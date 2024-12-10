@@ -26,6 +26,11 @@ void app_power_on_off(bool onoff);
  /*******************************************************************************
  * GLOBAL VARIABLES
  */
+
+/*******************************************************************************
+ * LOCAL VARIABLES
+ */
+static mb_state_t lt_mb_state;
 //static uint8_t l_u8_mpu_handshake = 0;
 static uint8_t l_u8_mpu_status = 0;
 //static uint8_t l_u8_acc_status = 0;
@@ -268,5 +273,10 @@ bool system_get_power_off_req(void)
 {
     return l_u8_power_off_req;
 }
+mb_state_t system_get_mb_state(void)
+{
+    return lt_mb_state;
+}
+
 
 		

@@ -130,6 +130,64 @@ void ResetSystemTickClock(void)
 {
    OsTickCounter = 0;//TMOS_GetSystemClock() * 625 / 1000;
 }
-/*******************************************************************************
- * LOCAL FUNCTIONS IMPLEMENTATION
- */
+
+
+#if 1
+void Date2tm(struct tm* pTM, const char* pData)
+{
+	struct tm timeInfo;
+	char* tokenPtr = NULL;
+	char dataTimeTest[40] = { 0 };
+	char arrDate[20] = { 0 };
+	char arrTime[20] = { 0 };
+	// struct tm* ptmDate = NULL;
+
+	if (NULL == pData || NULL == pTM)
+		return;
+
+	memset(&timeInfo, 0, sizeof(struct tm));
+	// ptmDate = (struct tm*)pTM;
+	strcpy(dataTimeTest, pData);
+	dataTimeTest[39] = 0;
+
+	tokenPtr = strtok(dataTimeTest, " ");
+	if (tokenPtr) // 日期
+	{
+		strcpy(arrDate, tokenPtr);
+		tokenPtr = strtok(NULL, " ");
+		if (tokenPtr)
+		{
+			strcpy(arrTime, tokenPtr);
+		}
+	}
+
+	// 日期
+	tokenPtr = strtok(arrDate, ".");
+	if (tokenPtr)
+		timeInfo.tm_mday = atoi(tokenPtr);
+	tokenPtr = strtok(NULL, ".");
+	if (tokenPtr)
+		timeInfo.tm_mon = atoi(tokenPtr);
+	tokenPtr = strtok(NULL, ".");
+	if (tokenPtr)
+		timeInfo.tm_year = atoi(tokenPtr);
+
+	// 时间
+	tokenPtr = strtok(arrTime, ":");
+	if (tokenPtr)
+		timeInfo.tm_hour = atoi(tokenPtr);
+	tokenPtr = strtok(NULL, ":");
+	if (tokenPtr)
+		timeInfo.tm_min = atoi(tokenPtr);
+	tokenPtr = strtok(NULL, ":");
+	if (tokenPtr)
+		timeInfo.tm_sec = atoi(tokenPtr);
+
+	*pTM = timeInfo;
+}
+#endif
+
+//------ end add ECTiny Sample ------//
+
+
+ 

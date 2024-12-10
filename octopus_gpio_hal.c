@@ -100,7 +100,10 @@ uint8_t hal_get_gpio_key_mask_code(uint8_t pin)
 // GPIO initialization function for ITE Open RTOS (currently no implementation)
 void hal_gpio_init(uint8_t task_id)
 {
-    //LOG_LEVEL(F_NAME," GPIO init\r\n");  // Optional log for GPIO initialization (disabled here)
+    ithGpioSetOut(MCU_SDIO_PWR_OUTPUT_PIN);
+    ithGpioSetMode(MCU_SDIO_PWR_OUTPUT_PIN, ITH_GPIO_MODE0);
+    GpioSetWifiPowerOn();
+    LOG_LEVEL(F_NAME,"hal gpio init\r\n");  // Optional log for GPIO initialization (disabled here)
 }
 
 // Function to get the GPIO key mask code (ITE Open RTOS version, returns 0)
@@ -113,6 +116,7 @@ uint8_t hal_get_gpio_key_mask_code(uint8_t pin)
 void hal_gpio_init(uint8_t task_id)
 {
     //LOG_LEVEL(F_NAME," GPIO init\r\n");  // Optional log for GPIO initialization (disabled here)
+    LOG_LEVEL(F_NAME,"hal gpio init\r\n");  // Optional log for GPIO initialization (disabled here)
 }
 
 // Function to get the GPIO key mask code (ITE Open RTOS version, returns 0)

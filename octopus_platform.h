@@ -14,8 +14,8 @@
  * Define which platform and RTOS to use.
  */
 //#define PLATFORM_ITE_OPEN_RTOS  // Use the ITE platform with OPEN RTOS
-#define PLATFORM_CST_OSAL_RTOS // Use the CST platform with OSAL RTOS
-// #define PLATFORM_CST_WIND_RTOS // Use the CST platform with WIND RTOS
+//#define PLATFORM_CST_OSAL_RTOS // Use the CST platform with OSAL RTOS
+//#define PLATFORM_CST_WIND_RTOS // Use the CST platform with WIND RTOS
 
 /*******************************************************************************
  * INCLUDE FILES
@@ -29,12 +29,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <unistd.h>
+#include <time.h>
+#include <stdarg.h>
+
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <pthread.h>
-#include <unistd.h>
 #include "ite/ith.h"              // ITE hardware-specific definitions
 #include "ite/itp.h"              // ITE platform-specific definitions
 #include "uart/uart.h"            // UART module
@@ -46,7 +49,6 @@
 #endif
 
 #ifdef PLATFORM_CST_OSAL_RTOS
-#include <stdarg.h>
 #include "OSAL.h"                 // OS abstraction layer
 #include "OSAL_PwrMgr.h"          // OS power management
 #include "OSAL_Memory.h"          // OS memory management
@@ -101,7 +103,7 @@ extern "C" {
 
 #elif PLATFORM_ITE_OPEN_RTOS
 
-#define GET_SYSTEM_TICK_COUNT (hal_systick() * 625 / 1000) // Convert system ticks to milliseconds
+#define GET_SYSTEM_TICK_COUNT (SDL_GetTicks()) // Convert system ticks to milliseconds
 #define DELAY_US(us) (WaitUs(us))                          // Microsecond delay
 
 #else
