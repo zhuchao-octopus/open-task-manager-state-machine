@@ -96,13 +96,13 @@ uint8_t hal_get_gpio_key_mask_code(uint8_t pin)
     }   
     return 0;   // Default return value if pin doesn't match any case
 }
-#elif PLATFORM_ITE_OPEN_RTOS
+#elif defined(PLATFORM_ITE_OPEN_RTOS)
 // GPIO initialization function for ITE Open RTOS (currently no implementation)
 void hal_gpio_init(uint8_t task_id)
 {
-    ithGpioSetOut(MCU_SDIO_PWR_OUTPUT_PIN);
-    ithGpioSetMode(MCU_SDIO_PWR_OUTPUT_PIN, ITH_GPIO_MODE0);
-    GpioSetWifiPowerOn();
+    ithGpioSetOut(GPIO_MCU_SDIO_PWR_OUTPUT_PIN);
+    ithGpioSetMode(GPIO_MCU_SDIO_PWR_OUTPUT_PIN, ITH_GPIO_MODE0);
+    hal_gpio_set_wifi_onoff(true);
     LOG_LEVEL(F_NAME,"hal gpio init\r\n");  // Optional log for GPIO initialization (disabled here)
 }
 
@@ -110,6 +110,14 @@ void hal_gpio_init(uint8_t task_id)
 uint8_t hal_get_gpio_key_mask_code(uint8_t pin)
 {
     return 0;   // Always return 0 for ITE Open RTOS
+}
+
+void hal_gpio_set_wifi_onoff(bool onoff)
+{
+   if(onoff)
+    ithGpioSet(GPIO_MCU_SDIO_PWR_OUTPUT_PIN);
+   else
+    ithGpioClear(GPIO_MCU_SDIO_PWR_OUTPUT_PIN); 
 }
 
 #else

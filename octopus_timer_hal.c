@@ -58,7 +58,7 @@ void hal_timer_interrupt_callback(uint8_t event)
 	}
 }
 
-#elif PLATFORM_ITE_OPEN_RTOS
+#elif defined(PLATFORM_ITE_OPEN_RTOS)
 void hal_timer_init(uint8_t timer_id)
 {
 	

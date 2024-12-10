@@ -60,8 +60,40 @@ extern "C"
 #define GPIO_PIN_SIF_SET_HIGH()  (HalGpioSet(GPIO_SIF_S_PIN,Bit_ENABLE))   // Set GPIO_SIF_S_PIN to High
 #define GPIO_PIN_READ_SIF()      (HalGpioGet(GPIO_SIF_R_PIN))  // Read the state of SIF_R_PIN
 
-#elif PLATFORM_ITE_OPEN_RTOS
+#elif defined(PLATFORM_ITE_OPEN_RTOS)
 // Define macros for ITE Open RTOS platform (if needed, to be implemented)
+#define GPIO_MCU_SDIO_PWR_OUTPUT_PIN		21
+
+#define GPIO_ACC_SOC_PIN 		    (0x00)								
+#define GPIO_ACC_PIN 				(0x00)							
+#define GPIO_KEY_PIN 				(0x00)							
+#define GPIO_DDD_PIN 				(0x00)							
+#define GPIO_ZZD_PIN 				(0x00)							
+#define GPIO_YZD_PIN 				(0x00)							
+#define GPIO_SKD_PIN 				(0x00)							
+
+#define GPIO_SIF_R_PIN 						  				    
+#define GPIO_SIF_S_PIN 						  				    
+
+// Macros for controlling GPIO pin states (Low/High)
+#define GPIO_ACC_SOC_LOW()   		 // Set GPIO_ACC_SOC_PIN to Low
+#define GPIO_ACC_SOC_HIGH()  		 // Set GPIO_ACC_SOC_PIN to High
+
+// Macros for writing to and reading from GPIO pins
+#define GPIO_PIN_WRITE(pin)  		 (0x00)// Write to the specified GPIO pin
+#define GPIO_PIN_READ(pin)   		 (0x00)// Read the state of the specified GPIO pin
+
+// Specific macros to read GPIO states for various pins
+#define GPIO_PIN_READ_ACC()  		 (0x00)// Read the state of ACC_PIN
+#define GPIO_PIN_READ_DDD()  		 (0x00)// Read the state of DDD_PIN
+#define GPIO_PIN_READ_ZZD()  		 (0x00)// Read the state of ZZD_PIN
+#define GPIO_PIN_READ_YZD()  	 	 (0x00)// Read the state of YZD_PIN
+#define GPIO_PIN_READ_SKD()  		 (0x00)// Read the state of SKD_PIN
+
+// Macros for setting SIF pins
+#define GPIO_PIN_SIF_SET_LOW()   			 // Set GPIO_SIF_S_PIN to Low
+#define GPIO_PIN_SIF_SET_HIGH()  			 // Set GPIO_SIF_S_PIN to High
+#define GPIO_PIN_READ_SIF()      (0x00)// Read the state of SIF_R_PIN
 
 #else
 #define GPIO_ACC_SOC_PIN 		(0x00)								
@@ -99,6 +131,9 @@ extern "C"
 /*********************************************************************
  * FUNCTION DECLARATIONS
  */
+#ifdef PLATFORM_ITE_OPEN_RTOS
+void hal_gpio_set_wifi_onoff(bool onoff);
+#endif
 
 // Function to initialize GPIOs
 void hal_gpio_init(uint8_t task_id);

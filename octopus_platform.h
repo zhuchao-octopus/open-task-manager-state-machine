@@ -13,7 +13,7 @@
  * PROJECT SWITCH MACROS
  * Define which platform and RTOS to use.
  */
-//#define PLATFORM_ITE_OPEN_RTOS  // Use the ITE platform with OPEN RTOS
+#define PLATFORM_ITE_OPEN_RTOS  // Use the ITE platform with OPEN RTOS
 //#define PLATFORM_CST_OSAL_RTOS // Use the CST platform with OSAL RTOS
 //#define PLATFORM_CST_WIND_RTOS // Use the CST platform with WIND RTOS
 
@@ -101,12 +101,13 @@ extern "C" {
 #define GET_SYSTEM_TICK_COUNT (hal_systick() * 625 / 1000) // Convert system ticks to milliseconds
 #define DELAY_US(us) (WaitUs(us))                          // Microsecond delay
 
-#elif PLATFORM_ITE_OPEN_RTOS
-
-#define GET_SYSTEM_TICK_COUNT (SDL_GetTicks()) // Convert system ticks to milliseconds
-#define DELAY_US(us) (WaitUs(us))                          // Microsecond delay
+#elif defined(PLATFORM_ITE_OPEN_RTOS)
+#define CFG_OTSM_STACK_SIZE    (200112L)
+#define GET_SYSTEM_TICK_COUNT  (SDL_GetTicks()) // Convert system ticks to milliseconds
+#define DELAY_US(us) (usleep(us))                          // Microsecond delay
 
 #else
+
 #define DELAY_US(us) 
 #define GET_SYSTEM_TICK_COUNT 0
 #endif

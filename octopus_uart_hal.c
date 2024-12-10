@@ -12,6 +12,8 @@
  * Includes necessary headers for UART functionality and platform-specific configurations.
  */
 #include "octopus_platform.h"
+#include "octopus_cfifo.h"
+
 #include "octopus_log.h"
 #include "octopus_uart_hal.h"
 #include "octopus_uart_ptl.h"
@@ -33,9 +35,9 @@
  * Variables that are accessible throughout the file or program.
  */
 uint8_t Hal_TaskID;              // Task ID for UART event handling.
-#ifdef PLATFORM_CST_OSAL_RTOS
-uart_data_t uart_data;           // Buffer structure for received UART data.
-#endif
+//#ifdef PLATFORM_CST_OSAL_RTOS
+com_uart_data_buff_t com_uart_data_buff;           // Buffer structure for received UART data.
+//#endif
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
 static bool UartIsInit = false;  // Tracks whether UART is initialized.
@@ -49,7 +51,12 @@ static uint8_t uart2RxFifoBuf[cFifo_ObjSize(256 + 64)];
  * Declare static functions used only within this file.
  */
 #ifdef PLATFORM_CST_OSAL_RTOS
-static void hal_uart_receive_callback(uart_Evt_t* pev);
+static void hal_com_uart_receive_callback(uart_Evt_t* pev);
+uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events);
+#elif defined(PLATFORM_ITE_OPEN_RTOS)
+static void hal_com_uart_receive_callback(void* arg1, uint32_t arg2);
+void* hal_com_uart_event_handler(void* arg);
+
 #endif
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
@@ -72,7 +79,7 @@ static void hal_uart_init(void) {
         .hw_fwctrl = FALSE,
         .use_tx_buf = FALSE,
         .parity = FALSE,
-        .evt_handler = hal_uart_receive_callback,
+        .evt_handler = hal_com_uart_receive_callback,
     };
     // Initialize UART1 with the specified configuration.
     HalUartInit(UART1, cfg);
@@ -81,28 +88,28 @@ static void hal_uart_init(void) {
 
 void hal_com_uart_init(uint8 task_id)
 {
-	  Hal_TaskID = task_id;
-	  if(task_id == 0)
-		{
+	Hal_TaskID = task_id;
+	if(task_id == 0)
+	{
     hal_uart_init();
-	  LOG_LEVEL(F_NAME, "hal uart1 init for protocol\r\n");
-		}
+	LOG_LEVEL(F_NAME, "hal uart1 init for protocol\r\n");
+	}
 }
 /**
  * @brief   Callback function triggered when UART events occur.
  * @param   pev  Pointer to the UART event structure.
  * @return  None.
  */
-static void hal_uart_receive_callback(uart_Evt_t* pev) {
+static void hal_com_uart_receive_callback(uart_Evt_t* pev) {
     switch (pev->type) {
         case UART_EVT_TYPE_RX_DATA:       // Data received event.
         case UART_EVT_TYPE_RX_DATA_TO:   // Timeout on data reception.
         {
             uint16_t i;
             for (i = 0; i < pev->len; i++) {
-                uart_data.data[(uart_data.wr + i) & (UART_BUFF_MAX_SIZE - 1)] = pev->data[i];
+                com_uart_data_buff.data[(com_uart_data_buff.wr + i) & (UART_BUFF_MAX_SIZE - 1)] = pev->data[i];
             }
-            uart_data.wr += pev->len;
+            com_uart_data_buff.wr += pev->len;
 
             // Start a timer to handle received data.
             osal_start_timerEx(Hal_TaskID, UART_RECEIVE_DATA_EVENT, 5);
@@ -121,7 +128,7 @@ static void hal_uart_receive_callback(uart_Evt_t* pev) {
  * @param   events   Event flags indicating the specific events to handle.
  * @return  Remaining unhandled events.
  */
-uint16_t hal_uart_event_handler(uint8_t task_id, uint16 events) {
+uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events) {
     if (task_id != Hal_TaskID) return 0;
 
     if (events & UART_RECEIVE_DATA_EVENT) {
@@ -130,12 +137,12 @@ uint16_t hal_uart_event_handler(uint8_t task_id, uint16 events) {
         #endif
 
         // Process received data from UART buffer.
-        while (uart_data.rd != uart_data.wr) {
+        while (com_uart_data_buff.rd != com_uart_data_buff.wr) {
             #ifdef TEST_LOG_DEBUG_UART_RX_DATA
-            LOG_("%02x ", uart_data.data[uart_data.rd & (UART_BUFF_MAX_SIZE - 1)]);
+            LOG_("%02x ", uart_data.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
             #endif
-            ptl_com_uart_receive_handler(uart_data.data[uart_data.rd & (UART_BUFF_MAX_SIZE - 1)]);
-            uart_data.rd++;
+            ptl_com_uart_receive_handler(com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
+            com_uart_data_buff.rd++;
         }
         ptl_frame_analysis_handler();  // Handle protocol layer.
 
@@ -148,7 +155,8 @@ uint16_t hal_uart_event_handler(uint8_t task_id, uint16 events) {
 
     return 0;
 }
-#elif PLATFORM_ITE_OPEN_RTOS
+
+#elif defined(PLATFORM_ITE_OPEN_RTOS)
 
 /**
  * @brief   Configures the USART peripheral for ITE OPEN RTOS platform.
@@ -170,9 +178,18 @@ void hal_uart_init(void) {
     // Register and initialize the UART device.
     itpRegisterDevice(PROTOCOL_UART_PORT, &PROTOCOL_UART_DEVICE);
     ioctl(PROTOCOL_UART_PORT, ITP_IOCTL_INIT, (void*)pUartInfo);
-    ioctl(PROTOCOL_UART_PORT, ITP_IOCTL_REG_UART_CB, (void*)hal_uart_receive_callback);
+    ioctl(PROTOCOL_UART_PORT, ITP_IOCTL_REG_UART_CB, (void*)hal_com_uart_receive_callback);
     sem_init(&UartSemIntr, 0, 0);
     UartIsInit = true;
+}
+
+void hal_com_uart_init(uint8_t task_id)
+{
+    pthread_t task_receive;
+    pthread_attr_t attr_receive;
+    pthread_attr_init(&attr_receive);
+    hal_uart_init();
+    pthread_create(&task_receive, &attr_receive, hal_com_uart_event_handler, NULL);
 }
 
 /**
@@ -181,7 +198,7 @@ void hal_uart_init(void) {
  * @param   arg2  Event-specific data.
  * @return  None.
  */
-static void hal_uart_receive_callback(void* arg1, uint32_t arg2) {
+static void hal_com_uart_receive_callback(void* arg1, uint32_t arg2) {
     sem_post(&UartSemIntr);
     if (arg2 == 1) {
         LOG_LEVEL(F_NAME,"arg2=1 error\n");
@@ -194,17 +211,17 @@ static void hal_uart_receive_callback(void* arg1, uint32_t arg2) {
  * @param   arg  Pointer to handler argument (unused).
  * @return  None.
  */
-static void* hal_uart_event_handler(void* arg) {
+void* hal_com_uart_event_handler(void* arg) {
     uint8_t length = 0;
     while (1) {
         sem_wait(&UartSemIntr);
         length = 0;
 
         if (UartIsInit)
-            length = read(PROTOCOL_UART_PORT, uart_data.data, UART_BUFF_MAX_SIZE);
+            length = read(PROTOCOL_UART_PORT, com_uart_data_buff.data, UART_BUFF_MAX_SIZE);
 
         for (int i = 0; i < length; i++) {
-            cFifo_Push(usartRxFifo, uart_data.data[i]);
+            cFifo_Push(usartRxFifo, com_uart_data_buff.data[i]);
         }
     }
 }
@@ -218,7 +235,7 @@ static void* hal_uart_event_handler(void* arg) {
  * 
  * @return The number of bytes actually received and copied into the buffer.
  */
-uint8_t hal_uart_get_fifo_data(uint8_t* buffer, uint16_t length)   
+uint8_t hal_com_uart_get_fifo_data(uint8_t* buffer, uint16_t length)   
 {
     uint8_t data = 0;   // Variable to hold each byte read from the FIFO
     uint8_t index = 0;  // Index to track how many bytes have been stored in the buffer
@@ -256,19 +273,9 @@ uint8_t hal_uart_get_fifo_data(uint8_t* buffer, uint16_t length)
     return index;
 }
 
-
-void hal_com_uart_protocol_init(void)
-{
-    pthread_t task_receive;
-    pthread_attr_t attr_receive;
-    pthread_attr_init(&attr_receive);
-    hal_uart_init();
-    pthread_create(&task_receive, &attr_receive, hal_uart_event_handler, NULL);
-}
-
 #else
 
-void hal_com_uart_init(uint8_t task_id)
+void hal_com_com_uart_init(uint8_t task_id)
 {
 	
 }
@@ -281,11 +288,11 @@ void hal_com_uart_init(uint8_t task_id)
  * @param   length  Length of the string.
  * @return  Number of bytes sent.
  */
-uint8_t hal_uart_send_string(const char* str, uint8_t length) {
+uint8_t hal_com_uart_send_string(const char* str, uint8_t length) {
 	  uint8_t ret_code = length;
     #ifdef PLATFORM_CST_OSAL_RTOS
-    osal_memcpy(uart_data.data, str, strlen(str));
-    ret_code = HalUartSendBuf(UART1, uart_data.data, strlen(str));
+    osal_memcpy(com_uart_data_buff.data, str, strlen(str));
+    ret_code = HalUartSendBuf(UART1, com_uart_data_buff.data, strlen(str));
     #endif
 
     #ifdef PLATFORM_ITE_OPEN_RTOS
@@ -300,7 +307,7 @@ uint8_t hal_uart_send_string(const char* str, uint8_t length) {
  * @param   length  Length of the buffer.
  * @return  Number of bytes sent.
  */
-uint8_t hal_uart_send_buffer(uint8_t* buff, uint16_t length) {
+uint8_t hal_com_uart_send_buffer(uint8_t* buff, uint16_t length) {
 	  uint8_t ret_code = length;
     #ifdef PLATFORM_CST_OSAL_RTOS
     ret_code = HalUartSendBuf(UART1, buff, length);

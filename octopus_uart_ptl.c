@@ -77,9 +77,7 @@ void ptl_error_detect(void);                   // Detect communication errors
 void ptl_tx_event_message_handler(void);      // Handle the transmission event message
 void ptl_rx_event_message_handler(uint8_t data);
 
-
 bool ptl_is_sleep_enable(void);               // Check if sleep mode is enabled
-
 module_info_t* ptl_get_module(ptl_frame_type_t frame_type); // Get module information by frame type
 
 /*******************************************************************************
@@ -142,7 +140,8 @@ void com_uart_running(void)
     else
     {
         #ifdef PLATFORM_ITE_OPEN_RTOS
-        ptl_rx_event_message_handler();
+        ptl_rx_event_message_handler(0);
+        ptl_frame_analysis_handler();
         #endif
         ptl_tx_event_message_handler();
         ptl_error_detect();
@@ -362,15 +361,15 @@ void ptl_rx_event_message_handler(uint8_t data)
 {
     // Call the HAL function to process received byte
     #ifdef PLATFORM_ITE_OPEN_RTOS
-    uint8_t data = 0;
+    //uint8_t data = 0;
     while(1)
     {
-        if (l_t_rx_proc_buf->size < PTL_FRAME_MAX_SIZE)
+        if (l_t_rx_proc_buf.size < PTL_FRAME_MAX_SIZE)
         {
-            if (0 != hal_uart_get_fifo_data(&data, 1))
+            if (0 != hal_com_uart_get_fifo_data(&data, 1))
             {
-                l_t_rx_proc_buf->buf[l_t_rx_proc_buf->size] = data;
-                l_t_rx_proc_buf->size ++;
+                l_t_rx_proc_buf.buff[l_t_rx_proc_buf.size] = data;
+                l_t_rx_proc_buf.size ++;
             }
             else
             {
@@ -402,31 +401,47 @@ void ptl_frame_analysis_handler(void)
  * Removes any data from the buffer that is not part of the header.
  * Only keeps the data after the A2M_PTL_HEADER byte.
  */
-void ptl_remove_none_header_data(ptl_proc_buff_t *buf)
+void ptl_remove_none_header_data(ptl_proc_buff_t *proc_buff)
 {
     // If the first byte is A2M_PTL_HEADER, no action needed
-    if (buf->buff[0] == A2M_PTL_HEADER)
-    {
-        return;
-    }
-
+    #ifdef TASK_MANAGER_STATE_MACHINE_MCU
+    if (proc_buff->buff[0] == A2M_PTL_HEADER)
+        return;   
     // Search for A2M_PTL_HEADER and remove data before it
-    for (uint16_t i = 0; i < buf->size; i++)
+    for (uint16_t i = 0; i < proc_buff->size; i++)
     {
-        if (buf->buff[i] == A2M_PTL_HEADER)
+        if (proc_buff->buff[i] == A2M_PTL_HEADER)
         {
-            // Shift data to remove the portion before the header
-            for (uint16_t j = i; j < buf->size; j++)
+            // Shift data to remove the position before the header
+            for (uint16_t j = i; j < proc_buff->size; j++)
             {
-                buf->buff[j - i] = buf->buff[j];
+                proc_buff->buff[j - i] = proc_buff->buff[j];
             }
-            buf->size -= i;
+            proc_buff->size -= i;
             break;
         }
     }
+    #endif
+    #ifdef TASK_MANAGER_STATE_MACHINE_SOC
+    if (proc_buff->buff[0] == M2A_PTL_HEADER)
+           return;
+    for (uint16_t i = 0; i < proc_buff->size; i ++)
+    {
+           if (proc_buff->buff[i] == M2A_PTL_HEADER)
+           {
+               // remove data before header
+               for (uint16_t j = i; j < proc_buff->size; j++)
+               {
+                   proc_buff->buff[j-i] = proc_buff->buff[j];
+               }
+               proc_buff->size -= i;
+               break;
+           }
+     }
 
-    // If A2M_PTL_HEADER is not found, clear the buffer
-    buf->size = 0;
+    #endif
+    // If _PTL_HEADER is not found, clear the buffer
+    proc_buff->size = 0;
 }
 
 /**
@@ -602,7 +617,7 @@ void ptl_init(void)
  */
 void ptl_hal_tx(uint8_t *data, uint16_t length)
 {
-    hal_uart_send_buffer(data, length);
+    hal_com_uart_send_buffer(data, length);
 }
 
 

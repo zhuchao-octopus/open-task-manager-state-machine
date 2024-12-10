@@ -82,18 +82,15 @@ uint16_t TaskManagerStateMachineInit(uint8_t task_id)
 {
     TaskManagerStateMachine_Id_ = task_id;  // Store the task ID in the global variable
     LOG_("\r\n");	
-    LOG_LEVEL(F_NAME,"OTMS initialization task_id=%d\r\n", TaskManagerStateMachine_Id_);
+    LOG_LEVEL(F_NAME,"OTMS initialization task_id=%02x\r\n", TaskManagerStateMachine_Id_);
     LOG_LEVEL(F_NAME,"OTMS datetime:%s\r\n", OTMS_RELEASE_DATA_TIME);
     LOG_LEVEL(F_NAME,"OTMS version :%s\r\n", OTMS_VERSION);
 	  /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize hardware abstraction layers (HAL)
     hal_gpio_init(0);  // Initialize GPIO
     hal_timer_init(5);  // Initialize timer with interval of 5 (could be milliseconds)
-	  hal_flash_init(0);
-	  hal_com_uart_init(0);
-	  #ifndef PLATFORM_CST_OSAL_RTOS
+	hal_flash_init(0);
     hal_com_uart_init(0);  // Initialize UART communication protocol
-    #endif
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize user task manager
     task_manager_init();  // Initialize the task manager
@@ -109,14 +106,14 @@ uint16_t TaskManagerStateMachineInit(uint8_t task_id)
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Enable task manager state matching main loop
     #ifdef PLATFORM_CST_OSAL_RTOS
-    osal_start_reload_timer(TaskManagerStateMachine_Id_, DEVICE_TIMER_EVENT, MAIN_TASK_TIMER_INTERVAL);
+    osal_start_reload_timer(TaskManagerStateMachine_Id_, DEVICE_TIMER_EVENT, MAIN_TASK_TIMER_INTERVAL);//timeout_value unit ms
     #endif
 
-    #ifdef PLATFORM_ITE_OPEN_RTOS
+    #ifdef PLATFORM_ITE_OPEN_RTOS 
     pthread_attr_init(&thread_attr);  // Initialize thread attributes
     pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);  // Set thread to detached state
-    pthread_attr_setstacksize(&thread_attr, CFG_KSM_STACK_SIZE);  // Set the stack size for the thread
-    pthread_create(&thread_task, &thread_attr, TaskManagerMainEventLoop, NULL);  // Create the task manager event loop thread
+    pthread_attr_setstacksize(&thread_attr, CFG_OTSM_STACK_SIZE);  // Set the stack size for the thread
+    pthread_create(&thread_task, &thread_attr, TaskManagerStateMachineEventLoop, NULL);  // Create the task manager event loop thread
     #endif
 
     return 0;
@@ -169,7 +166,7 @@ uint16 TaskManagerStateMachineEventLoop(uint8 task_id, uint16 events)
     return 0;  // Return 0 if no events were handled
 }
 
-#elif PLATFORM_ITE_OPEN_RTOS
+#elif defined(PLATFORM_ITE_OPEN_RTOS)
 /**
  * @brief Task manager state machine event loop for ITE Open RTOS.
  * @param arg Arguments passed to the thread (not used here).
@@ -181,7 +178,7 @@ void* TaskManagerStateMachineEventLoop(void* arg)
     while (1)
     {
         task_manager_run();  // Run the task manager to handle tasks in the event loop
-        usleep(1000);  // Sleep for 1 millisecond to control loop frequency
+        usleep(MAIN_TASK_TIMER_INTERVAL*1000);  // Sleep for 10 millisecond to control loop frequency
     }
     return 0;  // Exit the thread
 }

@@ -45,14 +45,14 @@ extern "C"
 #endif
 
 // If the platform is CST OSAL RTOS, define the UART data buffer structure
-#ifdef PLATFORM_CST_OSAL_RTOS
+//#ifdef PLATFORM_CST_OSAL_RTOS
 typedef struct
 {
     uint16_t wr;    // Write index for data buffer
     uint16_t rd;    // Read index for data buffer
     uint8_t data[UART_BUFF_MAX_SIZE];  // Data buffer
-} uart_data_t;
-#endif
+} com_uart_data_buff_t;
+//#endif
 
 /*******************************************************************************
  * FUNCTIONS
@@ -62,15 +62,14 @@ typedef struct
 // Initializes the UART protocol (e.g., UART configuration, GPIO, etc.)
 void hal_com_uart_init(uint8_t task_id);
 // Sends a string via UART, returning the number of bytes sent
-uint8_t hal_uart_send_string(const char* str, uint8_t length);
+uint8_t hal_com_uart_send_string(const char* str, uint8_t length);
 
 // Sends a buffer of data via UART, returning the number of bytes sent
-uint8_t hal_uart_send_buffer(uint8_t* buff, uint16_t length);
+uint8_t hal_com_uart_send_buffer(uint8_t* buff, uint16_t length);
 
 // Reads data from the UART FIFO and stores it in the provided buffer
-uint8_t hal_uart_get_fifo_data(uint8_t* buffer, uint16_t length);  
+uint8_t hal_com_uart_get_fifo_data(uint8_t* buffer, uint16_t length);  
 
-uint16_t hal_uart_event_handler(uint8_t task_id, uint16_t events);
 /*******************************************************************************/
 
 #ifdef __cplusplus
