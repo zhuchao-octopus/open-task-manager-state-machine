@@ -1,0 +1,82 @@
+
+/**
+ * ****************************************************************************
+ * @copyright Copyright (c) XXX
+ * All rights reserved.
+ *
+ * Header file for the Octopus Task Manager module.
+ * Defines macros, includes required libraries, and declares functions.
+ */
+
+#ifndef __OCTOPUS_TASK_MANAGER_UART_HAL_H__
+#define __OCTOPUS_TASK_MANAGER_UART_HAL_H__
+
+/*********************************************************************
+ * INCLUDES
+ */
+
+#include "octopus_platform.h" // Include custom types (likely custom data types or hardware-specific definitions)
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+/*******************************************************************************
+ * GENERAL MACROS
+ * Define common bit manipulation macros and constants.
+ */
+
+// Maximum buffer size for UART data
+#define UART_BUFF_MAX_SIZE          256
+
+// Event identifier for UART receive data
+#define UART_RECEIVE_DATA_EVENT     0x0001
+
+// If the platform is ITE OpenRTOS, configure UART settings
+#ifdef PLATFORM_ITE_OPEN_RTOS
+#define PROTOCOL_UART_PORT          ITP_DEVICE_UART2      // UART port used for communication
+#define PROTOCOL_UART_ITH_PORT      ITH_UART2             // ITH UART port for the platform
+#define PROTOCOL_UART_DEVICE        itpDeviceUart2        // UART device for the platform
+#define PROTOCOL_UART_BAUDRATE      CFG_UART2_BAUDRATE    // Baud rate for UART communication
+#define PROTOCOL_UART_PARITY        CFG_UART2_PARITY      // Parity setting for UART communication
+#define PROTOCOL_UART_GPIO_RX       CFG_GPIO_UART2_RX     // GPIO pin for UART RX (receive)
+#define PROTOCOL_UART_GPIO_TX       CFG_GPIO_UART2_TX     // GPIO pin for UART TX (transmit)
+#endif
+
+// If the platform is CST OSAL RTOS, define the UART data buffer structure
+#ifdef PLATFORM_CST_OSAL_RTOS
+typedef struct
+{
+    uint16_t wr;    // Write index for data buffer
+    uint16_t rd;    // Read index for data buffer
+    uint8_t data[UART_BUFF_MAX_SIZE];  // Data buffer
+} uart_data_t;
+#endif
+
+/*******************************************************************************
+ * FUNCTIONS
+ * Function prototypes for UART communication and protocol handling.
+ */
+
+// Initializes the UART protocol (e.g., UART configuration, GPIO, etc.)
+void hal_com_uart_init(uint8_t task_id);
+// Sends a string via UART, returning the number of bytes sent
+uint8_t hal_uart_send_string(const char* str, uint8_t length);
+
+// Sends a buffer of data via UART, returning the number of bytes sent
+uint8_t hal_uart_send_buffer(uint8_t* buff, uint16_t length);
+
+// Reads data from the UART FIFO and stores it in the provided buffer
+uint8_t hal_uart_get_fifo_data(uint8_t* buffer, uint16_t length);  
+
+uint16_t hal_uart_event_handler(uint8_t task_id, uint16_t events);
+/*******************************************************************************/
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // __OCTOPUS_TASK_MANAGER_UART_HAL_H__ 
+
+
