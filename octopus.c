@@ -91,13 +91,20 @@ uint16_t TaskManagerStateMachineInit(uint8_t task_id)
 	  /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize hardware abstraction layers (HAL)
     hal_gpio_init(0);  // Initialize GPIO
+	  #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     hal_timer_init(5);  // Initialize timer with interval of 5 (could be milliseconds)
+	  #endif
 	  hal_flash_init(0);
     hal_com_uart_init(0);  // Initialize UART communication protocol
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize user task manager
     task_manager_init();  // Initialize the task manager
     task_manager_start();  // Start the task manager
+	  /////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Initialize other user module
+		SIF_Init();
+		 /////////////////////////////////////////////////////////////////////////////////////////////////////
+		 //Nofify Initialize complete
     #ifdef TASK_MANAGER_STATE_MACHINE_MCU
 	  system_handshake_with_app();
 	  #endif

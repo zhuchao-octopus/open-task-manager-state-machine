@@ -163,17 +163,17 @@ extern "C" {
 #define LSB_BIT(BYTE) ((BYTE) & 0x0F)               // Extract least significant nibble
 #define MSB_BIT(BYTE) (((BYTE) >> 4) & 0x0F)        // Extract most significant nibble
 
-#define LSB_WORD(WORD)               ((uint8_t)((WORD) & 0xFF))                 // Extract least significant byte
-#define MSB_WORD(WORD)               ((uint8_t)(((WORD) >> 8) & 0xFF))          // Extract most significant byte
+#define LSB_WORD(a)               ((uint8_t)((a) & 0xFF))                 // Extract least significant byte
+#define MSB_WORD(a)               ((uint8_t)(((a) >> 8) & 0xFF))          // Extract most significant byte
 
-#define MK_LSB(WORD)		  (uint8_t)(WORD & 0xFF)                     // Extract the least significant byte (LSB) from a 16-bit word
-#define MK_MSB(WORD)		  (uint8_t)((WORD >> 8) & 0xFF)              // Extract the most significant byte (MSB) from a 16-bit word
-#define MK_LSBWORD(WORD)	  (uint16_t)(WORD & 0xFFFF)                  // Extract the least significant word (LSB) from a 32-bit word
-#define MK_MSBWORD(WORD)	  (uint16_t)((WORD >> 16) & 0xFFFF)          // Extract the most significant word (MSB) from a 32-bit word
-#define MK_BYTE(MSB, LSB) 	  ((uint8_t)(((MSB) << 4) | (LSB)))          // Combine two 4-bit values (MSB and LSB) into a single byte (alternative method)
-#define MK_WORD(MSB, LSB)	  (uint16_t)(((uint16_t)MSB << 8) + LSB)    // Combine two 8-bit values (MSB and LSB) into a 16-bit word
-#define MK_DWORD(MSB, LSB)    (uint32_t)(((uint32_t)MSB << 16) + LSB)   // Combine two 16-bit values (MSB and LSB) into a 32-bit double word
-#define MK_SIG_WORD(word)     (*(int16_t *)(&word))                      // Interpret a word as a signed 16-bit value
+#define MK_LSB(a)		  						(uint8_t)(a & 0xFF)                     // Extract the least significant byte (LSB) from a 16-bit word
+#define MK_MSB(a)		  						(uint8_t)((a >> 8) & 0xFF)              // Extract the most significant byte (MSB) from a 16-bit word
+#define MK_LSBWORD(a)	  					(uint16_t)(a & 0xFFFF)                  // Extract the least significant word (LSB) from a 32-bit word
+#define MK_MSBWORD(a)	  					(uint16_t)((a >> 16) & 0xFFFF)          // Extract the most significant word (MSB) from a 32-bit word
+#define MK_BYTE(MSB, LSB) 	  		((uint8_t)(((MSB) << 4) | (LSB)))          // Combine two 4-bit values (MSB and LSB) into a single byte (alternative method)
+#define MK_WORD(MSB, LSB)	  			(uint16_t)(((uint16_t)MSB << 8) + LSB)    // Combine two 8-bit values (MSB and LSB) into a 16-bit word
+#define MK_DWORD(MSB, LSB)    		(uint32_t)(((uint32_t)MSB << 16) + LSB)   // Combine two 16-bit values (MSB and LSB) into a 32-bit double word
+#define MK_SIG_WORD(a)     				(*(int16_t *)(&a))                      // Interpret a word as a signed 16-bit value
 
 /*******************************************************************************
  * CONSTANTS

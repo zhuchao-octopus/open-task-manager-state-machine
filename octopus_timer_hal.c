@@ -27,11 +27,9 @@ void hal_timer_init(uint8 timer_id)
 	//timer_TaskID = task_id;
 	//HalTimerSet(AP_TIMER_ID_6,2000000);	
 	//LOG("when test this case,you can uncomment comment which in timer int function\n");
-  #ifdef TASK_MANAGER_STATE_MACHINE_SIF
 	HalTimerInit(hal_timer_interrupt_callback);
 	HalTimerSet(AP_TIMER_ID_5,50);//50us for sif
 	LOG_LEVEL("hal timer init\r\n");
-	#endif
 }
  
 void hal_timer_interrupt_callback(uint8_t event)

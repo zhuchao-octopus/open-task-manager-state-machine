@@ -53,13 +53,13 @@ extern uint8_t IsSIFIdle(void);
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLEAR
  */
-extern void Sif_Init(void);
-extern void Sif_DeInit(void);
-extern bool Sif_IsInit(void);
-//void Sif_Receive_Data_Handle(void);      									//接收数据处理—带校准位，即波特率自适应
-//void Sif_Send_Data_Handle(void);
+extern void SIF_Init(void);
+extern void SIF_DeInit(void);
+extern bool SIF_IsInit(void);
+//void SIF_Receive_Data_Handle(void);      									//接收数据处理—带校准位，即波特率自适应
+//void SIF_Send_Data_Handle(void);
 //void RestartSIF(void);
-extern uint8_t Sif_ReadData(uint8_t* data, uint8_t maxlen);
+extern uint8_t SIF_ReadData(uint8_t* data, uint8_t maxlen);
 
 /*******************************************************************************
 *******************************************************************************/

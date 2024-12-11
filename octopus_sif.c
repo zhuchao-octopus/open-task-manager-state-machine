@@ -83,125 +83,126 @@ typedef enum
 } SIF_SEND_STATE_T;  //发送数据状态枚举
 
 /* 接收变量定义 -------------------------------------------------------------------*/
-uint32_t sif_receive_H_L_Level_time_cnt = 0; //高低电平时间计数
-uint8_t sif_receive_start_H_L_Level_timming_flag = 0; //开始高低电平计时标记
+uint32_t SIF_receive_H_L_Level_time_cnt = 0; //高低电平时间计数
+uint8_t SIF_receive_start_H_L_Level_timming_flag = 0; //开始高低电平计时标记
 
-uint8_t sif_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //接收数据状态
-uint8_t sif_receive_bit_num = 0;    //接收的bit位个数
-uint8_t sif_receive_data_num = 0;   //接收的数据个数
+uint8_t SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //接收数据状态
+uint8_t SIF_receive_bit_num = 0;    //接收的bit位个数
+uint8_t SIF_receive_data_num = 0;   //接收的数据个数
 
 //接收数据缓存数组-用一个数组来缓存数据，51个数据字节
-uint8_t sif_receive_data_buf[SIF_REV_DATA_NUM] = { 0 };
-uint8_t sif_receive_buf[SIF_REV_DATA_NUM] = { 0 };
+uint8_t SIF_receive_data_buf[SIF_REV_DATA_NUM] = { 0 };
+uint8_t SIF_receive_buf[SIF_REV_DATA_NUM] = { 0 };
 
-uint8_t sif_receive_has_read_bit = 0;               //1-已经读取一个bit位
-uint8_t sif_receive_check_OK = 0;                   //1-校验和正确，0-校验和失败
-uint8_t sif_receive_read_success = 0;                 //一帧数据是否读取成功，0-不成功，1-成功
+uint8_t SIF_receive_has_read_bit = 0;               //1-已经读取一个bit位
+uint8_t SIF_receive_check_OK = 0;                   //1-校验和正确，0-校验和失败
+uint8_t SIF_receive_read_success = 0;                 //一帧数据是否读取成功，0-不成功，1-成功
 
 /* 发送变量定义 -------------------------------------------------------------------*/
-uint32_t sif_send_H_L_Level_time_cnt = 0; //高低电平时间计数
-uint8_t sif_send_start_H_L_Level_timming_flag = 0; //开始高低电平计时标记
+uint32_t SIF_send_H_L_Level_time_cnt = 0; //高低电平时间计数
+uint8_t SIF_send_start_H_L_Level_timming_flag = 0; //开始高低电平计时标记
 
-uint8_t sif_send_state = 0;      //接收数据状态
-uint8_t sif_send_bit_num = 0;    //接收的bit位个数
-uint8_t sif_send_data_num = 0;   //接收的数据个数
+uint8_t SIF_send_state = 0;      //接收数据状态
+uint8_t SIF_send_bit_num = 0;    //接收的bit位个数
+uint8_t SIF_send_data_num = 0;   //接收的数据个数
 
-uint8_t sif_send_bit = 0;               //1-已经读取一个bit位
+uint8_t SIF_send_bit = 0;               //1-已经读取一个bit位
 
-uint8_t sif_send_data_buf[SIF_SEND_DATA_MAX_NUM] = { 0 };
-uint8_t sif_send_data_num_target = 0;
-uint8_t sif_send_req_flag = 0;               //存在发送请求
+uint8_t SIF_send_data_buf[SIF_SEND_DATA_MAX_NUM] = { 0 };
+uint8_t SIF_send_data_num_target = 0;
+uint8_t SIF_send_req_flag = 0;               //存在发送请求
 
-static bool sif_has_inited = false;
+static bool SIF_has_inited = false;
 /*************************************************************************************************
  * GLOBAL FUNCTIONS DECLEAR
  */
 /*************************************************************************************************/
 
-static void Sif_GPIO_Init(void);                //GPIO初始化函数
-static uint8_t Sif_Get_Input_Pin_Data(void);    //读取SIF接收端口电平，带消抖处理
-static void Sif_Receive_Data_Handle(void);      //接收数据处理—带校准位，即波特率自适应
-static void Sif_Send_Data_Handle(void);         //接收数据处理—带校准位，即波特率自适应
-static void Sif_Checksum_Handle(void);         //校验和处理
+static void SIF_GPIO_Init(void);                //GPIO初始化函数
+static uint8_t SIF_Get_Input_Pin_Data(void);    //读取SIF接收端口电平，带消抖处理
+static void SIF_Receive_Data_Handle(void);      //接收数据处理—带校准位，即波特率自适应
+static void SIF_Send_Data_Handle(void);         //接收数据处理—带校准位，即波特率自适应
+static void SIF_Checksum_Handle(void);         //校验和处理
 
-bool Sif_Is_Idle(void);
+bool SIF_Is_Idle(void);
 /***************************************************************************************************
  *                                            LOCAL FUNCTION
  ***************************************************************************************************/
-bool Sif_IsInit(void)
+bool SIF_IsInit(void)
 {
-  return sif_has_inited;
+  return SIF_has_inited;
 }
 
-void Sif_GPIO_Init(void)
+void SIF_GPIO_Init(void)
 {
 	SIF_SEND_DATA_BIT_LOW();
 }
 
-void Sif_Init(void)
+void SIF_Init(void)
 {
-if (!sif_has_inited)
+if (!SIF_has_inited)
 	{
-		Sif_GPIO_Init();
-		///Sif_TIM2_Int_Init(50 - 1, 96 - 1);
-		sif_has_inited = true;
+		SIF_GPIO_Init();
+		///SIF_TIM2_Int_Init(50 - 1, 96 - 1);
+		SIF_has_inited = true;
+		LOG_LEVEL("sif init\r\n");
 	}
 }
 
-void Sif_DeInit(void)
+void SIF_DeInit(void)
 {
-if (sif_has_inited)
+if (SIF_has_inited)
 	{
 		///TIM_ITConfig(TIM2, TIM_IT_Update, DISABLE);
 		///TIM_Cmd(TIM2, DISABLE);
-		sif_has_inited = false;
+		SIF_has_inited = false;
 	}
 }
 
-void Sif_ReStart()
+void SIF_ReStart()
 {
-	sif_receive_state = SIF_REV_STATE_INITIAL;
+	SIF_receive_state = SIF_REV_STATE_INITIAL;
 }
 
-bool Sif_Is_Idle(void)
+bool SIF_Is_Idle(void)
 {
-	if (sif_receive_state == SIF_REV_STATE_STOP)
+	if (SIF_receive_state == SIF_REV_STATE_STOP)
 		return 1;
 	else
 		return 0;
 }
 
-void Sif_Delay_us(uint32_t us) {
+void SIF_Delay_us(uint32_t us) {
   DELAY_US(us);  
 }
 
-uint8_t Sif_ReadData(uint8_t* data, uint8_t maxlen)
+uint8_t SIF_ReadData(uint8_t* data, uint8_t maxlen)
 {
 	assert(data);
-	if (!sif_has_inited)
+	if (!SIF_has_inited)
 	{
 		return 0;
 	}
 
-	if (sif_receive_read_success && sif_receive_check_OK)
+	if (SIF_receive_read_success && SIF_receive_check_OK)
 	{
 		uint8_t len = maxlen < SIF_REV_DATA_NUM ? maxlen : SIF_REV_DATA_NUM;
 		for (int i = 0; i < len; i++)
 		{
-			data[i] = sif_receive_buf[i];
+			data[i] = SIF_receive_buf[i];
 		}
-		sif_receive_read_success = false;
+		SIF_receive_read_success = false;
 		return len;
 	}
 	return 0;
 }
 
-uint8_t Sif_SendData_Sync(uint8_t* data, uint8_t len)
+uint8_t SIF_SendData_Sync(uint8_t* data, uint8_t len)
 {
 	assert(data);
 	assert(len);
 
-	if (!sif_has_inited)
+	if (!SIF_has_inited)
 	{
 		return 0;
 	}
@@ -210,9 +211,9 @@ uint8_t Sif_SendData_Sync(uint8_t* data, uint8_t len)
 	uint8_t flag = 0;
 	//同步信号
 	SIF_SEND_DATA_BIT_LOW();
-	Sif_Delay_us(20000);
+	SIF_Delay_us(20000);
 	SIF_SEND_DATA_BIT_HIGH();
-	Sif_Delay_us(500);
+	SIF_Delay_us(500);
 	for (int i = 0; i < len; i++)
 	{
 		byte = data[i];
@@ -222,28 +223,28 @@ uint8_t Sif_SendData_Sync(uint8_t* data, uint8_t len)
 			if (flag)
 			{
 				SIF_SEND_DATA_BIT_LOW();
-				Sif_Delay_us(500);
+				SIF_Delay_us(500);
 				SIF_SEND_DATA_BIT_HIGH();
-				Sif_Delay_us(1000);
+				SIF_Delay_us(1000);
 			}
 			else
 			{
 				SIF_SEND_DATA_BIT_LOW();
-				Sif_Delay_us(1000);
+				SIF_Delay_us(1000);
 				SIF_SEND_DATA_BIT_HIGH();
-				Sif_Delay_us(500);
+				SIF_Delay_us(500);
 			}
 		}
 	}
 	SIF_SEND_DATA_BIT_LOW();
-	Sif_Delay_us(5000);
+	SIF_Delay_us(5000);
 	return len;
 }
 
-uint8_t Sif_SendData(uint8_t* data, uint8_t len)
+uint8_t SIF_SendData(uint8_t* data, uint8_t len)
 {
 	#if 1
-	LOG_LEVEL("Sif_SendData:");
+	LOG_LEVEL("SIF_SendData:");
 	for (int i = 0; i < len; i++)
 	{
 		LOG_LEVEL("%02x ", data[i]);
@@ -253,19 +254,19 @@ uint8_t Sif_SendData(uint8_t* data, uint8_t len)
 	assert(data);
 	assert(len);
 	assert(len <= SIF_SEND_DATA_MAX_NUM);
-	if (!sif_has_inited)
+	if (!SIF_has_inited)
 	{
 		return 0;
 	}
 
-	if (sif_send_req_flag == false)
+	if (SIF_send_req_flag == false)
 	{
 		for (int i = 0; i < len; i++)
 		{
-			sif_send_data_buf[i] = data[i];
+			SIF_send_data_buf[i] = data[i];
 		}
-		sif_send_data_num_target = len;
-		sif_send_req_flag = true;
+		SIF_send_data_num_target = len;
+		SIF_send_req_flag = true;
 		return len;
 	}
 	return 0;
@@ -282,314 +283,312 @@ uint8_t Sif_SendData(uint8_t* data, uint8_t len)
 void SIF_IO_IRQHandler(void)
 {
 		//SIF 接收处理
-		if (sif_receive_start_H_L_Level_timming_flag == 1) //开始高低电平计时标记
+		if (SIF_receive_start_H_L_Level_timming_flag == 1) //开始高低电平计时标记
 		{
-			sif_receive_H_L_Level_time_cnt++;     //高低电平维持时间计数变量
+			SIF_receive_H_L_Level_time_cnt++;     //高低电平维持时间计数变量
 		}
 		/////////////////////////////////////////////////////////////////////////////////////
 
-		Sif_Receive_Data_Handle();      //接收数据处理
+		SIF_Receive_Data_Handle();      //接收数据处理
 
 		/////////////////////////////////////////////////////////////////////////////////////
 		//SIF 发送处理
 		#if 1
-		if (sif_send_start_H_L_Level_timming_flag == 1)
+		if (SIF_send_start_H_L_Level_timming_flag == 1)
 		{
-			sif_send_H_L_Level_time_cnt++;     //高低电平维持时间计数变量
+			SIF_send_H_L_Level_time_cnt++;     //高低电平维持时间计数变量
 		}
-		Sif_Send_Data_Handle();     //发送数据处理
+		SIF_Send_Data_Handle();     //发送数据处理
 		#endif
     /////////////////////////////////////////////////////////////////////////////////////
 }
 
 ///__attribute__((section(".highcode")))
-void Sif_Receive_Data_Handle(void)
+void SIF_Receive_Data_Handle(void)
 {
 
-	switch (sif_receive_state)													//检测当前接收数据状态
+	switch (SIF_receive_state)													//检测当前接收数据状态
 	{
 	case SIF_REV_STATE_INITIAL:                         //初始状态，未接收到同步信息，进行同步判断
-		if (Sif_Get_Input_Pin_Data() == SIF_LOW)          //判断接收引脚的电平状态，当读到低电平时，开始计时
+		if (SIF_Get_Input_Pin_Data() == SIF_LOW)          //判断接收引脚的电平状态，当读到低电平时，开始计时
 		{
-			sif_receive_bit_num = 0;                				//重置bit位计数器
-			sif_receive_data_num = 0;               				//重置接收数据个数
-			sif_receive_H_L_Level_time_cnt = 0;             //高低电平计时变量清0
-			sif_receive_start_H_L_Level_timming_flag = 1;   //开始高低电平计时
-			sif_receive_state = SIF_REV_STATE_SYNC_L;       //进入读取同步低电平信号状态
+			SIF_receive_bit_num = 0;                				//重置bit位计数器
+			SIF_receive_data_num = 0;               				//重置接收数据个数
+			SIF_receive_H_L_Level_time_cnt = 0;             //高低电平计时变量清0
+			SIF_receive_start_H_L_Level_timming_flag = 1;   //开始高低电平计时
+			SIF_receive_state = SIF_REV_STATE_SYNC_L;       //进入读取同步低电平信号状态
 
-			memset(sif_receive_data_buf, 0, SIF_REV_DATA_NUM);
+			memset(SIF_receive_data_buf, 0, SIF_REV_DATA_NUM);
 		}
 		break;
 
 	case SIF_REV_STATE_SYNC_L:                          //在读取同步低电平信号期间
-		if (Sif_Get_Input_Pin_Data() == SIF_HIGH)         //同步信号低电平检测期间读到高电平
+		if (SIF_Get_Input_Pin_Data() == SIF_HIGH)         //同步信号低电平检测期间读到高电平
 		{
-			if (sif_receive_H_L_Level_time_cnt >= SIF_REV_SYNC_L_TIME_NUM) //如果同步信号低电平时间>=SYNC_L_TIME_NUM
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_SYNC_L_TIME_NUM) //如果同步信号低电平时间>=SYNC_L_TIME_NUM
 			{                                       				//同步信号低电平时间要>=10ms
-				sif_receive_H_L_Level_time_cnt = 0;         	//高低电平计时变量清0
-				sif_receive_state = SIF_REV_STATE_SYNC_H;   	//进入读取同步信号高电平状态
+				SIF_receive_H_L_Level_time_cnt = 0;         	//高低电平计时变量清0
+				SIF_receive_state = SIF_REV_STATE_SYNC_H;   	//进入读取同步信号高电平状态
 			}
 			else
 			{
-				sif_receive_state = SIF_REV_STATE_IDLE_SIGNAL; //进入重新接收状态
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL; //进入重新接收状态
 			}
 		}
 		break;
 
 	case SIF_REV_STATE_SYNC_H:                          //在读取同步信号高电平期间
-		if (Sif_Get_Input_Pin_Data() == SIF_LOW)          //同步信号高电平检测期间读到低电平
+		if (SIF_Get_Input_Pin_Data() == SIF_LOW)          //同步信号高电平检测期间读到低电平
 		{
 			//判断同步信号高电平时间是否在1ms±100us之间
-			if (sif_receive_H_L_Level_time_cnt >= SIF_REV_SYNC_H_TIME_NUM_MIN
-					&& sif_receive_H_L_Level_time_cnt <= SIF_REV_SYNC_H_TIME_NUM_MAX)
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_SYNC_H_TIME_NUM_MIN
+					&& SIF_receive_H_L_Level_time_cnt <= SIF_REV_SYNC_H_TIME_NUM_MAX)
 			{
-				sif_receive_H_L_Level_time_cnt = 0;          //高低电平计时变量清0
-				sif_receive_has_read_bit = 0;
-				sif_receive_state = SIF_REV_STATE_REV_BIT;   //进入读取数据状态
+				SIF_receive_H_L_Level_time_cnt = 0;          //高低电平计时变量清0
+				SIF_receive_has_read_bit = 0;
+				SIF_receive_state = SIF_REV_STATE_REV_BIT;   //进入读取数据状态
 			}
 			else
 			{
-				sif_receive_state = SIF_REV_STATE_IDLE_SIGNAL;//进入重新接收状态
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;//进入重新接收状态
 			}
 		}
 		else            																	//如果在同步信号高电平检测期间，时间超过2ms±200us，认为超时
 		{
 			//判断时间是否超时 2ms±200us
-			if (sif_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
 			{
-				sif_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //进入重新接收状态
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //进入重新接收状态
 			}
 		}
 		break;
 
 	case SIF_REV_STATE_REV_BIT:          //在读取数据码电平期间
-		if (Sif_Get_Input_Pin_Data() == SIF_HIGH)               //同步信号低电平检测期间读到高电平
+		if (SIF_Get_Input_Pin_Data() == SIF_HIGH)               //同步信号低电平检测期间读到高电平
 		{
 			//判断时间是否超时 2ms±200us
-			if (sif_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
 			{
-				sif_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //进入重新接收状态
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //进入重新接收状态
 			}
 			else
 			{
-				if (sif_receive_has_read_bit == 0)
+				if (SIF_receive_has_read_bit == 0)
 				{
-					if ((sif_receive_H_L_Level_time_cnt < (SIF_REV_HALF_LOGIC_CYCLE_MIN)))
+					if ((SIF_receive_H_L_Level_time_cnt < (SIF_REV_HALF_LOGIC_CYCLE_MIN)))
 					{
-						sif_receive_data_buf[sif_receive_data_num] |= 0x01;
+						SIF_receive_data_buf[SIF_receive_data_num] |= 0x01;
 					}
-					sif_receive_has_read_bit = 1;
-					sif_receive_state = SIF_REV_STATE_BUILD_DATA;
+					SIF_receive_has_read_bit = 1;
+					SIF_receive_state = SIF_REV_STATE_BUILD_DATA;
 				}
 			}
 		}
 		else
 		{
-			if (sif_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
 			{
-				sif_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //进入重新接收状态
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //进入重新接收状态
 			}
 		}
 		break;
 
 	case SIF_REV_STATE_BUILD_DATA:
-		if (Sif_Get_Input_Pin_Data() == SIF_LOW)                //同步信号高电平检测期间读到低电平
+		if (SIF_Get_Input_Pin_Data() == SIF_LOW)                //同步信号高电平检测期间读到低电平
 		{
 			//判断同步信号高电平时间是否在1ms±100us之间
-			if (sif_receive_has_read_bit == 1)
+			if (SIF_receive_has_read_bit == 1)
 			{
-				sif_receive_H_L_Level_time_cnt = 0;         //高低电平计时变量清0
+				SIF_receive_H_L_Level_time_cnt = 0;         //高低电平计时变量清0
 
-				sif_receive_has_read_bit = 0;                   //清0，读取下一个bit位
-				sif_receive_bit_num++;                  //接收的bit数++
+				SIF_receive_has_read_bit = 0;                   //清0，读取下一个bit位
+				SIF_receive_bit_num++;                  //接收的bit数++
 
-				if (sif_receive_bit_num == SIF_REV_BIT_NUM)   //如果一个字节8个bit位接收完成
+				if (SIF_receive_bit_num == SIF_REV_BIT_NUM)   //如果一个字节8个bit位接收完成
 				{
-					sif_receive_data_num++;             //接收的数据个数++
-					sif_receive_bit_num = 0;            //接收bit位个数清0重新接收
-					if (sif_receive_data_num == SIF_REV_DATA_NUM)   //如果数据采集完毕
+					SIF_receive_data_num++;             //接收的数据个数++
+					SIF_receive_bit_num = 0;            //接收bit位个数清0重新接收
+					if (SIF_receive_data_num == SIF_REV_DATA_NUM)   //如果数据采集完毕
 					{
-						sif_receive_state = SIF_REV_STATE_END_SIGNAL; //进入接收结束低电平信号状态
+						SIF_receive_state = SIF_REV_STATE_END_SIGNAL; //进入接收结束低电平信号状态
 					}
 					else
 					{
-						sif_receive_state = SIF_REV_STATE_REV_BIT; //进入读取数据状态
+						SIF_receive_state = SIF_REV_STATE_REV_BIT; //进入读取数据状态
 					}
 				}
 				else                                //如果一个字节8个bit位还没有接收完成
 				{
 					//将接收数据缓存左移一位，数据从低bit位开始接收
-					sif_receive_data_buf[sif_receive_data_num] =
-							sif_receive_data_buf[sif_receive_data_num] << 1;
-					sif_receive_state = SIF_REV_STATE_REV_BIT; //进入读取数据状态
+					SIF_receive_data_buf[SIF_receive_data_num] =
+							SIF_receive_data_buf[SIF_receive_data_num] << 1;
+					SIF_receive_state = SIF_REV_STATE_REV_BIT; //进入读取数据状态
 				}
 			}
 		}
 		else            //如果在同步信号高电平检测期间，时间超过2ms±200us，认为超时
 		{
 			//判断时间是否超时 2ms±200us
-			if (sif_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
 			{
-				sif_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //进入重新接收状态
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //进入重新接收状态
 			}
 		}
 		break;
 
 	case SIF_REV_STATE_END_SIGNAL:                              //在接收结束信号低电平期间
-		if (Sif_Get_Input_Pin_Data() == SIF_LOW)
+		if (SIF_Get_Input_Pin_Data() == SIF_LOW)
 		{
-			if (sif_receive_H_L_Level_time_cnt >= SIF_REV_END_SIGNAL_TIME_NUM) //如果读到低电平时间>=5ms
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_END_SIGNAL_TIME_NUM) //如果读到低电平时间>=5ms
 			{
 
-				memcpy(sif_receive_buf, sif_receive_data_buf, SIF_REV_DATA_NUM);
-				Sif_Checksum_Handle();
+				memcpy(SIF_receive_buf, SIF_receive_data_buf, SIF_REV_DATA_NUM);
+				SIF_Checksum_Handle();
 
-				sif_receive_read_success = 1;                   //一帧数据读取成功
-				sif_receive_start_H_L_Level_timming_flag = 0;   //停止高低电平计时
-				sif_receive_H_L_Level_time_cnt = 0;             //定时器计数值清0
-				sif_receive_state = SIF_REV_STATE_INITIAL;      //接收状态清0
+				SIF_receive_read_success = 1;                   //一帧数据读取成功
+				SIF_receive_start_H_L_Level_timming_flag = 0;   //停止高低电平计时
+				SIF_receive_H_L_Level_time_cnt = 0;             //定时器计数值清0
+				SIF_receive_state = SIF_REV_STATE_INITIAL;      //接收状态清0
 			}
 		}
 		else    //结束信号低电平检测期间一直为低
 		{
-			if (sif_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX) //如果读到低电平时间>=10ms，认为超时
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX) //如果读到低电平时间>=10ms，认为超时
 			{                               //一帧数据发送完成后需要间隔50ms才发送第二帧数据，期间肯定会被拉高
-				sif_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //进入重新接收状态
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //进入重新接收状态
 			}
 		}
 		break;
 	#if 1
 	case SIF_REV_STATE_IDLE_SIGNAL:
-		//sif_receive_state = SIF_REV_STATE_RESTART;
+		//SIF_receive_state = SIF_REV_STATE_RESTART;
 		//break;
 	case SIF_REV_STATE_RESTART:                      		//重新接收数据状态
-		sif_receive_start_H_L_Level_timming_flag = 0;     //停止高低电平计时
-		sif_receive_H_L_Level_time_cnt = 0;          			//定时器计数值清0
-		sif_receive_has_read_bit = 0;                			//清0，读取下一个bit位
-		sif_receive_bit_num = 0;
-		sif_receive_data_num = 0;
-		sif_receive_state = SIF_REV_STATE_INITIAL;        //接收状态清0
+		SIF_receive_start_H_L_Level_timming_flag = 0;     //停止高低电平计时
+		SIF_receive_H_L_Level_time_cnt = 0;          			//定时器计数值清0
+		SIF_receive_has_read_bit = 0;                			//清0，读取下一个bit位
+		SIF_receive_bit_num = 0;
+		SIF_receive_data_num = 0;
+		SIF_receive_state = SIF_REV_STATE_INITIAL;        //接收状态清0
 		break;
 	#endif
-
 	}
-
 }
 
 ///__attribute__((section(".highcode")))
-void Sif_Send_Data_Handle(void)
+void SIF_Send_Data_Handle(void)
 {
-	switch (sif_send_state)															 //检测当前接收数据状态
+	switch (SIF_send_state)															 //检测当前接收数据状态
 	{
 	case SIF_SEND_STATE_INITIAL:                         //初始状态，未接收到同步信息，进行同步判断
-		if (sif_send_req_flag == true)             			   //判断接收引脚的电平状态，当读到低电平时，开始计时
+		if (SIF_send_req_flag == true)             			   //判断接收引脚的电平状态，当读到低电平时，开始计时
 		{
-			sif_send_bit_num = 0;                						 //重置bit位计数器
-			sif_send_data_num = 0;               						 //重置接收数据个数
-			sif_send_H_L_Level_time_cnt = 0;                 //高低电平计时变量清0
-			sif_send_start_H_L_Level_timming_flag = 1;       //开始高低电平计时
-			sif_send_state = SIF_SEND_STATE_SYNC_L;          //进入读取同步低电平信号状态
+			SIF_send_bit_num = 0;                						 //重置bit位计数器
+			SIF_send_data_num = 0;               						 //重置接收数据个数
+			SIF_send_H_L_Level_time_cnt = 0;                 //高低电平计时变量清0
+			SIF_send_start_H_L_Level_timming_flag = 1;       //开始高低电平计时
+			SIF_send_state = SIF_SEND_STATE_SYNC_L;          //进入读取同步低电平信号状态
 			SIF_SEND_DATA_BIT_LOW();
 		}
 		break;
 
 	case SIF_SEND_STATE_SYNC_L:                          //在读取同步低电平信号期间
-		if (sif_send_H_L_Level_time_cnt >= SIF_SEND_SYNC_L_TIME_NUM) //如果同步信号低电平时间>=SYNC_L_TIME_NUM
+		if (SIF_send_H_L_Level_time_cnt >= SIF_SEND_SYNC_L_TIME_NUM) //如果同步信号低电平时间>=SYNC_L_TIME_NUM
 		{                                                  //同步信号低电平时间要>=10ms
-			sif_send_H_L_Level_time_cnt = 0;                 //高低电平计时变量清0
+			SIF_send_H_L_Level_time_cnt = 0;                 //高低电平计时变量清0
 			SIF_SEND_DATA_BIT_HIGH();
-			sif_send_state = SIF_SEND_STATE_SYNC_H;          //进入读取同步信号高电平状态
+			SIF_send_state = SIF_SEND_STATE_SYNC_H;          //进入读取同步信号高电平状态
 		}
 		break;
 
 	case SIF_SEND_STATE_SYNC_H:                          //在读取同步信号高电平期间
 		//判断同步信号高电平时间是否在1ms±100us之间
-		if (sif_send_H_L_Level_time_cnt >= SIF_SEND_SYNC_H_TIME_NUM)
+		if (SIF_send_H_L_Level_time_cnt >= SIF_SEND_SYNC_H_TIME_NUM)
 		{
-			sif_send_H_L_Level_time_cnt = 0;                 //高低电平计时变量清0
+			SIF_send_H_L_Level_time_cnt = 0;                 //高低电平计时变量清0
 			SIF_SEND_DATA_BIT_LOW();
-			sif_send_state = SIF_SEND_STATE_GET_BIT;         //进入读取数据状态
+			SIF_send_state = SIF_SEND_STATE_GET_BIT;         //进入读取数据状态
 		}
 		break;
 
 	case SIF_SEND_STATE_GET_BIT:                         //在读取数据码电平期间
-		sif_send_H_L_Level_time_cnt = 0;
-		sif_send_bit = sif_send_data_buf[sif_send_data_num] & (0x80 >> sif_send_bit_num);
-		sif_send_state = SIF_SEND_STATE_BIT_L; 						 //进入读取数据状态
+		SIF_send_H_L_Level_time_cnt = 0;
+		SIF_send_bit = SIF_send_data_buf[SIF_send_data_num] & (0x80 >> SIF_send_bit_num);
+		SIF_send_state = SIF_SEND_STATE_BIT_L; 						 //进入读取数据状态
 		break;
 
 	case SIF_SEND_STATE_BIT_L:
-		if (sif_send_bit)
+		if (SIF_send_bit)
 		{
-			if (sif_send_H_L_Level_time_cnt >= SIF_SEND_SHORT_TIME_NUM)
+			if (SIF_send_H_L_Level_time_cnt >= SIF_SEND_SHORT_TIME_NUM)
 			{
-				sif_send_H_L_Level_time_cnt = 0;
+				SIF_send_H_L_Level_time_cnt = 0;
 				SIF_SEND_DATA_BIT_HIGH();
-				sif_send_state = SIF_SEND_STATE_BIT_H;      	 //进入重新接收状态
+				SIF_send_state = SIF_SEND_STATE_BIT_H;      	 //进入重新接收状态
 			}
 		}
 		else
 		{
-			if (sif_send_H_L_Level_time_cnt >= SIF_SEND_LONG_TIME_NUM)
+			if (SIF_send_H_L_Level_time_cnt >= SIF_SEND_LONG_TIME_NUM)
 			{
-				sif_send_H_L_Level_time_cnt = 0;
+				SIF_send_H_L_Level_time_cnt = 0;
 				SIF_SEND_DATA_BIT_HIGH();
-				sif_send_state = SIF_SEND_STATE_BIT_H;      		//进入重新接收状态
+				SIF_send_state = SIF_SEND_STATE_BIT_H;      		//进入重新接收状态
 			}
 		}
 		break;
 
 	case SIF_SEND_STATE_BIT_H:
-		if (sif_send_bit)
+		if (SIF_send_bit)
 		{
-			if (sif_send_H_L_Level_time_cnt >= SIF_SEND_LONG_TIME_NUM)
+			if (SIF_send_H_L_Level_time_cnt >= SIF_SEND_LONG_TIME_NUM)
 			{
-				sif_send_H_L_Level_time_cnt = 0;
+				SIF_send_H_L_Level_time_cnt = 0;
 				SIF_SEND_DATA_BIT_LOW();
-				sif_send_state = SIF_SEND_STATE_CHECK_BIT;      //进入重新接收状态
+				SIF_send_state = SIF_SEND_STATE_CHECK_BIT;      //进入重新接收状态
 			}
 		}
 		else
 		{
-			if (sif_send_H_L_Level_time_cnt >= SIF_SEND_SHORT_TIME_NUM)
+			if (SIF_send_H_L_Level_time_cnt >= SIF_SEND_SHORT_TIME_NUM)
 			{
-				sif_send_H_L_Level_time_cnt = 0;
+				SIF_send_H_L_Level_time_cnt = 0;
 				SIF_SEND_DATA_BIT_LOW();
-				sif_send_state = SIF_SEND_STATE_CHECK_BIT;      //进入重新接收状态
+				SIF_send_state = SIF_SEND_STATE_CHECK_BIT;      //进入重新接收状态
 			}
 		}
 		break;
 
 	case SIF_SEND_STATE_CHECK_BIT:
-		sif_send_bit_num++;
-		if (sif_send_bit_num == SIF_SEND_BIT_NUM)   				//如果一个字节8个bit位接收完成
+		SIF_send_bit_num++;
+		if (SIF_send_bit_num == SIF_SEND_BIT_NUM)   				//如果一个字节8个bit位接收完成
 		{
-			sif_send_data_num++;             									//接收的数据个数++
-			sif_send_bit_num = 0;            									//接收bit位个数清0重新接收
-			if (sif_send_data_num == sif_send_data_num_target)//如果数据采集完毕
+			SIF_send_data_num++;             									//接收的数据个数++
+			SIF_send_bit_num = 0;            									//接收bit位个数清0重新接收
+			if (SIF_send_data_num == SIF_send_data_num_target)//如果数据采集完毕
 			{
-				sif_send_state = SIF_SEND_STATE_END_SIGNAL;   	//进入接收结束低电平信号状态
+				SIF_send_state = SIF_SEND_STATE_END_SIGNAL;   	//进入接收结束低电平信号状态
 			}
 			else
 			{
 				SIF_SEND_DATA_BIT_LOW();
-				sif_send_state = SIF_SEND_STATE_GET_BIT; 				//进入读取数据状态
+				SIF_send_state = SIF_SEND_STATE_GET_BIT; 				//进入读取数据状态
 			}
 		}
 		else                                								//如果一个字节8个bit位还没有接收完成
 		{
 			SIF_SEND_DATA_BIT_LOW();
-			sif_send_state = SIF_SEND_STATE_GET_BIT; 					//进入读取数据状态
+			SIF_send_state = SIF_SEND_STATE_GET_BIT; 					//进入读取数据状态
 		}
 		break;
 
 	case SIF_SEND_STATE_END_SIGNAL:                       //在接收结束信号低电平期间
-		sif_send_req_flag = false;
-		sif_send_start_H_L_Level_timming_flag = 0;       		//停止高低电平计时
-		sif_send_H_L_Level_time_cnt = 0;                 		//定时器计数值清0
-		sif_send_bit_num = 0;
-		sif_send_data_num = 0;
-		sif_send_state = SIF_SEND_STATE_INITIAL;          	//接收状态清0
+		SIF_send_req_flag = false;
+		SIF_send_start_H_L_Level_timming_flag = 0;       		//停止高低电平计时
+		SIF_send_H_L_Level_time_cnt = 0;                 		//定时器计数值清0
+		SIF_send_bit_num = 0;
+		SIF_send_data_num = 0;
+		SIF_send_state = SIF_SEND_STATE_INITIAL;          	//接收状态清0
 		break;
 	}
 }
@@ -601,28 +600,28 @@ void Sif_Send_Data_Handle(void)
  *输出返回 : void
  *******************************************************************************/
 ///__attribute__((section(".highcode")))
-void Sif_Checksum_Handle(void)
+void SIF_Checksum_Handle(void)
 {
 	uint8_t checkByte = 0;
 	uint64_t checkXor = 0;
 	for (int i = 0; i < (SIF_REV_DATA_NUM - 1); i++)
 	{
-		checkXor = checkXor ^ sif_receive_buf[i];
+		checkXor = checkXor ^ SIF_receive_buf[i];
 	}
 
 	checkByte = (unsigned char) checkXor;
-	if (checkByte == sif_receive_buf[SIF_REV_DATA_NUM - 1])//校验和正确
+	if (checkByte == SIF_receive_buf[SIF_REV_DATA_NUM - 1])//校验和正确
 	{
-		sif_receive_check_OK = 1;           								 //标记校验成功
+		SIF_receive_check_OK = 1;           								 //标记校验成功
 	}
 	else
 	{
-		sif_receive_check_OK = 0;           								 //标记校验失败
+		SIF_receive_check_OK = 0;           								 //标记校验失败
 	}
 }
 
 ///__attribute__((section(".highcode")))
-uint8_t Sif_Get_Input_Pin_Data(void)
+uint8_t SIF_Get_Input_Pin_Data(void)
 {
 	static uint8_t flag = 0;
 	static uint8_t value = 0;

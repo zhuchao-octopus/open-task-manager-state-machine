@@ -75,10 +75,11 @@ static bool indicator_module_receive_handler(ptl_frame_payload_t *payload, ptl_p
 static bool drivinfo_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
-static void app_car_controller_msg_proc(void);  // Process messages related to car controller
+static void app_car_controller_msg_handler(void);  // Process messages related to car controller
 static void app_car_controller_sif_updating(void);  // Update the SIF (System Information Frame)
-
+#ifdef BATTERY_MANAGER
 static void get_battery_voltage(void);  // Retrieve the current battery voltage
+#endif
 #ifdef TEST_LOG_DEBUG_SIF
 static void log_sif_data(uint8_t* data, uint8_t maxlen);  // Log SIF data for debugging purposes
 #endif
@@ -97,14 +98,15 @@ static carinfo_indicator_t lt_indicator = {0};  // Local indicator data structur
 static carinfo_drivinfo_t lt_drivinfo = {0};  // Local drivetrain information
 
 // Timer variables
-// static uint32_t l_t_msg_wait_10_timer;  // Timer for 10 ms message wait (not used currently)
+static uint32_t l_t_msg_wait_meter_timer;  // Timer for 10 ms message wait (not used currently)
 static uint32_t l_t_msg_wait_50_timer;  // Timer for 50 ms message wait
 static uint32_t l_t_msg_wait_100_timer;  // Timer for 100 ms message wait
 
 static uint32_t l_t_soc_timer;  // Timer for state of charge monitoring
 static uint8_t l_u8_op_step = 0;  // Operational step variable
 
-
+static bool l_t_speed_changed = false;
+static bool l_t_gear_changed = false;
 /*******************************************************************************
  * EXTERNAL VARIABLES
  */
@@ -140,7 +142,7 @@ void app_carinfo_assert_running(void)
     com_uart_reqest_running(M2A_MOD_METER);
     com_uart_reqest_running(M2A_MOD_INDICATOR);
     com_uart_reqest_running(M2A_MOD_DRIV_INFO);
-    //StartTimer(&l_t_msg_wait_10_timer);
+    StartTimer(&l_t_msg_wait_meter_timer);
     StartTimer(&l_t_msg_wait_50_timer);
     StartTimer(&l_t_msg_wait_100_timer);
     StartTimer(&l_t_soc_timer);
@@ -160,7 +162,7 @@ void app_carinfo_running(void)
 
     #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     app_car_controller_sif_updating();
-    app_car_controller_msg_proc();
+    app_car_controller_msg_handler();
     #endif
 }
 
@@ -481,11 +483,14 @@ bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff
 
 void app_car_controller_sif_updating(void)
 {
-    uint8_t res = Sif_ReadData(sif_buff, sizeof(sif_buff));
+    uint8_t res = SIF_ReadData(sif_buff, sizeof(sif_buff));
+		//uint8_t lt_meter_current_gear = 0;
+	  uint16_t lt_meter_current_speed = 0;
+		
 #ifdef TEST_LOG_DEBUG_SIF
     if(res)
         log_sif_data(sif_buff,sizeof(sif_buff));
-#endif
+#endif 
     if(res && sif_buff[0] == 0x08 && sif_buff[1] == 0x61)
     {
         lt_sif.sideStand                = ((sif_buff[2] & 0x08) ? 1 : 0);                      //单撑断电检测  0:单撑收起     1:单撑放下
@@ -522,16 +527,28 @@ void app_car_controller_sif_updating(void)
         double v = w * radius; 																																	//线速度，单位:米/秒
 
         lt_meter.rpm = rpm + 20000; //offset:-20000
-        lt_meter.speed_real = v * (10.0 * 3600.0 / 1000.0);
+				lt_meter_current_speed = v * (10.0 * 3600.0 / 1000.0);
+        
         lt_meter.speed = v * (10.0 * 3600.0 / 1000.0) * 1.1;
         lt_meter.voltageSystem = lt_sif.voltageSystem;
         //lt_meter.soc = lt_sif.soc;
         lt_meter.current = lt_sif.current * 10;  																								//test
-        lt_drivinfo.gear = (carinfo_drivinfo_gear_t)lt_sif.gear;
+				
+      	
+				if(lt_sif.gear != lt_drivinfo.gear)
+				{
+					 lt_drivinfo.gear = (carinfo_drivinfo_gear_t)lt_sif.gear;
+					 l_t_gear_changed = true;
+				}
+				if(lt_meter.speed_real != lt_meter_current_speed)
+				{
+					lt_meter.speed_real = lt_meter_current_speed;
+					l_t_speed_changed=true;
+				}
     }
 }
 
-void app_car_controller_msg_proc( void )
+void app_car_controller_msg_handler( void )
 {
 
     lt_indicator.position = GPIO_PIN_READ_SKD()  ? 0 : 1;      /* 示宽灯 */
@@ -546,16 +563,25 @@ void app_car_controller_msg_proc( void )
     lt_indicator.motorFault = lt_sif.motorFault | lt_sif.hallFault;
 
     lt_indicator.parking = lt_sif.brake;
-
+    #ifdef BATTERY_MANAGER
     get_battery_voltage();
-
+    #endif
     Msg_t* msg = get_message(TASK_ID_CAR_INFOR);
     if(msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_GPIO_EVENT)
     {
-        send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);
+        //send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);
         send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
     }
-
+    if(l_t_speed_changed)
+		{
+			 send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);	
+			 l_t_speed_changed=false;
+		}
+		if(l_t_gear_changed)
+		{
+			send_message(TASK_ID_PTL, M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
+			l_t_gear_changed = false;
+		}
     if(GetTimer(&l_t_msg_wait_100_timer) >= 1500)
     {
         switch(l_u8_op_step)
@@ -564,13 +590,13 @@ void app_car_controller_msg_proc( void )
             send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_SOC, 0);
             break;
         case 1:
-            send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_ERROR_INFO, 0);
+            send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);				
             break;
         case 2:
             send_message(TASK_ID_PTL, M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
             break;
-        case 3:
-            send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
+				case 3:
+            send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_ERROR_INFO, 0);
             break;
         default:
             l_u8_op_step = (uint8_t)-1;
@@ -594,7 +620,7 @@ void log_sif_data(uint8_t* data, uint8_t maxlen)
     LOG_LEVEL("\r\n");
 }
 #endif
-#if 1
+#ifdef BATTERY_MANAGER
 void get_battery_voltage( void )
 {
     if(GetTimer(&l_t_soc_timer) < 1000)
