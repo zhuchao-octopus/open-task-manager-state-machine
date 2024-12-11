@@ -24,11 +24,11 @@
 #define SIF_REV_SYNC_H_TIME_NUM_MIN     18      //同步信号高电平最小时间：1000-100us = 900us / 50us = 18
 #define SIF_REV_SYNC_H_TIME_NUM_MAX     42      //同步信号高电平最大时间：1000+100us = 1000us / 50us = 22
 
-#define SIF_REV_SHORT_TIME_NUM_MIN      18      //一个逻辑周期中短的时间最小值：1000-100us = 900us / 50us = 18
-#define SIF_REV_SHORT_TIME_NUM_MAX      22      //一个逻辑周期中短的时间最大值：1000+100us = 1000us / 50us = 22
+//#define SIF_REV_SHORT_TIME_NUM_MIN      18      //一个逻辑周期中短的时间最小值：1000-100us = 900us / 50us = 18
+//#define SIF_REV_SHORT_TIME_NUM_MAX      22      //一个逻辑周期中短的时间最大值：1000+100us = 1000us / 50us = 22
 
-#define SIF_REV_LONG_TIME_NUM_MIN       36      //一个逻辑周期中长的时间最小值：2ms-200us = 1800us / 50us = 36
-#define SIF_REV_LONG_TIME_NUM_MAX       44      //一个逻辑周期中长的时间最大值：2ms+200us = 2200us / 50us = 44
+//#define SIF_REV_LONG_TIME_NUM_MIN       36      //一个逻辑周期中长的时间最小值：2ms-200us = 1800us / 50us = 36
+//#define SIF_REV_LONG_TIME_NUM_MAX       44      //一个逻辑周期中长的时间最大值：2ms+200us = 2200us / 50us = 44
 
 #define SIF_REV_LOGIC_CYCLE_NUM_MIN     54      //一个逻辑周期最小时间：3ms-300us = 2700us / 50us = 54
 #define SIF_REV_LOGIC_CYCLE_NUM_MAX     66      //一个逻辑周期最大时间：3ms+300us = 3300us / 50us = 66
