@@ -293,7 +293,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         switch(payload->cmd)
         {
         case CMD_MODSYSTEM_HANDSHAKE:
-            LOG_LEVEL("SYSTEM handshake Ok\r\n");
+            LOG_LEVEL("system got handshake from mcu Ok\r\n");
             ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t*)VER_STR, sizeof(VER_STR), ackbuff);
             return true;
 

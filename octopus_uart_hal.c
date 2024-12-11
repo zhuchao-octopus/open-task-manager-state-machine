@@ -28,7 +28,7 @@
  * MACROS
  * Define commonly used constants and values for UART operations.
  */
-#define PI_FLOAT (3.14159f)  // Example constant for mathematical computations.
+//#define PI_FLOAT (3.14159f)  // Example constant for mathematical computations.
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -143,7 +143,7 @@ uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events) {
             LOG_("%02x ", com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
             #endif
             ///ptl_com_uart_receive_handler(com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
-            cFifo_Push(usartRxFifo,         com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
+            cFifo_Push(usart_rx_fifo,         com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
             com_uart_data_buff.rd++;
         }
 
