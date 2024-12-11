@@ -1,3 +1,31 @@
+/*******************************************************************************
+ * FILE: octopus_car_controller.c
+ * 
+ * DESCRIPTION:
+ * This file contains the implementation of the car controller application
+ * for the Octopus platform. It includes functions for handling communication
+ * between various car system modules, such as the meter, indicator, and 
+ * drivetrain information. It also includes battery voltage retrieval and 
+ * system information frame (SIF) updates. 
+ * 
+ * MODULES:
+ * - Meter module
+ * - Indicator module
+ * - Drivetrain info module
+ * - Car controller message processing
+ * - Battery voltage retrieval
+ * 
+ * NOTE: This file is part of the Octopus car control system and interfaces
+ * with the Octopus platform to manage the car's state and communication with 
+ * external modules.
+ * 
+ * File Name: octopus_task_manager_platform.h
+ * @version  1.0.0
+ * @date     2024-12-11
+ * @author   Octopus Team
+
+ *
+ ******************************************************************************/
 
 /*******************************************************************************
  * INCLUDES
@@ -8,23 +36,24 @@
 #include "octopus_msgqueue.h"
 #include "octopus_sif.h"
 #include "octopus_task_manager.h"
-#include "octopus_log.h"            // Octopus-specific logging
+#include "octopus_log.h"            // Octopus-specific logging library
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
 
-//#define TEST_LOG_DEBUG_SIF
+//#define TEST_LOG_DEBUG_SIF  // Uncomment to enable debug logging for SIF module
+
 /*******************************************************************************
  * MACROS
  */
-#define CELL_VOL_20 (1058)
-#define CELL_VOL_30 (1076)
-#define CELL_VOL_40 (1100)
-#define CELL_VOL_50 (1120)
-#define CELL_VOL_60 (1142)
-#define CELL_VOL_70 (1164)
-#define CELL_VOL_80 (1184)
-#define CELL_VOL_90 (1206)
+#define CELL_VOL_20 (1058)    // Voltage corresponding to 20% battery charge
+#define CELL_VOL_30 (1076)    // Voltage corresponding to 30% battery charge
+#define CELL_VOL_40 (1100)    // Voltage corresponding to 40% battery charge
+#define CELL_VOL_50 (1120)    // Voltage corresponding to 50% battery charge
+#define CELL_VOL_60 (1142)    // Voltage corresponding to 60% battery charge
+#define CELL_VOL_70 (1164)    // Voltage corresponding to 70% battery charge
+#define CELL_VOL_80 (1184)    // Voltage corresponding to 80% battery charge
+#define CELL_VOL_90 (1206)    // Voltage corresponding to 90% battery charge
 
 /*******************************************************************************
  * TYPEDEFS
@@ -33,8 +62,9 @@
 /*******************************************************************************
  * CONSTANTS
  */
+
 /*******************************************************************************
- * LOCAL FUNCTIONS DECLEAR
+ * LOCAL FUNCTIONS DECLARATION
  */
 static bool meter_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
@@ -45,33 +75,35 @@ static bool indicator_module_receive_handler(ptl_frame_payload_t *payload, ptl_p
 static bool drivinfo_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
-static void app_car_controller_msg_proc( void );
-static void app_car_controller_sif_updating( void );
+static void app_car_controller_msg_proc(void);  // Process messages related to car controller
+static void app_car_controller_sif_updating(void);  // Update the SIF (System Information Frame)
 
-static void get_battery_voltage( void );
+static void get_battery_voltage(void);  // Retrieve the current battery voltage
 #ifdef TEST_LOG_DEBUG_SIF
-static void log_sif_data(uint8_t* data, uint8_t maxlen);
+static void log_sif_data(uint8_t* data, uint8_t maxlen);  // Log SIF data for debugging purposes
 #endif
+
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
 
-
 /*******************************************************************************
  * STATIC VARIABLES
  */
-static uint8_t             		sif_buff[12] = {0};
-static carinfo_sif_t       		lt_sif = {0};
-static carinfo_meter_t     		lt_meter = {0};
-static carinfo_indicator_t 		lt_indicator = {0};
-static carinfo_drivinfo_t  		lt_drivinfo = {0};
+static uint8_t sif_buff[12] = {0};  // Buffer for storing SIF data
+static carinfo_sif_t lt_sif = {0};  // Local SIF data structure
+static carinfo_meter_t lt_meter = {0};  // Local meter data structure
+static carinfo_indicator_t lt_indicator = {0};  // Local indicator data structure
+static carinfo_drivinfo_t lt_drivinfo = {0};  // Local drivetrain information
 
-//static uint32_t          		l_t_msg_wait_10_timer;
-static uint32_t            		l_t_msg_wait_50_timer;
-static uint32_t            		l_t_msg_wait_100_timer;
+// Timer variables
+// static uint32_t l_t_msg_wait_10_timer;  // Timer for 10 ms message wait (not used currently)
+static uint32_t l_t_msg_wait_50_timer;  // Timer for 50 ms message wait
+static uint32_t l_t_msg_wait_100_timer;  // Timer for 100 ms message wait
 
-static uint32_t            		l_t_soc_timer;
-static uint8_t             		l_u8_op_step = 0;
+static uint32_t l_t_soc_timer;  // Timer for state of charge monitoring
+static uint8_t l_u8_op_step = 0;  // Operational step variable
+
 
 /*******************************************************************************
  * EXTERNAL VARIABLES
@@ -196,19 +228,19 @@ bool meter_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uin
         switch(param1)
         {
         case CMD_MODMETER_RPM_SPEED:
-            tmp[0] = MSB(lt_meter.speed_real);
-            tmp[1] = LSB(lt_meter.speed_real);
-            tmp[2] = MSB(lt_meter.rpm);
-            tmp[3] = LSB(lt_meter.rpm);
+            tmp[0] = MSB_WORD(lt_meter.speed_real);
+            tmp[1] = LSB_WORD(lt_meter.speed_real);
+            tmp[2] = MSB_WORD(lt_meter.rpm);
+            tmp[3] = LSB_WORD(lt_meter.rpm);
             ptl_com_uart_build_frame(M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, tmp, 4, buff);
             return true;
         case CMD_MODMETER_SOC:
             //ACK, no thing to do
             tmp[0] = lt_meter.soc;
-            tmp[1] = MSB(lt_meter.voltage);
-            tmp[2] = LSB(lt_meter.voltage);
-            tmp[3] = MSB(lt_meter.current);
-            tmp[4] = LSB(lt_meter.current);
+            tmp[1] = MSB_WORD(lt_meter.voltage);
+            tmp[2] = LSB_WORD(lt_meter.voltage);
+            tmp[3] = MSB_WORD(lt_meter.current);
+            tmp[4] = LSB_WORD(lt_meter.current);
             tmp[5] = lt_meter.voltageSystem;
             tmp[6] = 0;
             //PRINT("SOC %d  V %d C %d adc %d\r\n",lt_meter.soc,lt_meter.voltage,lt_meter.current,SensorAdc_Get_BatVal());
@@ -480,7 +512,7 @@ void app_car_controller_sif_updating(void)
         lt_sif.electronicBrake          = ((sif_buff[5] & 0x02) ? 1 : 0);                      //电子刹车
         lt_sif.speedLimit               = ((sif_buff[5] & 0x01) ? 1 : 0);                      //限速
         lt_sif.current                  = ((sif_buff[6] & 0xFF));                              //电流 单位：1A
-        lt_sif.hallCounter              = WORD(sif_buff[7],sif_buff[8]);                       //0.5s内三个霍尔变化的个数
+        lt_sif.hallCounter              = MK_WORD(sif_buff[7],sif_buff[8]);                    //0.5s内三个霍尔变化的个数
         lt_sif.soc                      = ((sif_buff[9] & 0xFF));                              //电量/电量 0-100% 5灯指示为 90,70,50,30,20（百分比，建议对应的电压大体为 47V，46V,44.5V,43V,41V)，4 灯指示为 90,70,50,30
         lt_sif.voltageSystem            = ((sif_buff[10] & 0xFF));                             //电压系统  0x01:36V  0x02:48V  0x04:60V  0x08:64V  0x10:72V  0x20:80V  0x40:84V   0x80:96V
 

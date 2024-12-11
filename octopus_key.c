@@ -17,7 +17,7 @@
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLEAR
  */
-uint8_t GetOCTOPUSKey(uint8_t key);
+uint8_t get_dummy_key(uint8_t key);
  /*******************************************************************************
  * GLOBAL VARIABLES
  */
@@ -60,7 +60,7 @@ void app_key_running(void)
     Msg_t* msg = get_message(TASK_ID_KEY);		
 		if(msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_KEY_EVENT)
     {
-			uint8_t key = GetOCTOPUSKey(msg->param1);
+			uint8_t key = get_dummy_key(msg->param1);
 			///LOG_LEVEL("key pressed key=%d key_status=%d\r\n",key,msg->param2);
       switch (key)
 			{
@@ -79,8 +79,8 @@ void app_key_running(void)
 					system_handshake_with_mcu();
 				 #endif
 				 #endif
-				 param = WORD(KEY_CODE_MENU,KEY_STATE_PRESSED);
-         send_message(TASK_ID_PTL, M2A_MOD_SETUP , CMD_MODSETUP_KEY, param);
+				 param = MK_WORD(KEY_CODE_MENU,KEY_STATE_PRESSED);
+                 send_message(TASK_ID_PTL, M2A_MOD_SETUP , CMD_MODSETUP_KEY, param);
 				 break;
 			}	
     }		
@@ -98,16 +98,16 @@ void app_key_stop_running(void)
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t GetOCTOPUSKey(uint8_t key)
+uint8_t get_dummy_key(uint8_t key)
 {
  switch(key)
   {
-      case 0:		return OCTOPUS_KEY_0;
-      case 1:		return OCTOPUS_KEY_1;
-			case 2:		return OCTOPUS_KEY_2;
-			case 3:		return OCTOPUS_KEY_3;	
-	
-			case 14:	return OCTOPUS_KEY_14;	
+    case 0:		return OCTOPUS_KEY_0;
+    case 1:		return OCTOPUS_KEY_1;
+    case 2:		return OCTOPUS_KEY_2;
+    case 3:		return OCTOPUS_KEY_3;	
+
+    case 14:	return OCTOPUS_KEY_14;	
   }	
 	return 0;
 }
@@ -122,8 +122,8 @@ bool module_send_handler(ptl_frame_type_t frame_type,  uint16_t param1, uint16_t
       switch(param1)
       {
         case CMD_MODSETUP_KEY: 		//
-            tmp[0] = MSB(param2); //KEYCODE
-            tmp[1] = LSB(param2); //KEYSTATE
+            tmp[0] = MSB_WORD(param2); //KEYCODE
+            tmp[1] = LSB_WORD(param2); //KEYSTATE
             tmp[2] = 0;  					//
             LOG_LEVEL("CMD_MODSETUP_KEY key %02x state %02x\n",tmp[0],tmp[1]);
             ptl_com_uart_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_KEY, tmp, 3, buff);

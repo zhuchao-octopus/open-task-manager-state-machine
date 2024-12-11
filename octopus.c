@@ -85,7 +85,7 @@ uint16_t TaskManagerStateMachineInit(uint8_t task_id)
     #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     LOG_("###########################BOOT START###########################\r\n");
     #endif
-    LOG_LEVEL("OTMS initialization task_id=%02x\r\n", TaskManagerStateMachine_Id_);
+    LOG_LEVEL("OTMS initialization task_id:%02x\r\n", TaskManagerStateMachine_Id_);
     LOG_LEVEL("OTMS datetime:%s\r\n", OTMS_RELEASE_DATA_TIME);
     LOG_LEVEL("OTMS version :%s\r\n", OTMS_VERSION);
 	  /////////////////////////////////////////////////////////////////////////////////////////////////////

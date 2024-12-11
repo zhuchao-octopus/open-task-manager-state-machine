@@ -1,88 +1,116 @@
-/**
- * ****************************************************************************
- * @copyright Copyright (c) XXX
- * All rights reserved.
+/*******************************************************************************
+ * File Name: octopus_task_manager_platform.h
+ * @version  1.0.0
+ * @date     2024-12-11
+ * @author   Octopus Team
+ * Description: 
+ *   This file provides platform-specific configurations and utility macros 
+ *   for the Octopus Task Manager project. It supports multiple platforms 
+ *   and RTOS environments, allowing developers to switch between different 
+ *   setups based on project requirements.
+ * 
+ * Features:
+ *   - Platform selection macros to switch between ITE and CST platforms.
+ *   - Inclusion of standard and platform-specific libraries.
+ *   - Definition of general-purpose macros for bit manipulation, system timing, 
+ *     and mathematical operations.
+ *   - Abstracted delay and system tick retrieval for supported platforms.
+ * 
+ * Usage:
+ *   1. Define the appropriate platform macro (e.g., PLATFORM_ITE_OPEN_RTOS) 
+ *      before including this file.
+ *   2. Use the provided macros and utility functions as needed for platform-
+ *      specific development.
+ * 
+ * Notes:
+ *   - Ensure all required libraries and headers are available for the target 
+ *     platform.
+ *   - Validate compatibility between the selected platform and RTOS.
+ *   - This file is designed for internal use within the Octopus Task Manager 
+ *     project.
+ * 
+ * License:
+ * Copyright (c) 2024 Octopus Team
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
  *
- * Header file for the Octopus Task Manager module.
- * Defines macros, includes required libraries, and declares functions.
- */
+ 
+ ******************************************************************************/
+
 #ifndef ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 #define ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 
 /*******************************************************************************
  * PROJECT SWITCH MACROS
- * Define which platform and RTOS to use.
- */
-#define PLATFORM_ITE_OPEN_RTOS  // Use the ITE platform with OPEN RTOS
-//#define PLATFORM_CST_OSAL_RTOS // Use the CST platform with OSAL RTOS
-//#define PLATFORM_CST_WIND_RTOS // Use the CST platform with WIND RTOS
+ * Define which platform and RTOS to use by enabling the corresponding macro.
+ ******************************************************************************/
+#define PLATFORM_ITE_OPEN_RTOS  // Enable ITE platform with OPEN RTOS
+//#define PLATFORM_CST_OSAL_RTOS // Uncomment to use CST platform with OSAL RTOS
+//#define PLATFORM_CST_WIND_RTOS // Uncomment to use CST platform with WIND RTOS
 
 /*******************************************************************************
  * INCLUDE FILES
- * Include standard libraries and platform-specific headers.
- */
-#include <stddef.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <time.h>
-#include <stdarg.h>
-
+ * Include necessary standard libraries and platform-specific headers.
+ ******************************************************************************/
+#include <stddef.h>             // Standard definitions for NULL and size_t
+#include <stdint.h>             // Standard integer type definitions
+#include <stdbool.h>            // Boolean type definitions
+#include <stdio.h>              // Standard input/output functions
+#include <stdarg.h>             // Variable argument list handling
+#include <stdlib.h>             // Standard library functions
+#include <string.h>             // String manipulation functions
+#include <assert.h>             // Debugging support for assertions
+#include <time.h>               // Time manipulation functions
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
-#include <sys/ioctl.h>
-#include <sys/time.h>
-#include <pthread.h>
+#include <sys/ioctl.h>          // System I/O control definitions
+#include <sys/time.h>           // Time-related functions for UNIX systems
+#include <pthread.h>            // POSIX thread support
 #include "ite/ith.h"              // ITE hardware-specific definitions
 #include "ite/itp.h"              // ITE platform-specific definitions
-#include "uart/uart.h"            // UART module
-#include "saradc/saradc.h"        // SAR ADC module
-#include "math.h"                 // Math library
-#include "SDL/SDL.h"              // SDL library for graphics
-#include "openrtos/FreeRTOS.h"    // FreeRTOS kernel
-#include "openrtos/queue.h"       // FreeRTOS queue support
-#include <unistd.h>
+#include "uart/uart.h"            // UART communication module
+#include "saradc/saradc.h"        // SAR ADC module for analog input
+#include "math.h"                 // Standard mathematical functions
+#include "SDL/SDL.h"              // SDL library for multimedia applications
+#include "openrtos/FreeRTOS.h"    // FreeRTOS kernel for real-time tasks
+#include "openrtos/queue.h"       // FreeRTOS queue handling
+#include <unistd.h>             // POSIX API for file and process handling
 #endif
 
 #ifdef PLATFORM_CST_OSAL_RTOS
 #include "OSAL.h"                 // OS abstraction layer
-#include "OSAL_PwrMgr.h"          // OS power management
-#include "OSAL_Memory.h"          // OS memory management
-#include "gatt.h"                 // Bluetooth GATT protocol
+#include "OSAL_PwrMgr.h"          // OS power management utilities
+#include "OSAL_Memory.h"          // OS memory management functions
+#include "gatt.h"                 // Bluetooth Generic Attribute Profile
 #include "hci.h"                  // Host Controller Interface for Bluetooth
-#include "gapgattserver.h"        // GAP GATT server
-#include "gattservapp.h"          // GATT service application
-#include "gatt_profile_uuid.h"    // GATT profile UUIDs
-#include "linkdb.h"               // Link database for Bluetooth
-#include "peripheral.h"           // Peripheral device support
-#include "gapbondmgr.h"           // GAP bonding manager
-#include "hidkbdservice.h"        // HID keyboard service
-#include "hiddev.h"               // HID device interface
+#include "gapgattserver.h"        // GAP GATT server management
+#include "gattservapp.h"          // GATT service application interface
+#include "gatt_profile_uuid.h"    // GATT profile UUID definitions
+#include "linkdb.h"               // Link database for Bluetooth connections
+#include "peripheral.h"           // Peripheral device support utilities
+#include "gapbondmgr.h"           // GAP bonding manager for secure connections
+#include "hidkbdservice.h"        // HID keyboard service support
+#include "hiddev.h"               // HID device implementation
 #include "global_config.h"        // Global configuration settings
 #include "hidkbd.h"               // HID keyboard implementation
-#include "uart.h"                 // UART module
-#include "ll.h"                   // Link layer support
+#include "uart.h"                 // UART communication module
+#include "ll.h"                   // Link layer support for Bluetooth
 #include "ll_common.h"            // Common link layer definitions
-#include "ll_def.h"               // Link layer definitions
-#include "dma.h"                  // Direct Memory Access support
-#include "key.h"                  // Key handling
-#include "spi.h"                  // SPI module
-#include "gpio.h"                 // GPIO module
-#include "flash.h"                // Flash memory handling
-#include "clock.h"                // Clock management
-#include "error.h"                // Error handling
-#include "pwrmgr.h"               // Power management
+#include "dma.h"                  // Direct Memory Access handling
+#include "key.h"                  // Key input handling utilities
+#include "spi.h"                  // SPI communication interface
+#include "gpio.h"                 // General-Purpose Input/Output support
+#include "flash.h"                // Flash memory management utilities
+#include "clock.h"                // System clock management utilities
+#include "error.h"                // Error handling utilities
+#include "pwrmgr.h"               // Power management utilities
 #include "rom_sym_def.h"          // ROM symbol definitions
-#include "sdk_config.h"
-#include "rom_sym_def.h"
-#include "types.h"
-#include "uart.h"
+#include "sdk_config.h"           // SDK configuration file
+#include "types.h"                // Basic type definitions
 #endif
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -90,83 +118,73 @@ extern "C" {
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
- * Add macros for enabling or disabling debug functionality.
- */
+ * Define macros for enabling or disabling debug functionality.
+ ******************************************************************************/
 
 /*******************************************************************************
  * GENERAL MACROS
  * Define common bit manipulation macros and constants.
- */
+ ******************************************************************************/
 #ifdef PLATFORM_CST_OSAL_RTOS
 #define GET_SYSTEM_TICK_COUNT (hal_systick() * 625 / 1000) // Convert system ticks to milliseconds
-#define DELAY_US(us) (WaitUs(us))                          // Microsecond delay
+#define DELAY_US(us) (WaitUs(us))                          // Introduce delay in microseconds
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
-#define CFG_OTSM_STACK_SIZE    (200112L)
-#define GET_SYSTEM_TICK_COUNT  (SDL_GetTicks()) // Convert system ticks to milliseconds
-#define DELAY_US(us) (usleep(us))                          // Microsecond delay
+#define CFG_OTSM_STACK_SIZE    (200112L)                   // Stack size for Octopus Task Manager
+#define GET_SYSTEM_TICK_COUNT  (SDL_GetTicks())            // Retrieve system tick count in milliseconds
+#define DELAY_US(us) (usleep(us))                          // Introduce delay in microseconds
 
 #else
-
-#define DELAY_US(us) 
-#define GET_SYSTEM_TICK_COUNT 0
+#define DELAY_US(us) // Define empty macro for unsupported platforms
+#define GET_SYSTEM_TICK_COUNT 0 // Return zero for unsupported platforms
 #endif
 
 /*******************************************************************************
- * TYPE DEFINITIONS
- * Define any necessary types or structs here.
- */
+ * BIT MANIPULATION MACROS
+ * Define macros for setting, clearing, toggling, and extracting bit values.
+ ******************************************************************************/
+#define BIT_0 0x01 // Bit mask for bit 0
+#define BIT_1 0x02 // Bit mask for bit 1
+#define BIT_2 0x04 // Bit mask for bit 2
+#define BIT_3 0x08 // Bit mask for bit 3
+#define BIT_4 0x10 // Bit mask for bit 4
+#define BIT_5 0x20 // Bit mask for bit 5
+#define BIT_6 0x40 // Bit mask for bit 6
+#define BIT_7 0x80 // Bit mask for bit 7
+
+// Macros for setting, clearing, toggling, and checking bits
+#define SetBit(VAR, Place) ((VAR) |= (1 << (Place)))                    // Set specified bit
+#define ClrBit(VAR, Place) ((VAR) &= ~(1 << (Place)))                   // Clear specified bit
+#define ValBit(VAR, Place) ((VAR) & (1 << (Place)))                     // Get value of specified bit
+#define ChgBit(VAR, Place) ((VAR) ^= (1 << (Place)))                    // Toggle specified bit
+#define GetBit(VAR, Place) (((VAR) & (1 << (Place))) ? 1 : 0)         // Check bit state
+
+// Macros for byte and word manipulation
+#define LSB_BIT(BYTE) ((BYTE) & 0x0F)               // Extract least significant nibble
+#define MSB_BIT(BYTE) (((BYTE) >> 4) & 0x0F)        // Extract most significant nibble
+
+#define LSB_WORD(WORD)               ((uint8_t)((WORD) & 0xFF))                 // Extract least significant byte
+#define MSB_WORD(WORD)               ((uint8_t)(((WORD) >> 8) & 0xFF))          // Extract most significant byte
+
+#define MK_LSB(WORD)		  (uint8_t)(WORD & 0xFF)                     // Extract the least significant byte (LSB) from a 16-bit word
+#define MK_MSB(WORD)		  (uint8_t)((WORD >> 8) & 0xFF)              // Extract the most significant byte (MSB) from a 16-bit word
+#define MK_LSBWORD(WORD)	  (uint16_t)(WORD & 0xFFFF)                  // Extract the least significant word (LSB) from a 32-bit word
+#define MK_MSBWORD(WORD)	  (uint16_t)((WORD >> 16) & 0xFFFF)          // Extract the most significant word (MSB) from a 32-bit word
+#define MK_BYTE(MSB, LSB) 	  ((uint8_t)(((MSB) << 4) | (LSB)))          // Combine two 4-bit values (MSB and LSB) into a single byte (alternative method)
+#define MK_WORD(MSB, LSB)	  (uint16_t)(((uint16_t)MSB << 8) + LSB)    // Combine two 8-bit values (MSB and LSB) into a 16-bit word
+#define MK_DWORD(MSB, LSB)    (uint32_t)(((uint32_t)MSB << 16) + LSB)   // Combine two 16-bit values (MSB and LSB) into a 32-bit double word
+#define MK_SIG_WORD(word)     (*(int16_t *)(&word))                      // Interpret a word as a signed 16-bit value
 
 /*******************************************************************************
  * CONSTANTS
- * Define any necessary constant values here.
- */
-// Bit manipulation macros
-#define BIT_0 0x01
-#define BIT_1 0x02
-#define BIT_2 0x04
-#define BIT_3 0x08
-#define BIT_4 0x10
-#define BIT_5 0x20
-#define BIT_6 0x40
-#define BIT_7 0x80
+ * Define mathematical constants and other useful values.
+ ******************************************************************************/
+#define PI_FLOAT (3.14159f) // Value of ¦Ð as a floating-point constant
 
-// Set, clear, toggle, and get bit values
-#define SetBit(VAR, Place) ((VAR) |= (uint8_t)(1 << (Place)))      // Set a specific bit
-#define ClrBit(VAR, Place) ((VAR) &= (uint8_t)~(1 << (Place)))     // Clear a specific bit
-#define ValBit(VAR, Place) ((VAR) & (uint8_t)(1 << (Place)))       // Get the value of a specific bit
-#define ChgBit(Var, Place) ((Var) ^= (uint8_t)(1 << (Place)))      // Toggle a specific bit
-#define GetBit(Var, Place) (((Var) & (1 << (Place))) ? 1 : 0)      // Check if a specific bit is set
-
-// Macros for extracting and combining bits/bytes
-#define LSB_BIT(BYTE) ((BYTE) & 0x0F)               // Extract least significant nibble
-#define MSB_BIT(BYTE) (((BYTE) >> 4) & 0x0F)        // Extract most significant nibble
-#define LSB(WORD) ((uint8_t)((WORD) & 0xFF))        // Extract least significant byte
-#define MSB(WORD) ((uint8_t)(((WORD) >> 8) & 0xFF)) // Extract most significant byte
-
-#define MK_LSB(WORD)				(uint8_t)(WORD & 0xFF)
-#define MK_MSB(WORD)				(uint8_t)((WORD >> 8) & 0xFF)
-
-#define MK_LSBWORD(WORD)		(uint16_t)(WORD & 0xFFFF)
-#define MK_MSBWORD(WORD)		(uint16_t)((WORD >> 16) & 0xFFFF)
-
-#define MK_BYTE(MSB, LSB)   (uint8_t)(((uint8_t)MSB << 4) + LSB)
-#define MK_WORD(MSB, LSB)		(uint16_t)(((uint16_t)MSB << 8) + LSB)
-#define MK_DWORD(MSB, LSB)  (uint32_t)(((uint32_t)MSB << 16) + LSB)
-
-// Combine bytes/words
-#define BYTE(MSB, LSB) 			((uint8_t)(((MSB) << 4) | (LSB)))
-#define WORD(MSB, LSB) 			((uint16_t)(((MSB) << 8) | (LSB)))
-#define DWORD(MSB, LSB) 		((uint32_t)(((MSB) << 16) | (LSB)))
-#define MAKE_WORD(high,low) ((uint16_t)(((uint8_t)(low)) | ((uint16_t)((uint8_t)(high))) << 8))
-#define MAKE_SIG_WORD(word) (*(int16_t *)(&word))
-
-// Mathematical constants
-#define PI_FLOAT (3.14159f) // Value of PI
 /*******************************************************************************
  * FUNCTION DECLARATIONS
- * Declare external functions used in the task manager.
- */
+ * Declare any external functions used in this file.
+ ******************************************************************************/
 
 #ifdef __cplusplus
 }

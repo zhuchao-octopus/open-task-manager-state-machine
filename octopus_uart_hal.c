@@ -1,5 +1,5 @@
 /**
- * @file    octopus_uart.c
+ * @file    octopus_uart_hal.c
  * @brief   UART HAL (Hardware Abstraction Layer) implementation for Octopus platform.
  *          This file provides UART initialization, data transmission, and event handling
  *          for both CST OSAL RTOS and ITE OPEN RTOS platforms.
