@@ -13,8 +13,8 @@
  * PROJECT SWITCH MACROS
  * Define which platform and RTOS to use.
  */
-#define PLATFORM_ITE_OPEN_RTOS  // Use the ITE platform with OPEN RTOS
-//#define PLATFORM_CST_OSAL_RTOS // Use the CST platform with OSAL RTOS
+//#define PLATFORM_ITE_OPEN_RTOS  // Use the ITE platform with OPEN RTOS
+#define PLATFORM_CST_OSAL_RTOS // Use the CST platform with OSAL RTOS
 //#define PLATFORM_CST_WIND_RTOS // Use the CST platform with WIND RTOS
 
 /*******************************************************************************
@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <unistd.h>
 #include <time.h>
 #include <stdarg.h>
 
@@ -46,6 +45,7 @@
 #include "SDL/SDL.h"              // SDL library for graphics
 #include "openrtos/FreeRTOS.h"    // FreeRTOS kernel
 #include "openrtos/queue.h"       // FreeRTOS queue support
+#include <unistd.h>
 #endif
 
 #ifdef PLATFORM_CST_OSAL_RTOS

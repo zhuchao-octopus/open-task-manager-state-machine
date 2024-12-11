@@ -142,11 +142,18 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 {
     assert(buff);
     uint8_t tmp[8] = {0};
+		//LOG_LEVEL("frame_type=%02x d param1=%02x param2=%02x\n",frame_type,tmp[0],tmp[1]);
     if(M2A_MOD_SYSTEM == frame_type)
     {
         switch(param1)
         {
-		case CMD_MODSYSTEM_ACC_STATE:
+				case CMD_MODSYSTEM_HANDSHAKE:
+            tmp[0] = 0x55;
+            tmp[1] = 0xAA;
+            LOG_LEVEL("system handshake param1=%02x param2=%02x\n",tmp[0],tmp[1]);
+            ptl_com_uart_build_frame(A2M_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, buff);
+            return true;
+				case CMD_MODSYSTEM_ACC_STATE:
             //ACK, no thing to do
             //tmp[0] = GetWakeupEvent(WAKEUP_EVENT_ACC);
             ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_ACC_STATE, tmp, 1, buff);
@@ -156,8 +163,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             tmp[0] = 0;
             tmp[1] = 0;
             ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_POWER_OFF, tmp, 2, buff);
-            return true;
-				
+            return true;	
         case CMD_MODSETUP_UPDATE_TIME:
             //ACK, no thing to do
             tmp[0] = 23; //year
@@ -175,6 +181,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             LOG_LEVEL("CMD_MODSETUP_KEY  key %02x state %02x\n",tmp[0],tmp[1]);
             ptl_com_uart_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_KEY, tmp, 3, buff);
             return true;
+				
         default:
             break;
         }
@@ -186,7 +193,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         case CMD_MODSYSTEM_HANDSHAKE:
             tmp[0] = 0xAA;
             tmp[1] = 0x55;
-            LOG_LEVEL("CMD_MODSYSTEM_HANDSHAKE param1=%02x param2=%02x\n",tmp[0],tmp[1]);
+            LOG_LEVEL("system handshake param1=%02x param2=%02x\n",tmp[0],tmp[1]);
             ptl_com_uart_build_frame(A2M_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, buff);
             return true;
         case CMD_MODSYSTEM_APP_STATE:
@@ -278,7 +285,7 @@ void system_handshake_with_mcu(void)
 void system_handshake_with_app(void)
   {
     LOG_LEVEL("system send handshake data to app\r\n");
-
+    send_message(TASK_ID_PTL, M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, 0); 
     ///ptl_proc_buff_t ackbuff;
     ///ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t*)VER_STR, sizeof(VER_STR), &ackbuff);
   }
@@ -286,7 +293,7 @@ void system_handshake_with_app(void)
 
 void system_set_mpu_status(uint8_t status)
 {
-    LOG_LEVEL("mpu status=%d \r\n", status);
+    LOG_LEVEL("system set mpu status=%d \r\n", status);
     l_u8_mpu_status = status;
     send_message(TASK_ID_SYSTEM, CMD_MODSYSTEM_APP_STATE, l_u8_mpu_status, l_u8_mpu_status);
 }

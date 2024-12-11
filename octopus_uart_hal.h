@@ -70,6 +70,7 @@ uint8_t hal_com_uart_send_buffer(uint8_t* buff, uint16_t length);
 // Reads data from the UART FIFO and stores it in the provided buffer
 uint8_t hal_com_uart_get_fifo_data(uint8_t* buffer, uint16_t length);  
 
+uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events);
 /*******************************************************************************/
 
 #ifdef __cplusplus

@@ -52,7 +52,6 @@ static uint8_t uart2RxFifoBuf[cFifo_ObjSize(256 + 64)];
  */
 #ifdef PLATFORM_CST_OSAL_RTOS
 static void hal_com_uart_receive_callback(uart_Evt_t* pev);
-uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events);
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
 static void hal_com_uart_receive_callback(void* arg1, uint32_t arg2);
 void* hal_com_uart_event_handler(void* arg);
@@ -139,7 +138,7 @@ uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events) {
         // Process received data from UART buffer.
         while (com_uart_data_buff.rd != com_uart_data_buff.wr) {
             #ifdef TEST_LOG_DEBUG_UART_RX_DATA
-            LOG_("%02x ", uart_data.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
+            LOG_("%02x ", com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
             #endif
             ptl_com_uart_receive_handler(com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
             com_uart_data_buff.rd++;

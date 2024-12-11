@@ -71,8 +71,16 @@ void app_key_running(void)
 				 case OCTOPUS_KEY_14:
 					 //FlashReadToBuff(0x1107c004,bt_mac,6);
 				   //PrintfBuffHex(__func__, __LINE__, "read bt mac", bt_mac, 6);
-				   param = WORD(KEY_CODE_MENU,KEY_STATE_PRESSED);
-           send_message(TASK_ID_PTL, M2A_MOD_SETUP , CMD_MODSETUP_KEY, param);
+				 #if 0
+				 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
+					system_handshake_with_app();
+				 #endif
+				 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
+					system_handshake_with_mcu();
+				 #endif
+				 #endif
+				 param = WORD(KEY_CODE_MENU,KEY_STATE_PRESSED);
+         send_message(TASK_ID_PTL, M2A_MOD_SETUP , CMD_MODSETUP_KEY, param);
 				 break;
 			}	
     }		

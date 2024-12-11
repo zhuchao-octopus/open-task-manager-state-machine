@@ -100,10 +100,10 @@ uint16_t TaskManagerStateMachineInit(uint8_t task_id)
     task_manager_start();  // Start the task manager
     #ifdef TASK_MANAGER_STATE_MACHINE_MCU
 	  system_handshake_with_app();
-	#endif
-	#ifdef TASK_MANAGER_STATE_MACHINE_SOC
+	  #endif
+	  #ifdef TASK_MANAGER_STATE_MACHINE_SOC
 	  system_handshake_with_mcu();
-	#endif
+	  #endif
     LOG_("\r\n###########################BOOT COMPLETE###########################\r\n\r\n");
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -241,7 +241,7 @@ void ptl_com_uart_build_frame(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, 
 // Build the header of the communication frame
 void ptl_com_uart_build_frame_header(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint8_t datalen, ptl_proc_buff_t *proc_buff)
 {
-    assert(buff);
+    assert(proc_buff);
     if (frame_type >= A2M_MOD_START)
     {
         proc_buff->buff[0] = A2M_PTL_HEADER;
@@ -323,14 +323,7 @@ void ptl_tx_event_message_handler(void)
     // Retrieve the message from the UART task message queue
     Msg_t* msg = get_message(TASK_ID_PTL);
     if(msg->id != NO_MSG)
-    {
-        #ifdef TEST_LOG_DEBUG_PTL_TX_FRAME
-        LOG_LEVEL("msg_id=%02x cmd=%02x data[]=", (uint8_t)msg->id, (uint8_t)msg->param1);
-        //DBG("[ ] msg_id:%02x cmd:%02x\r\n", (uint8_t)msg->id, (uint8_t)msg->param1);
-		LOG_BUFF(l_t_tx_proc_buf.buff,l_t_tx_proc_buf.size);
-        //LOG_("\r\n");
-        #endif
-        
+    {        
         ptl_frame_type_t frame_type = (ptl_frame_type_t)msg->id;
         uint16_t param1 = msg->param1;
         uint16_t param2 = msg->param2;
@@ -345,6 +338,12 @@ void ptl_tx_event_message_handler(void)
             if(res)
             {
                 // Send the processed data over UART
+							  #ifdef TEST_LOG_DEBUG_PTL_TX_FRAME
+									LOG_LEVEL("msg_id=%02x cmd=%02x data[]=", (uint8_t)msg->id, (uint8_t)msg->param1);
+									//DBG("[ ] msg_id:%02x cmd:%02x\r\n", (uint8_t)msg->id, (uint8_t)msg->param1);
+									LOG_BUFF(l_t_tx_proc_buf.buff,l_t_tx_proc_buf.size);
+									//LOG_("\r\n");
+								#endif
                 ptl_hal_tx(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
             }
         }
