@@ -103,15 +103,15 @@ static uint8_t l_u8_next_empty_module = 0;  // Index for the next empty module s
 // Initialize UART communication for the task
 void com_uart_init_running(void)
 {
-    LOG_LEVEL(F_NAME, "app_comuart_init\r\n");
-    OTMS(TASK_ID_COM_UART, OTMS_S_INVALID);
+    LOG_LEVEL("app_comuart_init\r\n");
+    OTMS(TASK_ID_PTL, OTMS_S_INVALID);
 }
 
 // Start the UART communication for the task
 void com_uart_start_running(void)
 {
-    LOG_LEVEL(F_NAME, "app_comuart_start\r\n");
-    OTMS(TASK_ID_COM_UART, OTMS_S_ASSERT_RUN);
+    LOG_LEVEL("app_comuart_start\r\n");
+    OTMS(TASK_ID_PTL, OTMS_S_ASSERT_RUN);
 }
 
 // Assert that UART communication is running
@@ -119,7 +119,7 @@ void com_uart_assert_running(void)
 {
     if (PTL_RUNNING_NONE != l_u32_running_req_mask)
     {
-        OTMS(TASK_ID_COM_UART, OTMS_S_RUNNING);
+        OTMS(TASK_ID_PTL, OTMS_S_RUNNING);
         StartTimer(&l_t_ptl_rx_main_timer);
         StartTimer(&l_t_ptl_tx_main_timer);
         StartTimer(&l_t_ptl_error_detect_timer);
@@ -135,7 +135,7 @@ void com_uart_running(void)
 {
     if (true == ptl_is_sleep_enable())
     {
-        OTMS(TASK_ID_COM_UART, OTMS_S_POST_RUN);
+        OTMS(TASK_ID_PTL, OTMS_S_POST_RUN);
     }
     else
     {
@@ -156,14 +156,14 @@ void com_uart_post_running(void)
     }
     else
     {
-        OTMS(TASK_ID_COM_UART, OTMS_S_RUNNING);
+        OTMS(TASK_ID_PTL, OTMS_S_RUNNING);
     }
 }
 
 // Stop the UART communication task
 void com_uart_stop_running(void)
 {
-    OTMS(TASK_ID_COM_UART, OTMS_S_INVALID);
+    OTMS(TASK_ID_PTL, OTMS_S_INVALID);
 }
 
 // Request the UART task to start running (source indicates who requested)
@@ -239,30 +239,30 @@ void ptl_com_uart_build_frame(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, 
 }
 
 // Build the header of the communication frame
-void ptl_com_uart_build_frame_header(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint8_t datalen, ptl_proc_buff_t *buff)
+void ptl_com_uart_build_frame_header(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint8_t datalen, ptl_proc_buff_t *proc_buff)
 {
     assert(buff);
     if (frame_type >= A2M_MOD_START)
     {
-        buff->buff[0] = A2M_PTL_HEADER;
+        proc_buff->buff[0] = A2M_PTL_HEADER;
     }
     else
     {
-        buff->buff[0] = M2A_PTL_HEADER;
+        proc_buff->buff[0] = M2A_PTL_HEADER;
     }
 
-    buff->buff[1] = frame_type;
-    buff->buff[2] = cmd;
-    buff->buff[3] = datalen;
-    buff->buff[4] = ptl_com_uart_get_checksum(buff->buff, PTL_FRAME_HEADER_SIZE - 1);
+    proc_buff->buff[1] = frame_type;
+    proc_buff->buff[2] = cmd;
+    proc_buff->buff[3] = datalen;
+    proc_buff->buff[4] = ptl_com_uart_get_checksum(proc_buff->buff, PTL_FRAME_HEADER_SIZE - 1);
 }
 
 // Calculate the checksum for the data
-uint8_t ptl_com_uart_get_checksum(uint8_t *data, uint8_t len)
+uint8_t ptl_com_uart_get_checksum(uint8_t *data, uint8_t length)
 {
     assert(data);
     uint8_t sum = 0;
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < length; i++)
     {
         sum += data[i];
     }
@@ -321,11 +321,14 @@ void ptl_tx_event_message_handler(void)
     StartTimer(&l_t_ptl_tx_main_timer);
 
     // Retrieve the message from the UART task message queue
-    Msg_t* msg = get_message(TASK_ID_COM_UART);
+    Msg_t* msg = get_message(TASK_ID_PTL);
     if(msg->id != NO_MSG)
     {
-        #ifdef TEST_LOG_DEBUG_PTL_RX_FRAME
-        LOG_LEVEL(F_NAME, "ptl_tx_main msg mod:0x%02x cmd:0x%02x \r\n", msg->id, msg->param1);
+        #ifdef TEST_LOG_DEBUG_PTL_TX_FRAME
+        LOG_LEVEL("msg_id=%02x cmd=%02x data[]=", (uint8_t)msg->id, (uint8_t)msg->param1);
+        //DBG("[ ] msg_id:%02x cmd:%02x\r\n", (uint8_t)msg->id, (uint8_t)msg->param1);
+		LOG_BUFF(l_t_tx_proc_buf.buff,l_t_tx_proc_buf.size);
+        //LOG_("\r\n");
         #endif
         
         ptl_frame_type_t frame_type = (ptl_frame_type_t)msg->id;
@@ -551,7 +554,7 @@ void ptl_proc_valid_frame(uint8_t *data, uint16_t len)
     module_ = ptl_get_module(payload.frame_type);
 
     #ifdef TEST_LOG_DEBUG_PTL_RX_FRAME
-    LOG_("ptl_proc_valid_frame type=%02x cmd=%02x,length=%d data:\r\n", payload.frame_type, payload.cmd, payload.data_len);
+    LOG_LEVEL("frame_type=%02x cmd=%02x,length=%d data[]=\r\n", payload.frame_type, payload.cmd, payload.data_len);
     LOG_BUFF(payload.data, payload.data_len);
     #endif
     

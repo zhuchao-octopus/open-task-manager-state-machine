@@ -377,11 +377,11 @@ void dbg_log_printf(const char *format, ...)
 {
     va_list args;
     va_start(args, format); // Initialize the va_list to process the variable arguments
-	  #ifdef PLATFORM_CST_OSAL_RTOS
+	#ifdef PLATFORM_CST_OSAL_RTOS
     VSPRINTF(native_uart_putc, format, args); // Call formatted print function
-	  #else
-	  printf(format,args);
-	  #endif
+	#else
+	vprintf(format,args);
+	#endif
     va_end(args); // Clean up the va_list after use
 }
 
@@ -409,16 +409,20 @@ void dbg_log_printf_level(const char *function_name, const char *format, ...)
     }
 
     // Print log header with timestamp, level, function name
+    #ifdef PLATFORM_CST_OSAL_RTOS
     dbg_log_printf("[%s][%27s] ", level_str, function_name);
+    #else
+    printf("[%s][%27s] ", level_str, function_name);
+    #endif
     
     va_list args;
     va_start(args, format);
     // Print formatted log message
-		#ifdef PLATFORM_CST_OSAL_RTOS
+	#ifdef PLATFORM_CST_OSAL_RTOS
     VSPRINTF(native_uart_putc, format, args);
-		#else
-	  printf(format,args);
-	  #endif
+	#else
+	vprintf(format,args);
+	#endif
     va_end(args);
 }
 
@@ -427,13 +431,21 @@ void dbg_log_printf_level(const char *function_name, const char *format, ...)
  * @param buff The buffer to print.
  * @param length The length of the buffer.
  */
-void dbg_log_printf_buffer(uint8_t* buff, int length)
+void dbg_log_printf_buffer(uint8_t* buff, uint16_t length)
 {
     for (int i = 0; i < length; i++)
     {
+       #ifdef PLATFORM_CST_OSAL_RTOS
         dbg_log_printf("%02x ", buff[i]);
+       #else
+        printf("%02x ", buff[i]);
+       #endif
     }
-    dbg_log_printf("\r\n");
+    #ifdef PLATFORM_CST_OSAL_RTOS
+      dbg_log_printf("\r\n");
+    #else
+      printf("\r\n");
+    #endif
 }
 
 /**
@@ -442,7 +454,7 @@ void dbg_log_printf_buffer(uint8_t* buff, int length)
  * @param buff The buffer to print.
  * @param length The length of the buffer.
  */
-void dbg_log_printf_buffer_level(const char *function_name, uint8_t* buff, int length)
+void dbg_log_printf_buffer_level(const char *function_name, uint8_t* buff, uint16_t length)
 {
     for (int i = 0; i < length; i++)
     {

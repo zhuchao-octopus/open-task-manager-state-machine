@@ -77,7 +77,7 @@ void dbg_log_set_level(DBG_LOG_LEVEL level);
  * @param buff Pointer to the buffer.
  * @param lenth Length of the buffer.
  */
-void dbg_log_printf_buffer(uint8_t* buff, int lenth);
+void dbg_log_printf_buffer(uint8_t* buff, uint16_t lenth);
 
 /**
  * @brief Logs a formatted message.
@@ -100,7 +100,7 @@ void dbg_log_printf_level(const char *function_name, const char *format, ...);
  * @param buff Pointer to the buffer.
  * @param lenth Length of the buffer.
  */
-void dbg_log_printf_buffer_level(const char *function_name, uint8_t* buff, int lenth);
+void dbg_log_printf_buffer_level(const char *function_name, uint8_t* buff, uint16_t lenth);
 
 /*******************************************************************************
  * MACROS
@@ -120,10 +120,11 @@ void dbg_log_printf_buffer_level(const char *function_name, uint8_t* buff, int l
 #define LOG_SET_LEVEL(l) dbg_log_set_level(l)
 
 /** Macro to log a message with a specific level. */
-#define LOG_LEVEL(a, ...) dbg_log_printf_level(a, __VA_ARGS__)
+#define LOG_LEVEL(...) dbg_log_printf_level(__FUNCTION__, __VA_ARGS__)
 
 /** Macro to log a simple message. */
 #define LOG_(...) dbg_log_printf(__VA_ARGS__)
+#define DBG(...)  dbg_log_printf(__VA_ARGS__)
 
 /** Macro to log a buffer. */
 #define LOG_BUFF(a, b) dbg_log_printf_buffer(a, b)

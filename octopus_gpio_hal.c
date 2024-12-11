@@ -69,7 +69,7 @@ void hal_gpio_init(uint8_t task_id)
     HalGpioPinInit(GPIO_KEY_PIN, GPIO_INPUT);           // Set KEY pin (P14) as input
     HalGpioPupdConfig(GPIO_KEY_PIN, GPIO_PULL_UP);      // Enable pull-up for KEY pin (P14)
     
-    LOG_LEVEL(F_NAME,"hal gpio init\r\n");  // Optional log for GPIO initialization (disabled here)
+    LOG_LEVEL("hal gpio init\r\n");  // Optional log for GPIO initialization (disabled here)
 }
 
 // Function to get the GPIO key mask code based on the pin number
@@ -103,7 +103,7 @@ void hal_gpio_init(uint8_t task_id)
     ithGpioSetOut(GPIO_MCU_SDIO_PWR_OUTPUT_PIN);
     ithGpioSetMode(GPIO_MCU_SDIO_PWR_OUTPUT_PIN, ITH_GPIO_MODE0);
     hal_gpio_set_wifi_onoff(true);
-    LOG_LEVEL(F_NAME,"hal gpio init\r\n");  // Optional log for GPIO initialization (disabled here)
+    LOG_LEVEL("hal gpio init\r\n");  // Optional log for GPIO initialization (disabled here)
 }
 
 // Function to get the GPIO key mask code (ITE Open RTOS version, returns 0)
@@ -123,8 +123,8 @@ void hal_gpio_set_wifi_onoff(bool onoff)
 #else
 void hal_gpio_init(uint8_t task_id)
 {
-    //LOG_LEVEL(F_NAME," GPIO init\r\n");  // Optional log for GPIO initialization (disabled here)
-    LOG_LEVEL(F_NAME,"hal gpio init\r\n");  // Optional log for GPIO initialization (disabled here)
+    //LOG_LEVEL("GPIO init\r\n");  // Optional log for GPIO initialization (disabled here)
+    LOG_LEVEL("hal gpio init\r\n");  // Optional log for GPIO initialization (disabled here)
 }
 
 // Function to get the GPIO key mask code (ITE Open RTOS version, returns 0)

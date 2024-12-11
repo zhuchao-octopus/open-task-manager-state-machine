@@ -21,7 +21,7 @@ void hal_flash_init(uint8_t task_id)
 	///HalDMAInit();
 	///HalDMAInitChannel(dma_cfg);
  #endif
-	LOG_LEVEL(F_NAME,"hal flash init\r\n");
+	LOG_LEVEL("hal flash init\r\n");
 }
 
 void hal_flash_read_to_buff(uint32_t addr, uint8_t *buf, uint32_t len)

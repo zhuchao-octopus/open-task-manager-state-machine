@@ -49,15 +49,18 @@ static bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t
  */
 void app_system_init_running(void)
 {
-    LOG_LEVEL(F_NAME,"app_system_init\r\n");
+    LOG_LEVEL("app_system_init\r\n");
+    #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_com_uart_register_module(M2A_MOD_SYSTEM, system_send_handler, system_receive_handler);
+    #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
+    ptl_com_uart_register_module(A2M_MOD_SYSTEM, system_send_handler, system_receive_handler);
+    #endif
     OTMS(TASK_ID_SYSTEM, OTMS_S_INVALID);
 }
 
 void app_system_start_running(void)
 {
-    LOG_LEVEL(F_NAME,"app_system_start\r\n");
-	  system_handshake_with_app();
+    LOG_LEVEL("app_system_start\r\n");
     OTMS(TASK_ID_SYSTEM, OTMS_S_ASSERT_RUN);
 }
 
@@ -65,7 +68,11 @@ void app_system_assert_running(void)
 {
     StartTimer(&l_t_msg_wait_10_timer);
     //StartTimer(&l_t_msg_wait_50_timer);
+    #ifdef TASK_MANAGER_STATE_MACHINE_MCU
 	  com_uart_reqest_running(M2A_MOD_SYSTEM);
+    #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
+      com_uart_reqest_running(A2M_MOD_SYSTEM);
+    #endif
     OTMS(TASK_ID_SYSTEM, OTMS_S_RUNNING);
 }
 
@@ -73,34 +80,36 @@ void app_system_running(void)
 {
    if (GetTimer(&l_t_msg_wait_10_timer) < 10)
         return;
-		RestartTimer(&l_t_msg_wait_10_timer);
-		//if (GetTimer(&l_t_msg_wait_50_timer) < 50)
+    RestartTimer(&l_t_msg_wait_10_timer);
+    //if (GetTimer(&l_t_msg_wait_50_timer) < 50)
     //    return;
-		//RestartTimer(&l_t_msg_wait_50_timer);
+    //RestartTimer(&l_t_msg_wait_50_timer);
 		
 		
     Msg_t* msg = get_message(TASK_ID_SYSTEM);	
     if(msg->id == NO_MSG) return;	
-		
-		if((MsgId_t)msg->id == MSG_DEVICE_NORMAL_EVENT)
+    
+	 switch(msg->id)
     {
-        //send_message(TASK_ID_COM_UART, M2A_MOD_METER , CMD_MODMETER_RPM_SPEED, 0);
-        send_message(TASK_ID_COM_UART, M2A_MOD_INDICATOR , CMD_MODINDICATOR_INDICATOR, 0);
+     case MSG_DEVICE_NORMAL_EVENT:
+        //send_message(TASK_ID_PTL, M2A_MOD_METER , CMD_MODMETER_RPM_SPEED, 0);
+        send_message(TASK_ID_PTL, M2A_MOD_INDICATOR , CMD_MODINDICATOR_INDICATOR, 0);
         //StartTimer(&l_t_msg_wait_50_timer);
-				app_power_on_off(GPIO_PIN_READ_ACC());
+        app_power_on_off(GPIO_PIN_READ_ACC());
+        break;
+     case MSG_DEVICE_POWER_EVENT:
+        if(msg->param1 == CMD_MODSYSTEM_POWER_ON)
+        {
+        app_power_on_off(1);
+        }
+        else if(msg->param1 == CMD_MODSYSTEM_POWER_OFF)
+        {
+        app_power_on_off(0);
+        }
+       break;        
+     
     }
-    else if((MsgId_t)msg->id == MSG_DEVICE_NORMAL_EVENT)
-		{
-			if(msg->param1 == CMD_MODSYSTEM_POWER_ON)
-			{
-				app_power_on_off(1);
-			}
-			else if(msg->param1 == CMD_MODSYSTEM_POWER_OFF)
-			{
-				app_power_on_off(0);
-			}
-		}
-     			
+	
 }
 
 void app_system_post_running(void)
@@ -117,7 +126,7 @@ void app_power_on_off(bool onoff)
 {
  const char *power_state = onoff ? "on" : "off";  
  const char *acc_state = IsAccOn() ? "true" : "false"; 
- LOG_LEVEL(F_NAME,"power status=%s,acc=%s\r\n", power_state, acc_state);
+ LOG_LEVEL("power status=%s,acc=%s\r\n", power_state, acc_state);
 
 	if(onoff)
 	{
@@ -137,7 +146,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
     {
         switch(param1)
         {
-				case CMD_MODSYSTEM_ACC_STATE:
+		case CMD_MODSYSTEM_ACC_STATE:
             //ACK, no thing to do
             //tmp[0] = GetWakeupEvent(WAKEUP_EVENT_ACC);
             ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_ACC_STATE, tmp, 1, buff);
@@ -163,19 +172,37 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             tmp[0] = MSB(param2); //KEYCODE
             tmp[1] = LSB(param2); //KEYSTATE
             tmp[2] = 0;  //
-            LOG_LEVEL(F_NAME,"CMD_MODSETUP_KEY  key %02x state %02x\n",tmp[0],tmp[1]);
+            LOG_LEVEL("CMD_MODSETUP_KEY  key %02x state %02x\n",tmp[0],tmp[1]);
             ptl_com_uart_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_KEY, tmp, 3, buff);
             return true;
         default:
             break;
         }
     }
-		else if(M2A_MOD_SETUP == frame_type)
+    else if(A2M_MOD_SYSTEM == frame_type)
     {
         switch(param1)
         {
-        case CMD_MODSETUP_SET_TIME: //????
-            //ACK, no thing to do
+        case CMD_MODSYSTEM_HANDSHAKE:
+            tmp[0] = 0xAA;
+            tmp[1] = 0x55;
+            LOG_LEVEL("CMD_MODSYSTEM_HANDSHAKE param1=%02x param2=%02x\n",tmp[0],tmp[1]);
+            ptl_com_uart_build_frame(A2M_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, buff);
+            return true;
+        case CMD_MODSYSTEM_APP_STATE:
+            tmp[0] = l_u8_mpu_status;
+            tmp[1] = 0x01;           
+            ptl_com_uart_build_frame(A2M_MOD_SYSTEM, CMD_MODSYSTEM_APP_STATE, tmp, 2, buff);
+            return true;
+        default:
+            break;
+        }
+    }
+	else if(M2A_MOD_SETUP == frame_type)
+    {
+        switch(param1)
+        {
+        case CMD_MODSETUP_SET_TIME:
             return false;
         default:
             break;
@@ -195,20 +222,20 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
     {
         switch(payload->cmd)
         {
-				 case CMD_MODSYSTEM_HANDSHAKE:
-            LOG_LEVEL(F_NAME,"SYSTEM handshake Ok\r\n");
+		case CMD_MODSYSTEM_HANDSHAKE:
+            LOG_LEVEL("SYSTEM handshake Ok\r\n");
             ///l_u8_mpu_handshake = 1;
             ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t*)VER_STR, sizeof(VER_STR), ackbuff);
             return true;
         case CMD_MODSYSTEM_ACC_STATE:
             //ACK, no thing to do
-            LOG_LEVEL(F_NAME,"\nCMD_MODSYSTEM_ACC_STATE\r\n");
+            LOG_LEVEL("CMD_MODSYSTEM_ACC_STATE\r\n");
             ///l_u8_mpu_handshake = 1;
             ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t*)VER_STR, sizeof(VER_STR), ackbuff);
             return false;
         case CMD_MODSYSTEM_APP_STATE:
             ///l_u8_mpu_status = payload->data[0];
-            LOG_LEVEL(F_NAME,"CMD_MODSYSTEM_APP_STATE l_u8_mpu_status = %d\r\n",payload->data[0]);
+            LOG_LEVEL("CMD_MODSYSTEM_APP_STATE l_u8_mpu_status = %d\r\n",payload->data[0]);
             tmp = 0x01;
             ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_APP_STATE, &tmp, 1, ackbuff);
             return true;
@@ -244,22 +271,22 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 
 void system_handshake_with_mcu(void)
 {
-    printf("%s \n", __FUNCTION__);
-    send_message(TASK_ID_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, 0, 0);
+    LOG_LEVEL("system send handshake data to mcu\r\n");
+    send_message(TASK_ID_PTL, A2M_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, 0); 
 }
 
-bool system_handshake_with_app(void)
+void system_handshake_with_app(void)
   {
+    LOG_LEVEL("system send handshake data to app\r\n");
 
-    ptl_proc_buff_t ackbuff;
-    ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t*)VER_STR, sizeof(VER_STR), &ackbuff);
-    return true;
+    ///ptl_proc_buff_t ackbuff;
+    ///ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t*)VER_STR, sizeof(VER_STR), &ackbuff);
   }
 
 
 void system_set_mpu_status(uint8_t status)
 {
-    printf("%s status %d \n", __FUNCTION__, status);
+    LOG_LEVEL("mpu status=%d \r\n", status);
     l_u8_mpu_status = status;
     send_message(TASK_ID_SYSTEM, CMD_MODSYSTEM_APP_STATE, l_u8_mpu_status, l_u8_mpu_status);
 }

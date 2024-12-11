@@ -42,7 +42,7 @@ com_uart_data_buff_t com_uart_data_buff;           // Buffer structure for recei
 #ifdef PLATFORM_ITE_OPEN_RTOS
 static bool UartIsInit = false;  // Tracks whether UART is initialized.
 static sem_t UartSemIntr;        // Semaphore for UART interrupt handling.
-int parERR = 0;                  // Placeholder for parity error tracking.
+uint32_t com_uart_parity_error = 0;         // Placeholder for parity error tracking.
 static cFifo_t* usartRxFifo = NULL;
 static uint8_t uart2RxFifoBuf[cFifo_ObjSize(256 + 64)];
 #endif
@@ -92,7 +92,7 @@ void hal_com_uart_init(uint8 task_id)
 	if(task_id == 0)
 	{
     hal_uart_init();
-	LOG_LEVEL(F_NAME, "hal uart1 init for protocol\r\n");
+	LOG_LEVEL("hal uart1 init for protocol\r\n");
 	}
 }
 /**
@@ -117,7 +117,7 @@ static void hal_com_uart_receive_callback(uart_Evt_t* pev) {
         break;
 
         case UART_EVT_TYPE_TX_COMPLETED:  // Transmission complete event.
-            LOG_LEVEL(F_NAME, "tx completed\r\n");
+            LOG_LEVEL("tx completed\r\n");
         break;
     }
 }
@@ -189,6 +189,7 @@ void hal_com_uart_init(uint8_t task_id)
     pthread_attr_t attr_receive;
     pthread_attr_init(&attr_receive);
     hal_uart_init();
+    LOG_LEVEL("hal uart2 init for protocol\r\n");
     pthread_create(&task_receive, &attr_receive, hal_com_uart_event_handler, NULL);
 }
 
@@ -201,8 +202,8 @@ void hal_com_uart_init(uint8_t task_id)
 static void hal_com_uart_receive_callback(void* arg1, uint32_t arg2) {
     sem_post(&UartSemIntr);
     if (arg2 == 1) {
-        LOG_LEVEL(F_NAME,"arg2=1 error\n");
-        parERR = arg2;
+        LOG_LEVEL("arg2=1 error\n");
+        com_uart_parity_error = arg2;
     }
 }
 
@@ -220,6 +221,9 @@ void* hal_com_uart_event_handler(void* arg) {
         if (UartIsInit)
             length = read(PROTOCOL_UART_PORT, com_uart_data_buff.data, UART_BUFF_MAX_SIZE);
 
+          #ifdef TEST_LOG_DEBUG_UART_RX_DATA
+          LOG_BUFF(com_uart_data_buff.data,sizeof(com_uart_data_buff.data));
+          #endif
         for (int i = 0; i < length; i++) {
             cFifo_Push(usartRxFifo, com_uart_data_buff.data[i]);
         }

@@ -81,7 +81,7 @@ typedef enum{
     CMD_MODSYSTEM_ACC_STATE         = 0x01,      //ACC状态
     CMD_MODSYSTEM_APP_STATE         = 0x02,      //应用画面状态
     CMD_MODSYSTEM_POWER_ON          = 0x03,       //电源
-	  CMD_MODSYSTEM_POWER_OFF         = 0x04,      //关闭电源
+	CMD_MODSYSTEM_POWER_OFF         = 0x04,      //关闭电源
 
     /*MOD_UPDATE*/
     CMD_MODUPDATE_CHECK_FW_STATE    = 0x06,      //查询固件状态

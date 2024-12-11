@@ -60,7 +60,7 @@ static uint32_t           l_t_msg_wait_50_timer=0;
  */
 void app_ble_init_running(void)
 {
-    LOG_LEVEL(F_NAME,"app_ble_init\r\n");
+    LOG_LEVEL("app_ble_init\r\n");
     //com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
 	  hal_disable_bLe_pair_mode();
     OTMS(TASK_ID_BLE, OTMS_S_INVALID);
@@ -68,7 +68,7 @@ void app_ble_init_running(void)
 
 void app_ble_start_running(void)
 {
-    LOG_LEVEL(F_NAME,"app_ble_start\r\n");
+    LOG_LEVEL("app_ble_start\r\n");
     OTMS(TASK_ID_BLE, OTMS_S_ASSERT_RUN);
 }
 
@@ -148,19 +148,19 @@ void CheckBLeBondedConnectionStatus(uint8_t *connected_mac, uint8_t c_type)
 	
   ///if(length < 6)
 	///{
-	///		LOG_LEVEL(F_NAME,"OnCheckBondedMAC invalid mac length=%d c_type=%d\r\n", length, c_type);
+	///		LOG_LEVEL("OnCheckBondedMAC invalid mac length=%d c_type=%d\r\n", length, c_type);
 	///		return;
 	///}	
   if(c_type == DEVICE_BLE_DISCONNECTED || c_type == DEVICE_BLE_CONNECTED)	
 	{
 		if ((connected_mac[0] == 0) && (connected_mac[1] == 0) && (connected_mac[2] == 0) && (connected_mac[3] == 0) && (connected_mac[4] == 0) && (connected_mac[5] == 0))
 		{
-			LOG_LEVEL(F_NAME,"BLeConnectionStatus no valid mac c_type=%d\r\n", c_type);
+			LOG_LEVEL("BLeConnectionStatus no valid mac c_type=%d\r\n", c_type);
 			return;
 		}
 		if ((connected_mac[0] == 0xFF) && (connected_mac[1] == 0xFF) && (connected_mac[2] == 0xFF) && (connected_mac[3] == 0xFF) && (connected_mac[4] == 0xFF) && (connected_mac[5] == 0xFF))
 		{
-			LOG_LEVEL(F_NAME,"BLeConnectionStatus no valid mac c_type=%d\r\n", c_type);
+			LOG_LEVEL("BLeConnectionStatus no valid mac c_type=%d\r\n", c_type);
 			return;
 		}
   }
@@ -196,11 +196,11 @@ void BLE_connecttion_lock_polling(void)
 	//PRINT("OnDelaySleepSystem %d\r\n", speed);
 	if (ble_status.to_lock && GetTimer(&l_t_msg_wait_timer) > 10000)
 	{
-		 	StopTimer(&l_t_msg_wait_timer);
-			ble_status.locked = true;
-			ble_status.to_lock = false;	
-		  LOG_LEVEL(F_NAME,"Start to power off system...\r\n");
-			send_message(TASK_ID_SYSTEM, MSG_DEVICE_NORMAL_EVENT , CMD_MODSYSTEM_POWER_OFF,0);
+        StopTimer(&l_t_msg_wait_timer);
+        ble_status.locked = true;
+        ble_status.to_lock = false;	
+        LOG_LEVEL("Start to power off system...\r\n");
+        send_message(TASK_ID_SYSTEM, MSG_DEVICE_NORMAL_EVENT , CMD_MODSYSTEM_POWER_OFF,0);
 	}
 }
 
@@ -213,7 +213,7 @@ void StartToLock(void)
 			ble_status.to_lock = true;
 			ble_status.to_lock = true;
 			StartTimer(&l_t_msg_wait_timer);
-			LOG_LEVEL(F_NAME,"Start to lock system...\r\n");
+			LOG_LEVEL("Start to lock system...\r\n");
 		}
 	}
 }
@@ -227,7 +227,7 @@ void StartToUnlock(void)
 		StopTimer(&l_t_msg_wait_timer);
 	}
 	send_message(TASK_ID_SYSTEM, MSG_DEVICE_NORMAL_EVENT , CMD_MODSYSTEM_POWER_ON,1);
-	LOG_LEVEL(F_NAME,"Start to unlock system...\r\n");
+	LOG_LEVEL("Start to unlock system...\r\n");
 }
 
 

@@ -60,7 +60,7 @@ typedef struct
 typedef enum{
 	TASK_ID_SYSTEM=0,
 	TASK_ID_GPIO,
-	TASK_ID_COM_UART,
+	TASK_ID_PTL,
 	TASK_ID_CAR_INFOR,
 	TASK_ID_BLE,
 	TASK_ID_KEY,
@@ -99,7 +99,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] =
         },
     },
 		
-  [TASK_ID_COM_UART] = {
+  [TASK_ID_PTL] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = com_uart_init_running,

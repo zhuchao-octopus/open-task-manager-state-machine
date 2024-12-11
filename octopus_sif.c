@@ -243,12 +243,12 @@ uint8_t Sif_SendData_Sync(uint8_t* data, uint8_t len)
 uint8_t Sif_SendData(uint8_t* data, uint8_t len)
 {
 	#if 1
-	LOG_LEVEL(F_NAME,"Sif_SendData:");
+	LOG_LEVEL("Sif_SendData:");
 	for (int i = 0; i < len; i++)
 	{
-		LOG_LEVEL(F_NAME,"%02x ", data[i]);
+		LOG_LEVEL("%02x ", data[i]);
 	}
-	LOG_LEVEL(F_NAME,"\r\n");
+	LOG_LEVEL("\r\n");
 	#endif
 	assert(data);
 	assert(len);

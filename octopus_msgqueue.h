@@ -70,9 +70,11 @@ typedef struct
  * These are the message IDs associated with different events or types of messages.
  */
 typedef enum{ 
-    MSG_DEVICE_NORMAL_EVENT  = 0xA0,   // Normal device event message
-    MSG_DEVICE_KEY_EVENT     = 0xA1,   // Key event message
-    MSG_DEVICE_GPIO_EVENT    = 0xA2,   // GPIO event message
+    MSG_DEVICE_NORMAL_EVENT         = 0xA0,   // Normal device event message 160
+    MSG_DEVICE_KEY_EVENT            = 0xA1,   // Key event message
+    MSG_DEVICE_GPIO_EVENT           = 0xA2,   // GPIO event message
+    MSG_DEVICE_POWER_EVENT          = 0xA3,   // 
+    MSG_DEVICE_HANDSHAKE_EVENT      = 0xA4,
 } MsgId_t;
 
 /*******************************************************************************

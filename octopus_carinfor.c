@@ -82,7 +82,7 @@ static uint8_t             		l_u8_op_step = 0;
  */
 void app_carinfo_init_running(void)
 {
-    LOG_LEVEL(F_NAME,"app_carinfo_init\r\n");
+    LOG_LEVEL("app_carinfo_init\r\n");
 
     lt_meter.voltageSystem = 0x02;
     lt_drivinfo.gear = (carinfo_drivinfo_gear_t)1;
@@ -96,7 +96,7 @@ void app_carinfo_init_running(void)
 
 void app_carinfo_start_running(void)
 {
-    LOG_LEVEL(F_NAME,"app_carinfo_start\r\n");
+    LOG_LEVEL("app_carinfo_start\r\n");
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_ASSERT_RUN);
 }
 
@@ -106,11 +106,13 @@ void app_carinfo_assert_running(void)
     com_uart_reqest_running(M2A_MOD_METER);
     com_uart_reqest_running(M2A_MOD_INDICATOR);
     com_uart_reqest_running(M2A_MOD_DRIV_INFO);
+    //#ifdef TASK_MANAGER_STATE_MACHINE_MCU
     //StartTimer(&l_t_msg_wait_10_timer);
     StartTimer(&l_t_msg_wait_50_timer);
     StartTimer(&l_t_msg_wait_100_timer);
     StartTimer(&l_t_soc_timer);
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_RUNNING);
+    //#endif
 }
 
 void app_carinfo_running(void)
@@ -515,8 +517,8 @@ void app_car_controller_msg_proc( void )
     Msg_t* msg = get_message(TASK_ID_CAR_INFOR);
     if(msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_GPIO_EVENT)
     {
-        send_message(TASK_ID_COM_UART, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);
-        send_message(TASK_ID_COM_UART, M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
+        send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);
+        send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
     }
 
     if(GetTimer(&l_t_msg_wait_100_timer) >= 1500)
@@ -524,16 +526,16 @@ void app_car_controller_msg_proc( void )
         switch(l_u8_op_step)
         {
         case 0:
-            send_message(TASK_ID_COM_UART, M2A_MOD_METER, CMD_MODMETER_SOC, 0);
+            send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_SOC, 0);
             break;
         case 1:
-            send_message(TASK_ID_COM_UART, M2A_MOD_INDICATOR, CMD_MODINDICATOR_ERROR_INFO, 0);
+            send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_ERROR_INFO, 0);
             break;
         case 2:
-            send_message(TASK_ID_COM_UART, M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
+            send_message(TASK_ID_PTL, M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
             break;
         case 3:
-            send_message(TASK_ID_COM_UART, M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
+            send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
             break;
         default:
             l_u8_op_step = (uint8_t)-1;
@@ -549,12 +551,12 @@ void app_car_controller_msg_proc( void )
 #ifdef TEST_LOG_DEBUG_SIF
 void log_sif_data(uint8_t* data, uint8_t maxlen)
 {
-    LOG_LEVEL(F_NAME,"SIF DATA:");
+    LOG_LEVEL("SIF DATA:");
     for(int i = 0; i < maxlen; i++)
     {
-        LOG_LEVEL(F_NAME,"0x%02x ",data[i]);
+        LOG_LEVEL("0x%02x ",data[i]);
     }
-    LOG_LEVEL(F_NAME,"\r\n");
+    LOG_LEVEL("\r\n");
 }
 #endif
 #if 1

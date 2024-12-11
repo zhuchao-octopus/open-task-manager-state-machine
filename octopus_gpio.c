@@ -42,7 +42,7 @@ GPIO_STATUS skd_status = {false,true,0,0};
  */
 void app_gpio_init_running(void)
 {
-    LOG_LEVEL(F_NAME,"app_gpio_init\r\n");
+    LOG_LEVEL("app_gpio_init\r\n");
 	  GPIOInit();
     //com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
     OTMS(TASK_ID_GPIO, OTMS_S_INVALID);
@@ -50,8 +50,10 @@ void app_gpio_init_running(void)
 
 void app_gpio_start_running(void)
 {
-    LOG_LEVEL(F_NAME,"app_gpio_start\r\n");
+    #ifdef TASK_MANAGER_STATE_MACHINE_MCU
+    LOG_LEVEL("app_gpio_start\r\n");
     OTMS(TASK_ID_GPIO, OTMS_S_ASSERT_RUN);
+    #endif
 }
 
 void app_gpio_assert_running(void)
@@ -75,7 +77,7 @@ void app_gpio_running(void)
 			
 			if(acc_status.changed)
 			{
-				LOG_LEVEL(F_NAME,"get acc status=%d\r\n",acc_status.offon);
+				LOG_LEVEL("get acc status=%d\r\n",acc_status.offon);
 				send_message(TASK_ID_BLE, MSG_DEVICE_GPIO_EVENT, GPIO_ACC_PIN, acc_status.offon);
 				send_message(TASK_ID_SYSTEM, MSG_DEVICE_GPIO_EVENT, GPIO_ACC_PIN, acc_status.offon);
 				acc_status.changed=false;
@@ -83,28 +85,28 @@ void app_gpio_running(void)
 			
 	  	if(ddd_status.changed)
 			{
-				LOG_LEVEL(F_NAME,"get ddd status=%d\r\n",ddd_status.offon);
+				LOG_LEVEL("get ddd status=%d\r\n",ddd_status.offon);
 				send_message(TASK_ID_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_DDD_PIN, ddd_status.offon);
 				ddd_status.changed=false;
 			}	
 			
 			if(zzd_status.changed)
 			{
-				LOG_LEVEL(F_NAME,"get zzd status=%d\r\n",zzd_status.offon);
+				LOG_LEVEL("get zzd status=%d\r\n",zzd_status.offon);
 				send_message(TASK_ID_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_ZZD_PIN, zzd_status.offon);
 				zzd_status.changed=false;
 			}	
 			
 			if(yzd_status.changed)
 			{
-				LOG_LEVEL(F_NAME,"get yzd status=%d\r\n",yzd_status.offon);
+				LOG_LEVEL("get yzd status=%d\r\n",yzd_status.offon);
 				send_message(TASK_ID_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_YZD_PIN, yzd_status.offon);
 				yzd_status.changed=false;
 			}	
 			
 			if(skd_status.changed)
 			{
-				LOG_LEVEL(F_NAME,"get skd status=%d\r\n",skd_status.offon);
+				LOG_LEVEL("get skd status=%d\r\n",skd_status.offon);
 				send_message(TASK_ID_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_SKD_PIN, skd_status.offon);
 				skd_status.changed=false;
 			}
@@ -203,20 +205,20 @@ void ProcessKeyEvent(GPIO_KEY_STATUS *key_status)
 	{	
 		if(key_status->pressed_l)//long press
 		{
-			///LOG_LEVEL(F_NAME,"long press status key=%d %d\r\n",key_status->key,key_status->pressed_l);
+			///LOG_LEVEL("long press status key=%d %d\r\n",key_status->key,key_status->pressed_l);
 			send_message(TASK_ID_KEY, MSG_DEVICE_KEY_EVENT , key_status->key, 2);
 			key_status->dispatched=true;
 		}
     else if(key_status->pressed)
 		{
-			///LOG_LEVEL(F_NAME,"press status key=%d %d\r\n",key_status->key,key_status->pressed_l);
+			///LOG_LEVEL("press status key=%d %d\r\n",key_status->key,key_status->pressed_l);
 			send_message(TASK_ID_KEY, MSG_DEVICE_KEY_EVENT , key_status->key, 1);
       key_status->dispatched=true;  
 		}			
 		
 	  if(key_status->released)//short press
 		{
-			///LOG_LEVEL(F_NAME,"released status key=%d\r\n",key_status->key);
+			///LOG_LEVEL("released status key=%d\r\n",key_status->key);
 			send_message(TASK_ID_KEY, MSG_DEVICE_KEY_EVENT , key_status->key, 0);
 			key_status->released=false;
 			key_status->dispatched=true;

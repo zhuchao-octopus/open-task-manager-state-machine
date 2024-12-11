@@ -42,7 +42,7 @@ uint8_t hal_set_pairing_mode_onoff(bool ono_ff,uint8_t current_pairing_mode)
 	   {
 				pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
 				GAPBondMgr_SetParameter(GAPBOND_PAIRING_MODE, sizeof(uint8_t), &pairMode);
-				LOG_LEVEL(F_NAME,"GAPBondMgr_SetParameter to DEFAULT_PAIRING_MODE\r\n");
+				LOG_LEVEL("GAPBondMgr_SetParameter to DEFAULT_PAIRING_MODE\r\n");
 	  }
 		else
 			pairMode=current_pairing_mode;
@@ -53,7 +53,7 @@ uint8_t hal_set_pairing_mode_onoff(bool ono_ff,uint8_t current_pairing_mode)
 	   {
 				pairMode = GAPBOND_PAIRING_MODE_NO_PAIRING;
 				GAPBondMgr_SetParameter(GAPBOND_PAIRING_MODE, sizeof(uint8_t), &pairMode);
-				LOG_LEVEL(F_NAME,"GAPBondMgr_SetParameter to GAPBOND_PAIRING_MODE_NO_PAIRING\r\n");
+				LOG_LEVEL("GAPBondMgr_SetParameter to GAPBOND_PAIRING_MODE_NO_PAIRING\r\n");
 	   }
 		 else
 			 pairMode=current_pairing_mode;
