@@ -27,8 +27,9 @@ extern "C"{
 #define PRJ_VER_STR "KD070E01"
 #define VER_STR "MCU:"APP_VER_STR"HW:"HW_VER_STR"PRJ:"PRJ_VER_STR"\n"
 
-#define TASK_MANAGER_STATE_MACHINE_MCU 0 // main control
-//#define TASK_MANAGER_STATE_MACHINE_SOC 1   //
+//#define TASK_MANAGER_STATE_MACHINE_MCU 0 // main control
+#define TASK_MANAGER_STATE_MACHINE_SOC 1   //
+//#define TASK_MANAGER_STATE_MACHINE_SIF 1   //
 
 #define SYSTEM_MPU_STATE_INIT           (0x00)  //APP初始化
 #define SYSTEM_MPU_STATE_ENTER_PLAY     (0x01)  //APP开始播放进场动画
@@ -77,7 +78,6 @@ void app_system_stop_running(void);
 void system_set_mpu_status(uint8_t status);
 bool system_get_power_off_req(void);
 uint8_t system_get_mpu_status(void);
-
 
 void system_handshake_with_app(void);
 void system_handshake_with_mcu(void);

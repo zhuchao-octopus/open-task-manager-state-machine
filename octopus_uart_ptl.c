@@ -26,7 +26,7 @@
  * DEBUG SWITCH MACROS
  */
 #define TEST_LOG_DEBUG_PTL_RX_FRAME  // Enable debugging for receiving frames
-#define TEST_LOG_DEBUG_PTL_TX_FRAME  // Enable debugging for transmitting frames
+//#define TEST_LOG_DEBUG_PTL_TX_FRAME  // Enable debugging for transmitting frames
 
 /*******************************************************************************
  * MACROS
@@ -139,10 +139,9 @@ void com_uart_running(void)
     }
     else
     {
-        #ifdef PLATFORM_ITE_OPEN_RTOS
         ptl_rx_event_message_handler(0);
         ptl_frame_analysis_handler();
-        #endif
+        
         ptl_tx_event_message_handler();
         ptl_error_detect();
     }
@@ -337,14 +336,14 @@ void ptl_tx_event_message_handler(void)
             bool res = p_module->send_handler(frame_type, (ptl_frame_cmd_t)param1, param2, &l_t_tx_proc_buf);
             if(res)
             {
-                // Send the processed data over UART
-							  #ifdef TEST_LOG_DEBUG_PTL_TX_FRAME
-									LOG_LEVEL("msg_id=%02x cmd=%02x data[]=", (uint8_t)msg->id, (uint8_t)msg->param1);
-									//DBG("[ ] msg_id:%02x cmd:%02x\r\n", (uint8_t)msg->id, (uint8_t)msg->param1);
-									LOG_BUFF(l_t_tx_proc_buf.buff,l_t_tx_proc_buf.size);
-									//LOG_("\r\n");
-								#endif
-                ptl_hal_tx(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+            // Send the processed data over UART
+            #ifdef TEST_LOG_DEBUG_PTL_TX_FRAME
+            LOG_LEVEL("msg_id=%02x cmd=%02x data[]=", (uint8_t)msg->id, (uint8_t)msg->param1);
+            //DBG("[ ] msg_id:%02x cmd:%02x\r\n", (uint8_t)msg->id, (uint8_t)msg->param1);
+            LOG_BUFF(l_t_tx_proc_buf.buff,l_t_tx_proc_buf.size);
+            //LOG_("\r\n");
+            #endif
+            ptl_hal_tx(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
             }
         }
     }
@@ -466,8 +465,13 @@ void ptl_find_valid_frame(ptl_proc_buff_t *proc_buff)
     // Iterate through the received buffer to find a valid frame
     for (uint16_t i = 0; i < proc_buff->size; i++)
     {
+        #ifdef TASK_MANAGER_STATE_MACHINE_MCU
         if (proc_buff->buff[i] == A2M_PTL_HEADER)
         {
+        #else
+        if (proc_buff->buff[i] == M2A_PTL_HEADER)
+        {
+        #endif
             offset = i;
             datalen = proc_buff->buff[i + 3];
             framelen = datalen + PTL_FRAME_HEADER_SIZE + 1;
@@ -537,7 +541,7 @@ void ptl_find_valid_frame(ptl_proc_buff_t *proc_buff)
  * Processes the valid frame after it has been extracted from the buffer.
  * The payload is passed to the appropriate module handler.
  */
-void ptl_proc_valid_frame(uint8_t *data, uint16_t len)
+void ptl_proc_valid_frame(uint8_t *data, uint16_t length)
 {
     ptl_frame_payload_t payload;
     module_info_t *module_ = NULL;
@@ -553,8 +557,8 @@ void ptl_proc_valid_frame(uint8_t *data, uint16_t len)
     module_ = ptl_get_module(payload.frame_type);
 
     #ifdef TEST_LOG_DEBUG_PTL_RX_FRAME
-    LOG_LEVEL("frame_type=%02x cmd=%02x,length=%d data[]=\r\n", payload.frame_type, payload.cmd, payload.data_len);
-    LOG_BUFF(payload.data, payload.data_len);
+    LOG_LEVEL("frame_type=%02x cmd=%02x,length=%d data[]=", payload.frame_type, payload.cmd, payload.data_len);
+    LOG_BUFF(data,length);
     #endif
     
     // If module handler exists, call the receive handler

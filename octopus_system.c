@@ -147,13 +147,14 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
     {
         switch(param1)
         {
-				case CMD_MODSYSTEM_HANDSHAKE:
+        case CMD_MODSYSTEM_HANDSHAKE:
             tmp[0] = 0x55;
             tmp[1] = 0xAA;
             LOG_LEVEL("system handshake param1=%02x param2=%02x\n",tmp[0],tmp[1]);
-            ptl_com_uart_build_frame(A2M_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, buff);
+            ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, buff);
             return true;
-				case CMD_MODSYSTEM_ACC_STATE:
+            
+		case CMD_MODSYSTEM_ACC_STATE:
             //ACK, no thing to do
             //tmp[0] = GetWakeupEvent(WAKEUP_EVENT_ACC);
             ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_ACC_STATE, tmp, 1, buff);

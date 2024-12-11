@@ -22,7 +22,7 @@
  * DEBUG SWITCH MACROS
  * Enable debug logging for specific events during UART operations.
  */
-#define TEST_LOG_DEBUG_UART_RX_DATA 
+//#define TEST_LOG_DEBUG_UART_RX_DATA 
 
 /*******************************************************************************
  * MACROS
@@ -43,9 +43,11 @@ com_uart_data_buff_t com_uart_data_buff;           // Buffer structure for recei
 static bool UartIsInit = false;  // Tracks whether UART is initialized.
 static sem_t UartSemIntr;        // Semaphore for UART interrupt handling.
 uint32_t com_uart_parity_error = 0;         // Placeholder for parity error tracking.
-static cFifo_t* usartRxFifo = NULL;
-static uint8_t uart2RxFifoBuf[cFifo_ObjSize(256 + 64)];
 #endif
+
+static cFifo_t* usart_rx_fifo = NULL;
+static uint8_t uart_rx_fifo_buff[cFifo_ObjSize(256 + 64)];
+
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLARATION
  * Declare static functions used only within this file.
@@ -54,9 +56,8 @@ static uint8_t uart2RxFifoBuf[cFifo_ObjSize(256 + 64)];
 static void hal_com_uart_receive_callback(uart_Evt_t* pev);
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
 static void hal_com_uart_receive_callback(void* arg1, uint32_t arg2);
-void* hal_com_uart_event_handler(void* arg);
-
 #endif
+
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
@@ -82,6 +83,7 @@ static void hal_uart_init(void) {
     };
     // Initialize UART1 with the specified configuration.
     HalUartInit(UART1, cfg);
+    cFifo_Init(&usart_rx_fifo, uart_rx_fifo_buff, sizeof(uart_rx_fifo_buff));
     //LOG_("\r\n"); 
 }
 
@@ -140,10 +142,10 @@ uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events) {
             #ifdef TEST_LOG_DEBUG_UART_RX_DATA
             LOG_("%02x ", com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
             #endif
-            ptl_com_uart_receive_handler(com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
+            ///ptl_com_uart_receive_handler(com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
+            cFifo_Push(usartRxFifo,         com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
             com_uart_data_buff.rd++;
         }
-        ptl_frame_analysis_handler();  // Handle protocol layer.
 
         #ifdef TEST_LOG_DEBUG_UART_RX_DATA
         LOG_("\r\n");
@@ -156,14 +158,11 @@ uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events) {
 }
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
-
 /**
  * @brief   Configures the USART peripheral for ITE OPEN RTOS platform.
  * @return  None.
  */
 void hal_uart_init(void) {
-    cFifo_Init(&usartRxFifo, uart2RxFifoBuf, sizeof(uart2RxFifoBuf));
-
     UART_OBJ* pUartInfo = (UART_OBJ*)malloc(sizeof(UART_OBJ));
     pUartInfo->port = PROTOCOL_UART_ITH_PORT;
     pUartInfo->parity = PROTOCOL_UART_PARITY;
@@ -179,6 +178,7 @@ void hal_uart_init(void) {
     ioctl(PROTOCOL_UART_PORT, ITP_IOCTL_INIT, (void*)pUartInfo);
     ioctl(PROTOCOL_UART_PORT, ITP_IOCTL_REG_UART_CB, (void*)hal_com_uart_receive_callback);
     sem_init(&UartSemIntr, 0, 0);
+    cFifo_Init(&usart_rx_fifo, uart_rx_fifo_buff, sizeof(uart_rx_fifo_buff));
     UartIsInit = true;
 }
 
@@ -218,17 +218,26 @@ void* hal_com_uart_event_handler(void* arg) {
         length = 0;
 
         if (UartIsInit)
-            length = read(PROTOCOL_UART_PORT, com_uart_data_buff.data, UART_BUFF_MAX_SIZE);
-
-          #ifdef TEST_LOG_DEBUG_UART_RX_DATA
-          LOG_BUFF(com_uart_data_buff.data,sizeof(com_uart_data_buff.data));
-          #endif
-        for (int i = 0; i < length; i++) {
-            cFifo_Push(usartRxFifo, com_uart_data_buff.data[i]);
+                length = read(PROTOCOL_UART_PORT, com_uart_data_buff.data, UART_BUFF_MAX_SIZE);
+        if(length > 0)
+        {
+              for (int i = 0; i < length; i++) {
+                #ifdef TEST_LOG_DEBUG_UART_RX_DATA
+                LOG_("%02x ",com_uart_data_buff.data[i]);
+                #endif
+                cFifo_Push(usart_rx_fifo, com_uart_data_buff.data[i]);
+              }
         }
     }
 }
 
+#else
+void hal_com_com_uart_init(uint8_t task_id)
+{
+	
+}
+
+#endif // PLATFORM_ITE_OPEN_RTOS
 /**
  * Reads data from the UART RX FIFO buffer into the provided buffer.
  * It will attempt to read up to `length` bytes from the FIFO.
@@ -244,7 +253,7 @@ uint8_t hal_com_uart_get_fifo_data(uint8_t* buffer, uint16_t length)
     uint8_t index = 0;  // Index to track how many bytes have been stored in the buffer
 
     // Get the current size of the FIFO (number of available bytes to read)
-    uint8_t datasize = cFifo_DataSize(usartRxFifo);
+    uint8_t datasize = cFifo_DataSize(usart_rx_fifo);
 
     // Loop to read data from FIFO until we either fill the buffer or run out of data
     while (1)
@@ -253,7 +262,7 @@ uint8_t hal_com_uart_get_fifo_data(uint8_t* buffer, uint16_t length)
         if (index < length)
         {
             // Try to pop a byte from the FIFO
-            if (true == cFifo_Pop(usartRxFifo, &data))
+            if (true == cFifo_Pop(usart_rx_fifo, &data))
             {
                 // Store the byte in the provided buffer
                 buffer[index] = data;
@@ -275,15 +284,6 @@ uint8_t hal_com_uart_get_fifo_data(uint8_t* buffer, uint16_t length)
     // Return the number of bytes actually read from the FIFO
     return index;
 }
-
-#else
-
-void hal_com_com_uart_init(uint8_t task_id)
-{
-	
-}
-
-#endif // PLATFORM_ITE_OPEN_RTOS
 
 /**
  * @brief   Sends a string over UART.

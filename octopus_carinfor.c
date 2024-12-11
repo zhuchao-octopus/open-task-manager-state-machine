@@ -87,10 +87,11 @@ void app_carinfo_init_running(void)
     lt_meter.voltageSystem = 0x02;
     lt_drivinfo.gear = (carinfo_drivinfo_gear_t)1;
     lt_meter.soc = 100;
+    
     ptl_com_uart_register_module(M2A_MOD_METER, meter_module_send_handler, meter_module_receive_handler);
     ptl_com_uart_register_module(M2A_MOD_INDICATOR, indicator_module_send_handler, indicator_module_receive_handler);
     ptl_com_uart_register_module(M2A_MOD_DRIV_INFO, drivinfo_module_send_handler, drivinfo_module_receive_handler);
-
+    
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_INVALID);
 }
 
@@ -103,16 +104,16 @@ void app_carinfo_start_running(void)
 void app_carinfo_assert_running(void)
 {
     l_u8_op_step = 0;
+
     com_uart_reqest_running(M2A_MOD_METER);
     com_uart_reqest_running(M2A_MOD_INDICATOR);
     com_uart_reqest_running(M2A_MOD_DRIV_INFO);
-    //#ifdef TASK_MANAGER_STATE_MACHINE_MCU
     //StartTimer(&l_t_msg_wait_10_timer);
     StartTimer(&l_t_msg_wait_50_timer);
     StartTimer(&l_t_msg_wait_100_timer);
     StartTimer(&l_t_soc_timer);
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_RUNNING);
-    //#endif
+
 }
 
 void app_carinfo_running(void)
@@ -125,8 +126,10 @@ void app_carinfo_running(void)
         return;
     RestartTimer(&l_t_msg_wait_50_timer);
 
+    #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     app_car_controller_sif_updating();
     app_car_controller_msg_proc();
+    #endif
 }
 
 void app_carinfo_post_running(void)
@@ -139,7 +142,7 @@ void app_carinfo_post_running(void)
     ///{
     ///OTMS(CAR_INFOR_ID, OTMS_S_ASSERT_RUN);
     ///}
-    //goto app_carinfo_running;
+    ///goto app_carinfo_running;
 }
 
 
@@ -150,10 +153,10 @@ void app_carinfo_stop_running(void)
 
 void app_carinfo_on_enter_run(void)
 {
-    //if (KCS(AppSetting) > OTMS_S_POST_RUN)
-    //{
-    //    OTMS(CAR_INFOR_ID, OTMS_S_START);
-    //}
+    ///if (KCS(AppSetting) > OTMS_S_POST_RUN)
+    ///{
+    ///    OTMS(CAR_INFOR_ID, OTMS_S_START);
+    ///}
 }
 
 void app_carinfo_on_exit_post_run(void)
