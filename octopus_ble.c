@@ -59,11 +59,13 @@ static uint32_t           l_t_msg_wait_50_timer=0;
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
 void app_ble_init_running(void)
-{
-    LOG_LEVEL("app_ble_init\r\n");
-    //com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
-	  hal_disable_bLe_pair_mode();
-    OTMS(TASK_ID_BLE, OTMS_S_INVALID);
+{ 
+  OTMS(TASK_ID_BLE, OTMS_S_INVALID);
+ 	#ifdef TASK_MANAGER_STATE_MACHINE_BLE
+	LOG_LEVEL("app_ble_init\r\n");
+	//com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
+	hal_disable_bLe_pair_mode();
+	#endif
 }
 
 void app_ble_start_running(void)
@@ -74,9 +76,11 @@ void app_ble_start_running(void)
 
 void app_ble_assert_running(void)
 {
+	  #ifdef TASK_MANAGER_STATE_MACHINE_BLE
     StartTickCounter(&l_t_msg_wait_10_timer);
     StartTickCounter(&l_t_msg_wait_50_timer);
     OTMS(TASK_ID_BLE, OTMS_S_RUNNING);
+	  #endif
 }
 
 void app_ble_running(void)

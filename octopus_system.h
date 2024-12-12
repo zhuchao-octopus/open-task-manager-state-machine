@@ -56,10 +56,10 @@ extern "C"{
 /**
  * @brief Task Manager state machine modes.
  */
-#define TASK_MANAGER_STATE_MACHINE_MCU 0 /**< Main control mode. */
+#define TASK_MANAGER_STATE_MACHINE_MCU 1 /**< Main control mode. */
 //#define TASK_MANAGER_STATE_MACHINE_SOC 1 /**< (Reserved) SOC mode. */
 #define TASK_MANAGER_STATE_MACHINE_SIF 1 /**< Secondary interface mode. */
-
+#define TASK_MANAGER_STATE_MACHINE_BLE 1 
 /**
  * @brief System MPU (Microprocessor Unit) state definitions.
  */

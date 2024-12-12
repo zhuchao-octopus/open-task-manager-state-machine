@@ -76,9 +76,9 @@ void ptl_tx_event_message_handler(void);      // Handle the transmission event m
 void ptl_rx_event_message_handler(void);
 
 bool ptl_is_sleep_enable(void);               // Check if sleep mode is enabled
-module_info_t* ptl_get_module(ptl_frame_type_t frame_type); // Get module information by frame type
-
 void ptl_hal_tx(uint8_t *data, uint16_t length);
+
+module_info_t* ptl_get_module(ptl_frame_type_t frame_type); // Get module information by frame type
 /*******************************************************************************
  * STATIC VARIABLES
  */
