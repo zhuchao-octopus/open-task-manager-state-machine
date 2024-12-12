@@ -100,6 +100,7 @@ typedef enum MB_STATE {
     MB_ST_PARTIAL,      /**< Partial operation state. */
     MB_ST_SHUTDOWN,     /**< Shutdown process. */
     MB_ST_OFF           /**< Power-off state. */
+    MB_ST_STOP,
 } mb_state_t;
 
 /*******************************************************************************

@@ -64,6 +64,7 @@ typedef enum{
 	TASK_ID_CAR_INFOR,
 	TASK_ID_BLE,
 	TASK_ID_KEY,
+	TASK_ID_UPDATE,
   TASK_ID_MAX_NUM
 }TaskModule_t;
 

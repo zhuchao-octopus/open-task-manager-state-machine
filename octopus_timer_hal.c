@@ -19,7 +19,10 @@
 //static uint8 timer_TaskID; 
 //static uint8_t s_testCase = 0;
 //static void TimerTest(uint8_t testCase);
+#ifdef PLATFORM_CST_OSAL_RTOS
 void hal_timer_interrupt_callback(uint8_t event);
+#endif
+
 
 #ifdef PLATFORM_CST_OSAL_RTOS
 void hal_timer_init(uint8 timer_id)
@@ -60,22 +63,21 @@ void hal_timer_interrupt_callback(uint8_t event)
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
 void hal_timer_init(uint8_t timer_id)
 {
-	
+ 	
 }
 
 void hal_timer_interrupt_callback(uint8_t event)
 {
 	
 }
+
 #else
 void hal_timer_init(uint8_t timer_id)
-{
-	
+{	
 }
 
 void hal_timer_interrupt_callback(uint8_t event)
-{
-	
+{	
 }
 #endif
 

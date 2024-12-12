@@ -9,8 +9,10 @@
  * including initialization, push, pop, and utility macros for capacity and data size 
  * calculations. It is designed to support efficient data management in embedded systems.
  *
- * @author  
- * @date    
+ * @version  1.0.0
+ * @date     2024-12-09
+ * @author   Octopus Team
+
  ******************************************************************************/
 
 #ifndef __OCTOPUS_TASK_MANAGER_CFIFO_H__

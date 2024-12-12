@@ -1,14 +1,22 @@
 /**
  * ****************************************************************************
- * @copyright Copyright (c) XXX
- * All rights reserved.
- *
- * C file for the Octopus Task Manager module.
- * Defines macros, includes required libraries, and declares functions.
- */
+ * @file octopus_task_manager.c
+ * @brief C file for the Octopus Task Manager module.
+ * 
+ * This file defines the macros, includes required libraries, and declares
+ * functions used by the Octopus Task Manager. It includes the initialization, 
+ * start, stop, and running behaviors of Bluetooth Low Energy (BLE) tasks. 
+ * Additionally, it handles the bonding and connection status management 
+ * for BLE devices, such as pairing and locking the system based on BLE status.
+ * 
+ * @copyright Copyright (c) XXX. All rights reserved.
+ * @author  Octopus Team
+ * @version 1.0.0
+ * @date    2024-12-09
 
 /*******************************************************************************
  * INCLUDES
+ * Include the necessary header files for the Octopus platform and BLE functionality.
  */
  
 #include "octopus_platform.h"
@@ -20,6 +28,7 @@
 #include "octopus_msgqueue.h"
 #include "octopus_task_manager.h"
 #include "octopus_flash.h"
+
 /*******************************************************************************
  * DEBUG SWITCH MACROS
 */
