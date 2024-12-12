@@ -31,7 +31,7 @@
  * INCLUDES
  */
 #include "octopus_platform.h"  
-#include "octopus_timer.h"
+#include "octopus_tickcounter.h"
 #include "octopus_carinfor.h"
 #include "octopus_msgqueue.h"
 #include "octopus_sif.h"
@@ -122,9 +122,9 @@ void app_carinfo_init_running(void)
     lt_drivinfo.gear = (carinfo_drivinfo_gear_t)1;
     lt_meter.soc = 100;
     
-    ptl_com_uart_register_module(M2A_MOD_METER, meter_module_send_handler, meter_module_receive_handler);
-    ptl_com_uart_register_module(M2A_MOD_INDICATOR, indicator_module_send_handler, indicator_module_receive_handler);
-    ptl_com_uart_register_module(M2A_MOD_DRIV_INFO, drivinfo_module_send_handler, drivinfo_module_receive_handler);
+    ptl_register_module(M2A_MOD_METER, meter_module_send_handler, meter_module_receive_handler);
+    ptl_register_module(M2A_MOD_INDICATOR, indicator_module_send_handler, indicator_module_receive_handler);
+    ptl_register_module(M2A_MOD_DRIV_INFO, drivinfo_module_send_handler, drivinfo_module_receive_handler);
     
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_INVALID);
 }
@@ -139,13 +139,13 @@ void app_carinfo_assert_running(void)
 {
     l_u8_op_step = 0;
 
-    com_uart_reqest_running(M2A_MOD_METER);
-    com_uart_reqest_running(M2A_MOD_INDICATOR);
-    com_uart_reqest_running(M2A_MOD_DRIV_INFO);
-    StartTimer(&l_t_msg_wait_meter_timer);
-    StartTimer(&l_t_msg_wait_50_timer);
-    StartTimer(&l_t_msg_wait_100_timer);
-    StartTimer(&l_t_soc_timer);
+		ptl_reqest_running(M2A_MOD_METER);
+    ptl_reqest_running(M2A_MOD_INDICATOR);
+    ptl_reqest_running(M2A_MOD_DRIV_INFO);
+    StartTickCounter(&l_t_msg_wait_meter_timer);
+    StartTickCounter(&l_t_msg_wait_50_timer);
+    StartTickCounter(&l_t_msg_wait_100_timer);
+    StartTickCounter(&l_t_soc_timer);
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_RUNNING);
 
 }
@@ -156,9 +156,9 @@ void app_carinfo_running(void)
     ///{
     ///OTMS(CAR_INFOR_ID, OTMS_S_POST_RUN);
     ///}
-    if (GetTimer(&l_t_msg_wait_50_timer) < 50)
+    if (GetTickCounter(&l_t_msg_wait_50_timer) < 50)
         return;
-    RestartTimer(&l_t_msg_wait_50_timer);
+    StartTickCounter(&l_t_msg_wait_50_timer);
 
     #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     app_car_controller_sif_updating();
@@ -168,9 +168,9 @@ void app_carinfo_running(void)
 
 void app_carinfo_post_running(void)
 {
-    com_uart_release_running(M2A_MOD_METER);
-    com_uart_release_running(M2A_MOD_INDICATOR);
-    com_uart_release_running(M2A_MOD_DRIV_INFO);
+    ptl_release_running(M2A_MOD_METER);
+    ptl_release_running(M2A_MOD_INDICATOR);
+    ptl_release_running(M2A_MOD_DRIV_INFO);
 
     ///if(MB_ST_OFF != app_power_state_get_mb_state())
     ///{
@@ -234,7 +234,7 @@ bool meter_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uin
             tmp[1] = LSB_WORD(lt_meter.speed_real);
             tmp[2] = MSB_WORD(lt_meter.rpm);
             tmp[3] = LSB_WORD(lt_meter.rpm);
-            ptl_com_uart_build_frame(M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, tmp, 4, buff);
+            ptl_build_frame(M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, tmp, 4, buff);
             return true;
         case CMD_MODMETER_SOC:
             //ACK, no thing to do
@@ -246,7 +246,7 @@ bool meter_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uin
             tmp[5] = lt_meter.voltageSystem;
             tmp[6] = 0;
             //PRINT("SOC %d  V %d C %d adc %d\r\n",lt_meter.soc,lt_meter.voltage,lt_meter.current,SensorAdc_Get_BatVal());
-            ptl_com_uart_build_frame(M2A_MOD_METER, CMD_MODMETER_SOC, tmp, 7, buff);
+            ptl_build_frame(M2A_MOD_METER, CMD_MODMETER_SOC, tmp, 7, buff);
             return true;
         default:
             break;
@@ -297,7 +297,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             lt_meter.speed = lt_meter.speed_real * 11 / 10;
             //ACK
             tmp = 0x01;
-            ptl_com_uart_build_frame(A2M_MOD_METER, CMD_MODMETER_RPM_SPEED, &tmp, 1, ackbuff);
+            ptl_build_frame(A2M_MOD_METER, CMD_MODMETER_RPM_SPEED, &tmp, 1, ackbuff);
             return true;
         case CMD_MODMETER_SOC:
             //LOGIC
@@ -307,7 +307,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             lt_meter.voltageSystem = payload->data[5];
             //ACK
             tmp = 0x01;
-            ptl_com_uart_build_frame(A2M_MOD_METER, CMD_MODMETER_SOC, &tmp, 1, ackbuff);
+            ptl_build_frame(A2M_MOD_METER, CMD_MODMETER_SOC, &tmp, 1, ackbuff);
             return true;
         default:
             break;
@@ -338,12 +338,12 @@ bool indicator_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1,
             lt_indicator.ecuFault    ? SetBit(tmp[1], 2) : ClrBit(tmp[1], 2);   //ECU¹ÊÕÏµÆ
             lt_indicator.sensorFault ? SetBit(tmp[1], 3) : ClrBit(tmp[1], 3);   //´«¸ÐÆ÷¹ÊÕÏµÆ
             lt_indicator.motorFault  ? SetBit(tmp[1], 4) : ClrBit(tmp[1], 4);   //µç»ú¹ÊÕÏµÆ
-            ptl_com_uart_build_frame(M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, tmp, 5, buff);
+            ptl_build_frame(M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, tmp, 5, buff);
             //PRINT("CMD_MODINDICATOR_INDICATOR\r\n");
             return true;
         case CMD_MODINDICATOR_ERROR_INFO:
             //TODO
-            ptl_com_uart_build_frame(M2A_MOD_INDICATOR, CMD_MODINDICATOR_ERROR_INFO, tmp, 5, buff);
+            ptl_build_frame(M2A_MOD_INDICATOR, CMD_MODINDICATOR_ERROR_INFO, tmp, 5, buff);
             return true;
         default:
             break;
@@ -403,11 +403,11 @@ bool indicator_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buf
             lt_indicator.sensorFault = GetBit(payload->data[1], 3);   //´«¸ÐÆ÷¹ÊÕÏµÆ
             lt_indicator.motorFault  = GetBit(payload->data[1], 4);   //µç»ú¹ÊÕÏµÆ
             tmp = 0x01;
-            ptl_com_uart_build_frame(A2M_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, &tmp, 1, ackbuff);
+            ptl_build_frame(A2M_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, &tmp, 1, ackbuff);
             return true;
         case CMD_MODINDICATOR_ERROR_INFO:
             tmp = 0x01;
-            ptl_com_uart_build_frame(A2M_MOD_INDICATOR, CMD_MODINDICATOR_ERROR_INFO, &tmp, 1, ackbuff);
+            ptl_build_frame(A2M_MOD_INDICATOR, CMD_MODINDICATOR_ERROR_INFO, &tmp, 1, ackbuff);
             return true;
         default:
             break;
@@ -427,7 +427,7 @@ bool drivinfo_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, 
         case CMD_MODDRIVINFO_GEAR:
             tmp[0] = lt_drivinfo.gear;
             tmp[1] = lt_drivinfo.driveMode;
-            ptl_com_uart_build_frame(M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, tmp, 2, buff);
+            ptl_build_frame(M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, tmp, 2, buff);
             return true;
         default:
             break;
@@ -472,7 +472,7 @@ bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff
             lt_drivinfo.driveMode = (carinfo_drivinfo_drivemode_t)payload->data[1];
             //ACK
             tmp = 0x01;
-            ptl_com_uart_build_frame(A2M_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, &tmp, 1, ackbuff);
+            ptl_build_frame(A2M_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, &tmp, 1, ackbuff);
             return true;
         default:
             break;
@@ -582,7 +582,7 @@ void app_car_controller_msg_handler( void )
 			send_message(TASK_ID_PTL, M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
 			l_t_gear_changed = false;
 		}
-    if(GetTimer(&l_t_msg_wait_100_timer) >= 1500)
+    if(GetTickCounter(&l_t_msg_wait_100_timer) >= 1500)
     {
         switch(l_u8_op_step)
         {
@@ -605,7 +605,7 @@ void app_car_controller_msg_handler( void )
 
         l_u8_op_step++;
         if(l_u8_op_step >=4) l_u8_op_step = 0;
-        RestartTimer(&l_t_msg_wait_100_timer);
+        StartTickCounter(&l_t_msg_wait_100_timer);
     }
 }
 
@@ -623,11 +623,11 @@ void log_sif_data(uint8_t* data, uint8_t maxlen)
 #ifdef BATTERY_MANAGER
 void get_battery_voltage( void )
 {
-    if(GetTimer(&l_t_soc_timer) < 1000)
+    if(GetTickCounter(&l_t_soc_timer) < 1000)
     {
         return;
     }
-    StartTimer(&l_t_soc_timer);
+    StartTickCounter(&l_t_soc_timer);
     uint8_t cellcount = 4;//Ä¬ÈÏ4¿Åµç³Ø
     uint16_t vol = 0;//(uint32_t)SensorAdc_Get_BatVal() * 274 / 1000;
 

@@ -253,8 +253,8 @@ uint8_t hal_com_uart_get_fifo_data(uint8_t* buffer, uint16_t length)
     uint8_t index = 0;  // Index to track how many bytes have been stored in the buffer
 
     // Get the current size of the FIFO (number of available bytes to read)
-    uint8_t datasize = cFifo_DataSize(usart_rx_fifo);
-
+    ///uint8_t datasize = cFifo_DataSize(usart_rx_fifo);
+    ///if(datasize <= 0) return index;
     // Loop to read data from FIFO until we either fill the buffer or run out of data
     while (1)
     {

@@ -102,12 +102,12 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] =
   [TASK_ID_PTL] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
-            [OTMS_S_INIT] = com_uart_init_running,
-            [OTMS_S_START] = com_uart_start_running,
-            [OTMS_S_ASSERT_RUN] = com_uart_assert_running,
-            [OTMS_S_RUNNING] = com_uart_running,
-            [OTMS_S_POST_RUN] = com_uart_post_running,
-            [OTMS_S_STOP] = com_uart_stop_running,
+            [OTMS_S_INIT] = ptl_init_running,
+            [OTMS_S_START] = ptl_start_running,
+            [OTMS_S_ASSERT_RUN] = ptl_assert_running,
+            [OTMS_S_RUNNING] = ptl_running,
+            [OTMS_S_POST_RUN] = ptl_post_running,
+            [OTMS_S_STOP] = ptl_stop_running,
         },
     },
 	

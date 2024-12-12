@@ -35,7 +35,7 @@
 #include "octopus_uart_ptl.h"       // UART protocol handling
 #include "octopus_carinfor.h" 
 #include "octopus_sif.h"            // SIF protocol interface
-#include "octopus_timer.h"          // Timer management
+#include "octopus_tickcounter.h"    // Timer management
 #include "octopus_msgqueue.h"       // Message queue management
 #include "octopus_task_manager.h"   // Task manager
 #include "octopus_log.h"            // Octopus-specific logging

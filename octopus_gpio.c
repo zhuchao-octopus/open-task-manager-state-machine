@@ -4,7 +4,7 @@
  */
 
 #include "octopus_gpio.h"
-#include "octopus_timer.h"
+#include "octopus_tickcounter.h"
 #include "octopus_msgqueue.h"
 #include "octopus_task_manager.h"
 #include "octopus_flash.h"
@@ -58,13 +58,13 @@ void app_gpio_start_running(void)
 
 void app_gpio_assert_running(void)
 {
-    StartTimer(&l_t_msg_wait_50_timer);
+    StartTickCounter(&l_t_msg_wait_50_timer);
     OTMS(TASK_ID_GPIO, OTMS_S_RUNNING);
 }
 
 void app_gpio_running(void)
 {
-   if(GetTimer(&l_t_msg_wait_50_timer) >= 20)
+   if(GetTickCounter(&l_t_msg_wait_50_timer) >= 20)
 	 {
 			PollingGPIOStatus(GPIO_ACC_PIN,&acc_status);
 			PollingGPIOStatus(GPIO_DDD_PIN,&ddd_status);
@@ -111,7 +111,7 @@ void app_gpio_running(void)
 				skd_status.changed=false;
 			}
 			
-		RestartTimer(&l_t_msg_wait_50_timer); 
+		StartTickCounter(&l_t_msg_wait_50_timer); 
 	 }
 }
 

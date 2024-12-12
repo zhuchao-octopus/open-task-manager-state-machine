@@ -141,7 +141,7 @@ uint16 TaskManagerStateMachineEventLoop(uint8 task_id, uint16 events)
     if (events & DEVICE_TIMER_EVENT)  // If the timer event is triggered
     {
         /////////////////////////////////////////////////////////////////////////////////////////////////////
-        task_manager_run();  // Run the task manager to handle pending tasks
+        task_manager_run();  // Run the task manager to handle pending tasks per MAIN_TASK_TIMER_INTERVAL ms
         return (events ^ DEVICE_TIMER_EVENT);  // Remove the timer event from the active events
     }
     else if (events & DEVICE_BLE_PAIR)  // If BLE pairing event is triggered

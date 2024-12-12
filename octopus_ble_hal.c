@@ -13,7 +13,7 @@
 #include "octopus_platform.h"
 #include "octopus_log.h"
 #include "octopus_ble_hal.h"
-#include "octopus_timer.h"
+#include "octopus_tickcounter.h"
 #include "octopus_msgqueue.h"
 #include "octopus_task_manager.h"
 #include "octopus_flash.h"

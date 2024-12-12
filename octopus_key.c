@@ -6,7 +6,7 @@
 #include "octopus_log.h" 
 #include "octopus_flash.h"
 #include "octopus_key.h"
-#include "octopus_timer.h"
+#include "octopus_tickcounter.h"
 #include "octopus_msgqueue.h"
 #include "octopus_task_manager.h"
 
@@ -34,7 +34,7 @@ static bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t
 void app_key_init_running(void)
 {
     LOG_LEVEL("app_key_init\r\n");
-    ptl_com_uart_register_module(M2A_MOD_SETUP, module_send_handler, module_receive_handler);
+    ptl_register_module(M2A_MOD_SETUP, module_send_handler, module_receive_handler);
     OTMS(TASK_ID_KEY, OTMS_S_INVALID);
 }
 
@@ -46,16 +46,16 @@ void app_key_start_running(void)
 
 void app_key_assert_running(void)
 {
-	  com_uart_reqest_running(M2A_MOD_SETUP);
-    StartTimer(&l_t_msg_wait_timer);
+	  ptl_reqest_running(M2A_MOD_SETUP);
+    StartTickCounter(&l_t_msg_wait_timer);
     OTMS(TASK_ID_KEY, OTMS_S_RUNNING);
 }
 
 void app_key_running(void)
 {
-		if(GetTimer(&l_t_msg_wait_timer) < 20)
+		if(GetTickCounter(&l_t_msg_wait_timer) < 20)
         return;
-		RestartTimer(&l_t_msg_wait_timer);
+		StartTickCounter(&l_t_msg_wait_timer);
 		uint16_t param = 0;
     Msg_t* msg = get_message(TASK_ID_KEY);		
 		if(msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_KEY_EVENT)
@@ -126,7 +126,7 @@ bool module_send_handler(ptl_frame_type_t frame_type,  uint16_t param1, uint16_t
             tmp[1] = LSB_WORD(param2); //KEYSTATE
             tmp[2] = 0;  					//
             LOG_LEVEL("CMD_MODSETUP_KEY key %02x state %02x\n",tmp[0],tmp[1]);
-            ptl_com_uart_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_KEY, tmp, 3, buff);
+            ptl_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_KEY, tmp, 3, buff);
             return true;
         default:
             break;
@@ -150,7 +150,7 @@ bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             return false;
         case CMD_MODSETUP_SET_TIME: 
             tmp = 0x01;
-            ptl_com_uart_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_SET_TIME, &tmp, 1, ackbuff);
+            ptl_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_SET_TIME, &tmp, 1, ackbuff);
             return true;
         case CMD_MODSETUP_KEY: 
             //ACK, no thing to do

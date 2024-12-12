@@ -8,7 +8,7 @@
  * INCLUDES
  */
 
-#include "octopus_timer.h"
+#include "octopus_tickcounter.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -17,7 +17,7 @@
 /*******************************************************************************
  * MACROS
  */
-#define TICK_MAX                ((TimerType)-1)
+#define TICK_COUNTER_MAX                ((uint32_t)-1)
 
 
 /*******************************************************************************
@@ -46,8 +46,7 @@
 /*******************************************************************************
  * STATIC VARIABLES
  */
-static TimerType     OsTickCounter = 0;
-//static TimerType 		 SystemClock_ms = 0;
+static uint32_t     OsTickCounter = 0;
 
 
 /*******************************************************************************
@@ -59,7 +58,7 @@ static TimerType     OsTickCounter = 0;
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
 
-void StartTimer(TimerType* timer)
+void StartTickCounter(uint32_t* timer)
 {
 	assert(timer!=NULL);
 
@@ -75,20 +74,20 @@ void StartTimer(TimerType* timer)
 	}
 }
 
-void StopTimer(TimerType* timer)
+void StopTickCounter(uint32_t* timer)
 {
 	assert(timer!=NULL);
 	*timer = 0;
 }
 
-void RestartTimer(TimerType* timer)
+void RestartTickCounter(uint32_t* timer)
 {
-	StartTimer(timer);
+	StartTickCounter(timer);
 }
 
-TimerType GetTimer(const TimerType* timer)
+uint32_t GetTickCounter(const uint32_t* timer)
 {
-	TimerType diff;
+	uint32_t diff;
 	assert(timer!=NULL);
 
 	 OsTickCounter = GetSystemTickClock();
@@ -105,13 +104,13 @@ TimerType GetTimer(const TimerType* timer)
 		}
 		else
 		{
-			diff = (TICK_MAX - *timer) + OsTickCounter;
+			diff = (TICK_COUNTER_MAX - *timer) + OsTickCounter;
 		}
 	}
 	return diff;
 }
 
-bool IsTimerStart(const TimerType *timer)
+bool IsTickCounterStart(const uint32_t *timer)
 {
     return *timer != 0;
 }
@@ -130,7 +129,6 @@ void ResetSystemTickClock(void)
 {
    OsTickCounter = 0;//TMOS_GetSystemClock() * 625 / 1000;
 }
-
 
 #if 1
 void Date2tm(struct tm* pTM, const char* pData)

@@ -21,7 +21,7 @@
 #include "octopus_log.h"
 #include "octopus_gpio.h"
 #include "octopus_system.h"
-#include "octopus_timer.h"
+#include "octopus_tickcounter.h"
 #include "octopus_msgqueue.h"
 #include "octopus_task_manager.h"
 
@@ -67,7 +67,7 @@ void app_system_init_running(void)
     LOG_LEVEL("app_system_init\r\n");
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    ptl_com_uart_register_module(M2A_MOD_SYSTEM, system_send_handler, system_receive_handler);
+    ptl_register_module(M2A_MOD_SYSTEM, system_send_handler, system_receive_handler);
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
     ptl_com_uart_register_module(A2M_MOD_SYSTEM, system_send_handler, system_receive_handler);
 #endif
@@ -94,10 +94,10 @@ void app_system_start_running(void)
  */
 void app_system_assert_running(void)
 {
-    StartTimer(&l_t_msg_wait_10_timer);
+    StartTickCounter(&l_t_msg_wait_10_timer);
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    com_uart_reqest_running(M2A_MOD_SYSTEM);
+    ptl_reqest_running(M2A_MOD_SYSTEM);
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
     com_uart_reqest_running(A2M_MOD_SYSTEM);
 #endif
@@ -112,9 +112,9 @@ void app_system_assert_running(void)
  */
 void app_system_running(void)
 {
-    if (GetTimer(&l_t_msg_wait_10_timer) < 10)
+    if (GetTickCounter(&l_t_msg_wait_10_timer) < 10)
         return;
-    RestartTimer(&l_t_msg_wait_10_timer);
+    StartTickCounter(&l_t_msg_wait_10_timer);
 
     Msg_t* msg = get_message(TASK_ID_SYSTEM);
     if (msg->id == NO_MSG) return;
@@ -193,19 +193,19 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             tmp[0] = 0x55;
             tmp[1] = 0xAA;
             LOG_LEVEL("system handshake param1=%02x param2=%02x\n",tmp[0],tmp[1]);
-            ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, buff);
+            ptl_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, buff);
             return true;
             
         case CMD_MODSYSTEM_ACC_STATE:
             // Acknowledgement, no additional action needed
-            ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_ACC_STATE, tmp, 1, buff);
+            ptl_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_ACC_STATE, tmp, 1, buff);
             return true;
 
         case CMD_MODSYSTEM_POWER_OFF:
             // Acknowledgement, no additional action needed
             tmp[0] = 0;
             tmp[1] = 0;
-            ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_POWER_OFF, tmp, 2, buff);
+            ptl_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_POWER_OFF, tmp, 2, buff);
             return true;
         
         case CMD_MODSETUP_UPDATE_TIME:
@@ -216,7 +216,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             tmp[3] = 8;  // hour
             tmp[4] = 55; // minute
             tmp[5] = 0;  // second
-            ptl_com_uart_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_UPDATE_TIME, tmp, 6, buff);
+            ptl_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_UPDATE_TIME, tmp, 6, buff);
             return true;
 
         case CMD_MODSETUP_KEY: 
@@ -224,7 +224,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             tmp[1] = LSB_WORD(param2); // Key state (least significant byte)
             tmp[2] = 0;  // Reserved byte
             LOG_LEVEL("CMD_MODSETUP_KEY  key %02x state %02x\n",tmp[0],tmp[1]);
-            ptl_com_uart_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_KEY, tmp, 3, buff);
+            ptl_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_KEY, tmp, 3, buff);
             return true;
                 
         default:
@@ -240,13 +240,13 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             tmp[0] = 0xAA;
             tmp[1] = 0x55;
             LOG_LEVEL("system handshake param1=%02x param2=%02x\n",tmp[0],tmp[1]);
-            ptl_com_uart_build_frame(A2M_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, buff);
+            ptl_build_frame(A2M_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, buff);
             return true;
 
         case CMD_MODSYSTEM_APP_STATE:
             tmp[0] = l_u8_mpu_status;  // Send MPU status
             tmp[1] = 0x01;  // Additional status byte
-            ptl_com_uart_build_frame(A2M_MOD_SYSTEM, CMD_MODSYSTEM_APP_STATE, tmp, 2, buff);
+            ptl_build_frame(A2M_MOD_SYSTEM, CMD_MODSYSTEM_APP_STATE, tmp, 2, buff);
             return true;
 
         default:
@@ -294,18 +294,18 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         {
         case CMD_MODSYSTEM_HANDSHAKE:
             LOG_LEVEL("system got handshake from mcu Ok\r\n");
-            ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t*)VER_STR, sizeof(VER_STR), ackbuff);
+            ptl_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t*)VER_STR, sizeof(VER_STR), ackbuff);
             return true;
 
         case CMD_MODSYSTEM_ACC_STATE:
             LOG_LEVEL("CMD_MODSYSTEM_ACC_STATE\r\n");
-            ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t*)VER_STR, sizeof(VER_STR), ackbuff);
+            ptl_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t*)VER_STR, sizeof(VER_STR), ackbuff);
             return false;
 
         case CMD_MODSYSTEM_APP_STATE:
             LOG_LEVEL("CMD_MODSYSTEM_APP_STATE l_u8_mpu_status = %d\r\n",payload->data[0]);
             tmp = 0x01;
-            ptl_com_uart_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_APP_STATE, &tmp, 1, ackbuff);
+            ptl_build_frame(M2A_MOD_SYSTEM, CMD_MODSYSTEM_APP_STATE, &tmp, 1, ackbuff);
             return true;
 
         case CMD_MODSYSTEM_POWER_OFF:
@@ -313,17 +313,17 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 
         case CMD_MODSETUP_UPDATE_TIME: 
             tmp = 0x01;
-            ptl_com_uart_build_frame(A2M_MOD_SETUP, CMD_MODSETUP_UPDATE_TIME, &tmp, 1, ackbuff);
+            ptl_build_frame(A2M_MOD_SETUP, CMD_MODSETUP_UPDATE_TIME, &tmp, 1, ackbuff);
             return false;
 
         case CMD_MODSETUP_SET_TIME: 
             tmp = 0x01;
-            ptl_com_uart_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_SET_TIME, &tmp, 1, ackbuff);
+            ptl_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_SET_TIME, &tmp, 1, ackbuff);
             return true;
 
         case CMD_MODSETUP_KEY: 
             tmp = 0x01;
-            ptl_com_uart_build_frame(A2M_MOD_SETUP, CMD_MODSETUP_KEY, &tmp, 1, ackbuff);
+            ptl_build_frame(A2M_MOD_SETUP, CMD_MODSETUP_KEY, &tmp, 1, ackbuff);
             return false;
 
         default:

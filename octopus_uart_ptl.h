@@ -4,8 +4,8 @@
  *
  *
  */
-#ifndef __OCTOPUS_TASK_MANAGER_COM_UART_PTL_H__
-#define __OCTOPUS_TASK_MANAGER_COM_UART_PTL_H__
+#ifndef __OCTOPUS_TASK_MANAGER_PTL_H__
+#define __OCTOPUS_TASK_MANAGER_PTL_H__
 
 /*******************************************************************************
  * INCLUDES
@@ -144,25 +144,25 @@ typedef bool (*module_receive_handler_t)	(ptl_frame_payload_t *payload, ptl_proc
  * GLOBAL FUNCTIONS DECLEAR
  */
 
-void com_uart_init_running(void);
-void com_uart_start_running(void);
-void com_uart_assert_running(void);
-void com_uart_running(void);
-void com_uart_post_running(void);
-void com_uart_stop_running(void);
+void ptl_init_running(void);
+void ptl_start_running(void);
+void ptl_assert_running(void);
+void ptl_running(void);
+void ptl_post_running(void);
+void ptl_stop_running(void);
 
-bool com_uart_reqest_running(uint8_t source);
-bool com_uart_release_running(uint8_t source);
+bool ptl_reqest_running(uint8_t source);
+bool ptl_release_running(uint8_t source);
 
-void com_uart_set_opposite_running(bool running);
-bool com_uart_is_com_error(void);
+void ptl_set_opposite_running(bool running);
+bool ptl_is_com_error(void);
 
-void ptl_com_uart_register_module(ptl_frame_type_t frame_type, module_send_handler_t send_handler, module_receive_handler_t receive_handler);
-void ptl_com_uart_build_frame(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint8_t *data, uint8_t datelen, ptl_proc_buff_t *framebuff);
-void ptl_com_uart_build_frame_header(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint8_t datalen, ptl_proc_buff_t *buff);
-void ptl_com_uart_receive_handler(uint8_t data);
+void ptl_register_module(ptl_frame_type_t frame_type, module_send_handler_t send_handler, module_receive_handler_t receive_handler);
+void ptl_build_frame(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint8_t *data, uint8_t datelen, ptl_proc_buff_t *framebuff);
+void ptl_build_frame_header(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint8_t datalen, ptl_proc_buff_t *buff);
+void ptl_receive_handler(uint8_t data);
 void ptl_frame_analysis_handler(void);
-uint8_t ptl_com_uart_get_checksum(uint8_t *data, uint8_t len);
+uint8_t ptl_get_checksum(uint8_t *data, uint8_t len);
 
 
 #ifdef __cplusplus

@@ -16,7 +16,7 @@
 #include "octopus_ble_hal.h"
  
 #include "octopus_ble.h"
-#include "octopus_timer.h"
+#include "octopus_tickcounter.h"
 #include "octopus_msgqueue.h"
 #include "octopus_task_manager.h"
 #include "octopus_flash.h"
@@ -74,22 +74,22 @@ void app_ble_start_running(void)
 
 void app_ble_assert_running(void)
 {
-    StartTimer(&l_t_msg_wait_10_timer);
-    StartTimer(&l_t_msg_wait_50_timer);
+    StartTickCounter(&l_t_msg_wait_10_timer);
+    StartTickCounter(&l_t_msg_wait_50_timer);
     OTMS(TASK_ID_BLE, OTMS_S_RUNNING);
 }
 
 void app_ble_running(void)
 {
-   if (GetTimer(&l_t_msg_wait_10_timer) < 10)
+   if (GetTickCounter(&l_t_msg_wait_10_timer) < 10)
         return;
-		RestartTimer(&l_t_msg_wait_10_timer);
+		StartTickCounter(&l_t_msg_wait_10_timer);
 	 
 	 	BLE_connecttion_lock_polling();
 	 
-		if (GetTimer(&l_t_msg_wait_50_timer) < 50)
+		if (GetTickCounter(&l_t_msg_wait_50_timer) < 50)
         return;
-		RestartTimer(&l_t_msg_wait_50_timer);
+		StartTickCounter(&l_t_msg_wait_50_timer);
 	
 	
     Msg_t* msg = get_message(TASK_ID_BLE);		
@@ -194,9 +194,9 @@ void BLE_connecttion_lock_polling(void)
 {
 	//uint32_t speed = app_carinfo_getSpeed();
 	//PRINT("OnDelaySleepSystem %d\r\n", speed);
-	if (ble_status.to_lock && GetTimer(&l_t_msg_wait_timer) > 10000)
+	if (ble_status.to_lock && GetTickCounter(&l_t_msg_wait_timer) > 10000)
 	{
-        StopTimer(&l_t_msg_wait_timer);
+        StopTickCounter(&l_t_msg_wait_timer);
         ble_status.locked = true;
         ble_status.to_lock = false;	
         LOG_LEVEL("Start to power off system...\r\n");
@@ -206,13 +206,13 @@ void BLE_connecttion_lock_polling(void)
 
 void StartToLock(void)
 {
-	if (!IsTimerStart(&l_t_msg_wait_timer))
+	if (!IsTickCounterStart(&l_t_msg_wait_timer))
 	{
 		//if(!IsAccOn())
 		{
 			ble_status.to_lock = true;
 			ble_status.to_lock = true;
-			StartTimer(&l_t_msg_wait_timer);
+			StartTickCounter(&l_t_msg_wait_timer);
 			LOG_LEVEL("Start to lock system...\r\n");
 		}
 	}
@@ -220,11 +220,11 @@ void StartToLock(void)
 
 void StartToUnlock(void)
 {
-	if(IsTimerStart(&l_t_msg_wait_timer))
+	if(IsTickCounterStart(&l_t_msg_wait_timer))
 	{
 		ble_status.to_lock = false;
 		ble_status.locked = false;
-		StopTimer(&l_t_msg_wait_timer);
+		StopTickCounter(&l_t_msg_wait_timer);
 	}
 	send_message(TASK_ID_SYSTEM, MSG_DEVICE_NORMAL_EVENT , CMD_MODSYSTEM_POWER_ON,1);
 	LOG_LEVEL("Start to unlock system...\r\n");
