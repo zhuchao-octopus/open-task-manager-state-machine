@@ -32,6 +32,9 @@
 #include "octopus_tickcounter.h" 		// Include tick counter for timing operations
 #include "octopus_msgqueue.h"  			// Include message queue for inter-process communication
 
+#ifdef PLATFORM_ITE_OPEN_RTOS
+#include "../update/intelhexupdate.h"
+#endif
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -78,7 +81,9 @@ static void app_update_state_handler(void);  // Declare function to handle the M
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
 static void app_read_hex_file_callback(uint32_t addr, uint8_t* binbuff, uint8_t count);  // Declare callback function for reading data from a hex file
+#ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
 static void* app_read_hex_file_task(void* arg);  // Declare task function for reading hex file data
+#endif
 #endif
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -212,7 +217,7 @@ uint32_t app_update_get_fw_curr_line(void)
  * Returns the error code if any occurred during the update process.
  */
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
-int app_update_get_error_code(void)
+uint32_t app_update_get_error_code(void)
 {
     return l_i_mcu_file_res;  // Return the error code from the MCU firmware processing
 }
@@ -390,7 +395,7 @@ static void app_read_hex_file_callback(uint32_t addr, uint8_t* binbuff, uint8_t 
  * Task to read the hex file and initiate the transfer process.
  * This function reads the MCU update file and triggers the callback for each chunk of data.
  */
-
+#ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
 static void* app_read_hex_file_task(void* arg)
 {
     l_b_flag_transfer_complete = false;  // Reset the transfer complete flag before starting
@@ -398,6 +403,7 @@ static void* app_read_hex_file_task(void* arg)
     l_b_flag_transfer_complete = true;  // Set the transfer complete flag once the file is read
     return NULL;  // Return null as the task is completed
 }
+#endif
 #endif
 /**
  * This function handles the MCU firmware update process through multiple states.
@@ -497,6 +503,7 @@ static void app_update_state_handler(void)
             LOG_LEVEL("MCU_UPDATE_ST_WAIT_BOOT jump TRANSFER \r\n");
             // Start the thread to read the Intel Hex file and begin data transfer
 					#ifdef PLATFORM_ITE_OPEN_RTOS
+                    #ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
             pthread_t task;
             pthread_attr_t attr;
             pthread_attr_init(&attr);
@@ -504,6 +511,7 @@ static void app_update_state_handler(void)
             pthread_attr_setstacksize(&attr, CFG_UPDATE_STACK_SIZE);  // Set the stack size for the thread
             pthread_create(&task, &attr, app_read_hex_file_task, NULL);  // Create the thread to read and transfer data
 					#endif
+                    #endif
             // Transition to the data transfer state
             lt_mcu_status = MCU_UPDATE_ST_TRANSFER;
         }

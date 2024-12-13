@@ -78,7 +78,7 @@ void app_update_soc_start_running(void);
 /**
  * @brief Assert and verify the update process is running.
  */
-void app_update_soc_assert_run_running(void);
+void app_update_soc_assert_running(void);
 
 /**
  * @brief Handle the main logic for the update process.
