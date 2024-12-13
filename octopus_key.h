@@ -30,10 +30,7 @@
 extern "C" {
 #endif
 
-/*******************************************************************************
- * DEBUG SWITCH MACROS
-*/
-#ifdef TASK_MANAGER_STATE_MACHINE_KEY
+
 /*******************************************************************************
  * MACROS
  * The following macros define key IDs and their respective actions.
@@ -79,6 +76,11 @@ extern "C" {
 #define KEY_STATE_PRESSED           (0x01)  /**< Key is pressed */
 #define KEY_STATE_LONG_PRESSED      (0x02)  /**< Key is long pressed */
 #define KEY_STATE_DOUBLE_PRESSED    (0x03)  /**< Key is double pressed */
+
+/*******************************************************************************
+ * DEBUG SWITCH MACROS
+*/
+#ifdef TASK_MANAGER_STATE_MACHINE_KEY
 
 /*******************************************************************************
  * GLOBAL FUNCTIONS DECLARATIONS

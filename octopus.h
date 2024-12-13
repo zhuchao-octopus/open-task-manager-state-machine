@@ -24,21 +24,24 @@
  * INCLUDE FILES
  * Include standard libraries and platform-specific headers.
  */
- 
-#include "octopus_platform.h"
-#include "octopus_timer_hal.h"      // Hardware abstraction for timer
-#include "octopus_uart_hal.h"
-#include "octopus_gpio_hal.h"
-#include "octopus_flash_hal.h"
-#include "octopus_ble_hal.h"
-
+#include "octopus_platform.h"       // Platform-specific configurations and settings
+#include "octopus_task_manager.h"   // Task management functions and definitions
 #include "octopus_uart_ptl.h"       // UART protocol handling
-#include "octopus_carinfor.h" 
-#include "octopus_sif.h"            // SIF protocol interface
-#include "octopus_tickcounter.h"    // Timer management
-#include "octopus_msgqueue.h"       // Message queue management
-#include "octopus_task_manager.h"   // Task manager
-#include "octopus_log.h"            // Octopus-specific logging
+#include "octopus_tickcounter.h"    // Timer and tick counter management
+#include "octopus_msgqueue.h"       // Message queue for inter-task communication
+#include "octopus_log.h"            // Octopus-specific logging utilities
+
+#include "octopus_timer_hal.h"      // Hardware Abstraction Layer (HAL) for timers
+#include "octopus_uart_hal.h"       // HAL for UART communication
+#include "octopus_gpio_hal.h"       // HAL for GPIO (General-Purpose Input/Output)
+#include "octopus_flash_hal.h"      // HAL for flash memory management
+#include "octopus_ble_hal.h"        // HAL for Bluetooth Low Energy (BLE)
+
+#include "octopus_carinfor.h"       // Car information management structures and functions
+#include "octopus_sif.h"            // SIF (Serial Interface Framework) protocol interface
+#include "octopus_key.h"            // Key input handling and processing
+
+
 
 #ifdef PLATFORM_CST_WIND_RTOS
 // Include headers specific to WIND RTOS if required
