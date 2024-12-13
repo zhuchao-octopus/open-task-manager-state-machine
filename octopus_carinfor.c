@@ -275,7 +275,9 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
 {
     assert(payload);
     assert(ackbuff);
-    
+    #ifndef CARINFOR_PTL_NO_ACK //no ack
+		uint8_t tmp = 0;
+		#endif
     if(A2M_MOD_METER == payload->frame_type)
     {
         switch(payload->cmd)
@@ -292,8 +294,6 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
     }
     else if(M2A_MOD_METER == payload->frame_type)
     {
-			  #ifndef CARINFOR_PTL_NO_ACK //no ack
-			  uint8_t tmp = 0;
         switch(payload->cmd)
         {
         case CMD_MODMETER_RPM_SPEED:
@@ -302,8 +302,10 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             lt_meter.rpm = MK_WORD(payload->data[2], payload->data[3]);
             lt_meter.speed = lt_meter.speed_real * 11 / 10;
             //ACK
+			      #ifndef CARINFOR_PTL_NO_ACK //no ack
             tmp = 0x01;
             ptl_build_frame(A2M_MOD_METER, CMD_MODMETER_RPM_SPEED, &tmp, 1, ackbuff);
+						#endif
             return true;
         case CMD_MODMETER_SOC:
             //LOGIC
@@ -312,13 +314,15 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             lt_meter.current = MK_WORD(payload->data[3], payload->data[4]);
             lt_meter.voltageSystem = payload->data[5];
             //ACK
+				    #ifndef CARINFOR_PTL_NO_ACK //no ack
             tmp = 0x01;
             ptl_build_frame(A2M_MOD_METER, CMD_MODMETER_SOC, &tmp, 1, ackbuff);
+				    #endif     
 						return true;	        
         default:
             break;
         }
-				#endif      
+				 
     }
     return false;
 }
@@ -375,7 +379,9 @@ bool indicator_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buf
 {
     assert(payload);
     assert(ackbuff);
-    
+    #ifndef CARINFOR_PTL_NO_ACK //no ack
+	  uint8_t tmp = 0;
+	  #endif
     if(A2M_MOD_INDICATOR == payload->frame_type)
     {
         switch(payload->cmd)
@@ -391,9 +397,7 @@ bool indicator_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buf
         }
     }
     else if(M2A_MOD_INDICATOR == payload->frame_type)
-    {
-			  #ifndef CARINFOR_PTL_NO_ACK //no ack
-			  uint8_t tmp = 0;
+    {			  
         switch(payload->cmd)
         {
         case CMD_MODINDICATOR_INDICATOR:
@@ -411,17 +415,20 @@ bool indicator_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buf
             lt_indicator.ecuFault    = GetBit(payload->data[1], 2);   //ECU¹ÊÕÏµÆ
             lt_indicator.sensorFault = GetBit(payload->data[1], 3);   //´«¸ÐÆ÷¹ÊÕÏµÆ
             lt_indicator.motorFault  = GetBit(payload->data[1], 4);   //µç»ú¹ÊÕÏµÆ
+			      #ifndef CARINFOR_PTL_NO_ACK //no ack
             tmp = 0x01;
             ptl_build_frame(A2M_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, &tmp, 1, ackbuff);
+						#endif
             return true;
         case CMD_MODINDICATOR_ERROR_INFO:
+				    #ifndef CARINFOR_PTL_NO_ACK //no ack
             tmp = 0x01;
             ptl_build_frame(A2M_MOD_INDICATOR, CMD_MODINDICATOR_ERROR_INFO, &tmp, 1, ackbuff);
-            return true;
+						#endif
+            return true;				
         default:
             break;
         }
-				#endif
     }
     return false;
 }
@@ -473,9 +480,8 @@ bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff
         }
     }
     else if(M2A_MOD_DRIV_INFO == payload->frame_type)
-    {
-			  #ifndef CARINFOR_PTL_NO_ACK //no ack
-			  uint8_t tmp = 0;
+    {	  
+			  
         switch(payload->cmd)
         {
         case CMD_MODDRIVINFO_GEAR:
@@ -483,13 +489,16 @@ bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff
             lt_drivinfo.gear = (carinfo_drivinfo_gear_t)payload->data[0];
             lt_drivinfo.driveMode = (carinfo_drivinfo_drivemode_t)payload->data[1];
             //ACK
+				    #ifndef CARINFOR_PTL_NO_ACK //no ack
+				    uint8_t tmp = 0;
             tmp = 0x01;
             ptl_build_frame(A2M_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, &tmp, 1, ackbuff);
+			      #endif
             return true;
         default:
             break;
         }
-			 #endif
+			 
     }
     return false;
 }
