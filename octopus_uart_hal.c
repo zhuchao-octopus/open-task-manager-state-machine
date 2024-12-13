@@ -29,24 +29,25 @@
  * Define commonly used constants and values for UART operations.
  */
 //#define PI_FLOAT (3.14159f)  // Example constant for mathematical computations.
-
+#define FIFO_BUFFER_MAX_SIZE 256
 /*******************************************************************************
  * GLOBAL VARIABLES
  * Variables that are accessible throughout the file or program.
  */
-uint8_t Hal_TaskID;              // Task ID for UART event handling.
+uint8_t Hal_TaskID;              										// Task ID for UART event handling.
 //#ifdef PLATFORM_CST_OSAL_RTOS
-com_uart_data_buff_t com_uart_data_buff;           // Buffer structure for received UART data.
+//com_uart_data_buff_t com_uart_data_buff;            // Buffer structure for received UART data.
 //#endif
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
-static bool UartIsInit = false;  // Tracks whether UART is initialized.
-static sem_t UartSemIntr;        // Semaphore for UART interrupt handling.
-uint32_t com_uart_parity_error = 0;         // Placeholder for parity error tracking.
+static bool UartIsInit = false;  										// Tracks whether UART is initialized.
+static sem_t UartSemIntr;        										// Semaphore for UART interrupt handling.
+uint32_t com_uart_parity_error = 0;         				// Placeholder for parity error tracking.
+com_uart_data_buff_t com_uart_data_buff;            // Buffer structure for received UART data.
 #endif
 
 static cFifo_t* usart_rx_fifo = NULL;
-static uint8_t uart_rx_fifo_buff[cFifo_ObjSize(256 + 64)];
+static uint8_t uart_rx_fifo_buff[cFifo_ObjSize(FIFO_BUFFER_MAX_SIZE)];
 
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLARATION
@@ -108,12 +109,13 @@ static void hal_com_uart_receive_callback(uart_Evt_t* pev) {
         {
             uint16_t i;
             for (i = 0; i < pev->len; i++) {
-                com_uart_data_buff.data[(com_uart_data_buff.wr + i) & (UART_BUFF_MAX_SIZE - 1)] = pev->data[i];
+                ///com_uart_data_buff.data[(com_uart_data_buff.wr + i) & (UART_BUFF_MAX_SIZE - 1)] = pev->data[i];
+							 cFifo_Push(usart_rx_fifo,pev->data[i]);
             }
-            com_uart_data_buff.wr += pev->len;
+            ///com_uart_data_buff.wr += pev->len;
 
             // Start a timer to handle received data.
-            osal_start_timerEx(Hal_TaskID, UART_RECEIVE_DATA_EVENT, 5);
+            //osal_start_timerEx(Hal_TaskID, UART_RECEIVE_DATA_EVENT, 5);
         }
         break;
 
@@ -136,7 +138,7 @@ uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events) {
         #ifdef TEST_LOG_DEBUG_UART_RX_DATA
         LOG_("Hal receive data:\r\n");
         #endif
-
+        #if 0
         // Process received data from UART buffer.
         while (com_uart_data_buff.rd != com_uart_data_buff.wr) {
             #ifdef TEST_LOG_DEBUG_UART_RX_DATA
@@ -146,7 +148,7 @@ uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events) {
             cFifo_Push(usart_rx_fifo,         com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
             com_uart_data_buff.rd++;
         }
-
+        #endif
         #ifdef TEST_LOG_DEBUG_UART_RX_DATA
         LOG_("\r\n");
         #endif
@@ -294,8 +296,8 @@ uint8_t hal_com_uart_get_fifo_data(uint8_t* buffer, uint16_t length)
 uint8_t hal_com_uart_send_string(const char* str, uint8_t length) {
 	  uint8_t ret_code = length;
     #ifdef PLATFORM_CST_OSAL_RTOS
-    osal_memcpy(com_uart_data_buff.data, str, strlen(str));
-    ret_code = HalUartSendBuf(UART1, com_uart_data_buff.data, strlen(str));
+    //osal_memcpy(com_uart_data_buff.data, str, strlen(str));
+    ret_code = HalUartSendBuf(UART1, (uint8_t*)str, strlen(str));
     #endif
 
     #ifdef PLATFORM_ITE_OPEN_RTOS

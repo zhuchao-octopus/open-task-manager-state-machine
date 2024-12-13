@@ -1,24 +1,40 @@
+/*******************************************************************************
+ * @file    octopus_mcu_update.c
+ * @brief   MCU update management and reboot state machine implementation.
+ *
+ * This file contains the implementation for managing MCU firmware updates,
+ * handling reboot sequences, and interacting with various hardware modules.
+ *
+ * @details
+ * - Provides initialization and control functions for the MCU update task.
+ * - Implements a state machine for managing reboot sequences.
+ * - Handles communication with other system modules for update and reboot processes.
+ * - Offers support for flash memory operations during firmware updates.
+ *
+ * @version  1.0.0
+ * @date     2024-12-09
+ * @author   Octopus Team
+ *
+ * @note    Ensure all dependent modules are correctly initialized before using
+ *          the functions in this file.
+ */
 
 /*******************************************************************************
  * INCLUDES
  */
-/*******************************************************************************
- * INCLUDES
- */
-#include "octopus_platform.h"  // Include platform-specific header for hardware platform details
-#include "octopus_log.h"       // Include logging functions for debugging
-#include "octopus_task_manager.h" // Include task manager for scheduling tasks
-
-#include "octopus_update_mcu.h" 
-#include "octopus_tickcounter.h" // Include tick counter for timing operations
-#include "octopus_msgqueue.h"  // Include message queue for inter-process communication
-#include "octopus_flash.h"     // Include flash memory handling functions
+#include "octopus_platform.h"         // Include platform-specific hardware details
+#include "octopus_log.h"              // Include logging module for debugging purposes
+#include "octopus_task_manager.h"     // Include task manager for scheduling tasks
+#include "octopus_update_mcu.h"       // Include header for MCU update management
+#include "octopus_tickcounter.h"      // Include tick counter for timing operations
+#include "octopus_msgqueue.h"         // Include message queue for communication
+#include "octopus_flash.h"            // Include flash memory handling utilities
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
 
-#ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
+#ifdef TASK_MANAGER_STATE_MACHINE_UPDATE // Ensure this part is included only if the macro is defined
 
 /*******************************************************************************
  * MACROS
@@ -28,33 +44,31 @@
 /*******************************************************************************
  * TYPEDEFS
  */
-typedef struct
-{
-    uint32_t addr;      // 写入地址
-    uint8_t  buff[48];  // 缓冲区
-    uint8_t count;      // 缓冲数据长度
-}program_buf_t;
+// Define a buffer structure used for flash programming during firmware updates
+typedef struct {
+    uint32_t addr;      // Address in flash memory to write data
+    uint8_t  buff[48];  // Data buffer for temporary storage
+    uint8_t  count;     // Number of valid bytes in the buffer
+} program_buf_t;
 
+// Define enumeration for MCU reboot state machine states
 typedef enum {
-    MCU_REBOOT_ST_IDLE       = (0x00),  //IDLE状态
-    MCU_REBOOT_ST_INIT       = (0x01),  //初始化状态
-    MCU_REBOOT_ST_SOC_OFF    = (0x02),  //关闭SOC
-    MCU_REBOOT_ST_SOC_WAIT   = (0x03),  //等待时间
-    MCU_REBOOT_ST_SOC_ON     = (0x04),  //打开SOC
-    MCU_REBOOT_ST_MCU_RESET  = (0x05),  //MCU复位
-}mcu_reboot_state_t;
+    MCU_REBOOT_ST_IDLE       = (0x00),  // Idle state
+    MCU_REBOOT_ST_INIT       = (0x01),  // Initialization state
+    MCU_REBOOT_ST_SOC_OFF    = (0x02),  // State where the SOC is turned off
+    MCU_REBOOT_ST_SOC_WAIT   = (0x03),  // Waiting for SOC to be off
+    MCU_REBOOT_ST_SOC_ON     = (0x04),  // State where the SOC is turned on
+    MCU_REBOOT_ST_MCU_RESET  = (0x05),  // State to reset the MCU
+} mcu_reboot_state_t;
 /*******************************************************************************
  * CONSTANTS
  */
 
-
-/*******************************************************************************
- * LOCAL FUNCTIONS DECLEAR
- */
-static bool update_module_send_handler(ptl_frame_type_t module, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
-static bool update_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
-
-static void mcu_reboot_state_proc(void);
+// Define constants for reboot tags
+#define MCU_REBOOT_TAG_IDLE  (0xFF)  // Idle tag, indicating no reboot required
+#define MCU_REBOOT_TAG_MCU   (0x00)  // Tag for rebooting only the MCU
+#define MCU_REBOOT_TAG_MAC   (0x01)  // Tag for rebooting the entire machine
+#define MCU_REBOOT_TAG_SOC   (0x02)  // Tag for rebooting the SOC
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -64,16 +78,12 @@ static void mcu_reboot_state_proc(void);
 /*******************************************************************************
  * STATIC VARIABLES
  */
+// Declare static variables for managing reboot process
 //static uint8_t l_u8_acc_status = 0;
 
-#define MCU_REBOOT_TAG_IDLE  (0xFF)//0xFF:空闲
-#define MCU_REBOOT_TAG_MCU   (0x00)//0x00:对主控单独复位
-#define MCU_REBOOT_TAG_MAC   (0x01)//0x01:对整机断电复位
-#define MCU_REBOOT_TAG_SOC   (0x02)//0x02:对核心板单独断电复位
-
-static uint8_t l_u8_reboot = MCU_REBOOT_TAG_IDLE;
-static mcu_reboot_state_t l_t_reboot_status = MCU_REBOOT_ST_IDLE;
-static uint32_t l_tmr_reboot = 0;
+static uint8_t l_u8_reboot = MCU_REBOOT_TAG_IDLE;          				// Current reboot tag
+static mcu_reboot_state_t l_t_reboot_status = MCU_REBOOT_ST_IDLE; // Current reboot state
+static uint32_t l_tmr_reboot = 0;                         				// Timer for reboot delay
 
 /*******************************************************************************
  * EXTERNAL VARIABLES
@@ -81,205 +91,260 @@ static uint32_t l_tmr_reboot = 0;
 
 
 /*******************************************************************************
+ * LOCAL FUNCTIONS DECLEAR
+ */
+// Function declarations
+static bool update_module_send_handler(ptl_frame_type_t module, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff); // Handle outgoing messages
+static bool update_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff); // Handle incoming messages
+static void mcu_reboot_state_proc(void); // Process reboot state machine
+
+/*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
-void app_update_mcu_init_running(void)
-{
-    ptl_register_module(M2A_MOD_UPDATE, update_module_send_handler, update_module_receive_handler);
-    OTMS(TASK_ID_UPDATE_MCU, OTMS_S_INVALID);
+
+/**
+ * @brief Initialize the MCU update module and register communication handlers.
+ */
+void app_update_mcu_init_running(void) {
+    ptl_register_module(M2A_MOD_UPDATE, update_module_send_handler, update_module_receive_handler); // Register handlers for module communication
+    OTMS(TASK_ID_UPDATE_MCU, OTMS_S_INVALID); // Set the task state to invalid (not running)
 }
 
-void app_update_mcu_start_running(void)
-{
-    OTMS(TASK_ID_UPDATE_MCU, OTMS_S_ASSERT_RUN);
+/**
+ * @brief Start the MCU update task by setting it to the assert run state.
+ */
+void app_update_mcu_start_running(void) {
+    OTMS(TASK_ID_UPDATE_MCU, OTMS_S_ASSERT_RUN); // Assert task state to running
 }
 
-void app_update_mcu_assert_running(void)
-{
-    ptl_reqest_running(M2A_MOD_UPDATE);
-    OTMS(TASK_ID_UPDATE_MCU, OTMS_S_RUNNING);
+/**
+ * @brief Assert the MCU update task to a running state, ensuring it is active.
+ */
+void app_update_mcu_assert_running(void) {
+    ptl_reqest_running(M2A_MOD_UPDATE); // Request module to be active
+    OTMS(TASK_ID_UPDATE_MCU, OTMS_S_RUNNING); // Set task state to running
 }
 
-void app_update_mcu_running(void)
-{
-    mcu_reboot_state_proc();
+/**
+ * @brief Main task function for managing the MCU update process.
+ */
+void app_update_mcu_running(void) {
+    mcu_reboot_state_proc(); // Call the reboot state machine processing function
 }
 
-void app_update_mcu_post_running(void)
-{
-    //PRINT("%s\n", __FUNCTION__);
-    ptl_release_running(M2A_MOD_UPDATE);
-   // l_u8_mpu_status = SYSTEM_MPU_STATE_INIT;
-   // if(MB_ST_OFF != app_power_state_get_mb_state())
-    {
-        OTMS(TASK_ID_UPDATE_MCU, OTMS_S_ASSERT_RUN);
-    }
+/**
+ * @brief Post-task actions after the MCU update task completes.
+ */
+void app_update_mcu_post_running(void) {
+    ptl_release_running(M2A_MOD_UPDATE); // Release the active module
+    OTMS(TASK_ID_UPDATE_MCU, OTMS_S_ASSERT_RUN); // Reset task state to assert run
 }
 
-
-void app_update_mcu_stop_running(void)
-{
-    //PRINT("%s\n", __FUNCTION__);
-    OTMS(TASK_ID_UPDATE_MCU,OTMS_S_INVALID);
-}
-
+/**
+ * @brief Stop the MCU update task by invalidating its state.
+ */
+void app_update_mcu_stop_running(void) {
+    OTMS(TASK_ID_UPDATE_MCU, OTMS_S_INVALID); // Set the task state to invalid
+} 
 
 /*******************************************************************************
  * LOCAL FUNCTIONS IMPLEMENTATION
  */
+// Function to handle sending update module requests based on the module type and parameters
 bool update_module_send_handler(ptl_frame_type_t module, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
 {
-    //DEV_ASSERT(buff);
-    uint8_t tmp[8] = {0};
-    //PRINT("update_module_send_handler  MOD %02x  CMD %02x PRARM %04x\n", module, cmd, param);
-    if(M2A_MOD_UPDATE == module)
+    // DEV_ASSERT(buff);  // Uncommented: this would assert that the 'buff' pointer is not NULL.
+    
+    uint8_t tmp[8] = {0};  // Initialize a temporary buffer 'tmp' of 8 bytes, all set to 0.
+    
+    // The following commented print statement would log the function execution for debugging purposes:
+    // PRINT("update_module_send_handler  MOD %02x  CMD %02x PRARM %04x\n", module, cmd, param);
+    
+    // Check if the module type is M2A_MOD_UPDATE (which indicates an update operation).
+    if (M2A_MOD_UPDATE == module)
     {
-        switch(param1)
+        // Handle the specific update request based on 'param1'.
+        switch (param1)
         {
-        case CMD_MODUPDATE_UPDATE_FW_STATE:  //固件状态更新
-        {
-            tmp[0] = 0x00;  //0x00：MCU正常运行
-            ptl_build_frame(M2A_MOD_UPDATE, CMD_MODUPDATE_UPDATE_FW_STATE, tmp, 1, buff);
-            return true;
-        }
-        default:
-            break;
+            case CMD_MODUPDATE_UPDATE_FW_STATE:  // Case for firmware state update
+            {
+                tmp[0] = 0x00;  // Set the first byte of 'tmp' to 0x00, indicating that the MCU is running normally.
+                // Build the frame with the update information (M2A_MOD_UPDATE, firmware state update command, and the state data).
+                ptl_build_frame(M2A_MOD_UPDATE, CMD_MODUPDATE_UPDATE_FW_STATE, tmp, 1, buff);
+                return true;  // Successfully processed the update request.
+            }
+            default:
+                break;  // No action for unrecognized 'param1' values.
         }
     }
+    // Return false if the module is not for updates or no matching command is found.
     return false;
 }
 
-
+// Function to handle receiving update module requests, process the payload, and send acknowledgment.
 bool update_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
 {
-    //DEV_ASSERT(payload);
-    //DEV_ASSERT(ackbuff);
-    uint8_t tmp = 0;
-    if(A2M_MOD_UPDATE == payload->frame_type)
+    // DEV_ASSERT(payload);  // Uncommented: This would assert that the 'payload' pointer is not NULL.
+    // DEV_ASSERT(ackbuff);  // Uncommented: This would assert that the 'ackbuff' pointer is not NULL.
+    
+    uint8_t tmp = 0;  // Temporary variable to hold status or response data.
+    
+    // Check if the frame type of the received payload is A2M_MOD_UPDATE (indicating it's an update operation).
+    if (A2M_MOD_UPDATE == payload->frame_type)
     {
-        //PRINTF("MOD %02x CMD %02x pm1 %02x pm2 %02x\n", payload->module, payload->cmd,payload->data[0],payload->data[1]);
+        // The following commented print statement would log the frame details for debugging:
+        // PRINTF("MOD %02x CMD %02x pm1 %02x pm2 %02x\n", payload->module, payload->cmd, payload->data[0], payload->data[1]);
 
-        switch(payload->cmd)
+        // Switch based on the command in the received payload.
+        switch (payload->cmd)
         {
-        case CMD_MODUPDATE_CHECK_FW_STATE:   //查询固件状态
-        {
-            printf("CMD_MODUPDATE_CHECK_FW_STATE\n");
-            tmp = 0x00; //0x00：MCU正常运行
-            ptl_build_frame(M2A_MOD_UPDATE, CMD_MODUPDATE_CHECK_FW_STATE, &tmp, 1, ackbuff);
-            return true;
-        }
-        case CMD_MODUPDATE_UPDATE_FW_STATE:  //固件状态更新
-        {
-            printf("CMD_MODUPDATE_UPDATE_FW_STATE \n");
-            //ACK, no thing to do
-            return false;
-        }
-        case CMD_MODUPDATE_ENTER_FW_UPDATE:  //进入固件更新
-        {
-            //进入升级模式
-            printf("CMD_MODUPDATE_ENTER_FW_UPDATE \n");
+            case CMD_MODUPDATE_CHECK_FW_STATE:   // Command for checking the firmware state.
+            {
+                printf("CMD_MODUPDATE_CHECK_FW_STATE\n");
+                tmp = 0x00; // Set tmp to 0x00 to indicate that the MCU is running normally.
+                // Build a frame with the response (firmware state check) and send it back via 'ackbuff'.
+                ptl_build_frame(M2A_MOD_UPDATE, CMD_MODUPDATE_CHECK_FW_STATE, &tmp, 1, ackbuff);
+                return true;  // Successfully handled the request.
+            }
+            case CMD_MODUPDATE_UPDATE_FW_STATE:  // Command for updating the firmware state.
+            {
+                printf("CMD_MODUPDATE_UPDATE_FW_STATE \n");
+                // This command acknowledges the request but does nothing as per the current implementation.
+                return false;  // No action required.
+            }
+            case CMD_MODUPDATE_ENTER_FW_UPDATE:  // Command to enter firmware update mode.
+            {
+                printf("CMD_MODUPDATE_ENTER_FW_UPDATE \n");
 
-            /*printf("MCU_UPDATE_ST_ERASE start erase sector\n");
-            INT_SYS_DisableIRQGlobal();
-            uint32_t data[4];
-            // Write minimum 2 words
-            data[0] = 0x12345678;
-            data[1] = 0;
-            FLASH_DRV_Program(MEMORY_FLAG_START, 2*4, &data);
-            INT_SYS_EnableIRQGlobal();
-            OSIF_TimeDelay(5);
-            printf("MCU_UPDATE_ST_ERASE end erase sector\n");
-            //重新开启串口接收
-            Uart_Protocol_StartReceive();
-            */
+                // Commented-out code for actual firmware update process (e.g., erasing flash sectors, disabling interrupts, etc.).
+                /*
+                printf("MCU_UPDATE_ST_ERASE start erase sector\n");
+                INT_SYS_DisableIRQGlobal();
+                uint32_t data[4];
+                data[0] = 0x12345678;
+                data[1] = 0;
+                FLASH_DRV_Program(MEMORY_FLAG_START, 2*4, &data);
+                INT_SYS_EnableIRQGlobal();
+                OSIF_TimeDelay(5);
+                printf("MCU_UPDATE_ST_ERASE end erase sector\n");
+                Uart_Protocol_StartReceive();  // Re-enable UART receive after update.
+                */
 
-            l_u8_reboot = MCU_REBOOT_TAG_MCU;
-            l_t_reboot_status = MCU_REBOOT_ST_INIT;
+                // Indicate that the system should reboot into update mode.
+                l_u8_reboot = MCU_REBOOT_TAG_MCU;
+                l_t_reboot_status = MCU_REBOOT_ST_INIT;
+                StartTickCounter(&l_tmr_reboot);  // Start the reboot timer.
 
-            StartTickCounter(&l_tmr_reboot);
-            tmp = 0x01;
-            ptl_build_frame(M2A_MOD_UPDATE, CMD_MODUPDATE_ENTER_FW_UPDATE, &tmp, 1, ackbuff);
+                tmp = 0x01;  // Indicate success (entering firmware update mode).
+                // Build a response frame and send it back via 'ackbuff'.
+                ptl_build_frame(M2A_MOD_UPDATE, CMD_MODUPDATE_ENTER_FW_UPDATE, &tmp, 1, ackbuff);
+                return true;  // Successfully entered firmware update mode.
+            }
+            case CMD_MODUPDATE_EXIT_FW_UPDATE:   // Command to exit firmware update mode.
+            {
+                printf("CMD_MODUPDATE_EXIT_FW_UPDATE\n");
+                tmp = 0x00; // Indicate successful exit from update mode.
+                // Build a response frame and send it back via 'ackbuff'.
+                ptl_build_frame(M2A_MOD_UPDATE, CMD_MODUPDATE_EXIT_FW_UPDATE, &tmp, 1, ackbuff);
+                return true;  // Successfully exited update mode.
+            }
+            case CMD_MODUPDATE_REBOOT:           // Command for rebooting the system.
+            {
+                printf("CMD_MODUPDATE_REBOOT\n");
 
-            return true;
-        }
-        case CMD_MODUPDATE_EXIT_FW_UPDATE:   //完成固件更新
-        {
-            printf("CMD_MODUPDATE_EXIT_FW_UPDATE\n");
-            tmp = 0x00; //升级正常，后续操作进行
-            ptl_build_frame(M2A_MOD_UPDATE, CMD_MODUPDATE_EXIT_FW_UPDATE, &tmp, 1, ackbuff);
-            return true;
-        }
-        case CMD_MODUPDATE_REBOOT:           //系统复位
-        {
-            printf("CMD_MODUPDATE_REBOOT\n");
-            #if 0
-            0x00:对主控单独复位
-            0x01:对整机断电复位
-            0x02:对核心板单独断电复位
-            #endif
-            l_u8_reboot = payload->data[0]; //重启状态
-            l_t_reboot_status = MCU_REBOOT_ST_INIT;
-            StartTickCounter(&l_tmr_reboot);
-            
-            tmp = 0x01; //ack success
-            ptl_build_frame(M2A_MOD_UPDATE, CMD_MODUPDATE_REBOOT, &tmp, 1, ackbuff);
-            return true;
-        }
-        default:
-            break;
+                // Reboot options are commented out, but indicate how the system should handle different reboot scenarios.
+                #if 0
+                0x00: Reboot only the main controller.
+                0x01: Reboot the entire system by cutting power.
+                0x02: Reboot only the core board by cutting power.
+                #endif
+
+                l_u8_reboot = payload->data[0]; // Set reboot state based on payload data.
+                l_t_reboot_status = MCU_REBOOT_ST_INIT;  // Set reboot status to initialization.
+                StartTickCounter(&l_tmr_reboot);  // Start the reboot timer.
+
+                tmp = 0x01; // Acknowledge the success of the reboot request.
+                // Build a response frame and send it back via 'ackbuff'.
+                ptl_build_frame(M2A_MOD_UPDATE, CMD_MODUPDATE_REBOOT, &tmp, 1, ackbuff);
+                return true;  // Successfully processed reboot request.
+            }
+            default:
+                break;  // No action for unrecognized commands.
         }
     }
-    return false;
+    
+    return false;  // Return false if the frame type doesn't match or no matching command is found.
 }
 
+// Function to process the MCU reboot state machine. It handles different stages of the reboot process.
 static void mcu_reboot_state_proc(void)
 {
-    switch(l_t_reboot_status) {
-    case MCU_REBOOT_ST_IDLE:
-        break;
-    case MCU_REBOOT_ST_INIT:
-        if(GetTickCounter(&l_tmr_reboot) > 200)
-        {
-            if(MCU_REBOOT_TAG_MCU == l_u8_reboot)
+    // Switch based on the current reboot status.
+    switch (l_t_reboot_status) {
+    
+        // State when the MCU is idle, no reboot actions are needed.
+        case MCU_REBOOT_ST_IDLE:
+            break;  // No actions are performed in the idle state.
+
+        // Initial state when the reboot is first triggered.
+        case MCU_REBOOT_ST_INIT:
+            // If the reboot timer has elapsed more than 200ms, transition to the next state.
+            if (GetTickCounter(&l_tmr_reboot) > 200)
             {
-                l_t_reboot_status = MCU_REBOOT_ST_MCU_RESET;
-           }
-            else
-            {
-                l_t_reboot_status = MCU_REBOOT_ST_SOC_OFF;
+                // Check if the reboot target is MCU, if so, transition to MCU reset state.
+                if (MCU_REBOOT_TAG_MCU == l_u8_reboot)
+                {
+                    l_t_reboot_status = MCU_REBOOT_ST_MCU_RESET;
+                }
+                // If the reboot target is the entire system (SOC off), transition to SOC power-off state.
+                else
+                {
+                    l_t_reboot_status = MCU_REBOOT_ST_SOC_OFF;
+                }
             }
-        }
-        break;
-    case MCU_REBOOT_ST_SOC_OFF:
-        //soc off
-        //TODO 关闭SOC电源
-        StartTickCounter(&l_tmr_reboot);
-        l_t_reboot_status = MCU_REBOOT_ST_SOC_WAIT;
-        break;
-    case MCU_REBOOT_ST_SOC_WAIT:
-        if(GetTickCounter(&l_tmr_reboot) > 200)
-        {
-            if(MCU_REBOOT_TAG_MAC == l_u8_reboot)
+            break;
+
+        // State to power off the System-on-Chip (SOC).
+        case MCU_REBOOT_ST_SOC_OFF:
+            // TODO: Add code to power off the SOC.
+            // Start the timer again to track the delay for SOC power-off.
+            StartTickCounter(&l_tmr_reboot);
+            l_t_reboot_status = MCU_REBOOT_ST_SOC_WAIT;  // Move to SOC wait state.
+            break;
+
+        // State where the system waits after SOC power off.
+        case MCU_REBOOT_ST_SOC_WAIT:
+            // If the timer exceeds 200ms, decide whether to reset the MCU or power on the SOC.
+            if (GetTickCounter(&l_tmr_reboot) > 200)
             {
-                l_t_reboot_status = MCU_REBOOT_ST_MCU_RESET;
+                // If the reboot target is MAC (system), transition to MCU reset state.
+                if (MCU_REBOOT_TAG_MAC == l_u8_reboot)
+                {
+                    l_t_reboot_status = MCU_REBOOT_ST_MCU_RESET;
+                }
+                // Otherwise, power on the SOC and transition to the SOC on state.
+                else
+                {
+                    l_t_reboot_status = MCU_REBOOT_ST_SOC_ON;
+                }
             }
-            else
-            {
-                l_t_reboot_status = MCU_REBOOT_ST_SOC_ON;
-            }
-        }
-        break;
-    case MCU_REBOOT_ST_SOC_ON:
-        //soc on
-        //TODO 打开SOC电源
-        l_t_reboot_status = MCU_REBOOT_ST_IDLE;
-        break;
-    case MCU_REBOOT_ST_MCU_RESET:
-        //System_Reset();
-        //printf("MCU_REBOOT_ST_MCU_RESET\n");
-        //IAP_Reboot();
-    	//IAP_RebootToBootloader();
-        break;
+            break;
+
+        // State to power on the SOC.
+        case MCU_REBOOT_ST_SOC_ON:
+            // TODO: Add code to power on the SOC.
+            l_t_reboot_status = MCU_REBOOT_ST_IDLE;  // After powering on, return to idle state.
+            break;
+
+        // State to reset the MCU.
+        case MCU_REBOOT_ST_MCU_RESET:
+            // System reset code here (currently commented out).
+            // System_Reset();  
+            // Print debugging info or trigger a reset.
+            // printf("MCU_REBOOT_ST_MCU_RESET\n");
+            // IAP_Reboot();   // Boot into the next stage after reset.
+            // IAP_RebootToBootloader(); // Reboot to bootloader for firmware update, etc.
+            break;
     }
 }
 
