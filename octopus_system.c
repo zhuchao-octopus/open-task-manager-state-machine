@@ -70,7 +70,7 @@ void app_system_init_running(void)
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_register_module(M2A_MOD_SYSTEM, system_send_handler, system_receive_handler);
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
-    ptl_com_uart_register_module(A2M_MOD_SYSTEM, system_send_handler, system_receive_handler);
+    ptl_register_module(A2M_MOD_SYSTEM, system_send_handler, system_receive_handler);
 #else
 	  ptl_register_module(M2A_MOD_SYSTEM, system_send_handler, system_receive_handler);
 #endif
@@ -102,7 +102,7 @@ void app_system_assert_running(void)
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_reqest_running(M2A_MOD_SYSTEM);
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
-    com_uart_reqest_running(A2M_MOD_SYSTEM);
+    ptl_reqest_running(A2M_MOD_SYSTEM);
 #endif
 
     OTMS(TASK_ID_SYSTEM, OTMS_S_RUNNING);
