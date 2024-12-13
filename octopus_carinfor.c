@@ -574,7 +574,7 @@ void app_car_controller_sif_updating(void)
 
 void app_car_controller_msg_handler( void )
 {
-
+    //static uint8_t l_u8_op_step = 0;  // Operational step variable
     lt_indicator.position = GPIO_PIN_READ_SKD()  ? 0 : 1;      /* Ê¾¿íµÆ */
     lt_indicator.highBeam = GPIO_PIN_READ_DDD()  ? 0 : 1;      /* ´óµÆ   */
     lt_indicator.leftTurn = GPIO_PIN_READ_ZZD()  ? 0 : 1;      /* ×ó×ªµÆ */
@@ -593,21 +593,21 @@ void app_car_controller_msg_handler( void )
     Msg_t* msg = get_message(TASK_ID_CAR_INFOR);
     if(msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_GPIO_EVENT)
     {
-        send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
+      send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
     }
 		
     if(l_t_speed_changed)
 		{
-			 send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);	
-			 l_t_speed_changed=false;
+			send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);	
+			l_t_speed_changed=false;			
 		}
 		if(l_t_gear_changed)
 		{
 			send_message(TASK_ID_PTL, M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
 			l_t_gear_changed = false;
 		}
+	
 		#if 0
-		static uint8_t l_u8_op_step = 0;  // Operational step variable
     if(GetTickCounter(&l_t_msg_wait_100_timer) >= 1000)
     {
         switch(l_u8_op_step)
@@ -616,7 +616,7 @@ void app_car_controller_msg_handler( void )
             send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_SOC, 0);
             break;
         case 1:
-            send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);				
+            send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);		
             break;
         case 2:
             send_message(TASK_ID_PTL, M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
@@ -629,8 +629,7 @@ void app_car_controller_msg_handler( void )
             break;
         }
 
-        l_u8_op_step++;
-        if(l_u8_op_step >=4) l_u8_op_step = 0;
+        l_u8_op_step = (uint8_t)-1;
         StartTickCounter(&l_t_msg_wait_100_timer);
     }
 		#endif
