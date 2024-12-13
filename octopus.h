@@ -40,7 +40,7 @@
 #include "octopus_carinfor.h"       // Car information management structures and functions
 #include "octopus_sif.h"            // SIF (Serial Interface Framework) protocol interface
 #include "octopus_key.h"            // Key input handling and processing
-
+#include "octopus_bms.h" 
 
 
 #ifdef PLATFORM_CST_WIND_RTOS

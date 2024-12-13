@@ -40,14 +40,19 @@ extern "C" {
 // Define GPIO pins for various hardware components (mapped to platform-specific pins)
 #define GPIO_ACC_SOC_PIN                    P1     /**< ACC_SOC pin */
 #define GPIO_ACC_PIN                        P0     /**< ACC pin */
-#define GPIO_KEY_PIN                        P14    /**< Key pin */
+
 #define GPIO_DDD_PIN                        P31    /**< DDD pin */
 #define GPIO_ZZD_PIN                        P32    /**< ZZD pin */
 #define GPIO_YZD_PIN                        P33    /**< YZD pin */
 #define GPIO_SKD_PIN                        P34    /**< SKD pin */
 
+#define GPIO_KEY_PIN                        P14    /**< Key pin */
+
 #define GPIO_SIF_R_PIN                      P15    /**< SIF Receive pin */
-#define GPIO_SIF_S_PIN                      P24    /**< SIF Send pin */
+#define GPIO_SIF_S_PIN                      P20    /**< SIF Send pin */
+
+#define GPIO_BMS_R_PIN                      P11    /**< BMS Receive pin */
+//#define GPIO_BMS_S_PIN                      P11    /**< BMS Send pin */
 
 // Macros for controlling GPIO pin states (Low/High)
 #define GPIO_ACC_SOC_LOW()                  (HalGpioSet(GPIO_ACC_SOC_PIN, Bit_DISABLE))  /**< Set GPIO_ACC_SOC_PIN to Low */
@@ -67,7 +72,12 @@ extern "C" {
 // Macros for controlling SIF pins
 #define GPIO_PIN_SIF_SET_LOW()              (HalGpioSet(GPIO_SIF_S_PIN, Bit_DISABLE))  /**< Set GPIO_SIF_S_PIN to Low */
 #define GPIO_PIN_SIF_SET_HIGH()             (HalGpioSet(GPIO_SIF_S_PIN, Bit_ENABLE))   /**< Set GPIO_SIF_S_PIN to High */
-#define GPIO_PIN_READ_SIF()                 (HalGpioGet(GPIO_SIF_R_PIN))    /**< Read the state of SIF_R_PIN */
+#define GPIO_PIN_READ_SIF()                 (HalGpioGet(GPIO_SIF_R_PIN))    					 /**< Read the state of SIF_R_PIN */
+
+// Macros for controlling BMS pins
+#define GPIO_PIN_BMS_SET_LOW()              //(HalGpioSet(GPIO_BMS_R_PIN, Bit_DISABLE))  /**< Set GPIO_BMS_S_PIN to Low */
+#define GPIO_PIN_BMS_SET_HIGH()             //(HalGpioSet(GPIO_BMS_R_PIN, Bit_ENABLE))   /**< Set GPIO_BMS_S_PIN to High */
+#define GPIO_PIN_READ_BMS()                 (HalGpioGet(GPIO_BMS_R_PIN))    					 	 /**< Read the state of BMS_R_PIN */
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
 

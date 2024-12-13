@@ -150,7 +150,7 @@ void BMS_GPIO_Init(void)
 	BMS_SEND_DATA_BIT_LOW();
 }
 
-void BMS_Init(void)
+void bms_init(void)
 {
 if (!BMS_has_inited)
 	{

@@ -107,7 +107,6 @@ static uint32_t l_t_msg_wait_50_timer;  // Timer for 50 ms message wait
 static uint32_t l_t_msg_wait_100_timer;  // Timer for 100 ms message wait
 
 static uint32_t l_t_soc_timer;  // Timer for state of charge monitoring
-static uint8_t l_u8_op_step = 0;  // Operational step variable
 
 static bool l_t_speed_changed = false;
 static bool l_t_gear_changed = false;
@@ -141,8 +140,6 @@ void app_carinfo_start_running(void)
 
 void app_carinfo_assert_running(void)
 {
-    l_u8_op_step = 0;
-
 		ptl_reqest_running(M2A_MOD_METER);
     ptl_reqest_running(M2A_MOD_INDICATOR);
     ptl_reqest_running(M2A_MOD_DRIV_INFO);
@@ -160,14 +157,16 @@ void app_carinfo_running(void)
     ///{
     ///OTMS(CAR_INFOR_ID, OTMS_S_POST_RUN);
     ///}
-    if (GetTickCounter(&l_t_msg_wait_50_timer) < 50)
+    if (GetTickCounter(&l_t_msg_wait_50_timer) < 30)
         return;
     StartTickCounter(&l_t_msg_wait_50_timer);
 
     #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     app_car_controller_sif_updating();
     #endif
-		app_car_controller_msg_handler();
+		#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+	  app_car_controller_msg_handler();
+    #endif
 }
 
 void app_carinfo_post_running(void)
@@ -350,7 +349,6 @@ bool indicator_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1,
             lt_indicator.sensorFault ? SetBit(tmp[1], 3) : ClrBit(tmp[1], 3);   //传感器故障灯
             lt_indicator.motorFault  ? SetBit(tmp[1], 4) : ClrBit(tmp[1], 4);   //电机故障灯
             ptl_build_frame(M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, tmp, 5, buff);
-            //PRINT("CMD_MODINDICATOR_INDICATOR\r\n");
             return true;
         case CMD_MODINDICATOR_ERROR_INFO:
             //TODO
@@ -549,10 +547,11 @@ void app_car_controller_sif_updating(void)
         double w = rpm * (2.0 * 3.14159265358979 / 60.0); 																			//转换角速度，单位：弧度/秒
         double v = w * radius; 																																	//线速度，单位:米/秒
 
-        lt_meter.rpm = rpm + 20000; //offset:-20000
-				lt_meter_current_speed = v * (10.0 * 3600.0 / 1000.0);
-        
+        lt_meter.rpm = rpm + 20000; //offset:-20000        
         lt_meter.speed = v * (10.0 * 3600.0 / 1000.0) * 1.1;
+				
+				lt_meter_current_speed = v * (10.0 * 3600.0 / 1000.0);
+								
         lt_meter.voltageSystem = lt_sif.voltageSystem;
         //lt_meter.soc = lt_sif.soc;
         lt_meter.current = lt_sif.current * 10;  																								//test
@@ -563,11 +562,12 @@ void app_car_controller_sif_updating(void)
 					 lt_drivinfo.gear = (carinfo_drivinfo_gear_t)lt_sif.gear;
 					 l_t_gear_changed = true;
 				}
+				
 				if(lt_meter.speed_real != lt_meter_current_speed)
 				{
-					lt_meter.speed_real = lt_meter_current_speed;
 					l_t_speed_changed=true;
 				}
+				lt_meter.speed_real = lt_meter_current_speed;
     }
 }
 #endif
@@ -593,9 +593,9 @@ void app_car_controller_msg_handler( void )
     Msg_t* msg = get_message(TASK_ID_CAR_INFOR);
     if(msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_GPIO_EVENT)
     {
-        //send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);
         send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
     }
+		
     if(l_t_speed_changed)
 		{
 			 send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);	
@@ -606,7 +606,9 @@ void app_car_controller_msg_handler( void )
 			send_message(TASK_ID_PTL, M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
 			l_t_gear_changed = false;
 		}
-    if(GetTickCounter(&l_t_msg_wait_100_timer) >= 1500)
+		#if 0
+		static uint8_t l_u8_op_step = 0;  // Operational step variable
+    if(GetTickCounter(&l_t_msg_wait_100_timer) >= 1000)
     {
         switch(l_u8_op_step)
         {
@@ -631,6 +633,7 @@ void app_car_controller_msg_handler( void )
         if(l_u8_op_step >=4) l_u8_op_step = 0;
         StartTickCounter(&l_t_msg_wait_100_timer);
     }
+		#endif
 }
 
 #ifdef TEST_LOG_DEBUG_SIF

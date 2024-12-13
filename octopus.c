@@ -106,6 +106,9 @@ uint16_t TaskManagerStateMachineInit(uint8_t task_id)
 		#ifdef TASK_MANAGER_STATE_MACHINE_SIF
 		sif_init();
 		#endif
+		#ifdef TASK_MANAGER_STATE_MACHINE_BMS
+		bms_init();
+		#endif
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize user task manager state machine
     task_manager_init();  // Initialize the task manager

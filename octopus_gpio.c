@@ -80,7 +80,11 @@ void app_gpio_running(void)
 			{
 				LOG_LEVEL("get acc status=%d\r\n",acc_status.offon);
 				send_message(TASK_ID_BLE, MSG_DEVICE_GPIO_EVENT, GPIO_ACC_PIN, acc_status.offon);
-				send_message(TASK_ID_SYSTEM, MSG_DEVICE_GPIO_EVENT, GPIO_ACC_PIN, acc_status.offon);
+				if(acc_status.offon)
+				send_message(TASK_ID_SYSTEM, MSG_DEVICE_POWER_EVENT, CMD_MODSYSTEM_POWER_ON, acc_status.offon);
+				else
+				send_message(TASK_ID_SYSTEM, MSG_DEVICE_POWER_EVENT, CMD_MODSYSTEM_POWER_OFF, acc_status.offon);
+				
 				acc_status.changed=false;
 			}	
 			
