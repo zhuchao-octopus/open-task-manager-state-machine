@@ -143,7 +143,7 @@ void app_carinfo_assert_running(void)
 {
     l_u8_op_step = 0;
 
-		ptl_reqest_running(M2A_MOD_METER);
+	ptl_reqest_running(M2A_MOD_METER);
     ptl_reqest_running(M2A_MOD_INDICATOR);
     ptl_reqest_running(M2A_MOD_DRIV_INFO);
     StartTickCounter(&l_t_msg_wait_meter_timer);
@@ -156,6 +156,8 @@ void app_carinfo_assert_running(void)
 
 void app_carinfo_running(void)
 {
+   #ifdef TASK_MANAGER_STATE_MACHINE_MCU
+
     ///if(MB_ST_OFF == app_power_state_get_mb_state())
     ///{
     ///OTMS(CAR_INFOR_ID, OTMS_S_POST_RUN);
@@ -167,7 +169,9 @@ void app_carinfo_running(void)
     #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     app_car_controller_sif_updating();
     #endif
-		app_car_controller_msg_handler();
+   
+	app_car_controller_msg_handler();
+    #endif
 }
 
 void app_carinfo_post_running(void)
