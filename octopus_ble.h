@@ -22,11 +22,15 @@
  * Include necessary headers for BLE management.
  *******************************************************************************/
 #include "octopus_platform.h"  // Platform-specific definitions and utilities
-
+#include "octopus_system.h" 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/*******************************************************************************
+ * DEBUG SWITCH MACROS
+*/
+#ifdef TASK_MANAGER_STATE_MACHINE_BLE
 /*******************************************************************************
  * MACROS
  * Define commonly used macros for this module.
@@ -45,7 +49,7 @@ typedef struct {
     uint8_t mode;       /**< Current mode of the BLE module. */
     bool locked;        /**< Indicates if the BLE module is locked. */
     bool to_lock;       /**< Indicates if the BLE module should be locked. */
-    uint8_t mac[8];     /**< MAC address associated with the BLE module. */
+    uint8_t mac[6];     /**< MAC address associated with the BLE module. */
 } BLE_STATUS;
 
 /*******************************************************************************
@@ -85,6 +89,8 @@ void app_ble_stop_running(void);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif // __OCTOPUS_TASK_MANAGER_BLE_H__

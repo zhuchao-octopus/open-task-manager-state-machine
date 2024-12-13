@@ -31,9 +31,10 @@
  * INCLUDES
  */
  
-#include "octopus_msgqueue.h"  // Include header file for message queue operations
-#include "octopus_log.h" 
+#include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
+#include "octopus_log.h"       			// Include logging functions for debugging
 
+#include "octopus_msgqueue.h"  // Include message queue for inter-process communication
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLARATION
  */
@@ -49,7 +50,7 @@ static MsgQueue_t g_msgQueue[TASK_ID_MAX_NUM];  // Declare an array of message q
  * @param param1   The first parameter for the message.
  * @param param2   The second parameter for the message.
  */
-void send_message(TaskModule_t module, msgid_t id, uint16_t param1, uint16_t param2)
+void send_message(TaskModule_t task_module, msgid_t id, uint16_t param1, uint16_t param2)
 {
     Msg_t msg;
     uint8_t enque;  // Index of where to enqueue the new message
@@ -62,14 +63,14 @@ void send_message(TaskModule_t module, msgid_t id, uint16_t param1, uint16_t par
     msg.param2 = param2;
 
     // Get the current enqueue and dequeue positions, and check if the queue is full
-    enque = g_msgQueue[module].nEnque & 0x7f;  // Mask the 7 least significant bits for the enqueue index
-    full = g_msgQueue[module].nEnque & 0x80;   // Check if the most significant bit indicates that the queue is full
-    deque = g_msgQueue[module].nDeque & 0x7f;   // Mask the 7 least significant bits for the dequeue index
+    enque = g_msgQueue[task_module].nEnque & 0x7f;  // Mask the 7 least significant bits for the enqueue index
+    full = g_msgQueue[task_module].nEnque & 0x80;   // Check if the most significant bit indicates that the queue is full
+    deque = g_msgQueue[task_module].nDeque & 0x7f;   // Mask the 7 least significant bits for the dequeue index
 
     // If the queue is not full, enqueue the new message
     if (full == false)
     {
-        g_msgQueue[module].queue[enque] = msg;  // Store the message at the enqueue position
+        g_msgQueue[task_module].queue[enque] = msg;  // Store the message at the enqueue position
         enque++;  // Move the enqueue index forward
 
         if (enque >= QUEUE_LENGTH)  // Wrap around to the beginning of the queue if we exceed the maximum length
@@ -85,7 +86,7 @@ void send_message(TaskModule_t module, msgid_t id, uint16_t param1, uint16_t par
     }
     else
     {    
-        LOG_("message queue full,module:%d\r\n", module);  // Log an error if the queue is full
+        LOG_("message queue full,module:%d\r\n", task_module);  // Log an error if the queue is full
     }
 
     // Update the full flag in the enqueue index
@@ -95,8 +96,8 @@ void send_message(TaskModule_t module, msgid_t id, uint16_t param1, uint16_t par
     }
 
     // Update the message queue's enqueue and dequeue indices
-    g_msgQueue[module].nEnque = enque;
-    g_msgQueue[module].nDeque = deque;
+    g_msgQueue[task_module].nEnque = enque;
+    g_msgQueue[task_module].nDeque = deque;
 }
 
 /**
@@ -105,7 +106,7 @@ void send_message(TaskModule_t module, msgid_t id, uint16_t param1, uint16_t par
  * @param module   The task module from which the message is retrieved.
  * @return Msg_t*  Pointer to the retrieved message, or a static message if no message is available.
  */
-Msg_t *get_message(TaskModule_t module)
+Msg_t *get_message(TaskModule_t task_module)
 {
     static Msg_t s_msg;  // Static message structure to return
     uint8_t enque;       // Current enqueue index
@@ -115,14 +116,14 @@ Msg_t *get_message(TaskModule_t module)
     s_msg.id = NO_MSG;  // Default to no message if the queue is empty
 
     // Get the current enqueue and dequeue positions, and check if the queue is empty
-    enque = g_msgQueue[module].nEnque & 0x7f;  // Mask the 7 least significant bits for the enqueue index
-    deque = g_msgQueue[module].nDeque & 0x7f;  // Mask the 7 least significant bits for the dequeue index
-    empty = g_msgQueue[module].nDeque & 0x80;  // Check if the most significant bit indicates that the queue is empty
+    enque = g_msgQueue[task_module].nEnque & 0x7f;  // Mask the 7 least significant bits for the enqueue index
+    deque = g_msgQueue[task_module].nDeque & 0x7f;  // Mask the 7 least significant bits for the dequeue index
+    empty = g_msgQueue[task_module].nDeque & 0x80;  // Check if the most significant bit indicates that the queue is empty
 
     // If the queue is not empty, dequeue the next message
     if (empty == false) 
     {
-        s_msg = g_msgQueue[module].queue[deque];  // Retrieve the message from the queue
+        s_msg = g_msgQueue[task_module].queue[deque];  // Retrieve the message from the queue
         deque++;  // Move the dequeue index forward
 
         if (deque >= QUEUE_LENGTH)  // Wrap around to the beginning of the queue if we exceed the maximum length
@@ -144,8 +145,8 @@ Msg_t *get_message(TaskModule_t module)
     }
 
     // Update the message queue's enqueue and dequeue indices
-    g_msgQueue[module].nEnque = enque;
-    g_msgQueue[module].nDeque = deque;
+    g_msgQueue[task_module].nEnque = enque;
+    g_msgQueue[task_module].nDeque = deque;
 
     return &s_msg;  // Return a pointer to the retrieved message
 }
@@ -155,11 +156,11 @@ Msg_t *get_message(TaskModule_t module)
  *
  * @param module   The task module whose message queue is cleared.
  */
-void clear_message(TaskModule_t module)
+void clear_message(TaskModule_t task_module)
 {
     // Reset the enqueue and dequeue indices to initial values
-    g_msgQueue[module].nEnque = 0x00;  // Set enqueue index to 0, indicating the queue is not full
-    g_msgQueue[module].nDeque = 0x80;  // Set dequeue index to 0x80, indicating the queue is empty
+    g_msgQueue[task_module].nEnque = 0x00;  // Set enqueue index to 0, indicating the queue is not full
+    g_msgQueue[task_module].nDeque = 0x80;  // Set dequeue index to 0x80, indicating the queue is empty
 }
 
 /**

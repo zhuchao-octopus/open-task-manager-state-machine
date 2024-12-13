@@ -24,20 +24,18 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"  // Include platform-specific header for hardware platform details
-#include "octopus_log.h"       // Include logging functions for debugging
-#include "octopus_ble_hal.h"   // Include Bluetooth Low Energy Hardware Abstraction Layer (HAL) header
- 
-#include "octopus_ble.h"       // Include Bluetooth Low Energy functionality
-#include "octopus_tickcounter.h" // Include tick counter for timing operations
-#include "octopus_msgqueue.h"  // Include message queue for inter-process communication
-#include "octopus_task_manager.h" // Include task manager for scheduling tasks
-#include "octopus_flash.h"     // Include flash memory handling functions
+#include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
+#include "octopus_log.h"       			// Include logging functions for debugging
+#include "octopus_task_manager.h" 	// Include task manager for scheduling tasks
+
+#include "octopus_update_soc.h" 
+#include "octopus_tickcounter.h" 		// Include tick counter for timing operations
+#include "octopus_msgqueue.h"  			// Include message queue for inter-process communication
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
-
+#ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
 /*******************************************************************************
  * MACROS
  */
@@ -74,13 +72,14 @@ typedef struct
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLARATION
  */
-static bool app_update_send_handler(ptl_frame_module_t module, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff);  // Declare function to handle sending update commands
+static bool app_update_send_handler(ptl_frame_type_t module, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);  // Declare function to handle sending update commands
 static bool app_update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);  // Declare function to handle receiving update commands
 static void app_update_state_handler(void);  // Declare function to handle the MCU firmware update state
 
+#ifdef PLATFORM_ITE_OPEN_RTOS
 static void app_read_hex_file_callback(uint32_t addr, uint8_t* binbuff, uint8_t count);  // Declare callback function for reading data from a hex file
 static void* app_read_hex_file_task(void* arg);  // Declare task function for reading hex file data
-
+#endif
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
@@ -89,25 +88,25 @@ static void* app_read_hex_file_task(void* arg);  // Declare task function for re
  * STATIC VARIABLES
  */
 
-static mcu_update_state_t lt_mcu_status = 0;  // Define static variable to hold the MCU update status
+static mcu_update_state_t lt_mcu_status = (mcu_update_state_t)0;  // Define static variable to hold the MCU update status
 
+#ifdef PLATFORM_ITE_OPEN_RTOS
 static ptl_mcu_fw_state_t mcu_fw_state = MCU_FW_STATE_NORMAL;  // Define static variable to hold the MCU firmware state (initialized to normal)
-
-static bool l_b_flag_confirm_start = false;      // Flag to indicate if the start of the update process is confirmed
+static bool l_b_flag_update_success = false;     // Flag to indicate if the MCU update was successful
 static bool l_b_flag_enter_fw_update = false;    // Flag to indicate if the MCU is entering firmware update mode
 static bool l_b_flag_transfer_next = false;      // Flag to indicate if the next data frame is ready for transfer
-static bool l_b_flag_transfer_retry = false;     // Flag to indicate if a transfer retry is required
 static bool l_b_flag_transfer_complete = false;  // Flag to indicate if the data transfer is complete
-static bool l_b_flag_update_success = false;     // Flag to indicate if the MCU update was successful
 static bool l_b_flag_update_failed = false;      // Flag to indicate if the MCU update failed
+static bool l_b_flag_transfer_retry = false;     // Flag to indicate if a transfer retry is required
 static bool l_b_flag_update_reboot_req = false;  // Flag to indicate if a reboot request is made after the update
+static uint32_t l_tmr_check_fw_state;           // Define a timer for checking the firmware state
+static uint32_t l_i_mcu_file_res = 0;           // Variable to hold the result of the MCU firmware file processing
+#endif
 
+//static bool l_b_flag_confirm_start = false;      // Flag to indicate if the start of the update process is confirmed
 static uint32_t l_u32_mcu_fw_total_line = 0;    // Variable to hold the total number of lines in the MCU firmware
 static uint32_t l_u32_mcu_fw_curr_line = 0;     // Variable to hold the current line number being processed in the MCU firmware
-static uint32_t l_i_mcu_file_res = 0;           // Variable to hold the result of the MCU firmware file processing
 static uint32_t l_tmr_confirm;                  // Define a timer for confirming the upgrade process
-static uint32_t l_tmr_check_fw_state;           // Define a timer for checking the firmware state
-
 static program_buf_t lt_mcu_program_buf;        // Define a buffer to store data for the MCU program
 
 /*******************************************************************************
@@ -120,37 +119,37 @@ static program_buf_t lt_mcu_program_buf;        // Define a buffer to store data
 /**
  * Initializes the update process and registers the update module handlers.
  */
-void app_update_init_running(void)
+void app_update_soc_init_running(void)
 {
     LOG_LEVEL("app_update_init\r\n");  // Log the initialization of the update process
-    ptl_register_module(A2M_MOD_UPDATE, app_update_module_send_handler, app_update_module_receive_handler);  // Register the send and receive handlers for the update module
-    OTMS(TASK_ID_UPDATE, OTMS_S_INVALID);  // Set the update task status to invalid
+    ptl_register_module(A2M_MOD_UPDATE, app_update_send_handler, app_update_receive_handler);  // Register the send and receive handlers for the update module
+    OTMS(TASK_ID_UPDATE_SOC, OTMS_S_INVALID);  // Set the update task status to invalid
 }
 
 /**
  * Starts the update process by asserting the update task as running.
  */
-void app_update_start_running(void)
+void app_update_soc_start_running(void)
 {
-    OTMS(TASK_ID_UPDATE, OTMS_S_ASSERT_RUN);  // Set the update task status to assert run (start the update process)
+    OTMS(TASK_ID_UPDATE_SOC, OTMS_S_ASSERT_RUN);  // Set the update task status to assert run (start the update process)
 }
 
 /**
  * Asserts the running state of the update task if the system's memory board is on.
  */
-void app_update_assert_running(void)
+void app_update_soc_assert_running(void)
 {
     if (MB_ST_ON <= system_get_mb_state())  // Check if the memory board state is ON
     {
         ptl_reqest_running(A2M_MOD_UPDATE);  // Request the update module to start running
-        OTMS(TASK_ID_UPDATE, OTMS_S_RUNNING);  // Set the update task status to running
+        OTMS(TASK_ID_UPDATE_SOC, OTMS_S_RUNNING);  // Set the update task status to running
     }
 }
 
 /**
  * Executes the MCU update state processing logic.
  */
-void app_update_running(void)
+void app_update_soc_running(void)
 {
     app_update_state_handler();  // Process the current MCU update state
 }
@@ -158,22 +157,22 @@ void app_update_running(void)
 /**
  * Ends the update process, releases the running state, and asserts run if the memory board is not stopped.
  */
-void app_update_post_running(void)
+void app_update_soc_post_running(void)
 {
     ptl_release_running(A2M_MOD_UPDATE);  // Release the update module from running state
     if(MB_ST_STOP != system_get_mb_state())  // Check if the memory board state is not stopped
     {
-        OTMS(TASK_ID_UPDATE, OTMS_S_ASSERT_RUN);  // Assert the update task status to running
+        OTMS(TASK_ID_UPDATE_SOC, OTMS_S_ASSERT_RUN);  // Assert the update task status to running
     }
 }
 
 /**
  * Stops the update process and sets the task status to invalid.
  */
-void app_update_stop_running(void)
+void app_update_soc_stop_running(void)
 {
     LOG_LEVEL("app_update_stop_running\r\n");  // Log the stopping of the update process
-    OTMS(TASK_ID_UPDATE, OTMS_S_INVALID);  // Set the update task status to invalid (stop the update process)
+    OTMS(TASK_ID_UPDATE_SOC, OTMS_S_INVALID);  // Set the update task status to invalid (stop the update process)
 }
 
 /**
@@ -182,7 +181,7 @@ void app_update_stop_running(void)
 void app_update_confirm()
 {
     LOG_LEVEL("update_set_confirm\r\n");  // Log the confirmation of the update start
-    l_b_flag_confirm_start = true;  // Set the flag indicating that the update confirmation has started
+    //l_b_flag_confirm_start = true;  // Set the flag indicating that the update confirmation has started
 }
 
 /**
@@ -190,7 +189,7 @@ void app_update_confirm()
  */
 uint32_t app_update_get_confirm_time(void)
 {
-    return MCU_UPDATE_CONFIRM_TIME - GetTimer(&l_tmr_confirm);  // Calculate the remaining confirmation time
+    return MCU_UPDATE_CONFIRM_TIME - GetTickCounter(&l_tmr_confirm);  // Calculate the remaining confirmation time
 }
 
 /**
@@ -212,11 +211,12 @@ uint32_t app_update_get_fw_curr_line(void)
 /**
  * Returns the error code if any occurred during the update process.
  */
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
 int app_update_get_error_code(void)
 {
     return l_i_mcu_file_res;  // Return the error code from the MCU firmware processing
 }
-
+#endif
 /**
  * Returns the current status of the MCU update process.
  */
@@ -233,16 +233,16 @@ mcu_update_state_t app_update_get_status(void)
  * Handles the sending of update module frames based on the command received.
  * This function constructs the update frame and passes it to the `com_uart_build_frame` function for transmission.
  */
-static bool app_update_module_send_handler(ptl_frame_module_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff)
+static bool app_update_send_handler(ptl_frame_type_t frame_type,uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
 {
     assert(buff);  // Ensure the buffer pointer is valid
 
     uint8_t tmp[64] = {0};  // Temporary buffer to hold data to be sent
-    LOG_LEVEL("update_module_send_handler MOD %02x CMD %02x\r\n", module, cmd);  // Log the module and command for debugging
+    LOG_LEVEL("update_module_send_handler MOD %02x CMD %02x\r\n", frame_type, param1);  // Log the module and command for debugging
 
     if(A2M_MOD_UPDATE == frame_type)  // Check if the module is the update module
     {
-        switch(cmd)  // Handle the command based on the type
+        switch(param1)  // Handle the command based on the type
         {
         case CMD_MODUPDATE_CHECK_FW_STATE:  // Command to check the firmware state
             tmp[0] = 0x00;  // Set the first byte to 0 (used for the check firmware state command)
@@ -279,7 +279,7 @@ static bool app_update_module_send_handler(ptl_frame_module_t frame_type, ptl_fr
         }
         case CMD_MODUPDATE_REBOOT:  // Command to request a reboot
         {
-            tmp[0] = param;  // Set the reboot parameter in the buffer
+            tmp[0] = param2;  // Set the reboot parameter in the buffer
             ptl_build_frame(A2M_MOD_UPDATE, CMD_MODUPDATE_REBOOT, tmp, 1, buff);  // Build and send the reboot frame
             return true;  // Indicate the frame was successfully sent
         }
@@ -294,8 +294,9 @@ static bool app_update_module_send_handler(ptl_frame_module_t frame_type, ptl_fr
  * Handles the receiving of update module frames based on the payload received.
  * This function processes the response to the update commands and updates the flags or state accordingly.
  */
-static bool app_update_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
+static bool app_update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
 {
+	  #ifdef PLATFORM_ITE_OPEN_RTOS
     assert(payload);  // Ensure the payload pointer is valid
     assert(ackbuff);  // Ensure the acknowledgment buffer pointer is valid
 
@@ -306,16 +307,16 @@ static bool app_update_module_receive_handler(ptl_frame_payload_t *payload, ptl_
         switch(payload->cmd)  // Handle the command based on the payload's command
         {
         case CMD_MODUPDATE_CHECK_FW_STATE:  // Command to check the firmware state
-            mcu_fw_state = payload->data[0];  // Update the MCU firmware state from the payload data
+            mcu_fw_state = (ptl_mcu_fw_state_t)payload->data[0];  // Update the MCU firmware state from the payload data
             l_b_flag_enter_fw_update = (MCU_FW_STATE_WAIT_TRANSFER == mcu_fw_state);  // Set the flag to enter firmware update if the state indicates transfer wait
             // ACK, no further action required for this command
             return false;  // Return false since no acknowledgment frame is needed
         case CMD_MODUPDATE_UPDATE_FW_STATE:  // Command to update the firmware state
-            mcu_fw_state = payload->data[0];  // Update the MCU firmware state from the payload data
+            mcu_fw_state = (ptl_mcu_fw_state_t)payload->data[0];  // Update the MCU firmware state from the payload data
             l_b_flag_enter_fw_update = (MCU_FW_STATE_WAIT_TRANSFER == mcu_fw_state);  // Set the flag to enter firmware update if the state indicates transfer wait
             // Send ACK with data 0x01 indicating the state update is successful
             tmp = 0x01;  // Set acknowledgment byte to 0x01
-            com_uart_build_frame(A2M_MOD_UPDATE, CMD_MODUPDATE_UPDATE_FW_STATE, &tmp, 1, ackbuff);  // Build and send acknowledgment frame
+            ptl_build_frame(A2M_MOD_UPDATE, CMD_MODUPDATE_UPDATE_FW_STATE, &tmp, 1, ackbuff);  // Build and send acknowledgment frame
             return true;  // Return true indicating acknowledgment was sent
         case CMD_MODUPDATE_ENTER_FW_UPDATE:  // Command to enter firmware update mode
             l_b_flag_enter_fw_update = (0x01 == payload->data[0]);  // Set the flag to enter firmware update mode if the data is 0x01
@@ -335,6 +336,7 @@ static bool app_update_module_receive_handler(ptl_frame_payload_t *payload, ptl_
             break;  // No action for unknown commands
         }
     }
+		#endif
     return false;  // Return false if the module is not the update module or the command is not recognized
 }
 
@@ -342,6 +344,7 @@ static bool app_update_module_receive_handler(ptl_frame_payload_t *payload, ptl_
  * Callback function to handle the reading of a hex file's data.
  * This function processes the address and data, prints it, and manages the transfer flow.
  */
+#ifdef PLATFORM_ITE_OPEN_RTOS
 static void app_read_hex_file_callback(uint32_t addr, uint8_t* binbuff, uint8_t count)
 {
     // Print the address, count of bytes, and the data read from the hex file
@@ -352,7 +355,7 @@ static void app_read_hex_file_callback(uint32_t addr, uint8_t* binbuff, uint8_t 
     }
     LOG_("\r\n");
 
-    usleep(1 * 1000);  // Sleep for 1 millisecond to avoid overloading the system
+    DELAY_US(1 * 1000);  // Sleep for 1 millisecond to avoid overloading the system
 
     if (l_b_flag_transfer_next) {  // Check if the flag for transferring the next frame is set
         l_u32_mcu_fw_curr_line++;  // Increment the current line number of the MCU firmware
@@ -365,7 +368,7 @@ static void app_read_hex_file_callback(uint32_t addr, uint8_t* binbuff, uint8_t 
         }
 
         l_b_flag_transfer_next = false;  // Reset the flag indicating to transfer the next frame
-        send_message(MSGMODULE_APP_UART, A2M_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, 0);  // Send a message to request the next firmware data transfer
+        send_message(TASK_ID_PTL, A2M_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, 0);  // Send a message to request the next firmware data transfer
 
         while (!l_b_flag_transfer_next && !l_b_flag_transfer_retry)  // Wait until either transfer next or retry flag is set
         {
@@ -374,7 +377,7 @@ static void app_read_hex_file_callback(uint32_t addr, uint8_t* binbuff, uint8_t 
     }
     else if (l_b_flag_transfer_retry) {  // If retry is needed
         l_b_flag_transfer_retry = false;  // Reset the retry flag
-        send_message(MSGMODULE_APP_UART, A2M_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, 0);  // Send a message to retry the firmware data transfer
+        send_message(TASK_ID_PTL, A2M_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, 0);  // Send a message to retry the firmware data transfer
 
         while (!l_b_flag_transfer_next && !l_b_flag_transfer_retry)  // Wait until either transfer next or retry flag is set
         {
@@ -387,25 +390,27 @@ static void app_read_hex_file_callback(uint32_t addr, uint8_t* binbuff, uint8_t 
  * Task to read the hex file and initiate the transfer process.
  * This function reads the MCU update file and triggers the callback for each chunk of data.
  */
+
 static void* app_read_hex_file_task(void* arg)
 {
     l_b_flag_transfer_complete = false;  // Reset the transfer complete flag before starting
-    l_i_mcu_file_res = readIntelHexFile(MCU_UPDATE_FILE_PATH, readIntelHexFileCallBack);  // Read the hex file and call the callback function for each chunk
+    l_i_mcu_file_res = readIntelHexFile(MCU_UPDATE_FILE_PATH, app_read_hex_file_callback);  // Read the hex file and call the callback function for each chunk
     l_b_flag_transfer_complete = true;  // Set the transfer complete flag once the file is read
     return NULL;  // Return null as the task is completed
 }
-
+#endif
 /**
  * This function handles the MCU firmware update process through multiple states.
  * It transitions between states depending on the result of checks, timers, and the current update status.
  */
 static void app_update_state_handler(void)
 {
+	 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     switch (lt_mcu_status)  // Switch statement based on the current MCU update status
     {
     case MCU_UPDATE_ST_INIT:  // Initial state, setting up flags and timers for the update
         LOG_LEVEL("MCU_UPDATE_ST_INIT \r\n");  // Log the state
-        l_b_flag_confirm_start = false;   // Flag indicating confirmation start
+        //l_b_flag_confirm_start = false;   // Flag indicating confirmation start
         l_b_flag_enter_fw_update = false;  // Flag indicating whether to enter firmware update
         l_b_flag_transfer_next = false;    // Flag for the next transfer
         l_b_flag_transfer_retry = false;   // Flag for retrying transfer
@@ -446,7 +451,7 @@ static void app_update_state_handler(void)
         if (GetTickCounter(&l_tmr_check_fw_state) >= MCU_UPDATE_CHECK_FW_STATE_TIME)  // Timer to check firmware state
         {
             StartTickCounter(&l_tmr_check_fw_state);  // Restart the timer
-            send_message(MSGMODULE_APP_UART, A2M_MOD_UPDATE, CMD_MODUPDATE_CHECK_FW_STATE, 0);  // Send check firmware state command
+            send_message(TASK_ID_PTL, A2M_MOD_UPDATE, CMD_MODUPDATE_CHECK_FW_STATE, 0);  // Send check firmware state command
         }
 
         if ((GetTickCounter(&l_tmr_confirm) >= MCU_UPDATE_CONFIRM_TIME) || l_b_flag_enter_fw_update)  // Check if confirmation timeout or flag set
@@ -471,7 +476,7 @@ static void app_update_state_handler(void)
 
     case MCU_UPDATE_ST_START:  // Start the firmware update process
         LOG_LEVEL("MCU_UPDATE_ST_START \r\n");
-        send_message(MSGMODULE_APP_UART, A2M_MOD_UPDATE, CMD_MODUPDATE_ENTER_FW_UPDATE, 0);  // Send command to enter firmware update mode
+        send_message(TASK_ID_PTL, A2M_MOD_UPDATE, CMD_MODUPDATE_ENTER_FW_UPDATE, 0);  // Send command to enter firmware update mode
         
         l_b_flag_transfer_next = true;  // Set flag to transfer the next chunk
         l_b_flag_transfer_retry = false;  // Reset retry flag
@@ -484,20 +489,21 @@ static void app_update_state_handler(void)
         if (GetTickCounter(&l_tmr_check_fw_state) >= MCU_UPDATE_CHECK_FW_STATE_TIME)  // Timer to check firmware state
         {
             StartTickCounter(&l_tmr_check_fw_state);  // Restart the timer
-            send_message(MSGMODULE_APP_UART, A2M_MOD_UPDATE, CMD_MODUPDATE_CHECK_FW_STATE, 0);  // Send check firmware state command
+            send_message(TASK_ID_PTL, A2M_MOD_UPDATE, CMD_MODUPDATE_CHECK_FW_STATE, 0);  // Send check firmware state command
         }
 
         if (mcu_fw_state == MCU_FW_STATE_WAIT_TRANSFER)  // Check if MCU is ready to receive firmware transfer
         {
             LOG_LEVEL("MCU_UPDATE_ST_WAIT_BOOT jump TRANSFER \r\n");
             // Start the thread to read the Intel Hex file and begin data transfer
+					#ifdef PLATFORM_ITE_OPEN_RTOS
             pthread_t task;
             pthread_attr_t attr;
             pthread_attr_init(&attr);
             pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);  // Set thread to detached state
             pthread_attr_setstacksize(&attr, CFG_UPDATE_STACK_SIZE);  // Set the stack size for the thread
-            pthread_create(&task, &attr, readIntelHexFileTask, NULL);  // Create the thread to read and transfer data
-
+            pthread_create(&task, &attr, app_read_hex_file_task, NULL);  // Create the thread to read and transfer data
+					#endif
             // Transition to the data transfer state
             lt_mcu_status = MCU_UPDATE_ST_TRANSFER;
         }
@@ -509,7 +515,7 @@ static void app_update_state_handler(void)
             l_b_flag_transfer_complete = false;  // Reset transfer complete flag
             if (l_i_mcu_file_res > 0)  // If the file was successfully read
             {
-                send_message(MSGMODULE_APP_UART, A2M_MOD_UPDATE, CMD_MODUPDATE_EXIT_FW_UPDATE, 0);  // Send command to exit firmware update mode
+                send_message(TASK_ID_PTL, A2M_MOD_UPDATE, CMD_MODUPDATE_EXIT_FW_UPDATE, 0);  // Send command to exit firmware update mode
             }
             else
             {
@@ -536,7 +542,7 @@ static void app_update_state_handler(void)
             if (l_b_flag_update_reboot_req)  // If reboot is requested
             {
                 l_b_flag_update_reboot_req = false;  // Reset reboot request flag
-                send_message(MSGMODULE_APP_UART, A2M_MOD_UPDATE, CMD_MODUPDATE_REBOOT, 0x01);  // Send reboot command
+                send_message(TASK_ID_PTL, A2M_MOD_UPDATE, CMD_MODUPDATE_REBOOT, 0x01);  // Send reboot command
             }
         }
         break;
@@ -545,6 +551,8 @@ static void app_update_state_handler(void)
         // Log the failure state (optional)
         break;
     }
+		#endif
 }
 
+#endif
 

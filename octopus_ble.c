@@ -13,7 +13,7 @@
  * @author  Octopus Team
  * @version 1.0.0
  * @date    2024-12-09
-
+ */
 /*******************************************************************************
  * INCLUDES
  * Include the necessary header files for the Octopus platform and BLE functionality.
@@ -21,18 +21,19 @@
  
 #include "octopus_platform.h"
 #include "octopus_log.h"
-#include "octopus_ble_hal.h"
+#include "octopus_ble_hal.h"   // Include Bluetooth Low Energy Hardware Abstraction Layer (HAL) header
  
-#include "octopus_ble.h"
+#include "octopus_ble.h"       // Include Bluetooth Low Energy functionality
 #include "octopus_tickcounter.h"
 #include "octopus_msgqueue.h"
 #include "octopus_task_manager.h"
 #include "octopus_flash.h"
 
+
 /*******************************************************************************
  * DEBUG SWITCH MACROS
 */
-
+#ifdef TASK_MANAGER_STATE_MACHINE_BLE
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLEAR
  */
@@ -45,7 +46,7 @@ void BLE_connecttion_lock_polling(void);
  /*******************************************************************************
  * GLOBAL VARIABLES
  */
-BLE_STATUS ble_status = {false,false,false, { 0, 0,0, 0, 0, 0, 0, 0 } };
+BLE_STATUS ble_status = {false,false,false,{0}};
 
 uint8_t ble_bonded_mac[6][6] = { 
 { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },	
@@ -243,4 +244,4 @@ void StartToUnlock(void)
 	LOG_LEVEL("Start to unlock system...\r\n");
 }
 
-
+#endif

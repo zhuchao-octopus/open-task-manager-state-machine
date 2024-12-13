@@ -16,8 +16,8 @@
 
  ******************************************************************************/
 
-#ifndef ___OCTOPUS_TASK_MANAGER_H___
-#define ___OCTOPUS_TASK_MANAGER_H___
+#ifndef ___OCTOPUS_TASK_MANAGER_OCTOPUS_H___
+#define ___OCTOPUS_TASK_MANAGER_OCTOPUS_H___
 
 
 /*******************************************************************************

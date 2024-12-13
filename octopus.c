@@ -20,8 +20,10 @@
 /*******************************************************************************
  * INCLUDES
  */
+#include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
+#include "octopus_log.h"       			// Include logging functions for debugging
+#include "octopus_task_manager.h" 	// Include task manager for scheduling tasks
 #include "octopus.h"
-#include "octopus_platform.h"  // Core octopus library
 
 
 /*******************************************************************************
@@ -88,6 +90,7 @@ uint16_t TaskManagerStateMachineInit(uint8_t task_id)
     LOG_LEVEL("OTMS initialization task_id:%02x\r\n", TaskManagerStateMachine_Id_);
     LOG_LEVEL("OTMS datetime:%s\r\n", OTMS_RELEASE_DATA_TIME);
     LOG_LEVEL("OTMS version :%s\r\n", OTMS_VERSION);
+	
 	  /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize hardware abstraction layers (HAL)
     hal_gpio_init(0);  // Initialize GPIO
@@ -96,15 +99,20 @@ uint16_t TaskManagerStateMachineInit(uint8_t task_id)
 	  #endif
 	  hal_flash_init(0);
     hal_com_uart_init(0);  // Initialize UART communication protocol
+	
+		/////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Initialize the necessary modules
+		message_queue_init(); // Initialize the task message queue.
+		#ifdef TASK_MANAGER_STATE_MACHINE_SIF
+		sif_init();
+		#endif
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Initialize user task manager
+    // Initialize user task manager state machine
     task_manager_init();  // Initialize the task manager
     task_manager_start();  // Start the task manager
-	  /////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Initialize other user module
-		SIF_Init();
-		 /////////////////////////////////////////////////////////////////////////////////////////////////////
-		 //Nofify Initialize complete
+
+		/////////////////////////////////////////////////////////////////////////////////////////////////////
+		//Nofify Initialize complete
     #ifdef TASK_MANAGER_STATE_MACHINE_MCU
 	  system_handshake_with_app();
 	  #endif

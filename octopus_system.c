@@ -17,13 +17,14 @@
  ******************************************************************************/
 
 /* Includes ------------------------------------------------------------------*/
-#include "octopus_platform.h"
-#include "octopus_log.h"
+#include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
+#include "octopus_log.h"       			// Include logging functions for debugging
+#include "octopus_task_manager.h" 	// Include task manager for scheduling tasks
 #include "octopus_gpio.h"
 #include "octopus_system.h"
 #include "octopus_tickcounter.h"
 #include "octopus_msgqueue.h"
-#include "octopus_task_manager.h"
+
 
 /*******************************************************************************
  * Debug Switch Macros
@@ -70,6 +71,8 @@ void app_system_init_running(void)
     ptl_register_module(M2A_MOD_SYSTEM, system_send_handler, system_receive_handler);
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
     ptl_com_uart_register_module(A2M_MOD_SYSTEM, system_send_handler, system_receive_handler);
+#else
+	  ptl_register_module(M2A_MOD_SYSTEM, system_send_handler, system_receive_handler);
 #endif
 
     OTMS(TASK_ID_SYSTEM, OTMS_S_INVALID);

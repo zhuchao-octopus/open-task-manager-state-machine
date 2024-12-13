@@ -15,24 +15,15 @@
 
  ******************************************************************************/
 
-#ifndef ___OCTOPUS_TASK_MANAGER_UPDATE_H___
-#define ___OCTOPUS_TASK_MANAGER_UPDATE_H___
+#ifndef ___OCTOPUS_TASK_MANAGER_UPDATE_SOC_H___
+#define ___OCTOPUS_TASK_MANAGER_UPDATE_SOC_H___
 
 /*******************************************************************************
  * INCLUDE FILES
  * Include standard libraries and platform-specific headers.
  ******************************************************************************/
 #include "octopus_platform.h"          // Platform-specific definitions
-#include "octopus_timer_hal.h"         // Hardware abstraction for timer
-#include "octopus_uart_hal.h"          // UART hardware abstraction
-#include "octopus_gpio_hal.h"          // GPIO hardware abstraction
-#include "octopus_flash_hal.h"         // Flash memory hardware abstraction
-
-#include "octopus_uart_ptl.h"          // UART protocol handling
-#include "octopus_tickcounter.h"       // Timer management
-#include "octopus_msgqueue.h"          // Message queue management
-#include "octopus_task_manager.h"      // Task manager functionality
-#include "octopus_log.h"               // Logging functionality
+#include "octopus_system.h" 
 
 #ifdef __cplusplus
 extern "C"{
@@ -48,7 +39,7 @@ extern "C"{
  * DEBUG SWITCH MACROS
  * Define macros to enable or disable debug functionality.
  ******************************************************************************/
-
+#ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
 /*******************************************************************************
  * MACROS
  * Define commonly used macros for this module.
@@ -58,21 +49,6 @@ extern "C"{
  * TYPEDEFS
  * Define types used in the MCU update process.
  ******************************************************************************/
-
-/**
- * @enum mcu_update_state_t
- * @brief Enumeration representing the states of the MCU update process.
- */
-typedef enum {
-    MCU_UPDATE_ST_INIT          = (0x00),  /**< Initialization state. */
-    MCU_UPDATE_ST_CHECK_FILE    = (0x01),  /**< State for checking the update file. */
-    MCU_UPDATE_ST_WAIT_CONFIRM  = (0x02),  /**< Waiting for confirmation to start update. */
-    MCU_UPDATE_ST_START         = (0x03),  /**< Starting the update process. */
-    MCU_UPDATE_ST_WAIT_BOOT     = (0x04),  /**< Waiting for the MCU to enter boot mode. */
-    MCU_UPDATE_ST_TRANSFER      = (0x05),  /**< Transferring firmware data. */
-    MCU_UPDATE_ST_COMPLETED     = (0x06),  /**< Update process completed. */
-    MCU_UPDATE_ST_FAILED        = (0x07),  /**< Update process failed. */
-} mcu_update_state_t;
 
 /*******************************************************************************
  * CONSTANTS
@@ -92,32 +68,32 @@ typedef enum {
 /**
  * @brief Initialize the update process.
  */
-void app_update_init_running(void);
+void app_update_soc_init_running(void);
 
 /**
  * @brief Start the update process.
  */
-void app_update_start_running(void);
+void app_update_soc_start_running(void);
 
 /**
  * @brief Assert and verify the update process is running.
  */
-void app_update_assert_run_running(void);
+void app_update_soc_assert_run_running(void);
 
 /**
  * @brief Handle the main logic for the update process.
  */
-void app_update_running(void);
+void app_update_soc_running(void);
 
 /**
  * @brief Perform post-update operations.
  */
-void app_update_post_running(void);
+void app_update_soc_post_running(void);
 
 /**
  * @brief Stop the update process.
  */
-void app_update_stop_running(void);
+void app_update_soc_stop_running(void);
 
 /**
  * @brief Confirm the update process.
@@ -146,8 +122,9 @@ uint32_t app_update_get_fw_curr_line(void);
  * @brief Get the error code from the update process.
  * @return The error code indicating the reason for failure.
  */
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
 uint32_t app_update_get_error_code(void);
-
+#endif
 /**
  * @brief Get the current status of the update process.
  * @return The current state of the MCU update.
@@ -161,6 +138,8 @@ mcu_update_state_t app_update_get_status(void);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif // ___OCTOPUS_TASK_MANAGER_UPDATE_H___

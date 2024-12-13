@@ -41,9 +41,11 @@ void hal_timer_interrupt_callback(uint8_t event)
 	{
 		case HAL_EVT_TIMER_5:
 			//LOG("t5\n");
+		#ifdef TASK_MANAGER_STATE_MACHINE_SIF
 		  HalTimerMaskInt(AP_TIMER_ID_5,true);
 			SIF_IO_IRQHandler();
 		  HalTimerMaskInt(AP_TIMER_ID_5,false);
+		#endif
 			break;
 		case HAL_EVT_TIMER_6:
 			LOG("t6\n");

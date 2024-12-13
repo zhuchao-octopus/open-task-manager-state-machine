@@ -14,13 +14,15 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"
-#include "octopus_log.h" 
+#include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
+#include "octopus_log.h"       			// Include logging functions for debugging
+#include "octopus_task_manager.h" 	// Include task manager for scheduling tasks
+
 #include "octopus_uart_ptl.h"      // Include UART protocol header
 #include "octopus_uart_hal.h"      // Include UART hardware abstraction layer header
 #include "octopus_tickcounter.h"         // Include timer utility functions
 #include "octopus_msgqueue.h"      // Include message queue header for task communication
-#include "octopus_task_manager.h"  // Include task manager header for task state management
+
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS

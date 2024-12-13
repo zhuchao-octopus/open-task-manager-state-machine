@@ -1,7 +1,8 @@
 
 
-#include "octopus_platform.h"
-#include "octopus_log.h"
+#include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
+#include "octopus_log.h"       			// Include logging functions for debugging
+#include "octopus_task_manager.h" 	// Include task manager for scheduling tasks
 #include "octopus_flash.h"
 
 

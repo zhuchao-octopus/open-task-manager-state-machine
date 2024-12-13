@@ -53,13 +53,18 @@ extern "C"{
 #define PRJ_VER_STR "KD070E01" /**< Project version. */
 #define VER_STR "MCU:"APP_VER_STR"HW:"HW_VER_STR"PRJ:"PRJ_VER_STR"\n" /**< Combined version string. */
 
-/**
+/***********************************************************************************
  * @brief Task Manager state machine modes.
  */
-#define TASK_MANAGER_STATE_MACHINE_MCU 1 /**< Main control mode. */
+//#define TASK_MANAGER_STATE_MACHINE_MCU 1 /**< Main control mode. */
 //#define TASK_MANAGER_STATE_MACHINE_SOC 1 /**< (Reserved) SOC mode. */
-#define TASK_MANAGER_STATE_MACHINE_SIF 1 /**< Secondary interface mode. */
-#define TASK_MANAGER_STATE_MACHINE_BLE 1 
+//#define TASK_MANAGER_STATE_MACHINE_SIF 1 /**< Secondary interface mode. */
+//#define TASK_MANAGER_STATE_MACHINE_BLE 1 
+//#define TASK_MANAGER_STATE_MACHINE_BMS 1 
+//#define TASK_MANAGER_STATE_MACHINE_KEY 1 
+//#define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
+
+
 /**
  * @brief System MPU (Microprocessor Unit) state definitions.
  */
@@ -99,7 +104,7 @@ typedef enum MB_STATE {
     MB_ST_ON,           /**< Fully operational state. */
     MB_ST_PARTIAL,      /**< Partial operation state. */
     MB_ST_SHUTDOWN,     /**< Shutdown process. */
-    MB_ST_OFF           /**< Power-off state. */
+    MB_ST_OFF,          /**< Power-off state. */
     MB_ST_STOP,
 } mb_state_t;
 

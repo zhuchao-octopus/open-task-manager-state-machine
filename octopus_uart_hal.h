@@ -1,4 +1,3 @@
-
 /**
  * ****************************************************************************
  * @copyright Copyright (c) XXX
@@ -6,7 +5,10 @@
  *
  * Header file for the Octopus Task Manager module.
  * Defines macros, includes required libraries, and declares functions.
- */
+ * @version  1.0.0
+ * @date 2024-12-12
+ * @author   Octopus Team
+ *****************************************************************************/
 
 #ifndef __OCTOPUS_TASK_MANAGER_UART_HAL_H__
 #define __OCTOPUS_TASK_MANAGER_UART_HAL_H__

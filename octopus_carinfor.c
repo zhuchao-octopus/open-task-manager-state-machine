@@ -23,20 +23,20 @@
  * @version  1.0.0
  * @date     2024-12-11
  * @author   Octopus Team
-
  *
  ******************************************************************************/
 
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"  
+#include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
+#include "octopus_log.h"       			// Include logging functions for debugging
+#include "octopus_task_manager.h" 	// Include task manager for scheduling tasks
 #include "octopus_tickcounter.h"
 #include "octopus_carinfor.h"
 #include "octopus_msgqueue.h"
 #include "octopus_sif.h"
-#include "octopus_task_manager.h"
-#include "octopus_log.h"            // Octopus-specific logging library
+
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -76,7 +76,9 @@ static bool drivinfo_module_send_handler(ptl_frame_type_t frame_type, uint16_t p
 static bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
 static void app_car_controller_msg_handler(void);  // Process messages related to car controller
+#ifdef TASK_MANAGER_STATE_MACHINE_SIF
 static void app_car_controller_sif_updating(void);  // Update the SIF (System Information Frame)
+#endif
 #ifdef BATTERY_MANAGER
 static void get_battery_voltage(void);  // Retrieve the current battery voltage
 #endif
@@ -91,7 +93,9 @@ static void log_sif_data(uint8_t* data, uint8_t maxlen);  // Log SIF data for de
 /*******************************************************************************
  * STATIC VARIABLES
  */
+#ifdef TASK_MANAGER_STATE_MACHINE_SIF
 static uint8_t sif_buff[12] = {0};  // Buffer for storing SIF data
+#endif
 static carinfo_sif_t lt_sif = {0};  // Local SIF data structure
 static carinfo_meter_t lt_meter = {0};  // Local meter data structure
 static carinfo_indicator_t lt_indicator = {0};  // Local indicator data structure
@@ -162,8 +166,8 @@ void app_carinfo_running(void)
 
     #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     app_car_controller_sif_updating();
-    app_car_controller_msg_handler();
     #endif
+		app_car_controller_msg_handler();
 }
 
 void app_carinfo_post_running(void)
@@ -481,9 +485,10 @@ bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff
     return false;
 }
 
+#ifdef TASK_MANAGER_STATE_MACHINE_SIF
 void app_car_controller_sif_updating(void)
 {
-    uint8_t res = SIF_ReadData(sif_buff, sizeof(sif_buff));
+	  uint8_t res = SIF_ReadData(sif_buff, sizeof(sif_buff));	
 		//uint8_t lt_meter_current_gear = 0;
 	  uint16_t lt_meter_current_speed = 0;
 		
@@ -547,6 +552,7 @@ void app_car_controller_sif_updating(void)
 				}
     }
 }
+#endif
 
 void app_car_controller_msg_handler( void )
 {

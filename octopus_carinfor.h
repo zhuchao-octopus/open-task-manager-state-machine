@@ -1,9 +1,25 @@
-/** ****************************************************************************
- * @copyright Copyright (c) XXX
+/********************************** (C) COPYRIGHT *******************************
+ * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
  * All rights reserved.
  *
+ * @file    octopus_task_manager_carinfo.h
+ * @brief   This header file defines structures, macros, constants, and function 
+ *          declarations related to managing car information within the Octopus 
+ *          task manager system.
  *
- */
+ * @details This file contains the definitions for monitoring various car 
+ *          parameters, including electrical and mechanical states such as 
+ *          battery voltage, motor faults, gear positions, and more. It also 
+ *          provides the necessary functions to manage and retrieve car information 
+ *          during system operation. This is essential for vehicle control systems 
+ *          that require precise monitoring of the car's status in real-time.
+ *
+ * @note    This software (modified or not) and binary are intended for use 
+ *          with microcontrollers manufactured by Nanjing Qinheng Microelectronics.
+ * @author  Octopus Team
+ * @version 1.0.0
+ * @date    2024-12-09
+ *******************************************************************************/
 #ifndef __OCTOPUS_TASK_MANAGER_CARINFO_H__
 #define __OCTOPUS_TASK_MANAGER_CARINFO_H__
 
@@ -99,8 +115,6 @@ typedef struct
     uint32_t speed_real;                //实际车速 单位：0.1km/h
     uint32_t rpm;                       //转速 单位：rpm
 }carinfo_t;
-
-
 
 typedef struct
 {

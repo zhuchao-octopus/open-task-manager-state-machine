@@ -12,14 +12,13 @@
  * - Message Structure (`Msg_t`): Represents a message containing an ID and two parameters.
  * - Function Prototypes: Functions to send, retrieve, and clear messages in the queues.
  *
- * @version 1.0
- * @date    2024-12-09
- *
  * @note    The maximum length of the queue is defined by `QUEUE_LENGTH`, and a special value
  *          `NO_MSG` is used to indicate an empty message state.
  *
- * @author  Your Name
- ******************************************************************************/
+* @version  1.0.0
+* @date     2024-12-09
+* @author   Octopus Team
+*******************************************************************************/
 
 #ifndef __OCTOPUS_TASK_MANAGER_MSG_QUEUE_H__
 #define __OCTOPUS_TASK_MANAGER_MSG_QUEUE_H__
@@ -29,11 +28,23 @@
  */
  
 #include "octopus_platform.h"                 // General Octopus definitions
-#include "octopus_task_manager.h"     // Task manager definitions
+#include "octopus_task_manager.h"     				// Task manager definitions
 
 #ifdef __cplusplus
 extern "C"{
 #endif
+
+/*******************************************************************************
+ * MODULE IDs (Message Types)
+ * These are the message IDs associated with different events or types of messages.
+ */
+typedef enum{ 
+    MSG_DEVICE_NORMAL_EVENT         = 0xA0,   // Normal device event message 160
+    MSG_DEVICE_KEY_EVENT            = 0xA1,   // Key event message
+    MSG_DEVICE_GPIO_EVENT           = 0xA2,   // GPIO event message
+    MSG_DEVICE_POWER_EVENT          = 0xA3,   // 
+    MSG_DEVICE_HANDSHAKE_EVENT      = 0xA4,
+} MsgId_t;
 
 /*******************************************************************************
  * DEFINITIONS AND MACROS
@@ -66,25 +77,13 @@ typedef struct
 } MsgQueue_t;
 
 /*******************************************************************************
- * MODULE IDs (Message Types)
- * These are the message IDs associated with different events or types of messages.
- */
-typedef enum{ 
-    MSG_DEVICE_NORMAL_EVENT         = 0xA0,   // Normal device event message 160
-    MSG_DEVICE_KEY_EVENT            = 0xA1,   // Key event message
-    MSG_DEVICE_GPIO_EVENT           = 0xA2,   // GPIO event message
-    MSG_DEVICE_POWER_EVENT          = 0xA3,   // 
-    MSG_DEVICE_HANDSHAKE_EVENT      = 0xA4,
-} MsgId_t;
-
-/*******************************************************************************
  * FUNCTION PROTOTYPES
  * Functions for managing the message queues
  */
-Msg_t *get_message(TaskModule_t module);         // Retrieve a message from the task module's queue
-void send_message(TaskModule_t module, msgid_t id, uint16_t param1, uint16_t param2);  // Send a message to the task module's queue
-void clear_message(TaskModule_t module);         // Clear the task module's message queue
-void message_queue_init(void);                   // Initialize all message queues for the task manager
+Msg_t *get_message(TaskModule_t task_module);         // Retrieve a message from the task module's queue
+void send_message(TaskModule_t task_module, msgid_t id, uint16_t param1, uint16_t param2);  // Send a message to the task module's queue
+void clear_message(TaskModule_t task_module);         // Clear the task module's message queue
+void message_queue_init(void);                   			// Initialize all message queues for the task manager
 
 #ifdef __cplusplus
 }

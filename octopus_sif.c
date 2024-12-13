@@ -8,10 +8,15 @@
 /******************************************************************************/
 /* Header file contains */
 
-#include "octopus_platform.h"
-#include "octopus_log.h"
+#include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
+#include "octopus_log.h"       			// Include logging functions for debugging
+#include "octopus_system.h"
 #include "octopus_sif.h"
 
+/*******************************************************************************
+ * DEBUG SWITCH MACROS
+*/
+#ifdef TASK_MANAGER_STATE_MACHINE_SIF
 /********************************** (C) COPYRIGHT *******************************
  * CONSTANTS
  */
@@ -138,7 +143,7 @@ void SIF_GPIO_Init(void)
 	SIF_SEND_DATA_BIT_LOW();
 }
 
-void SIF_Init(void)
+void sif_init(void)
 {
 if (!SIF_has_inited)
 	{
@@ -643,3 +648,4 @@ uint8_t SIF_Get_Input_Pin_Data(void)
 	return ret;
 }
 
+#endif

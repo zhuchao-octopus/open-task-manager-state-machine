@@ -2,18 +2,18 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"
-#include "octopus_log.h" 
+#include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
+#include "octopus_log.h"       			// Include logging functions for debugging
+#include "octopus_task_manager.h" 	// Include task manager for scheduling tasks
 #include "octopus_flash.h"
 #include "octopus_key.h"
 #include "octopus_tickcounter.h"
 #include "octopus_msgqueue.h"
-#include "octopus_task_manager.h"
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
 */
-
+#ifdef TASK_MANAGER_STATE_MACHINE_KEY
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLEAR
  */
@@ -163,4 +163,5 @@ bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
     return false;
 }
 
+#endif
 
