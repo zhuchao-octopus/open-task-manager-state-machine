@@ -40,7 +40,7 @@
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
-
+#define CARINFOR_PTL_NO_ACK
 //#define TEST_LOG_DEBUG_SIF  // Uncomment to enable debug logging for SIF module
 
 /*******************************************************************************
@@ -275,7 +275,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
 {
     assert(payload);
     assert(ackbuff);
-    uint8_t tmp = 0;
+    
     if(A2M_MOD_METER == payload->frame_type)
     {
         switch(payload->cmd)
@@ -292,6 +292,8 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
     }
     else if(M2A_MOD_METER == payload->frame_type)
     {
+			  #ifndef CARINFOR_PTL_NO_ACK //no ack
+			  uint8_t tmp = 0;
         switch(payload->cmd)
         {
         case CMD_MODMETER_RPM_SPEED:
@@ -312,10 +314,11 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             //ACK
             tmp = 0x01;
             ptl_build_frame(A2M_MOD_METER, CMD_MODMETER_SOC, &tmp, 1, ackbuff);
-            return true;
+						return true;	        
         default:
             break;
         }
+				#endif      
     }
     return false;
 }
@@ -372,7 +375,7 @@ bool indicator_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buf
 {
     assert(payload);
     assert(ackbuff);
-    uint8_t tmp = 0;
+    
     if(A2M_MOD_INDICATOR == payload->frame_type)
     {
         switch(payload->cmd)
@@ -389,6 +392,8 @@ bool indicator_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buf
     }
     else if(M2A_MOD_INDICATOR == payload->frame_type)
     {
+			  #ifndef CARINFOR_PTL_NO_ACK //no ack
+			  uint8_t tmp = 0;
         switch(payload->cmd)
         {
         case CMD_MODINDICATOR_INDICATOR:
@@ -416,6 +421,7 @@ bool indicator_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buf
         default:
             break;
         }
+				#endif
     }
     return false;
 }
@@ -454,7 +460,7 @@ bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff
 {
     assert(payload);
     assert(ackbuff);
-    uint8_t tmp = 0;
+    
     if(A2M_MOD_DRIV_INFO == payload->frame_type)
     {
         switch(payload->cmd)
@@ -468,6 +474,8 @@ bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff
     }
     else if(M2A_MOD_DRIV_INFO == payload->frame_type)
     {
+			  #ifndef CARINFOR_PTL_NO_ACK //no ack
+			  uint8_t tmp = 0;
         switch(payload->cmd)
         {
         case CMD_MODDRIVINFO_GEAR:
@@ -481,6 +489,7 @@ bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff
         default:
             break;
         }
+			 #endif
     }
     return false;
 }
