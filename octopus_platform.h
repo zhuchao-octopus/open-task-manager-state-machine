@@ -47,8 +47,8 @@
  * PROJECT SWITCH MACROS
  * Define which platform and RTOS to use by enabling the corresponding macro.
  ******************************************************************************/
-//#define PLATFORM_ITE_OPEN_RTOS  // Enable ITE platform with OPEN RTOS
-#define PLATFORM_CST_OSAL_RTOS // Uncomment to use CST platform with OSAL RTOS
+#define PLATFORM_ITE_OPEN_RTOS  // Enable ITE platform with OPEN RTOS
+//#define PLATFORM_CST_OSAL_RTOS // Uncomment to use CST platform with OSAL RTOS
 //#define PLATFORM_CST_WIND_RTOS // Uncomment to use CST platform with WIND RTOS
 
 /*******************************************************************************
