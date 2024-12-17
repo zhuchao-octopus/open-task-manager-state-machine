@@ -37,11 +37,11 @@
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLEAR
  */
-void CheckBLeBondedConnectionStatus(uint8_t *connected_mac, uint8_t c_type);
+void CheckBLeConnectionStatus(uint8_t *connected_mac, uint8_t c_type);
 
 void StartToLock(void);
 void StartToUnlock(void);
-void BLE_connecttion_lock_polling(void);
+void BLE_connecttion_polling(void);
 
  /*******************************************************************************
  * GLOBAL VARIABLES
@@ -58,7 +58,7 @@ uint8_t ble_bonded_mac[6][6] = {
 { 0xae, 0xd8, 0xb4, 0xf6, 0x40, 0xc4 },	
 };
 
-static uint32_t 		  l_t_msg_wait_timer=0;
+static uint32_t 		  		l_t_msg_wait_timer=0;
 static uint32_t           l_t_msg_wait_10_timer=0;
 static uint32_t           l_t_msg_wait_50_timer=0;
 
@@ -99,20 +99,24 @@ void app_ble_running(void)
         return;
 		StartTickCounter(&l_t_msg_wait_10_timer);
 	 
-	 	BLE_connecttion_lock_polling();
+	 	BLE_connecttion_polling();
 	 
 		if (GetTickCounter(&l_t_msg_wait_50_timer) < 50)
         return;
 		StartTickCounter(&l_t_msg_wait_50_timer);
 	
-	
-    Msg_t* msg = get_message(TASK_ID_BLE);		
-		if(msg->id != NO_MSG)
-    {
+    Msg_t* msg = get_message(TASK_ID_BLE);	
+		if(msg->id == NO_MSG) return;
+		
 		  if((MsgId_t)msg->id == MSG_DEVICE_GPIO_EVENT)
 			{
-				if(msg->param1 == GPIO_ACC_PIN)
-				{
+		  }
+			else if((MsgId_t)msg->id == MSG_DEVICE_BLE_EVENT)
+			{
+					CheckBLeConnectionStatus(ble_status.mac,msg->param2); 
+			}
+		  else if((MsgId_t)msg->id == MSG_DEVICE_ACC_EVENT)
+			{
 					if(IsAccOn())		
 					{
 						ble_status.mode=hal_set_pairing_mode_onoff(true,ble_status.mode);
@@ -121,11 +125,7 @@ void app_ble_running(void)
 					{
 						ble_status.mode=hal_set_pairing_mode_onoff(false,ble_status.mode);
 					}
-				}
 		  }
-			else 
-       CheckBLeBondedConnectionStatus(ble_status.mac,msg->param2); 
-    } 
 }
 
 void app_ble_post_running(void)
@@ -155,11 +155,10 @@ bool IsExistsBondedMAC(uint8_t *connected_mac)
 	return matched;
 } 
 
-void CheckBLeBondedConnectionStatus(uint8_t *connected_mac, uint8_t c_type)
+void CheckBLeConnectionStatus(uint8_t *connected_mac, uint8_t c_type)
 {
 	
-	///uint8_t length =  sizeof(connected_mac) / sizeof(connected_mac[0]);  
-	
+	///uint8_t length =  sizeof(connected_mac) / sizeof(connected_mac[0]);  	
   ///if(length < 6)
 	///{
 	///		LOG_LEVEL("OnCheckBondedMAC invalid mac length=%d c_type=%d\r\n", length, c_type);
@@ -178,21 +177,22 @@ void CheckBLeBondedConnectionStatus(uint8_t *connected_mac, uint8_t c_type)
 			return;
 		}
   }
+	
 	///bool matched = IsExistsBondedMAC(connected_mac);
 	///if(!matched)
 	///{
 	///		LOG_LEVEL(F_NAME,"OnCheckBondedMAC no boned exists mac c_type=%d\r\n", c_type);
 	///		return;	
 	///}
-	
-	//LOG_LEVEL(F_NAME,"OnCheckBondedMAC ble connection type=%d\r\n", c_type);
+	///LOG_LEVEL(F_NAME,"OnCheckBondedMAC ble connection type=%d\r\n", c_type);
 
 	switch (c_type)
 	{	
 			case DEVICE_BLE_PAIR:
 			case DEVICE_BLE_BONDED:
 				FlashReadToBuff(0x1107c004,ble_status.mac,6);
-	      PrintfBuffHex(__func__, __LINE__, "BLE", ble_status.mac, 6);
+				LOG_LEVEL("ble mac:\r\n");
+	      LOG_BUFF(ble_status.mac, 6);
 			case DEVICE_BLE_CONNECTED:
 				StartToUnlock();
 			break;
@@ -204,17 +204,17 @@ void CheckBLeBondedConnectionStatus(uint8_t *connected_mac, uint8_t c_type)
 	}
 }
 
-void BLE_connecttion_lock_polling(void)
+void BLE_connecttion_polling(void)
 {
 	//uint32_t speed = app_carinfo_getSpeed();
 	//PRINT("OnDelaySleepSystem %d\r\n", speed);
 	if (ble_status.to_lock && GetTickCounter(&l_t_msg_wait_timer) > 10000)
 	{
-        StopTickCounter(&l_t_msg_wait_timer);
-        ble_status.locked = true;
-        ble_status.to_lock = false;	
-        LOG_LEVEL("Start to power off system...\r\n");
-        send_message(TASK_ID_SYSTEM, MSG_DEVICE_NORMAL_EVENT , CMD_MODSYSTEM_POWER_OFF,0);
+			StopTickCounter(&l_t_msg_wait_timer);
+			ble_status.locked = true;
+			ble_status.to_lock = false;	
+			LOG_LEVEL("Start to power off system...\r\n");
+			send_message(TASK_ID_SYSTEM, MSG_DEVICE_POWER_EVENT , CMD_MODSYSTEM_POWER_OFF,0);
 	}
 }
 
@@ -240,8 +240,8 @@ void StartToUnlock(void)
 		ble_status.locked = false;
 		StopTickCounter(&l_t_msg_wait_timer);
 	}
-	send_message(TASK_ID_SYSTEM, MSG_DEVICE_NORMAL_EVENT , CMD_MODSYSTEM_POWER_ON,1);
 	LOG_LEVEL("Start to unlock system...\r\n");
+	send_message(TASK_ID_SYSTEM, MSG_DEVICE_POWER_EVENT , CMD_MODSYSTEM_POWER_ON,1);	
 }
 
 #endif

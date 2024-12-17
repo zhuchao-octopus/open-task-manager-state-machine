@@ -23,10 +23,16 @@ extern "C" {
  * @brief    GPIO status redundancy macros.
  * @details  These macros define redundancy levels for GPIO status and key status.
  */
+#define GPIO_POLLING_PERIOD_MS          				   20
+ 
 #define GPIO_STATUS_REDUNDANCY                      8       ///< Redundancy level for GPIO status.
+
 #define GPIO_KEY_STATUS_REDUNDANCY                  5       ///< Redundancy level for key status.
 #define GPIO_KEY_STATUS_MAX_REDUNDANCY              255     ///< Maximum redundancy level for key status.
 
+#define GPIO_KEY_STATUS_PRESS_PERIOD								(GPIO_KEY_STATUS_REDUNDANCY*1)   //100 ms
+#define GPIO_KEY_STATUS_LONG_PRESS_PERIOD						(GPIO_KEY_STATUS_REDUNDANCY*10)  //1 s
+#define GPIO_KEY_STATUS_LONG_LONG_PRESS_PERIOD			(GPIO_KEY_STATUS_REDUNDANCY*30)  //5 s  
 ////////////////////////////////////////////////////////////////////////////////
 
 /*******************************************************************************
@@ -38,8 +44,8 @@ typedef struct
 {
     uint8_t key;           ///< The GPIO key identifier.
     bool pressed;          ///< Whether the key is currently pressed.
-    bool pressed_l;        ///< Whether the key is long-pressed.
-    bool released;         ///< Whether the key is released.
+    uint8_t state;         ///< Whether the key is long-pressed.
+    //bool released;         ///< Whether the key is released.
     bool dispatched;       ///< Whether the key event has been dispatched.
     uint8_t count1;        ///< A counter used for key press tracking.
 } GPIO_KEY_STATUS;

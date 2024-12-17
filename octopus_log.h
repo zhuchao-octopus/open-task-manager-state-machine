@@ -111,25 +111,25 @@ void dbg_log_printf_buffer_level(const char *function_name, uint8_t* buff, uint1
 
 /** Macro for formatted string processing. */
 #ifdef PLATFORM_CST_OSAL_RTOS
-#define VSPRINTF(a, b, ...) vsprintf__(a, b, __VA_ARGS__)
+#define VSPRINTF(a, b, ...) 	vsprintf__(a, b, __VA_ARGS__)
 #else 
 //#define VSPRINTF(a, b, ...) printf(a, b, __VA_ARGS__)
 #endif
 
 /** Macro to set the logging level. */
-#define LOG_SET_LEVEL(l) 		dbg_log_set_level(l)
+#define LOG_SET_LEVEL(l) 			dbg_log_set_level(l)
 
 /** Macro to log a message with a specific level. */
-#define LOG_LEVEL(...) 			dbg_log_printf_level(__FUNCTION__, __VA_ARGS__)
+#define LOG_LEVEL(...) 				dbg_log_printf_level(__FUNCTION__, __VA_ARGS__)
 
 /** Macro to log a simple message. */
-#define LOG_(...) 					dbg_log_printf(__VA_ARGS__)
+#define LOG_(...) 						dbg_log_printf(__VA_ARGS__)
 
-#define DBG(...)  					dbg_log_printf(__VA_ARGS__)
+#define DBG(...)  						dbg_log_printf(__VA_ARGS__)
 
 /** Macro to log a buffer. */
-#define LOG_BUFF(a, b) dbg_log_printf_buffer(a, b)
-
+#define LOG_BUFF(a, b) 				dbg_log_printf_buffer(a, b)
+#define LOG_BUFF_LEVEL(a, b)	dbg_log_printf_buffer_level(__FUNCTION__, a, b)
 #ifdef __cplusplus
 }
 #endif

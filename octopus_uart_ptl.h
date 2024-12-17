@@ -71,7 +71,8 @@ typedef enum {
     M2A_MOD_INDICATOR = 0x04, ///< Indicator data
     M2A_MOD_DRIV_INFO = 0x05, ///< Driving information
     M2A_MOD_SETUP = 0x06,     ///< Settings
-
+    M2A_MOD_KEY = 0x07,       ///< KEY
+    
     /* APP -> MCU module IDs */
     A2M_MOD_SYSTEM = 0x80,    ///< System initialization
     A2M_MOD_UPDATE = 0x81,    ///< System update
@@ -80,12 +81,14 @@ typedef enum {
     A2M_MOD_INDICATOR = 0x84, ///< Indicator data
     A2M_MOD_DRIV_INFO = 0x85, ///< Driving information
     A2M_MOD_SETUP = 0x86,     ///< Settings
+    A2M_MOD_KEY = 0x87,       ///< KEY
 
+	  P2M_MOD_DEBUG = 0xF0,       ///< DEBUG
     /* Range definitions for validity checks */
     M2A_MOD_START = M2A_MOD_SYSTEM,
-    M2A_MOD_END = M2A_MOD_SETUP,
+    M2A_MOD_END = M2A_MOD_KEY,
     A2M_MOD_START = A2M_MOD_SYSTEM,
-    A2M_MOD_END = A2M_MOD_SETUP
+    A2M_MOD_END = A2M_MOD_KEY
 } ptl_frame_type_t;
 
 /** 

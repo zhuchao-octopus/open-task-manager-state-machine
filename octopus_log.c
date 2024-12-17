@@ -29,13 +29,13 @@
 #include "octopus_log.h"       			// Include logging functions for debugging
 
 
-#define ZEROPAD 1               // Pad with zero
-#define SIGN    2               // Unsigned/signed long
-#define PLUS    4               // Show plus
-#define SPACE   8               // Space if plus
-#define LEFT    16              // Left justified
-#define SPECIAL 32              // 0x
-#define LARGE   64              // Use 'ABCDEF' instead of 'abcdef'
+#define ZEROPAD 1               		// Pad with zero
+#define SIGN    2               		// Unsigned/signed long
+#define PLUS    4               		// Show plus
+#define SPACE   8               		// Space if plus
+#define LEFT    16              		// Left justified
+#define SPECIAL 32              		// 0x
+#define LARGE   64              		// Use 'ABCDEF' instead of 'abcdef'
 #define is_digit(c) ((c) >= '0' && (c) <= '9')
 
 DBG_LOG_LEVEL current_log_level = LOG_LEVEL_DEBUG;

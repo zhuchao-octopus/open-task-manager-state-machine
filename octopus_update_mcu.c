@@ -46,9 +46,9 @@
  */
 // Define a buffer structure used for flash programming during firmware updates
 typedef struct {
-    uint32_t addr;      // Address in flash memory to write data
-    uint8_t  buff[48];  // Data buffer for temporary storage
-    uint8_t  count;     // Number of valid bytes in the buffer
+    uint32_t addr;      								// Address in flash memory to write data
+    uint8_t  buff[48];  								// Data buffer for temporary storage
+    uint8_t  count;     								// Number of valid bytes in the buffer
 } program_buf_t;
 
 // Define enumeration for MCU reboot state machine states
@@ -65,10 +65,10 @@ typedef enum {
  */
 
 // Define constants for reboot tags
-#define MCU_REBOOT_TAG_IDLE  (0xFF)  // Idle tag, indicating no reboot required
-#define MCU_REBOOT_TAG_MCU   (0x00)  // Tag for rebooting only the MCU
-#define MCU_REBOOT_TAG_MAC   (0x01)  // Tag for rebooting the entire machine
-#define MCU_REBOOT_TAG_SOC   (0x02)  // Tag for rebooting the SOC
+#define MCU_REBOOT_TAG_IDLE  	 (0xFF)  // Idle tag, indicating no reboot required
+#define MCU_REBOOT_TAG_MCU   	 (0x00)  // Tag for rebooting only the MCU
+#define MCU_REBOOT_TAG_MAC   	 (0x01)  // Tag for rebooting the entire machine
+#define MCU_REBOOT_TAG_SOC   	 (0x02)  // Tag for rebooting the SOC
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -151,17 +151,16 @@ void app_update_mcu_stop_running(void) {
  * LOCAL FUNCTIONS IMPLEMENTATION
  */
 // Function to handle sending update module requests based on the module type and parameters
-bool update_module_send_handler(ptl_frame_type_t module, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
+bool update_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
 {
     // DEV_ASSERT(buff);  // Uncommented: this would assert that the 'buff' pointer is not NULL.
     
     uint8_t tmp[8] = {0};  // Initialize a temporary buffer 'tmp' of 8 bytes, all set to 0.
     
     // The following commented print statement would log the function execution for debugging purposes:
-    // PRINT("update_module_send_handler  MOD %02x  CMD %02x PRARM %04x\n", module, cmd, param);
-    
+    // PRINT("update_module_send_handler  MOD %02x  CMD %02x PRARM %04x\n", module, cmd, param);  
     // Check if the module type is M2A_MOD_UPDATE (which indicates an update operation).
-    if (M2A_MOD_UPDATE == module)
+    if (M2A_MOD_UPDATE == frame_type)
     {
         // Handle the specific update request based on 'param1'.
         switch (param1)
@@ -171,7 +170,7 @@ bool update_module_send_handler(ptl_frame_type_t module, uint16_t param1, uint16
                 tmp[0] = 0x00;  // Set the first byte of 'tmp' to 0x00, indicating that the MCU is running normally.
                 // Build the frame with the update information (M2A_MOD_UPDATE, firmware state update command, and the state data).
                 ptl_build_frame(M2A_MOD_UPDATE, CMD_MODUPDATE_UPDATE_FW_STATE, tmp, 1, buff);
-                return true;  // Successfully processed the update request.
+                return true;    // Successfully processed the update request.
             }
             default:
                 break;  // No action for unrecognized 'param1' values.
@@ -193,14 +192,14 @@ bool update_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t
     if (A2M_MOD_UPDATE == payload->frame_type)
     {
         // The following commented print statement would log the frame details for debugging:
-        // PRINTF("MOD %02x CMD %02x pm1 %02x pm2 %02x\n", payload->module, payload->cmd, payload->data[0], payload->data[1]);
+        // LOG_LEVEL("MOD %02x CMD %02x pm1 %02x pm2 %02x\r\n", payload->module, payload->cmd, payload->data[0], payload->data[1]);
 
         // Switch based on the command in the received payload.
         switch (payload->cmd)
         {
             case CMD_MODUPDATE_CHECK_FW_STATE:   // Command for checking the firmware state.
             {
-                printf("CMD_MODUPDATE_CHECK_FW_STATE\n");
+                LOG_LEVEL("CMD_MODUPDATE_CHECK_FW_STATE\r\n");
                 tmp = 0x00; // Set tmp to 0x00 to indicate that the MCU is running normally.
                 // Build a frame with the response (firmware state check) and send it back via 'ackbuff'.
                 ptl_build_frame(M2A_MOD_UPDATE, CMD_MODUPDATE_CHECK_FW_STATE, &tmp, 1, ackbuff);
@@ -208,28 +207,13 @@ bool update_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t
             }
             case CMD_MODUPDATE_UPDATE_FW_STATE:  // Command for updating the firmware state.
             {
-                printf("CMD_MODUPDATE_UPDATE_FW_STATE \n");
+                LOG_LEVEL("CMD_MODUPDATE_UPDATE_FW_STATE \r\n");
                 // This command acknowledges the request but does nothing as per the current implementation.
                 return false;  // No action required.
             }
             case CMD_MODUPDATE_ENTER_FW_UPDATE:  // Command to enter firmware update mode.
             {
-                printf("CMD_MODUPDATE_ENTER_FW_UPDATE \n");
-
-                // Commented-out code for actual firmware update process (e.g., erasing flash sectors, disabling interrupts, etc.).
-                /*
-                printf("MCU_UPDATE_ST_ERASE start erase sector\n");
-                INT_SYS_DisableIRQGlobal();
-                uint32_t data[4];
-                data[0] = 0x12345678;
-                data[1] = 0;
-                FLASH_DRV_Program(MEMORY_FLAG_START, 2*4, &data);
-                INT_SYS_EnableIRQGlobal();
-                OSIF_TimeDelay(5);
-                printf("MCU_UPDATE_ST_ERASE end erase sector\n");
-                Uart_Protocol_StartReceive();  // Re-enable UART receive after update.
-                */
-
+                LOG_LEVEL("CMD_MODUPDATE_ENTER_FW_UPDATE \r\n");
                 // Indicate that the system should reboot into update mode.
                 l_u8_reboot = MCU_REBOOT_TAG_MCU;
                 l_t_reboot_status = MCU_REBOOT_ST_INIT;
@@ -242,7 +226,7 @@ bool update_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t
             }
             case CMD_MODUPDATE_EXIT_FW_UPDATE:   // Command to exit firmware update mode.
             {
-                printf("CMD_MODUPDATE_EXIT_FW_UPDATE\n");
+                LOG_LEVEL("CMD_MODUPDATE_EXIT_FW_UPDATE\r\n");
                 tmp = 0x00; // Indicate successful exit from update mode.
                 // Build a response frame and send it back via 'ackbuff'.
                 ptl_build_frame(M2A_MOD_UPDATE, CMD_MODUPDATE_EXIT_FW_UPDATE, &tmp, 1, ackbuff);
@@ -250,7 +234,7 @@ bool update_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t
             }
             case CMD_MODUPDATE_REBOOT:           // Command for rebooting the system.
             {
-                printf("CMD_MODUPDATE_REBOOT\n");
+                LOG_LEVEL("CMD_MODUPDATE_REBOOT\r\n");
 
                 // Reboot options are commented out, but indicate how the system should handle different reboot scenarios.
                 #if 0
@@ -338,11 +322,7 @@ static void mcu_reboot_state_proc(void)
 
         // State to reset the MCU.
         case MCU_REBOOT_ST_MCU_RESET:
-            // System reset code here (currently commented out).
-            // System_Reset();  
-            // Print debugging info or trigger a reset.
-            // printf("MCU_REBOOT_ST_MCU_RESET\n");
-            // IAP_Reboot();   // Boot into the next stage after reset.
+            // LOG_LEVEL("MCU_REBOOT_ST_MCU_RESET\r\n");
             // IAP_RebootToBootloader(); // Reboot to bootloader for firmware update, etc.
             break;
     }

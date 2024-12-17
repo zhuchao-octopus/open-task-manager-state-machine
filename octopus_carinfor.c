@@ -108,8 +108,8 @@ static uint32_t l_t_msg_wait_100_timer;  // Timer for 100 ms message wait
 
 static uint32_t l_t_soc_timer;  // Timer for state of charge monitoring
 
-static bool l_t_speed_changed = false;
-static bool l_t_gear_changed = false;
+//static bool l_t_speed_changed = false;
+//static bool l_t_gear_changed = false;
 /*******************************************************************************
  * EXTERNAL VARIABLES
  */
@@ -148,7 +148,6 @@ void app_carinfo_assert_running(void)
     StartTickCounter(&l_t_msg_wait_100_timer);
     StartTickCounter(&l_t_soc_timer);
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_RUNNING);
-
 }
 
 void app_carinfo_running(void)
@@ -157,13 +156,15 @@ void app_carinfo_running(void)
     ///{
     ///OTMS(CAR_INFOR_ID, OTMS_S_POST_RUN);
     ///}
-    if (GetTickCounter(&l_t_msg_wait_50_timer) < 30)
-        return;
-    StartTickCounter(&l_t_msg_wait_50_timer);
-
+   
     #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     app_car_controller_sif_updating();
     #endif
+	
+	 if (GetTickCounter(&l_t_msg_wait_50_timer) < 50)
+        return;
+    StartTickCounter(&l_t_msg_wait_50_timer);
+	 
 		#ifdef TASK_MANAGER_STATE_MACHINE_MCU
 	  app_car_controller_msg_handler();
     #endif
@@ -558,14 +559,17 @@ void app_car_controller_sif_updating(void)
 				
       	
 				if(lt_sif.gear != lt_drivinfo.gear)
-				{
-					 lt_drivinfo.gear = (carinfo_drivinfo_gear_t)lt_sif.gear;
-					 l_t_gear_changed = true;
+				{		 
+					 //l_t_gear_changed = true;
+				 	 LOG_LEVEL("SIF DATA:lt_drivinfo.gear changed\r\n");
+					 send_message(TASK_ID_PTL, M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);	
 				}
-				
+				lt_drivinfo.gear = (carinfo_drivinfo_gear_t)lt_sif.gear;
 				if(lt_meter.speed_real != lt_meter_current_speed)
 				{
-					l_t_speed_changed=true;
+					//l_t_speed_changed=true;
+					LOG_LEVEL("SIF DATA:lt_drivinfo.speed_real changed\r\n");
+					send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);	
 				}
 				lt_meter.speed_real = lt_meter_current_speed;
     }
@@ -574,7 +578,7 @@ void app_car_controller_sif_updating(void)
 
 void app_car_controller_msg_handler( void )
 {
-    //static uint8_t l_u8_op_step = 0;  // Operational step variable
+   
     lt_indicator.position = GPIO_PIN_READ_SKD()  ? 0 : 1;      /* Ê¾¿íµÆ */
     lt_indicator.highBeam = GPIO_PIN_READ_DDD()  ? 0 : 1;      /* ´óµÆ   */
     lt_indicator.leftTurn = GPIO_PIN_READ_ZZD()  ? 0 : 1;      /* ×ó×ªµÆ */
@@ -590,12 +594,14 @@ void app_car_controller_msg_handler( void )
     #ifdef BATTERY_MANAGER
     get_battery_voltage();
     #endif
+	
     Msg_t* msg = get_message(TASK_ID_CAR_INFOR);
     if(msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_GPIO_EVENT)
     {
       send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
     }
 		
+		#if 0
     if(l_t_speed_changed)
 		{
 			send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);	
@@ -606,9 +612,10 @@ void app_car_controller_msg_handler( void )
 			send_message(TASK_ID_PTL, M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
 			l_t_gear_changed = false;
 		}
-	
+	  #endif
 		#if 0
-    if(GetTickCounter(&l_t_msg_wait_100_timer) >= 1000)
+		static uint8_t l_u8_op_step = 0;  // Operational step variable
+    if(GetTickCounter(&l_t_msg_wait_100_timer) >= 300)
     {
         switch(l_u8_op_step)
         {
@@ -628,8 +635,10 @@ void app_car_controller_msg_handler( void )
             l_u8_op_step = (uint8_t)-1;
             break;
         }
-
-        l_u8_op_step = (uint8_t)-1;
+				
+        l_u8_op_step++;
+				if(l_u8_op_step >=4)
+					l_u8_op_step = 0;
         StartTickCounter(&l_t_msg_wait_100_timer);
     }
 		#endif
@@ -641,9 +650,9 @@ void log_sif_data(uint8_t* data, uint8_t maxlen)
     LOG_LEVEL("SIF DATA:");
     for(int i = 0; i < maxlen; i++)
     {
-        LOG_LEVEL("0x%02x ",data[i]);
+        LOG_("0x%02x ",data[i]);
     }
-    LOG_LEVEL("\r\n");
+    LOG_("\r\n");
 }
 #endif
 #ifdef BATTERY_MANAGER

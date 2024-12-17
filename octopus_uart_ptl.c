@@ -27,8 +27,8 @@
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
-#define TEST_LOG_DEBUG_PTL_RX_FRAME  // Enable debugging for receiving frames
-//#define TEST_LOG_DEBUG_PTL_TX_FRAME  // Enable debugging for transmitting frames
+//#define TEST_LOG_DEBUG_PTL_RX_FRAME  // Enable debugging for receiving frames
+#define TEST_LOG_DEBUG_PTL_TX_FRAME  // Enable debugging for transmitting frames
 
 /*******************************************************************************
  * MACROS
@@ -373,18 +373,18 @@ void ptl_rx_event_message_handler(void)
     // Call the HAL function to process received byte
     //#ifdef PLATFORM_ITE_OPEN_RTOS
     ///uint8_t data = 0;
-	  uint8_t count = 0;
+	uint8_t count = 0;
     while(1)
     {
         if (l_t_rx_proc_buf.size < PTL_FRAME_MAX_SIZE)
         {
-					 count = hal_com_uart_get_fifo_data(&l_t_rx_proc_buf.buff[l_t_rx_proc_buf.size],PTL_FRAME_MAX_SIZE - l_t_rx_proc_buf.size);
-					 if(count <= 0) break;
-					 l_t_rx_proc_buf.size = l_t_rx_proc_buf.size + count;	
+		 count = hal_com_uart_get_fifo_data(&l_t_rx_proc_buf.buff[l_t_rx_proc_buf.size],PTL_FRAME_MAX_SIZE - l_t_rx_proc_buf.size);
+		 if(count <= 0) break;
+		 l_t_rx_proc_buf.size = l_t_rx_proc_buf.size + count;	
         }
         else
         {
-            break;
+          break;
         }
     }
    //#endif

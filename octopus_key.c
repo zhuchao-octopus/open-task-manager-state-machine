@@ -25,16 +25,17 @@ uint8_t bt_mac[8];
  
 static uint32_t           l_t_msg_wait_timer;
 
-static bool module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
-static bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
-
+static bool key_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
+static bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
+void KeySendKeyCodeEvent(uint8_t key_code, uint8_t key_state);
+void app_goto_bootloader(void);
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
 void app_key_init_running(void)
 {
     LOG_LEVEL("app_key_init\r\n");
-    ptl_register_module(M2A_MOD_SETUP, module_send_handler, module_receive_handler);
+    ptl_register_module(M2A_MOD_KEY, key_send_handler, key_receive_handler);
     OTMS(TASK_ID_KEY, OTMS_S_INVALID);
 }
 
@@ -79,11 +80,37 @@ void app_key_running(void)
 					system_handshake_with_mcu();
 				 #endif
 				 #endif
-				 param = MK_WORD(KEY_CODE_MENU,KEY_STATE_PRESSED);
-                 send_message(TASK_ID_PTL, M2A_MOD_SETUP , CMD_MODSETUP_KEY, param);
+				 
+				 if(msg->param2 == KEY_STATE_PRESSED)
+				 {
+						param = MK_WORD(KEY_CODE_MENU,KEY_STATE_PRESSED);
+						send_message(TASK_ID_PTL, M2A_MOD_KEY, CMD_MODSETUP_KEY, param);
+					  //app_power_on_off(0);
+				 }
+				 
+				 else if(msg->param2 == KEY_STATE_LONG_PRESSED)
+				 {
+					  param = MK_WORD(KEY_CODE_MENU,KEY_STATE_LONG_PRESSED);
+					  send_message(TASK_ID_PTL, M2A_MOD_KEY, CMD_MODSETUP_KEY, param);
+				 }
+			
+				 else if(msg->param2 == KEY_STATE_LONG_LONG_PRESSED)
+				 {
+						app_goto_bootloader();
+				 }
 				 break;
 			}	
     }		
+}
+
+#define ADDR_OTA_FLAG	0x1FFF18FC
+void app_goto_bootloader(void)
+{
+			 LOG_LEVEL("reboot to dul ota to upgrade mcu ble sw.\r\n");
+			 write_reg(ADDR_OTA_FLAG,0x55AAAA55);
+			 GAPRole_TerminateConnection();
+			 WaitMs(500);
+			 NVIC_SystemReset();	
 }
 
 void app_key_post_running(void)
@@ -112,12 +139,12 @@ uint8_t get_dummy_key(uint8_t key)
 	return 0;
 }
 
-bool module_send_handler(ptl_frame_type_t frame_type,  uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
+bool key_send_handler(ptl_frame_type_t frame_type,  uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
 {
     assert(buff);
     uint8_t tmp[8] = {0};
-    //PRINT("setting_module_send_handler  MOD %02x  CMD %02x PRARM %04x\n", module, cmd, param);
-    if(M2A_MOD_SETUP == frame_type)
+
+    if(M2A_MOD_KEY == frame_type)
     {
       switch(param1)
       {
@@ -126,7 +153,7 @@ bool module_send_handler(ptl_frame_type_t frame_type,  uint16_t param1, uint16_t
             tmp[1] = LSB_WORD(param2); //KEYSTATE
             tmp[2] = 0;  					//
             LOG_LEVEL("CMD_MODSETUP_KEY key %02x state %02x\n",tmp[0],tmp[1]);
-            ptl_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_KEY, tmp, 3, buff);
+            ptl_build_frame(M2A_MOD_KEY, CMD_MODSETUP_KEY, tmp, 3, buff);
             return true;
         default:
             break;
@@ -135,33 +162,79 @@ bool module_send_handler(ptl_frame_type_t frame_type,  uint16_t param1, uint16_t
     return false;
 }
 
-bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
+bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
 {
     assert(payload);
     assert(ackbuff);
     uint8_t tmp;
 	
-    if(M2A_MOD_SETUP == payload->frame_type)
+   if(M2A_MOD_KEY == payload->frame_type)
     {
         switch(payload->cmd)
         {
         case CMD_MODSETUP_UPDATE_TIME: 
-            //ACK, no thing to do
-            return false;
-        case CMD_MODSETUP_SET_TIME: 
             tmp = 0x01;
-            ptl_build_frame(M2A_MOD_SETUP, CMD_MODSETUP_SET_TIME, &tmp, 1, ackbuff);
+            ptl_build_frame(A2M_MOD_SETUP, CMD_MODSETUP_UPDATE_TIME, &tmp, 1, ackbuff);
             return true;
-        case CMD_MODSETUP_KEY: 
+        case CMD_MODSETUP_SET_TIME: 
             //ACK, no thing to do
             return false;
+        case CMD_MODSETUP_KEY:
+        {
+            uint8_t code = payload->data[0];
+            uint8_t state = payload->data[1];	
+            LOG_LEVEL("CMD_MODSETUP_KEY key %02x state %02x\r\n", code, state);
+			
+            KeySendKeyCodeEvent(code, state);
+            tmp = 0x01;
+            ///ptl_build_frame(A2M_MOD_SETUP, CMD_MODSETUP_KEY, &tmp, 1, ackbuff);
+            return true;
+        }
         default:
             break;
         }
     }
-
     return false;
 }
+
+
+void KeySendKeyCodeEvent(uint8_t key_code, uint8_t key_state)
+{
+	  #if 0
+    ExternalEvent ev;
+
+    int code = EVENT_CUSTOM_KEY_PWR;
+    int param = atoi(KEY_STATE_PRESSED);
+
+    switch (key_code)
+    {
+    case KEY_CODE_UP:    code = EVENT_CUSTOM_KEY_PLUS;  break;
+    case KEY_CODE_DOWN:  code = EVENT_CUSTOM_KEY_MINUS; break;
+    case KEY_CODE_POWER: code = EVENT_CUSTOM_KEY_PWR;   break;
+    case KEY_CODE_MENU:  code = EVENT_CUSTOM_KEY_INFO;  break;
+    case KEY_CODE_ILL:   code = EVENT_CUSTOM_KEY_LAMP;  break;
+    }
+
+    switch (key_state)
+    { 
+    case KEY_STATE_NONE:   param = atoi(KEY_STATE_RELEASE);        break;
+    case KEY_STATE_DOWN:   param = atoi(KEY_STATE_PRESSED);        break;
+    case KEY_STATE_DOUBLE: param = atoi(KEY_STATE_DOUBLE_PRESSED); break;
+    case KEY_STATE_LONG:   param = atoi(KEY_STATE_LONG_PRESSED);   break;
+    }
+    
+    ev.type = EXTERNAL_KEY_MSG;
+    ev.arg1 = code;
+    ev.arg2 = param;
+    ExternalInQueueSend(&ev);
+
+    theEnvInfo.key_click_flag = true;
+
+    theEnvInfo.key_code = code;
+    theEnvInfo.key_state = param;
+   #endif
+}
+
 
 #endif
 

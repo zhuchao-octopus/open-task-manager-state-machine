@@ -84,9 +84,9 @@ uint16_t TaskManagerStateMachineInit(uint8_t task_id);
 
 // The main event loop for the task manager.
 #ifdef PLATFORM_CST_OSAL_RTOS
-uint16_t TaskManagerStateMachineEventLoop(uint8_t task_id, uint16_t events);
+uint16_t TaskManagerStateEventLoop(uint8_t task_id, uint16_t events);
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
-void* TaskManagerStateMachineEventLoop(void* arg);
+void* TaskManagerStateEventLoop(void* arg);
 #endif
 
 #ifdef __cplusplus

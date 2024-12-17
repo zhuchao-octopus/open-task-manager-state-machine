@@ -134,7 +134,7 @@ uint16_t TaskManagerStateMachineInit(uint8_t task_id)
     pthread_attr_init(&thread_attr);  // Initialize thread attributes
     pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);  // Set thread to detached state
     pthread_attr_setstacksize(&thread_attr, CFG_OTSM_STACK_SIZE);  // Set the stack size for the thread
-    pthread_create(&thread_task, &thread_attr, TaskManagerStateMachineEventLoop, NULL);  // Create the task manager event loop thread
+    pthread_create(&thread_task, &thread_attr, TaskManagerStateEventLoop, NULL);  // Create the task manager event loop thread
     #endif
 
     return 0;
@@ -147,7 +147,7 @@ uint16_t TaskManagerStateMachineInit(uint8_t task_id)
  * @param events The event mask that defines which events are active.
  * @return The events that were handled (removed from the active event mask).
  */
-uint16 TaskManagerStateMachineEventLoop(uint8 task_id, uint16 events)
+uint16 TaskManagerStateEventLoop(uint8 task_id, uint16 events)
 {
     if (events & DEVICE_TIMER_EVENT)  // If the timer event is triggered
     {
@@ -157,26 +157,26 @@ uint16 TaskManagerStateMachineEventLoop(uint8 task_id, uint16 events)
     }
     else if (events & DEVICE_BLE_PAIR)  // If BLE pairing event is triggered
     {
-        LOG_LEVEL("\r\ntask_id=%d events=%d ble pair\r\n", task_id, events);
-        send_message(TASK_ID_BLE, MSG_DEVICE_NORMAL_EVENT, events, events);  // Send BLE pair event to BLE task
+        LOG_LEVEL("task_id=%d events=%d ble pair\r\n", task_id, events);
+        send_message(TASK_ID_BLE, MSG_DEVICE_BLE_EVENT, events, events);  // Send BLE pair event to BLE task
         return (events ^ DEVICE_BLE_PAIR);  // Remove the BLE pair event from the active events
     }
     else if (events & DEVICE_BLE_BONDED)  // If BLE bonded event is triggered
     {
-        LOG_LEVEL("\r\ntask_id=%d events=%d ble bonded\r\n", task_id, events);
-        send_message(TASK_ID_BLE, MSG_DEVICE_NORMAL_EVENT, events, events);  // Send BLE bonded event to BLE task
+        LOG_LEVEL("task_id=%d events=%d ble bonded\r\n", task_id, events);
+        send_message(TASK_ID_BLE, MSG_DEVICE_BLE_EVENT, events, events);  // Send BLE bonded event to BLE task
         return (events ^ DEVICE_BLE_BONDED);  // Remove the BLE bonded event from the active events
     }
     else if (events & DEVICE_BLE_CONNECTED)  // If BLE connected event is triggered
     {
-        LOG_LEVEL("\r\ntask_id=%d events=%d ble connected\r\n", task_id, events);
-        send_message(TASK_ID_BLE, MSG_DEVICE_NORMAL_EVENT, events, events);  // Send BLE connected event to BLE task
+        LOG_LEVEL("task_id=%d events=%d ble connected\r\n", task_id, events);
+        send_message(TASK_ID_BLE, MSG_DEVICE_BLE_EVENT, events, events);  // Send BLE connected event to BLE task
         return (events ^ DEVICE_BLE_CONNECTED);  // Remove the BLE connected event from the active events
     }
     else if (events & DEVICE_BLE_DISCONNECTED)  // If BLE disconnected event is triggered
     {
-        LOG_LEVEL("\r\ntask_id=%d events=%d ble disconnected\r\n", task_id, events);
-        send_message(TASK_ID_BLE, MSG_DEVICE_NORMAL_EVENT, events, events);  // Send BLE disconnected event to BLE task
+        LOG_LEVEL("task_id=%d events=%d ble disconnected\r\n", task_id, events);
+        send_message(TASK_ID_BLE, MSG_DEVICE_BLE_EVENT, events, events);  // Send BLE disconnected event to BLE task
         return (events ^ DEVICE_BLE_DISCONNECTED);  // Remove the BLE disconnected event from the active events
     }
     else
@@ -193,7 +193,7 @@ uint16 TaskManagerStateMachineEventLoop(uint8 task_id, uint16 events)
  * @param arg Arguments passed to the thread (not used here).
  * @return NULL when the thread exits.
  */
-void* TaskManagerStateMachineEventLoop(void* arg)
+void* TaskManagerStateEventLoop(void* arg)
 {
     uint32_t wait_cnt = 0;
     LOG_LEVEL("task manager state machine event loop running\r\n");  // Log unhandled events

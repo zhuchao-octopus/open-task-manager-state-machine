@@ -30,7 +30,6 @@
 extern "C" {
 #endif
 
-
 /*******************************************************************************
  * MACROS
  * The following macros define key IDs and their respective actions.
@@ -57,6 +56,12 @@ extern "C" {
  * TYPEDEFS
  * The following defines key codes representing different actions or states of the keys.
  */
+#define KEY_ACTION_NONE          0 
+#define KEY_ACTION_DOWN          1
+#define	KEY_ACTION_UP            2
+#define	KEY_ACTION_LONG          3
+#define	KEY_ACTION_DUBDOW        4
+#define	KEY_ACTION_DOUBLE        5
 
 // Key action codes
 #define KEY_CODE_IDLE               (0x00)  /**< No key action detected */
@@ -72,10 +77,11 @@ extern "C" {
 #define KEY_CODE_POWER              (0x0A)  /**< Power button pressed */
 
 // Key states
-#define KEY_STATE_RELEASE           (0x00)  /**< Key is released */
-#define KEY_STATE_PRESSED           (0x01)  /**< Key is pressed */
-#define KEY_STATE_LONG_PRESSED      (0x02)  /**< Key is long pressed */
-#define KEY_STATE_DOUBLE_PRESSED    (0x03)  /**< Key is double pressed */
+#define KEY_STATE_NONE         			(0x00)  /**< Key is released */
+#define KEY_STATE_RELEASED          (0x01)  /**< Key is released */
+#define KEY_STATE_PRESSED           (0x02)  /**< Key is pressed */
+#define KEY_STATE_LONG_PRESSED      (0x03)  /**< Key is long pressed */
+#define KEY_STATE_LONG_LONG_PRESSED (0x04)  /**< Key is double pressed */
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
