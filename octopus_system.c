@@ -35,8 +35,8 @@
  * MACROS
  * The following macros define key IDs and their respective actions.
  */
- #define SYSTEM_POWER_ON_VALUE 1
- #define SYSTEM_POWER_OFF_VALUE 0
+ #define SYSTEM_POWER_ON_VALUE 			1
+ #define SYSTEM_POWER_OFF_VALUE 		0
 /*******************************************************************************
  * Local Function Declarations
  * Declare static functions used only within this file.

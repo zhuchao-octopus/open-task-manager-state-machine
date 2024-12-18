@@ -41,7 +41,7 @@
  * DEBUG SWITCH MACROS
  */
 #define CARINFOR_PTL_NO_ACK
-//#define TEST_LOG_DEBUG_SIF  // Uncomment to enable debug logging for SIF module
+///#define TEST_LOG_DEBUG_SIF  // Uncomment to enable debug logging for SIF module
 
 /*******************************************************************************
  * MACROS
@@ -161,7 +161,7 @@ void app_carinfo_running(void)
     app_car_controller_sif_updating();
     #endif
 	
-	 if (GetTickCounter(&l_t_msg_wait_50_timer) < 50)
+	 if (GetTickCounter(&l_t_msg_wait_50_timer) < 10)
         return;
     StartTickCounter(&l_t_msg_wait_50_timer);
 	 

@@ -89,7 +89,8 @@ uint16_t TaskManagerStateMachineInit(uint8_t task_id)
     #endif
     LOG_LEVEL("OTMS initialization task_id:%02x\r\n", TaskManagerStateMachine_Id_);
     LOG_LEVEL("OTMS datetime:%s\r\n", OTMS_RELEASE_DATA_TIME);
-    LOG_LEVEL("OTMS version :%s\r\n", OTMS_VERSION);
+	  LOG_LEVEL("OTMS version:%s app version:%s\r\n", OTMS_VERSION,APP_VER_STR);
+	
 	
 	  /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize hardware abstraction layers (HAL)

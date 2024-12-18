@@ -27,8 +27,13 @@ static uint32_t           l_t_msg_wait_timer;
 
 static bool key_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
+
+static void app_do_key_action_hanlder(void);
+
 void KeySendKeyCodeEvent(uint8_t key_code, uint8_t key_state);
 void app_goto_bootloader(void);
+
+
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
@@ -57,12 +62,17 @@ void app_key_running(void)
 		if(GetTickCounter(&l_t_msg_wait_timer) < 20)
         return;
 		StartTickCounter(&l_t_msg_wait_timer);
+		
+		app_do_key_action_hanlder();
 		uint16_t param = 0;
     Msg_t* msg = get_message(TASK_ID_KEY);		
-		if(msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_KEY_EVENT)
+		
+		if(msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_KEY_DOWN_EVENT)
     {
 			uint8_t key = get_dummy_key(msg->param1);
-			///LOG_LEVEL("key pressed key=%d key_status=%d\r\n",key,msg->param2);
+			GPIO_KEY_STATUS *key_status = get_key_status_by_key(key);
+			
+			LOG_LEVEL("key pressed key=%d key_status=%d\r\n",key,msg->param2);
       switch (key)
 			{
 				 case OCTOPUS_KEY_0:
@@ -81,26 +91,47 @@ void app_key_running(void)
 				 #endif
 				 #endif
 				 
-				 if(msg->param2 == KEY_STATE_PRESSED)
+				 if(key_status->long_press_duration <= GPIO_KEY_STATUS_PRESS_PERIOD)
 				 {
-						param = MK_WORD(KEY_CODE_MENU,KEY_STATE_PRESSED);
-						send_message(TASK_ID_PTL, M2A_MOD_KEY, CMD_MODSETUP_KEY, param);
-					  //app_power_on_off(0);
-				 }
-				 
-				 else if(msg->param2 == KEY_STATE_LONG_PRESSED)
-				 {
-					  param = MK_WORD(KEY_CODE_MENU,KEY_STATE_LONG_PRESSED);
+					  param = MK_WORD(KEY_CODE_MENU,KEY_STATE_PRESSED);
 					  send_message(TASK_ID_PTL, M2A_MOD_KEY, CMD_MODSETUP_KEY, param);
-				 }
-			
-				 else if(msg->param2 == KEY_STATE_LONG_LONG_PRESSED)
+				 }			
+				 break;				 
+			}	
+    }		
+		
+		else if(msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_KEY_UP_EVENT)
+		{
+			uint8_t key = get_dummy_key(msg->param1);
+			GPIO_KEY_STATUS *key_status = get_key_status_by_key(key);
+			LOG_LEVEL("key released key=%d key_status=%d\r\n",key,msg->param2);
+      switch (key)
+			{
+				 case OCTOPUS_KEY_0:
+						break;
+				 case OCTOPUS_KEY_1:
+					 break;
+				 case OCTOPUS_KEY_14:
+				 
+				 if(key_status->long_press_duration >= GPIO_KEY_STATUS_LONG_LONG_PRESS_PERIOD)
 				 {
 						app_goto_bootloader();
 				 }
-				 break;
+				 
+				 else if(key_status->long_press_duration >= GPIO_KEY_STATUS_LONG_PRESS_PERIOD)
+				 {
+						param = MK_WORD(KEY_CODE_MENU,KEY_STATE_LONG_PRESSED);
+						send_message(TASK_ID_PTL, M2A_MOD_KEY, CMD_MODSETUP_KEY, param);
+				 }
+				 	
+				 break;				 
 			}	
-    }		
+    }	
+}
+
+static void app_do_key_action_hanlder(void)
+{
+	
 }
 
 #define ADDR_OTA_FLAG	0x1FFF18FC

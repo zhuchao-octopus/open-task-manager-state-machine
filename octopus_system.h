@@ -42,14 +42,14 @@ extern "C"{
 /**
  * @brief Version information.
  */
-#define OTMS_VERSION "V1.0.0"                         /**< Current version of the Task Manager System. */
+#define OTMS_VERSION "v1.0.4"                         /**< Current version of the Task Manager System. */
 #define OTMS_RELEASE_DATA_TIME  __DATE__ " " __TIME__ /**< Compilation date and time. */
 
 /**
  * @brief Version strings for the application, hardware, and project.
  */
-#define APP_VER_STR "V1.0.0"                   /**< Application version. */
-#define HW_VER_STR  "V1.0.0"                   /**< Hardware version. */
+#define APP_VER_STR OTMS_VERSION //"v1.0.0"                   /**< Application version. */
+#define HW_VER_STR  "v1.0.0"                   /**< Hardware version. */
 #define PRJ_VER_STR "KD070E01"                 /**< Project version. */
 #define VER_STR "MCU:"APP_VER_STR"HW:"HW_VER_STR"PRJ:"PRJ_VER_STR"\n" /**< Combined version string. */
 
