@@ -63,13 +63,13 @@ uint8_t hal_set_pairing_mode_onoff(bool ono_ff,uint8_t current_pairing_mode)
 
 void hal_enable_bLe_pair_mode(void)
 {
-	uint8_t pairMode = GAPBOND_PAIRING_MODE_NO_PAIRING;
+	uint8_t pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
 	GAPBondMgr_SetParameter(GAPBOND_PAIRING_MODE, sizeof(uint8_t), &pairMode);
 }
 
 void hal_disable_bLe_pair_mode(void)
 {
-	uint8_t pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
+	uint8_t pairMode = GAPBOND_PAIRING_MODE_NO_PAIRING;
 	GAPBondMgr_SetParameter(GAPBOND_PAIRING_MODE, sizeof(uint8_t), &pairMode);
 }
 #else

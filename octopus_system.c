@@ -32,11 +32,21 @@
  ******************************************************************************/
 
 /*******************************************************************************
+ * MACROS
+ * The following macros define key IDs and their respective actions.
+ */
+ #define SYSTEM_POWER_ON_VALUE 			1
+ #define SYSTEM_POWER_OFF_VALUE 		0
+/*******************************************************************************
  * Local Function Declarations
  * Declare static functions used only within this file.
  ******************************************************************************/
 static bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
+
+static bool debug_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
+static bool debug_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
+
 void app_power_on_off(bool onoff);
 
 /*******************************************************************************
@@ -65,8 +75,10 @@ static uint32_t l_t_msg_wait_10_timer; // Timer for 10 ms message waiting period
  */
 void app_system_init_running(void)
 {
-    LOG_LEVEL("app_system_init\r\n");
-
+    LOG_LEVEL("app_system_init_running\r\n");
+	OTMS(TASK_ID_SYSTEM, OTMS_S_INVALID);
+		
+    ptl_register_module(P2M_MOD_DEBUG, debug_send_handler, debug_receive_handler);
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_register_module(M2A_MOD_SYSTEM, system_send_handler, system_receive_handler);
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
@@ -74,8 +86,7 @@ void app_system_init_running(void)
 #else
 	  ptl_register_module(M2A_MOD_SYSTEM, system_send_handler, system_receive_handler);
 #endif
-
-    OTMS(TASK_ID_SYSTEM, OTMS_S_INVALID);
+	
 }
 
 /**
@@ -85,7 +96,7 @@ void app_system_init_running(void)
  */
 void app_system_start_running(void)
 {
-    LOG_LEVEL("app_system_start\r\n");
+    LOG_LEVEL("app_system_start_running\r\n");
     OTMS(TASK_ID_SYSTEM, OTMS_S_ASSERT_RUN);
 }
 
@@ -98,7 +109,9 @@ void app_system_start_running(void)
 void app_system_assert_running(void)
 {
     StartTickCounter(&l_t_msg_wait_10_timer);
-
+	
+    ptl_reqest_running(P2M_MOD_DEBUG);
+	
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_reqest_running(M2A_MOD_SYSTEM);
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
@@ -126,14 +139,17 @@ void app_system_running(void)
     {
         case MSG_DEVICE_NORMAL_EVENT:
             send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
-            app_power_on_off(GPIO_PIN_READ_ACC());
             break;
 
+				case MSG_DEVICE_ACC_EVENT:
+              app_power_on_off(msg->param2);
+            break;
+				
         case MSG_DEVICE_POWER_EVENT:
             if (msg->param1 == CMD_MODSYSTEM_POWER_ON)
-                app_power_on_off(1);
+                app_power_on_off(SYSTEM_POWER_ON_VALUE);
             else if (msg->param1 == CMD_MODSYSTEM_POWER_OFF)
-                app_power_on_off(0);
+                app_power_on_off(SYSTEM_POWER_OFF_VALUE);
             break;
     }
 }
@@ -162,9 +178,13 @@ void app_power_on_off(bool onoff)
     LOG_LEVEL("power status=%s, acc=%s\r\n", power_state, acc_state);
 
     if (onoff)
-        GPIO_ACC_SOC_HIGH();
+		{
+			  GPIO_ACC_SOC_HIGH();         
+		}
     else
-        GPIO_ACC_SOC_LOW();
+		{
+				GPIO_ACC_SOC_LOW(); 			
+		}
 }
 /*******************************************************************************
  * FUNCTION: system_send_handler
@@ -337,6 +357,22 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
     return false;  // Command not processed
 }
 
+
+static bool debug_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
+{
+	return false;
+}
+
+static bool debug_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
+{
+	 if(P2M_MOD_DEBUG == payload->frame_type)
+    {
+			LOG_LEVEL("debug_receive_handler\r\n");
+			///ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, (uint8_t*)VER_STR, sizeof(VER_STR), ackbuff);
+			return true;	
+		}
+	return false;	
+}
 /*******************************************************************************
  * FUNCTION: system_handshake_with_mcu
  * 

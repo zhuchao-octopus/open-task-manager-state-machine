@@ -1,15 +1,22 @@
-
 /*******************************************************************************
  * @file octopus_task_manager_ptl.h
- * @brief Header file for the Octopus protocol task manager.
+ * @brief Header file for managing Octopus protocol tasks.
  * 
- * This file defines the protocol structure, constants, and functions 
- * for managing communication tasks between MCU and APP in the Octopus platform.
+ * This file defines the structure, constants, and function prototypes for handling
+ * communication tasks between the MCU (Microcontroller Unit) and the APP (Application)
+ * within the Octopus platform. It provides the necessary protocol definitions to
+ * ensure smooth task management and communication across the platform.
  * 
- * @version  1.0.0
+ * The Octopus protocol facilitates seamless interaction between hardware and software,
+ * enabling efficient data exchange and task synchronization. This header file serves 
+ * as the interface for the task manager, providing the necessary tools to integrate 
+ * protocol handling into the Octopus platform.
+ * 
+ * @version 1.0.0
  * @author   Octopus Team
- * @date 2024-12-12
+ * @date     2024-12-12
  *******************************************************************************/
+
 #ifndef __OCTOPUS_TASK_MANAGER_PTL_H__
 #define __OCTOPUS_TASK_MANAGER_PTL_H__
 /*******************************************************************************
@@ -55,8 +62,9 @@ typedef enum UartChannel
  * @brief Enumeration for frame headers. 
  */
 typedef enum {
-    M2A_PTL_HEADER = 0x55, ///< MCU -> APP frame header
-    A2M_PTL_HEADER = 0xAA  ///< APP -> MCU frame header
+    M2A_PTL_HEADER = 0x55,   ///< MCU -> APP frame header
+    A2M_PTL_HEADER = 0xAA,   ///< APP -> MCU frame header
+	  DBG_PTL_HEADER = 0xFF    ///< for debug
 } ptl_frame_header_t;
 
 /** 
@@ -71,7 +79,8 @@ typedef enum {
     M2A_MOD_INDICATOR = 0x04, ///< Indicator data
     M2A_MOD_DRIV_INFO = 0x05, ///< Driving information
     M2A_MOD_SETUP = 0x06,     ///< Settings
-
+    M2A_MOD_KEY = 0x07,       ///< KEY
+    
     /* APP -> MCU module IDs */
     A2M_MOD_SYSTEM = 0x80,    ///< System initialization
     A2M_MOD_UPDATE = 0x81,    ///< System update
@@ -80,12 +89,14 @@ typedef enum {
     A2M_MOD_INDICATOR = 0x84, ///< Indicator data
     A2M_MOD_DRIV_INFO = 0x85, ///< Driving information
     A2M_MOD_SETUP = 0x86,     ///< Settings
+    A2M_MOD_KEY = 0x87,       ///< KEY
 
+	  P2M_MOD_DEBUG = 0xF0,     ///< DEBUG
     /* Range definitions for validity checks */
     M2A_MOD_START = M2A_MOD_SYSTEM,
-    M2A_MOD_END = M2A_MOD_SETUP,
+    M2A_MOD_END = M2A_MOD_KEY,
     A2M_MOD_START = A2M_MOD_SYSTEM,
-    A2M_MOD_END = A2M_MOD_SETUP
+    A2M_MOD_END = A2M_MOD_KEY
 } ptl_frame_type_t;
 
 /** 
@@ -96,7 +107,7 @@ typedef enum {
     CMD_MODSYSTEM_HANDSHAKE = 0x00, ///< System handshake
     CMD_MODSYSTEM_ACC_STATE = 0x01, ///< ACC state
     CMD_MODSYSTEM_APP_STATE = 0x02, ///< Application state
-    CMD_MODSYSTEM_POWER_ON = 0x03,  ///< Power on
+    CMD_MODSYSTEM_POWER_ON 	= 0x03,  ///< Power on
     CMD_MODSYSTEM_POWER_OFF = 0x04, ///< Power off
 
     /* MOD_UPDATE commands */
@@ -265,6 +276,7 @@ void ptl_frame_analysis_handler(void);
  */
 uint8_t ptl_get_checksum(uint8_t *data, uint8_t len);
 
+void ptl_help(void);
 
 #ifdef __cplusplus
 }

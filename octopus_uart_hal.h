@@ -60,6 +60,7 @@ typedef struct
  * FUNCTIONS
  * Function prototypes for UART communication and protocol handling.
  */
+void dbg_log_printf_init(void);
 
 // Initializes the UART protocol (e.g., UART configuration, GPIO, etc.)
 void hal_com_uart_init(uint8_t task_id);
@@ -77,6 +78,8 @@ uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events);
 #else
 void* hal_com_uart_event_handler(void* arg);
 #endif
+
+
 /*******************************************************************************/
 
 #ifdef __cplusplus

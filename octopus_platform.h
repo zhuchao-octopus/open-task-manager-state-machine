@@ -48,8 +48,9 @@
  * Define which platform and RTOS to use by enabling the corresponding macro.
  ******************************************************************************/
 //#define PLATFORM_ITE_OPEN_RTOS  // Enable ITE platform with OPEN RTOS
-#define PLATFORM_CST_OSAL_RTOS // Uncomment to use CST platform with OSAL RTOS
+//#define PLATFORM_CST_OSAL_RTOS // Uncomment to use CST platform with OSAL RTOS
 //#define PLATFORM_CST_WIND_RTOS // Uncomment to use CST platform with WIND RTOS
+#define PLATFORM_LINUX_RISC
 
 /*******************************************************************************
  * INCLUDE FILES
@@ -64,6 +65,7 @@
 #include <string.h>             // String manipulation functions
 #include <assert.h>             // Debugging support for assertions
 #include <time.h>               // Time manipulation functions
+
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
 #include <sys/ioctl.h>          // System I/O control definitions
@@ -112,6 +114,12 @@
 #include "types.h"                // Basic type definitions
 #endif
 
+#ifdef PLATFORM_LINUX_RISC
+#include <pthread.h>
+#include <unistd.h>
+#include "../HAL/octopus_serialport_c.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -133,6 +141,20 @@ extern "C" {
 #define CFG_OTSM_STACK_SIZE    (200112L)                   // Stack size for Octopus Task Manager
 #define GET_SYSTEM_TICK_COUNT  (SDL_GetTicks())            // Retrieve system tick count in milliseconds
 #define DELAY_US(us) (usleep(us))                          // Introduce delay in microseconds
+
+#elif defined(PLATFORM_LINUX_RISC)
+
+#define DELAY_US(us)  (usleep(us))  // Define empty macro for unsupported platforms
+#define GET_SYSTEM_TICK_COUNT ({ \
+    struct timespec ts; \
+    unsigned long long tick_count = 0; \
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) { \
+        tick_count = (unsigned long long)(ts.tv_sec) * 1000 + (ts.tv_nsec / 1000000); \
+    } else { \
+        perror("clock_gettime"); \
+    } \
+    tick_count; \
+}) // Return zero for unsupported platforms
 
 #else
 #define DELAY_US(us) // Define empty macro for unsupported platforms
@@ -179,7 +201,7 @@ extern "C" {
  * CONSTANTS
  * Define mathematical constants and other useful values.
  ******************************************************************************/
-#define PI_FLOAT (3.14159f) // Value of ¦Ð as a floating-point constant
+#define PI_FLOAT (3.14159f) // Value of ï¿½ï¿½ as a floating-point constant
 
 /*******************************************************************************
  * FUNCTION DECLARATIONS

@@ -54,7 +54,7 @@ void hal_timer_init(uint8_t timer_id);
  * 
  * @note The actual handling of events should be done within this function based on the event type.
  */
-void hal_timer_interrupt_callback(uint8_t evt);
+//void hal_timer_interrupt_callback(uint8_t evt);
 
 #ifdef __cplusplus
 }

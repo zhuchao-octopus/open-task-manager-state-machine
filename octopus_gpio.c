@@ -9,7 +9,7 @@
 #include "octopus_tickcounter.h"
 #include "octopus_msgqueue.h"
 #include "octopus_flash.h"
-
+#include "octopus_key.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
 */
@@ -28,13 +28,15 @@ static uint32_t           l_t_msg_wait_50_timer;
  /*******************************************************************************
  * GLOBAL VARIABLES
  */
-GPIO_KEY_STATUS key_status_1 = {0,0,0,0,0,0};
+
 GPIO_STATUS acc_status = {false,true,0,0};
 GPIO_STATUS ddd_status = {false,true,0,0};
 GPIO_STATUS zzd_status = {false,true,0,0};
 GPIO_STATUS yzd_status = {false,true,0,0};
 GPIO_STATUS skd_status = {false,true,0,0};
 
+GPIO_KEY_STATUS key_status_1 = {0};
+GPIO_KEY_STATUS *gpio_key_array[]={&key_status_1};
 //static bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff);
 //static bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
@@ -43,29 +45,29 @@ GPIO_STATUS skd_status = {false,true,0,0};
  */
 void app_gpio_init_running(void)
 {
-    LOG_LEVEL("app_gpio_init\r\n");
-	  GPIOInit();
+    LOG_LEVEL("app_gpio_init_running\r\n");
+	GPIOInit();
     //com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
     OTMS(TASK_ID_GPIO, OTMS_S_INVALID);
 }
 
 void app_gpio_start_running(void)
 {
-    #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    LOG_LEVEL("app_gpio_start\r\n");
+    LOG_LEVEL("app_gpio_start_running\r\n");
     OTMS(TASK_ID_GPIO, OTMS_S_ASSERT_RUN);
-    #endif
 }
 
 void app_gpio_assert_running(void)
 {
+    #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     StartTickCounter(&l_t_msg_wait_50_timer);
     OTMS(TASK_ID_GPIO, OTMS_S_RUNNING);
+    #endif
 }
 
 void app_gpio_running(void)
 {
-   if(GetTickCounter(&l_t_msg_wait_50_timer) >= 20)
+   if(GetTickCounter(&l_t_msg_wait_50_timer) >= GPIO_POLLING_PERIOD_MS)
 	 {
 			PollingGPIOStatus(GPIO_ACC_PIN,&acc_status);
 			PollingGPIOStatus(GPIO_DDD_PIN,&ddd_status);
@@ -79,8 +81,12 @@ void app_gpio_running(void)
 			if(acc_status.changed)
 			{
 				LOG_LEVEL("get acc status=%d\r\n",acc_status.offon);
-				send_message(TASK_ID_BLE, MSG_DEVICE_GPIO_EVENT, GPIO_ACC_PIN, acc_status.offon);
-				send_message(TASK_ID_SYSTEM, MSG_DEVICE_GPIO_EVENT, GPIO_ACC_PIN, acc_status.offon);
+				send_message(TASK_ID_BLE, MSG_DEVICE_ACC_EVENT, GPIO_ACC_PIN, acc_status.offon);
+				if(acc_status.offon)
+				send_message(TASK_ID_SYSTEM, MSG_DEVICE_POWER_EVENT, CMD_MODSYSTEM_POWER_ON, acc_status.offon);
+				else
+				send_message(TASK_ID_SYSTEM, MSG_DEVICE_POWER_EVENT, CMD_MODSYSTEM_POWER_OFF, acc_status.offon);
+				
 				acc_status.changed=false;
 			}	
 			
@@ -167,64 +173,80 @@ void PollingGPIOStatus(uint8_t pin, GPIO_STATUS *gpio_status)
 void PollingGPIOKeyStatus(uint8_t pin,GPIO_KEY_STATUS *key_status)
 {
 	if(!GPIO_PIN_READ(pin))
-	{
-		if(key_status->count1 < GPIO_KEY_STATUS_MAX_REDUNDANCY)
-		   key_status->count1++;
-		
-		if(key_status->count1 > GPIO_KEY_STATUS_REDUNDANCY*4 && key_status->pressed)
+	{		
+		if(key_status->press_count < GPIO_KEY_STATUS_MAX_REDUNDANCY)
 		{
-			key_status->key = hal_get_gpio_key_mask_code(pin);//key_status->key | GetGPIOKeyMask(pin);
-			key_status->pressed=true;
-			key_status->pressed_l=true;
-			key_status->released=false;
-			key_status->dispatched=false;
-			return;
+		   key_status->press_count++;
+			 key_status->long_press_duration =key_status->press_count;
 		}
-		
-		if(key_status->count1 > GPIO_KEY_STATUS_REDUNDANCY && !key_status->pressed)
+													
+	  if(key_status->press_count > GPIO_KEY_STATUS_PRESS_PERIOD && !key_status->pressed)
 		{
 			key_status->key = hal_get_gpio_key_mask_code(pin);//key_status->key | GetGPIOKeyMask(pin);
 			key_status->pressed=true;
-			key_status->pressed_l=false;
-			key_status->released=false;
-			key_status->dispatched=false;
+			key_status->release=false;
+			key_status->event_dispatched=false;
+			key_status->state=KEY_STATE_PRESSED;
+		}	
+		
+		if(key_status->press_count > GPIO_KEY_STATUS_LONG_PRESS_PERIOD && key_status->pressed)
+		{
+			key_status->key = hal_get_gpio_key_mask_code(pin);//key_status->key | GetGPIOKeyMask(pin);
+			key_status->pressed=true;
+			key_status->release=false;
+			key_status->event_dispatched=false;
+			key_status->state=KEY_STATE_LONG_PRESSED;
+		}	
+		if(key_status->press_count > GPIO_KEY_STATUS_LONG_LONG_PRESS_PERIOD && key_status->pressed)
+		{
+			key_status->key = hal_get_gpio_key_mask_code(pin);//key_status->key | GetGPIOKeyMask(pin);
+			key_status->pressed=true;
+			key_status->release=false;
+			key_status->event_dispatched=false;
+			key_status->state=KEY_STATE_LONG_LONG_PRESSED;
 		}	
 	}
 	else
 	{
-		key_status->count1 = 0;
 		if(key_status->pressed)
-			key_status->released=true;
+		{
+			key_status->release=true;
+			key_status->event_dispatched=false;
+		}
 		key_status->pressed=false;
+		key_status->press_count = 0;
 		///key_status->key = key_status->key & (~GetGPIOKeyMask(pin));
 	}
 } 
 
 void ProcessKeyEvent(GPIO_KEY_STATUS *key_status)
 {
-	if(!key_status->dispatched)	
+	if(!key_status->event_dispatched)	
 	{	
-		if(key_status->pressed_l)//long press
+		///LOG_LEVEL("press status key=%d %d\r\n",key_status->key,key_status->state);
+		if(key_status->pressed)
 		{
-			///LOG_LEVEL("long press status key=%d %d\r\n",key_status->key,key_status->pressed_l);
-			send_message(TASK_ID_KEY, MSG_DEVICE_KEY_EVENT , key_status->key, 2);
-			key_status->dispatched=true;
+   			send_message(TASK_ID_KEY, MSG_DEVICE_KEY_DOWN_EVENT , key_status->key, KEY_STATE_PRESSED );
+        key_status->event_dispatched=true; 										
 		}
-    else if(key_status->pressed)
+    else if(key_status->release)
 		{
-			///LOG_LEVEL("press status key=%d %d\r\n",key_status->key,key_status->pressed_l);
-			send_message(TASK_ID_KEY, MSG_DEVICE_KEY_EVENT , key_status->key, 1);
-      key_status->dispatched=true;  
-		}			
-		
-	  if(key_status->released)//short press
-		{
-			///LOG_LEVEL("released status key=%d\r\n",key_status->key);
-			send_message(TASK_ID_KEY, MSG_DEVICE_KEY_EVENT , key_status->key, 0);
-			key_status->released=false;
-			key_status->dispatched=true;
+		    send_message(TASK_ID_KEY, MSG_DEVICE_KEY_UP_EVENT , key_status->key, KEY_STATE_RELEASED );
+        key_status->event_dispatched=true;	
 		}
 	}	
+}
+
+GPIO_KEY_STATUS* get_key_status_by_key(uint8_t key) 
+{
+	size_t array_size = sizeof(gpio_key_array) / sizeof(gpio_key_array[0]); 
+  for (size_t i = 0; i < array_size; i++) 
+	{
+        if (gpio_key_array[i]->key == key) {
+            return gpio_key_array[i]; 
+        }
+  }
+    return NULL; 
 }
 
 bool IsAccOn(void)

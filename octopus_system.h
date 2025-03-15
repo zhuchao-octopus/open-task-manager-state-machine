@@ -42,28 +42,29 @@ extern "C"{
 /**
  * @brief Version information.
  */
-#define OTMS_VERSION "V1.0.0" /**< Current version of the Task Manager System. */
+#define OTMS_VERSION "v1.0.5"                         /**< Current version of the Task Manager System. */
 #define OTMS_RELEASE_DATA_TIME  __DATE__ " " __TIME__ /**< Compilation date and time. */
 
 /**
  * @brief Version strings for the application, hardware, and project.
  */
-#define APP_VER_STR "V1.0.0"  /**< Application version. */
-#define HW_VER_STR  "V1.0.0"  /**< Hardware version. */
-#define PRJ_VER_STR "KD070E01" /**< Project version. */
-#define VER_STR "MCU:"APP_VER_STR"HW:"HW_VER_STR"PRJ:"PRJ_VER_STR"\n" /**< Combined version string. */
+#define APP_VER_STR OTMS_VERSION //"v1.0.0"                   /**< Application version. */
+#define HW_VER_STR  "v1.0.0"                   /**< Hardware version. */
+#define PRJ_VER_STR "KD070E01"                 /**< Project version. */
+#define VER_STR "MCU:" APP_VER_STR "HW:" HW_VER_STR "PRJ:" PRJ_VER_STR "\n" /**< Combined version string. */
 
 /***********************************************************************************
  * @brief Task Manager state machine modes.
  */
-#define TASK_MANAGER_STATE_MACHINE_MCU 1 /**< Main control mode. */
-//#define TASK_MANAGER_STATE_MACHINE_SOC 1 /**< (Reserved) SOC mode. */
+//#define TASK_MANAGER_STATE_MACHINE_MCU 1 /**< Main control mode. */
+#define TASK_MANAGER_STATE_MACHINE_SOC 1 /**< (Reserved) SOC mode. */
 
-#define TASK_MANAGER_STATE_MACHINE_SIF 1 /**< Secondary interface mode. */
-#define TASK_MANAGER_STATE_MACHINE_BLE 1 
+
+//#define TASK_MANAGER_STATE_MACHINE_SIF 1 /**< Secondary interface mode. */
+//#define TASK_MANAGER_STATE_MACHINE_BLE 1 
 //#define TASK_MANAGER_STATE_MACHINE_BMS 1 
-#define TASK_MANAGER_STATE_MACHINE_KEY 1 
-#define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
+//#define TASK_MANAGER_STATE_MACHINE_KEY 1 
+//#define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
 
 
 /**
@@ -84,28 +85,28 @@ extern "C"{
  * @brief MCU (Microcontroller Unit) update state enumeration.
  */
 typedef enum {
-    MCU_UPDATE_ST_INIT          = (0x00), /**< Update initialization. */
-    MCU_UPDATE_ST_CHECK_FILE    = (0x01), /**< Check update file. */
-    MCU_UPDATE_ST_WAIT_CONFIRM  = (0x02), /**< Wait for update confirmation. */
-    MCU_UPDATE_ST_START         = (0x03), /**< Start the update process. */
-    MCU_UPDATE_ST_WAIT_BOOT     = (0x04), /**< Wait for MCU to boot. */
-    MCU_UPDATE_ST_TRANSFER      = (0x05), /**< Transfer update data. */
-    MCU_UPDATE_ST_COMPLETED     = (0x06), /**< Update completed successfully. */
-    MCU_UPDATE_ST_FAILED        = (0x07), /**< Update failed. */
+    MCU_UPDATE_ST_INIT          = (0x00),      /**< Update initialization. */
+    MCU_UPDATE_ST_CHECK_FILE    = (0x01),      /**< Check update file. */
+    MCU_UPDATE_ST_WAIT_CONFIRM  = (0x02),      /**< Wait for update confirmation. */
+    MCU_UPDATE_ST_START         = (0x03),      /**< Start the update process. */
+    MCU_UPDATE_ST_WAIT_BOOT     = (0x04),      /**< Wait for MCU to boot. */
+    MCU_UPDATE_ST_TRANSFER      = (0x05),      /**< Transfer update data. */
+    MCU_UPDATE_ST_COMPLETED     = (0x06),      /**< Update completed successfully. */
+    MCU_UPDATE_ST_FAILED        = (0x07),      /**< Update failed. */
 } mcu_update_state_t;
 
 /**
  * @brief Mainboard (MB) state enumeration.
  */
 typedef enum MB_STATE {
-    MB_ST_INIT = 0,     /**< Initialization state. */
-    MB_ST_LOWPOWER,     /**< Low-power state. */
-    MB_ST_BOOTING,      /**< Booting state. */
-    MB_ST_STANDBY,      /**< Standby state. */
-    MB_ST_ON,           /**< Fully operational state. */
-    MB_ST_PARTIAL,      /**< Partial operation state. */
-    MB_ST_SHUTDOWN,     /**< Shutdown process. */
-    MB_ST_OFF,          /**< Power-off state. */
+    MB_ST_INIT = 0,                            /**< Initialization state. */
+    MB_ST_LOWPOWER,                            /**< Low-power state. */
+    MB_ST_BOOTING,                             /**< Booting state. */
+    MB_ST_STANDBY,                             /**< Standby state. */
+    MB_ST_ON,                                  /**< Fully operational state. */
+    MB_ST_PARTIAL,                             /**< Partial operation state. */
+    MB_ST_SHUTDOWN,                            /**< Shutdown process. */
+    MB_ST_OFF,                                 /**< Power-off state. */
     MB_ST_STOP,
 } mb_state_t;
 
@@ -177,6 +178,7 @@ void system_handshake_with_mcu(void);
  */
 mb_state_t system_get_mb_state(void);
 
+void app_power_on_off(bool onoff);
 #ifdef __cplusplus
 }
 #endif
