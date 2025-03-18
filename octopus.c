@@ -20,8 +20,10 @@
  * INCLUDES
  */
 #include "octopus_platform.h"     // Include platform-specific header for hardware platform details
-#include "octopus_log.h"          // Include logging functions for debugging
+
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
+#include "octopus_tickcounter.h"
+#include "octopus_log.h"          // Include logging functions for debugging
 #include "octopus.h"
 
 /*******************************************************************************
@@ -49,9 +51,10 @@ void TaskManagerStateGoRunning();
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-#ifdef PLATFORM_ITE_OPEN_RTOS
+#if defined(PLATFORM_ITE_OPEN_RTOS) || defined(PLATFORM_LINUX_RISC)
 static pthread_t thread_task;      // Thread handle for task manager event loop
 static pthread_attr_t thread_attr; // Thread attributes (for setting stack size, etc.)
+bool stop_thread = false;
 #endif
 
 uint8_t TaskManagerStateMachine_Id_; // Task manager state machine identifier
@@ -84,7 +87,7 @@ __attribute__((constructor)) void TaskManagerStateMachineInit(void)
     TaskManagerStateMachine_Id_ = 0; // Store the task ID in the global variable
     /// LOG_NONE("\r\n\r\n");//[1B blob data]
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
-    LOG_NONE("\r\n############################BOOT  START############################\r\n");
+    LOG_NONE("\r\n###################################BOOT  START###################################\r\n");
     TaskManagerStateStopRunning();
 #endif
     LOG_LEVEL("OTMS initialization task_id:%02x\r\n", TaskManagerStateMachine_Id_);
@@ -113,7 +116,7 @@ __attribute__((constructor)) void TaskManagerStateMachineInit(void)
     // Initialize user task manager state machine
     task_manager_init();  // Initialize the task manager
     task_manager_start(); // Start the task manager
-    TaskManagerStateGoRunning();
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Nofify Initialize complete
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
@@ -123,7 +126,7 @@ __attribute__((constructor)) void TaskManagerStateMachineInit(void)
     system_handshake_with_mcu();
 #endif
     ptl_help();
-    LOG_NONE("###########################BOOT COMPLETE###########################\r\n");
+    LOG_NONE("##################################BOOT COMPLETE##################################\r\n");
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Enable task manager state matching main loop
@@ -131,11 +134,8 @@ __attribute__((constructor)) void TaskManagerStateMachineInit(void)
     osal_start_reload_timer(TaskManagerStateMachine_Id_, DEVICE_TIMER_EVENT, MAIN_TASK_TIMER_INTERVAL); // timeout_value unit ms
 #endif
 
-#ifdef PLATFORM_ITE_OPEN_RTOS
-    pthread_attr_init(&thread_attr);                                             // Initialize thread attributes
-    pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);          // Set thread to detached state
-    pthread_attr_setstacksize(&thread_attr, CFG_OTSM_STACK_SIZE);                // Set the stack size for the thread
-    pthread_create(&thread_task, &thread_attr, TaskManagerStateEventLoop, NULL); // Create the task manager event loop thread
+#if defined(PLATFORM_ITE_OPEN_RTOS) || defined(PLATFORM_LINUX_RISC)
+    TaskManagerStateGoRunning();
 #endif
 }
 
@@ -194,48 +194,57 @@ void TaskManagerStateGoRunning()
  * @param arg Arguments passed to the thread (not used here).
  * @return NULL when the thread exits.
  */
-void *TaskManagerStateEventLoop(void *arg)
+void *TaskManagerStateRunningLoop(void *arg)
 {
     uint32_t wait_cnt = 0;
-    LOG_LEVEL("task manager state machine event loop running\r\n"); // Log unhandled events
-    while (1)
-    {
-        task_manager_run();                      // Run the task manager to handle tasks in the event loop
-        usleep(MAIN_TASK_TIMER_INTERVAL * 1000); // Sleep for 10 millisecond to control loop frequency
-    }
-    return 0; // Exit the thread
-}
-void TaskManagerStateGoRunning()
-{
-}
-
-#elif defined(PLATFORM_LINUX_RISC)
-
-bool stop_thread = false;
-void *TaskManagerStateRunning(void *arg)
-{
-    uint32_t wait_cnt = 0;
-    stop_thread = false;
     LOG_LEVEL("task manager state machine event loop running\r\n"); // Log unhandled events
     while (!stop_thread)
     {
         task_manager_run();                      // Run the task manager to handle tasks in the event loop
         usleep(MAIN_TASK_TIMER_INTERVAL * 1000); // Sleep for 10 millisecond to control loop frequency
     }
-    LOG_LEVEL("task manager state machine event loop stoped\r\n"); // Log unhandled events
+    return 0; // Exit the thread
+}
+
+#elif defined(PLATFORM_LINUX_RISC)
+
+void *TaskManagerStateRunningLoop(void *arg)
+{
+     uint32_t wait_cnt = 0;
+    stop_thread = false;
+    LOG_LEVEL("task manager state machine event start running\r\n"); // Log unhandled events
+    //fflush(stdout); // 强制刷新缓冲区，确保日志输出
+    StartTickCounter(&wait_cnt);
+     while (!stop_thread)
+    {
+        task_manager_run();                      // Run the task manager to handle tasks in the event loop
+        usleep(MAIN_TASK_TIMER_INTERVAL * 1000);             // Sleep for 10 millisecond to control loop frequency
+
+        if(GetTickCounter(&wait_cnt)>=1000*60)
+        {
+        LOG_LEVEL("task manager state machine event running\r\n"); // Log unhandled events
+        RestartTickCounter(&wait_cnt);
+        }
+    }
+    LOG_LEVEL("task manager state machine event stoped\r\n"); // Log unhandled events
 }
 
 void TaskManagerStateGoRunning()
 {
-    pthread_t thread_id;
-    // 创建线程，启动状态机
-    if (pthread_create(&thread_id, NULL, TaskManagerStateRunning, NULL) != 0)
+    pthread_attr_init(&thread_attr);                                                         // Initialize thread attributes
+    pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);                      // Set thread to detached state
+    pthread_attr_setstacksize(&thread_attr, CFG_OTSM_STACK_SIZE);                            // Set the stack size for the thread
+    int ret = pthread_create(&thread_task, &thread_attr, TaskManagerStateRunningLoop, NULL); // Create the task manager event loop thread
+    if (ret != 0)
     {
-        LOG_LEVEL("task manager state machine error creating thread\r\n");
+        LOG_LEVEL("task manager state machine error creating thread: %s\n", strerror(ret));
     }
     else
     {
-        LOG_LEVEL("task manager state machine thread started\r\n");
+        LOG_LEVEL("task manager state machine thread started: %s\n", strerror(ret));
+        pthread_detach(thread_task); // 让线程自动释放资源
+        //pthread_join(thread_task, NULL);  // 等待线程结束
+        //LOG_LEVEL("task manager state machine thread finished\n"); 
     }
 }
 

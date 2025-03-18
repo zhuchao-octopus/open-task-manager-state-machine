@@ -289,7 +289,7 @@ void hal_uart_init(void)
     cFifo_Init(&usart_rx_fifo, uart_rx_fifo_buff, sizeof(uart_rx_fifo_buff));
     if (!serial)
     {
-        printf("Failed to open serial port.\n");
+        LOG_LEVEL("Failed to open serial port.\r\n");
         return;
     }
     serialport_set_callback(serial, hal_com_uart_receive_callback);
@@ -297,6 +297,7 @@ void hal_uart_init(void)
 
 void hal_com_uart_init(uint8_t task_id)
 {
+    LOG_LEVEL("hal uart2 init for protocol\r\n");
     hal_uart_init();
 }
 

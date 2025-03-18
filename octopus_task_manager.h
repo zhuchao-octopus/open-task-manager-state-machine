@@ -84,10 +84,11 @@ extern "C"
     /** Enum for defining unique task IDs. */
     typedef enum
     {
-        TASK_ID_SYSTEM = 0, /**< System task. */
-        TASK_ID_GPIO,       /**< GPIO management task. */
-        TASK_ID_PTL,        /**< Protocol handling task. */
-        TASK_ID_CAR_INFOR,  /**< Car information management task. */
+        TASK_ID_PTL = 0, /**< Protocol handling task. */
+        TASK_ID_SYSTEM,  /**< System task. */
+        TASK_ID_GPIO,    /**< GPIO management task. */
+
+        TASK_ID_CAR_INFOR, /**< Car information management task. */
 
         TASK_ID_BLE,        /**< BLE communication task. */
         TASK_ID_KEY,        /**< Key input handling task. */
@@ -108,6 +109,18 @@ extern "C"
     /** Static configuration for all tasks in the OTMS. */
     const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
 #if 1
+        [TASK_ID_PTL] = {
+            .state_limit = OTMS_S_INVALID,
+            .func = {
+                [OTMS_S_INIT] = ptl_init_running,
+                [OTMS_S_START] = ptl_start_running,
+                [OTMS_S_ASSERT_RUN] = ptl_assert_running,
+                [OTMS_S_RUNNING] = ptl_running,
+                [OTMS_S_POST_RUN] = ptl_post_running,
+                [OTMS_S_STOP] = ptl_stop_running,
+            },
+        },
+
         [TASK_ID_SYSTEM] = {
             .state_limit = OTMS_S_INVALID,
             .func = {
@@ -129,18 +142,6 @@ extern "C"
                 [OTMS_S_RUNNING] = app_gpio_running,
                 [OTMS_S_POST_RUN] = app_gpio_post_running,
                 [OTMS_S_STOP] = app_gpio_stop_running,
-            },
-        },
-
-        [TASK_ID_PTL] = {
-            .state_limit = OTMS_S_INVALID,
-            .func = {
-                [OTMS_S_INIT] = ptl_init_running,
-                [OTMS_S_START] = ptl_start_running,
-                [OTMS_S_ASSERT_RUN] = ptl_assert_running,
-                [OTMS_S_RUNNING] = ptl_running,
-                [OTMS_S_POST_RUN] = ptl_post_running,
-                [OTMS_S_STOP] = ptl_stop_running,
             },
         },
 

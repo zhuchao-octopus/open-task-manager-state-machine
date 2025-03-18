@@ -13,12 +13,10 @@
  * DEBUG SWITCH MACROS
  */
 
-
 /*******************************************************************************
  * MACROS
  */
-#define TICK_COUNTER_MAX                ((uint32_t)-1)
-
+#define TICK_COUNTER_MAX ((uint32_t)-1)
 
 /*******************************************************************************
  * TYPEDEFS
@@ -28,7 +26,6 @@
  * \defgroup GROUP_LOCAL_FUNCTIONS OS:TIMER:LOCAL_FUNCTIONS
  */
 
-
 /*******************************************************************************
  * CONSTANTS
  */
@@ -36,33 +33,28 @@
  * LOCAL FUNCTIONS DECLEAR
  */
 
-
-
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
 
-
 /*******************************************************************************
  * STATIC VARIABLES
  */
-static uint32_t     OsTickCounter = 0;
-
+static uint32_t OsTickCounter = 0;
 
 /*******************************************************************************
  * EXTERNAL VARIABLES
  */
 
-
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
 
-void StartTickCounter(uint32_t* timer)
+void StartTickCounter(uint32_t *timer)
 {
-	assert(timer!=NULL);
+	assert(timer != NULL);
 
-	 OsTickCounter = GetSystemTickClock();
+	OsTickCounter = GetSystemTickClock();
 
 	if (OsTickCounter == 0U)
 	{
@@ -74,25 +66,25 @@ void StartTickCounter(uint32_t* timer)
 	}
 }
 
-void StopTickCounter(uint32_t* timer)
+void StopTickCounter(uint32_t *timer)
 {
-	assert(timer!=NULL);
+	assert(timer != NULL);
 	*timer = 0;
 }
 
-void RestartTickCounter(uint32_t* timer)
+void RestartTickCounter(uint32_t *timer)
 {
 	StartTickCounter(timer);
 }
 
-uint32_t GetTickCounter(const uint32_t* timer)
+uint32_t GetTickCounter(const uint32_t *timer)
 {
 	uint32_t diff;
-	assert(timer!=NULL);
+	assert(timer != NULL);
 
-	 OsTickCounter = GetSystemTickClock();
+	OsTickCounter = GetSystemTickClock();
 
-	if(0 == *timer)
+	if (0 == *timer)
 	{
 		diff = 0U;
 	}
@@ -112,32 +104,32 @@ uint32_t GetTickCounter(const uint32_t* timer)
 
 bool IsTickCounterStart(const uint32_t *timer)
 {
-    return *timer != 0;
+	return *timer != 0;
 }
 
-uint32_t GetSystemTickClock( void )
+uint32_t GetSystemTickClock(void)
 {
-   return GET_SYSTEM_TICK_COUNT;
+	return GET_SYSTEM_TICK_COUNT;
 }
 
 void SetSystemTickClock(uint32_t timer_tick)
 {
-   OsTickCounter = OsTickCounter + timer_tick;
+	OsTickCounter = OsTickCounter + timer_tick;
 }
 
 void ResetSystemTickClock(void)
 {
-   OsTickCounter = 0;//TMOS_GetSystemClock() * 625 / 1000;
+	OsTickCounter = 0; // TMOS_GetSystemClock() * 625 / 1000;
 }
 
 #if 1
-void Date2tm(struct tm* pTM, const char* pData)
+void Date2tm(struct tm *pTM, const char *pData)
 {
 	struct tm timeInfo;
-	char* tokenPtr = NULL;
-	char dataTimeTest[40] = { 0 };
-	char arrDate[20] = { 0 };
-	char arrTime[20] = { 0 };
+	char *tokenPtr = NULL;
+	char dataTimeTest[40] = {0};
+	char arrDate[20] = {0};
+	char arrTime[20] = {0};
 	// struct tm* ptmDate = NULL;
 
 	if (NULL == pData || NULL == pTM)
@@ -149,7 +141,7 @@ void Date2tm(struct tm* pTM, const char* pData)
 	dataTimeTest[39] = 0;
 
 	tokenPtr = strtok(dataTimeTest, " ");
-	if (tokenPtr) // ÈÕÆÚ
+	if (tokenPtr) // ï¿½ï¿½ï¿½ï¿½
 	{
 		strcpy(arrDate, tokenPtr);
 		tokenPtr = strtok(NULL, " ");
@@ -159,7 +151,7 @@ void Date2tm(struct tm* pTM, const char* pData)
 		}
 	}
 
-	// ÈÕÆÚ
+	// ï¿½ï¿½ï¿½ï¿½
 	tokenPtr = strtok(arrDate, ".");
 	if (tokenPtr)
 		timeInfo.tm_mday = atoi(tokenPtr);
@@ -170,7 +162,7 @@ void Date2tm(struct tm* pTM, const char* pData)
 	if (tokenPtr)
 		timeInfo.tm_year = atoi(tokenPtr);
 
-	// Ê±¼ä
+	// Ê±ï¿½ï¿½
 	tokenPtr = strtok(arrTime, ":");
 	if (tokenPtr)
 		timeInfo.tm_hour = atoi(tokenPtr);
@@ -186,6 +178,3 @@ void Date2tm(struct tm* pTM, const char* pData)
 #endif
 
 //------ end add ECTiny Sample ------//
-
-
- 
