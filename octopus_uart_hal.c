@@ -285,8 +285,8 @@ static void hal_com_uart_receive_callback(const char *data, int length)
 
 void hal_uart_init(void)
 {
-    SerialPortHandle serial = serialport_create("/dev/ttyS1", 115200);
     cFifo_Init(&usart_rx_fifo, uart_rx_fifo_buff, sizeof(uart_rx_fifo_buff));
+    SerialPortHandle serial = serialport_create("/dev/ttyS1", 115200);
     if (!serial)
     {
         LOG_LEVEL("Failed to open serial port.\r\n");

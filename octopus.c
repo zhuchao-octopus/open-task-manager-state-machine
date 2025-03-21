@@ -19,11 +19,11 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"     // Include platform-specific header for hardware platform details
+#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_tickcounter.h"
-#include "octopus_log.h"          // Include logging functions for debugging
+#include "octopus_log.h" // Include logging functions for debugging
 #include "octopus.h"
 
 /*******************************************************************************
@@ -139,6 +139,14 @@ __attribute__((constructor)) void TaskManagerStateMachineInit(void)
 #endif
 }
 
+__attribute__((destructor)) void ExitCleanup()
+{
+    LOG_LEVEL("so unloaded!\n");
+#if defined(PLATFORM_ITE_OPEN_RTOS) || defined(PLATFORM_LINUX_RISC)
+    TaskManagerStateStopRunning();
+#endif
+}
+
 #ifdef PLATFORM_CST_OSAL_RTOS
 /**
  * @brief Handles events in the Task Manager State Machine for CST OSAL RTOS.
@@ -194,7 +202,7 @@ void TaskManagerStateGoRunning()
  * @param arg Arguments passed to the thread (not used here).
  * @return NULL when the thread exits.
  */
-void *TaskManagerStateRunningLoop(void *arg)
+void *TaskManagerStateEventLoop(void *arg)
 {
     uint32_t wait_cnt = 0;
     LOG_LEVEL("task manager state machine event loop running\r\n"); // Log unhandled events
@@ -208,22 +216,22 @@ void *TaskManagerStateRunningLoop(void *arg)
 
 #elif defined(PLATFORM_LINUX_RISC)
 
-void *TaskManagerStateRunningLoop(void *arg)
+void *TaskManagerStateEventLoop(void *arg)
 {
-     uint32_t wait_cnt = 0;
+    uint32_t wait_cnt = 0;
     stop_thread = false;
     LOG_LEVEL("task manager state machine event start running\r\n"); // Log unhandled events
-    //fflush(stdout); // 强制刷新缓冲区，确保日志输出
+    // fflush(stdout); // 强制刷新缓冲区，确保日志输出
     StartTickCounter(&wait_cnt);
-     while (!stop_thread)
+    while (!stop_thread)
     {
         task_manager_run();                      // Run the task manager to handle tasks in the event loop
-        usleep(MAIN_TASK_TIMER_INTERVAL * 1000);             // Sleep for 10 millisecond to control loop frequency
+        usleep(MAIN_TASK_TIMER_INTERVAL * 1000); // Sleep for 10 millisecond to control loop frequency
 
-        if(GetTickCounter(&wait_cnt)>=1000*60)
+        if (GetTickCounter(&wait_cnt) >= 1000 * 60)
         {
-        LOG_LEVEL("task manager state machine event running\r\n"); // Log unhandled events
-        RestartTickCounter(&wait_cnt);
+            LOG_LEVEL("task manager state machine event running\r\n"); // Log unhandled events
+            RestartTickCounter(&wait_cnt);
         }
     }
     LOG_LEVEL("task manager state machine event stoped\r\n"); // Log unhandled events
@@ -234,7 +242,7 @@ void TaskManagerStateGoRunning()
     pthread_attr_init(&thread_attr);                                                         // Initialize thread attributes
     pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);                      // Set thread to detached state
     pthread_attr_setstacksize(&thread_attr, CFG_OTSM_STACK_SIZE);                            // Set the stack size for the thread
-    int ret = pthread_create(&thread_task, &thread_attr, TaskManagerStateRunningLoop, NULL); // Create the task manager event loop thread
+    int ret = pthread_create(&thread_task, &thread_attr, TaskManagerStateEventLoop, NULL); // Create the task manager event loop thread
     if (ret != 0)
     {
         LOG_LEVEL("task manager state machine error creating thread: %s\n", strerror(ret));
@@ -243,8 +251,8 @@ void TaskManagerStateGoRunning()
     {
         LOG_LEVEL("task manager state machine thread started: %s\n", strerror(ret));
         pthread_detach(thread_task); // 让线程自动释放资源
-        //pthread_join(thread_task, NULL);  // 等待线程结束
-        //LOG_LEVEL("task manager state machine thread finished\n"); 
+        // pthread_join(thread_task, NULL);  // 等待线程结束
+        // LOG_LEVEL("task manager state machine thread finished\n");
     }
 }
 
@@ -256,3 +264,4 @@ void TaskManagerStateStopRunning()
 #else
 
 #endif
+

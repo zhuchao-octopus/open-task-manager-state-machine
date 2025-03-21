@@ -1,24 +1,24 @@
 /*******************************************************************************
  * FILE: octopus_car_controller.c
- * 
+ *
  * DESCRIPTION:
  * This file contains the implementation of the car controller application
  * for the Octopus platform. It includes functions for handling communication
- * between various car system modules, such as the meter, indicator, and 
- * drivetrain information. It also includes battery voltage retrieval and 
- * system information frame (SIF) updates. 
- * 
+ * between various car system modules, such as the meter, indicator, and
+ * drivetrain information. It also includes battery voltage retrieval and
+ * system information frame (SIF) updates.
+ *
  * MODULES:
  * - Meter module
  * - Indicator module
  * - Drivetrain info module
  * - Car controller message processing
  * - Battery voltage retrieval
- * 
+ *
  * NOTE: This file is part of the Octopus car control system and interfaces
- * with the Octopus platform to manage the car's state and communication with 
+ * with the Octopus platform to manage the car's state and communication with
  * external modules.
- * 
+ *
  * File Name: octopus_task_manager_platform.h
  * @version  1.0.0
  * @date     2024-12-11
@@ -29,9 +29,9 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
-#include "octopus_log.h"       			// Include logging functions for debugging
-#include "octopus_task_manager.h" 	// Include task manager for scheduling tasks
+#include "octopus_platform.h"     // Include platform-specific header for hardware platform details
+#include "octopus_log.h"          // Include logging functions for debugging
+#include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_tickcounter.h"
 #include "octopus_carinfor.h"
 #include "octopus_msgqueue.h"
@@ -41,19 +41,19 @@
  * DEBUG SWITCH MACROS
  */
 #define CARINFOR_PTL_NO_ACK
-///#define TEST_LOG_DEBUG_SIF  // Uncomment to enable debug logging for SIF module
+/// #define TEST_LOG_DEBUG_SIF  // Uncomment to enable debug logging for SIF module
 
 /*******************************************************************************
  * MACROS
  */
-#define CELL_VOL_20 (1058)    // Voltage corresponding to 20% battery charge
-#define CELL_VOL_30 (1076)    // Voltage corresponding to 30% battery charge
-#define CELL_VOL_40 (1100)    // Voltage corresponding to 40% battery charge
-#define CELL_VOL_50 (1120)    // Voltage corresponding to 50% battery charge
-#define CELL_VOL_60 (1142)    // Voltage corresponding to 60% battery charge
-#define CELL_VOL_70 (1164)    // Voltage corresponding to 70% battery charge
-#define CELL_VOL_80 (1184)    // Voltage corresponding to 80% battery charge
-#define CELL_VOL_90 (1206)    // Voltage corresponding to 90% battery charge
+#define CELL_VOL_20 (1058) // Voltage corresponding to 20% battery charge
+#define CELL_VOL_30 (1076) // Voltage corresponding to 30% battery charge
+#define CELL_VOL_40 (1100) // Voltage corresponding to 40% battery charge
+#define CELL_VOL_50 (1120) // Voltage corresponding to 50% battery charge
+#define CELL_VOL_60 (1142) // Voltage corresponding to 60% battery charge
+#define CELL_VOL_70 (1164) // Voltage corresponding to 70% battery charge
+#define CELL_VOL_80 (1184) // Voltage corresponding to 80% battery charge
+#define CELL_VOL_90 (1206) // Voltage corresponding to 90% battery charge
 
 /*******************************************************************************
  * TYPEDEFS
@@ -75,15 +75,15 @@ static bool indicator_module_receive_handler(ptl_frame_payload_t *payload, ptl_p
 static bool drivinfo_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
-static void app_car_controller_msg_handler(void);  // Process messages related to car controller
+static void app_car_controller_msg_handler(void); // Process messages related to car controller
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
-static void app_car_controller_sif_updating(void);  // Update the SIF (System Information Frame)
+static void app_car_controller_sif_updating(void); // Update the SIF (System Information Frame)
 #endif
 #ifdef BATTERY_MANAGER
-static void get_battery_voltage(void);  // Retrieve the current battery voltage
+static void get_battery_voltage(void); // Retrieve the current battery voltage
 #endif
 #ifdef TEST_LOG_DEBUG_SIF
-static void log_sif_data(uint8_t* data, uint8_t maxlen);  // Log SIF data for debugging purposes
+static void log_sif_data(uint8_t *data, uint8_t maxlen); // Log SIF data for debugging purposes
 #endif
 
 /*******************************************************************************
@@ -94,22 +94,22 @@ static void log_sif_data(uint8_t* data, uint8_t maxlen);  // Log SIF data for de
  * STATIC VARIABLES
  */
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
-static uint8_t sif_buff[12] = {0};  // Buffer for storing SIF data
+static uint8_t sif_buff[12] = {0}; // Buffer for storing SIF data
 #endif
-static carinfo_sif_t lt_sif = {0};  // Local SIF data structure
-static carinfo_meter_t lt_meter = {0};  // Local meter data structure
-static carinfo_indicator_t lt_indicator = {0};  // Local indicator data structure
-static carinfo_drivinfo_t lt_drivinfo = {0};  // Local drivetrain information
+static carinfo_sif_t lt_sif = {0};             // Local SIF data structure
+static carinfo_meter_t lt_meter = {0};         // Local meter data structure
+static carinfo_indicator_t lt_indicator = {0}; // Local indicator data structure
+static carinfo_drivinfo_t lt_drivinfo = {0};   // Local drivetrain information
 
 // Timer variables
-static uint32_t l_t_msg_wait_meter_timer;  // Timer for 10 ms message wait (not used currently)
-static uint32_t l_t_msg_wait_50_timer;  // Timer for 50 ms message wait
-static uint32_t l_t_msg_wait_100_timer;  // Timer for 100 ms message wait
+static uint32_t l_t_msg_wait_meter_timer; // Timer for 10 ms message wait (not used currently)
+static uint32_t l_t_msg_wait_50_timer;    // Timer for 50 ms message wait
+static uint32_t l_t_msg_wait_100_timer;   // Timer for 100 ms message wait
 
-static uint32_t l_t_soc_timer;  // Timer for state of charge monitoring
+static uint32_t l_t_soc_timer; // Timer for state of charge monitoring
 
-//static bool l_t_speed_changed = false;
-//static bool l_t_gear_changed = false;
+// static bool l_t_speed_changed = false;
+// static bool l_t_gear_changed = false;
 /*******************************************************************************
  * EXTERNAL VARIABLES
  */
@@ -124,11 +124,11 @@ void app_carinfo_init_running(void)
     lt_meter.voltageSystem = 0x02;
     lt_drivinfo.gear = (carinfo_drivinfo_gear_t)1;
     lt_meter.soc = 100;
-    
+
     ptl_register_module(M2A_MOD_METER, meter_module_send_handler, meter_module_receive_handler);
     ptl_register_module(M2A_MOD_INDICATOR, indicator_module_send_handler, indicator_module_receive_handler);
     ptl_register_module(M2A_MOD_DRIV_INFO, drivinfo_module_send_handler, drivinfo_module_receive_handler);
-    
+
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_INVALID);
 }
 
@@ -152,22 +152,22 @@ void app_carinfo_assert_running(void)
 
 void app_carinfo_running(void)
 {
-    ///if(MB_ST_OFF == app_power_state_get_mb_state())
+    /// if(MB_ST_OFF == app_power_state_get_mb_state())
     ///{
-    ///OTMS(CAR_INFOR_ID, OTMS_S_POST_RUN);
+    /// OTMS(CAR_INFOR_ID, OTMS_S_POST_RUN);
     ///}
-   
-    #ifdef TASK_MANAGER_STATE_MACHINE_SIF
+
+#ifdef TASK_MANAGER_STATE_MACHINE_SIF
     app_car_controller_sif_updating();
-    #endif
-	
-	 if (GetTickCounter(&l_t_msg_wait_50_timer) < 10)
+#endif
+
+    if (GetTickCounter(&l_t_msg_wait_50_timer) < 10)
         return;
     StartTickCounter(&l_t_msg_wait_50_timer);
-	 
-		#ifdef TASK_MANAGER_STATE_MACHINE_MCU
-	  app_car_controller_msg_handler();
-    #endif
+
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+    app_car_controller_msg_handler();
+#endif
 }
 
 void app_carinfo_post_running(void)
@@ -176,13 +176,12 @@ void app_carinfo_post_running(void)
     ptl_release_running(M2A_MOD_INDICATOR);
     ptl_release_running(M2A_MOD_DRIV_INFO);
 
-    ///if(MB_ST_OFF != app_power_state_get_mb_state())
+    /// if(MB_ST_OFF != app_power_state_get_mb_state())
     ///{
-    ///OTMS(CAR_INFOR_ID, OTMS_S_ASSERT_RUN);
-    ///}
-    ///goto app_carinfo_running;
+    /// OTMS(CAR_INFOR_ID, OTMS_S_ASSERT_RUN);
+    /// }
+    /// goto app_carinfo_running;
 }
-
 
 void app_carinfo_stop_running(void)
 {
@@ -191,10 +190,10 @@ void app_carinfo_stop_running(void)
 
 void app_carinfo_on_enter_run(void)
 {
-    ///if (KCS(AppSetting) > OTMS_S_POST_RUN)
+    /// if (KCS(AppSetting) > OTMS_S_POST_RUN)
     ///{
-    ///    OTMS(CAR_INFOR_ID, OTMS_S_START);
-    ///}
+    ///     OTMS(CAR_INFOR_ID, OTMS_S_START);
+    /// }
 }
 
 void app_carinfo_on_exit_post_run(void)
@@ -207,17 +206,19 @@ uint16_t app_carinfo_getSpeed(void)
     return lt_meter.speed_real;
 }
 
-carinfo_meter_t* app_carinfo_get_meter_info(void)
+carinfo_meter_t *app_carinfo_get_meter_info(void)
 {
     return &lt_meter;
 }
 
-carinfo_indicator_t* app_carinfo_get_indicator_info(void)
+carinfo_indicator_t *app_carinfo_get_indicator_info(void)
 {
+    //lt_indicator.leftTurn = 0x03;
+    //lt_indicator.wifi = 0x0f;
     return &lt_indicator;
 }
 
-carinfo_drivinfo_t* app_carinfo_get_drivinfo_info(void)
+carinfo_drivinfo_t *app_carinfo_get_drivinfo_info(void)
 {
     return &lt_drivinfo;
 }
@@ -229,9 +230,9 @@ bool meter_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uin
 {
     assert(buff);
     uint8_t tmp[16] = {0};
-    if(M2A_MOD_METER == frame_type)
+    if (M2A_MOD_METER == frame_type)
     {
-        switch(param1)
+        switch (param1)
         {
         case CMD_MODMETER_RPM_SPEED:
             tmp[0] = MSB_WORD(lt_meter.speed_real);
@@ -241,7 +242,7 @@ bool meter_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uin
             ptl_build_frame(M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, tmp, 4, buff);
             return true;
         case CMD_MODMETER_SOC:
-            //ACK, no thing to do
+            // ACK, no thing to do
             tmp[0] = lt_meter.soc;
             tmp[1] = MSB_WORD(lt_meter.voltage);
             tmp[2] = LSB_WORD(lt_meter.voltage);
@@ -249,16 +250,16 @@ bool meter_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uin
             tmp[4] = LSB_WORD(lt_meter.current);
             tmp[5] = lt_meter.voltageSystem;
             tmp[6] = 0;
-            //PRINT("SOC %d  V %d C %d adc %d\r\n",lt_meter.soc,lt_meter.voltage,lt_meter.current,SensorAdc_Get_BatVal());
+            // PRINT("SOC %d  V %d C %d adc %d\r\n",lt_meter.soc,lt_meter.voltage,lt_meter.current,SensorAdc_Get_BatVal());
             ptl_build_frame(M2A_MOD_METER, CMD_MODMETER_SOC, tmp, 7, buff);
             return true;
         default:
             break;
         }
     }
-    else if(A2M_MOD_METER == frame_type)
+    else if (A2M_MOD_METER == frame_type)
     {
-        switch(param1)
+        switch (param1)
         {
         case CMD_MODMETER_RPM_SPEED:
             return false;
@@ -275,54 +276,53 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
 {
     assert(payload);
     assert(ackbuff);
-    #ifndef CARINFOR_PTL_NO_ACK //no ack
-		uint8_t tmp = 0;
-		#endif
-    if(A2M_MOD_METER == payload->frame_type)
+#ifndef CARINFOR_PTL_NO_ACK // no ack
+    uint8_t tmp = 0;
+#endif
+    if (A2M_MOD_METER == payload->frame_type)
     {
-        switch(payload->cmd)
+        switch (payload->cmd)
         {
         case CMD_MODMETER_RPM_SPEED:
-            //ACK, no thing to do
+            // ACK, no thing to do
             return false;
         case CMD_MODMETER_SOC:
-            //ACK, no thing to do
+            // ACK, no thing to do
             return false;
         default:
             break;
         }
     }
-    else if(M2A_MOD_METER == payload->frame_type)
+    else if (M2A_MOD_METER == payload->frame_type)
     {
-        switch(payload->cmd)
+        switch (payload->cmd)
         {
         case CMD_MODMETER_RPM_SPEED:
-            //LOGIC
+            // LOGIC
             lt_meter.speed_real = MK_WORD(payload->data[0], payload->data[1]);
             lt_meter.rpm = MK_WORD(payload->data[2], payload->data[3]);
             lt_meter.speed = lt_meter.speed_real * 11 / 10;
-            //ACK
-			      #ifndef CARINFOR_PTL_NO_ACK //no ack
+            // ACK
+#ifndef CARINFOR_PTL_NO_ACK // no ack
             tmp = 0x01;
             ptl_build_frame(A2M_MOD_METER, CMD_MODMETER_RPM_SPEED, &tmp, 1, ackbuff);
-						#endif
+#endif
             return true;
         case CMD_MODMETER_SOC:
-            //LOGIC
+            // LOGIC
             lt_meter.soc = payload->data[0];
             lt_meter.voltage = MK_WORD(payload->data[1], payload->data[2]);
             lt_meter.current = MK_WORD(payload->data[3], payload->data[4]);
             lt_meter.voltageSystem = payload->data[5];
-            //ACK
-				    #ifndef CARINFOR_PTL_NO_ACK //no ack
+            // ACK
+#ifndef CARINFOR_PTL_NO_ACK // no ack
             tmp = 0x01;
             ptl_build_frame(A2M_MOD_METER, CMD_MODMETER_SOC, &tmp, 1, ackbuff);
-				    #endif     
-						return true;	        
+#endif
+            return true;
         default:
             break;
         }
-				 
     }
     return false;
 }
@@ -331,37 +331,37 @@ bool indicator_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1,
 {
     assert(buff);
     uint8_t tmp[16] = {0};
-    if(M2A_MOD_INDICATOR == frame_type)
+    if (M2A_MOD_INDICATOR == frame_type)
     {
-        switch(param1)
+        switch (param1)
         {
         case CMD_MODINDICATOR_INDICATOR:
-            lt_indicator.highBeam    ? SetBit(tmp[0], 0) : ClrBit(tmp[0], 0);   //Ô¶¹âµÆ
-            lt_indicator.lowBeam     ? SetBit(tmp[0], 1) : ClrBit(tmp[0], 1);   //½ü¹âµÆ
-            lt_indicator.position    ? SetBit(tmp[0], 2) : ClrBit(tmp[0], 2);   //Î»ÖÃµÆ
-            lt_indicator.frontFog    ? SetBit(tmp[0], 3) : ClrBit(tmp[0], 3);   //Ç°ÎíµÆ
-            lt_indicator.rearFog     ? SetBit(tmp[0], 4) : ClrBit(tmp[0], 4);   //ºóÎíµÆ
-            lt_indicator.leftTurn    ? SetBit(tmp[0], 5) : ClrBit(tmp[0], 5);   //×ó×ªµÆ
-            lt_indicator.rightTurn   ? SetBit(tmp[0], 6) : ClrBit(tmp[0], 6);   //ÓÒ×ªµÆ
-            lt_indicator.ready       ? SetBit(tmp[0], 7) : ClrBit(tmp[0], 7);   //ReadyµÆ
-            lt_indicator.charge      ? SetBit(tmp[1], 0) : ClrBit(tmp[1], 0);   //µç³Ø³ä·ÅµçµÆ
-            lt_indicator.parking     ? SetBit(tmp[1], 1) : ClrBit(tmp[1], 1);   //×¤³µµÆ
-            lt_indicator.ecuFault    ? SetBit(tmp[1], 2) : ClrBit(tmp[1], 2);   //ECU¹ÊÕÏµÆ
-            lt_indicator.sensorFault ? SetBit(tmp[1], 3) : ClrBit(tmp[1], 3);   //´«¸ÐÆ÷¹ÊÕÏµÆ
-            lt_indicator.motorFault  ? SetBit(tmp[1], 4) : ClrBit(tmp[1], 4);   //µç»ú¹ÊÕÏµÆ
+            lt_indicator.highBeam ? SetBit(tmp[0], 0) : ClrBit(tmp[0], 0);    // Ô¶ï¿½ï¿½ï¿½
+            lt_indicator.lowBeam ? SetBit(tmp[0], 1) : ClrBit(tmp[0], 1);     // ï¿½ï¿½ï¿½ï¿½ï¿½
+            lt_indicator.position ? SetBit(tmp[0], 2) : ClrBit(tmp[0], 2);    // Î»ï¿½Ãµï¿½
+            lt_indicator.frontFog ? SetBit(tmp[0], 3) : ClrBit(tmp[0], 3);    // Ç°ï¿½ï¿½ï¿½ï¿½
+            lt_indicator.rearFog ? SetBit(tmp[0], 4) : ClrBit(tmp[0], 4);     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+            lt_indicator.leftTurn ? SetBit(tmp[0], 5) : ClrBit(tmp[0], 5);    // ï¿½ï¿½×ªï¿½ï¿½
+            lt_indicator.rightTurn ? SetBit(tmp[0], 6) : ClrBit(tmp[0], 6);   // ï¿½ï¿½×ªï¿½ï¿½
+            lt_indicator.ready ? SetBit(tmp[0], 7) : ClrBit(tmp[0], 7);       // Readyï¿½ï¿½
+            lt_indicator.charge ? SetBit(tmp[1], 0) : ClrBit(tmp[1], 0);      // ï¿½ï¿½Ø³ï¿½Åµï¿½ï¿½
+            lt_indicator.parking ? SetBit(tmp[1], 1) : ClrBit(tmp[1], 1);     // ×¤ï¿½ï¿½ï¿½ï¿½
+            lt_indicator.ecuFault ? SetBit(tmp[1], 2) : ClrBit(tmp[1], 2);    // ECUï¿½ï¿½ï¿½Ïµï¿½
+            lt_indicator.sensorFault ? SetBit(tmp[1], 3) : ClrBit(tmp[1], 3); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½
+            lt_indicator.motorFault ? SetBit(tmp[1], 4) : ClrBit(tmp[1], 4);  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½
             ptl_build_frame(M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, tmp, 5, buff);
             return true;
         case CMD_MODINDICATOR_ERROR_INFO:
-            //TODO
+            // TODO
             ptl_build_frame(M2A_MOD_INDICATOR, CMD_MODINDICATOR_ERROR_INFO, tmp, 5, buff);
             return true;
         default:
             break;
         }
     }
-    else if(A2M_MOD_INDICATOR == frame_type)
+    else if (A2M_MOD_INDICATOR == frame_type)
     {
-        switch(param1)
+        switch (param1)
         {
         case CMD_MODINDICATOR_INDICATOR:
             return false;
@@ -378,53 +378,53 @@ bool indicator_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buf
 {
     assert(payload);
     assert(ackbuff);
-    #ifndef CARINFOR_PTL_NO_ACK //no ack
-	  uint8_t tmp = 0;
-	  #endif
-    if(A2M_MOD_INDICATOR == payload->frame_type)
+#ifndef CARINFOR_PTL_NO_ACK // no ack
+    uint8_t tmp = 0;
+#endif
+    if (A2M_MOD_INDICATOR == payload->frame_type)
     {
-        switch(payload->cmd)
+        switch (payload->cmd)
         {
         case CMD_MODINDICATOR_INDICATOR:
-            //ACK, no thing to do
+            // ACK, no thing to do
             return false;
         case CMD_MODINDICATOR_ERROR_INFO:
-            //ACK, no thing to do
+            // ACK, no thing to do
             return false;
         default:
             break;
         }
     }
-    else if(M2A_MOD_INDICATOR == payload->frame_type)
-    {			  
-        switch(payload->cmd)
+    else if (M2A_MOD_INDICATOR == payload->frame_type)
+    {
+        switch (payload->cmd)
         {
         case CMD_MODINDICATOR_INDICATOR:
-            //LOGIC
-            lt_indicator.highBeam    = GetBit(payload->data[0], 0);   //Ô¶¹âµÆ
-            lt_indicator.lowBeam     = GetBit(payload->data[0], 1);   //½ü¹âµÆ
-            lt_indicator.position    = GetBit(payload->data[0], 2);   //Î»ÖÃµÆ
-            lt_indicator.frontFog    = GetBit(payload->data[0], 3);   //Ç°ÎíµÆ
-            lt_indicator.rearFog     = GetBit(payload->data[0], 4);   //ºóÎíµÆ
-            lt_indicator.leftTurn    = GetBit(payload->data[0], 5);   //×ó×ªµÆ
-            lt_indicator.rightTurn   = GetBit(payload->data[0], 6);   //ÓÒ×ªµÆ
-            lt_indicator.ready       = GetBit(payload->data[0], 7);   //ReadyµÆ
-            lt_indicator.charge      = GetBit(payload->data[1], 0);   //µç³Ø³ä·ÅµçµÆ
-            lt_indicator.parking     = GetBit(payload->data[1], 1);   //×¤³µµÆ
-            lt_indicator.ecuFault    = GetBit(payload->data[1], 2);   //ECU¹ÊÕÏµÆ
-            lt_indicator.sensorFault = GetBit(payload->data[1], 3);   //´«¸ÐÆ÷¹ÊÕÏµÆ
-            lt_indicator.motorFault  = GetBit(payload->data[1], 4);   //µç»ú¹ÊÕÏµÆ
-			      #ifndef CARINFOR_PTL_NO_ACK //no ack
+            // LOGIC
+            lt_indicator.highBeam = GetBit(payload->data[0], 0);    // Ô¶ï¿½ï¿½ï¿½
+            lt_indicator.lowBeam = GetBit(payload->data[0], 1);     // ï¿½ï¿½ï¿½ï¿½ï¿½
+            lt_indicator.position = GetBit(payload->data[0], 2);    // Î»ï¿½Ãµï¿½
+            lt_indicator.frontFog = GetBit(payload->data[0], 3);    // Ç°ï¿½ï¿½ï¿½ï¿½
+            lt_indicator.rearFog = GetBit(payload->data[0], 4);     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+            lt_indicator.leftTurn = GetBit(payload->data[0], 5);    // ï¿½ï¿½×ªï¿½ï¿½
+            lt_indicator.rightTurn = GetBit(payload->data[0], 6);   // ï¿½ï¿½×ªï¿½ï¿½
+            lt_indicator.ready = GetBit(payload->data[0], 7);       // Readyï¿½ï¿½
+            lt_indicator.charge = GetBit(payload->data[1], 0);      // ï¿½ï¿½Ø³ï¿½Åµï¿½ï¿½
+            lt_indicator.parking = GetBit(payload->data[1], 1);     // ×¤ï¿½ï¿½ï¿½ï¿½
+            lt_indicator.ecuFault = GetBit(payload->data[1], 2);    // ECUï¿½ï¿½ï¿½Ïµï¿½
+            lt_indicator.sensorFault = GetBit(payload->data[1], 3); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½
+            lt_indicator.motorFault = GetBit(payload->data[1], 4);  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½
+#ifndef CARINFOR_PTL_NO_ACK                                         // no ack
             tmp = 0x01;
             ptl_build_frame(A2M_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, &tmp, 1, ackbuff);
-						#endif
+#endif
             return true;
         case CMD_MODINDICATOR_ERROR_INFO:
-				    #ifndef CARINFOR_PTL_NO_ACK //no ack
+#ifndef CARINFOR_PTL_NO_ACK // no ack
             tmp = 0x01;
             ptl_build_frame(A2M_MOD_INDICATOR, CMD_MODINDICATOR_ERROR_INFO, &tmp, 1, ackbuff);
-						#endif
-            return true;				
+#endif
+            return true;
         default:
             break;
         }
@@ -436,9 +436,9 @@ bool drivinfo_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, 
 {
     assert(buff);
     uint8_t tmp[16] = {0};
-    if(M2A_MOD_DRIV_INFO == frame_type)
+    if (M2A_MOD_DRIV_INFO == frame_type)
     {
-        switch(param1)
+        switch (param1)
         {
         case CMD_MODDRIVINFO_GEAR:
             tmp[0] = lt_drivinfo.gear;
@@ -449,9 +449,9 @@ bool drivinfo_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, 
             break;
         }
     }
-    else if(A2M_MOD_DRIV_INFO == frame_type)
+    else if (A2M_MOD_DRIV_INFO == frame_type)
     {
-        switch(param1)
+        switch (param1)
         {
         case CMD_MODDRIVINFO_GEAR:
             return false;
@@ -466,38 +466,36 @@ bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff
 {
     assert(payload);
     assert(ackbuff);
-    
-    if(A2M_MOD_DRIV_INFO == payload->frame_type)
+
+    if (A2M_MOD_DRIV_INFO == payload->frame_type)
     {
-        switch(payload->cmd)
+        switch (payload->cmd)
         {
         case CMD_MODDRIVINFO_GEAR:
-            //ACK, no thing to do
+            // ACK, no thing to do
             return false;
         default:
             break;
         }
     }
-    else if(M2A_MOD_DRIV_INFO == payload->frame_type)
-    {	  
-			  
-        switch(payload->cmd)
+    else if (M2A_MOD_DRIV_INFO == payload->frame_type)
+    {
+        switch (payload->cmd)
         {
         case CMD_MODDRIVINFO_GEAR:
-            //LOGIC
+            // LOGIC
             lt_drivinfo.gear = (carinfo_drivinfo_gear_t)payload->data[0];
             lt_drivinfo.driveMode = (carinfo_drivinfo_drivemode_t)payload->data[1];
-            //ACK
-				    #ifndef CARINFOR_PTL_NO_ACK //no ack
-				    uint8_t tmp = 0;
+            // ACK
+#ifndef CARINFOR_PTL_NO_ACK // no ack
+            uint8_t tmp = 0;
             tmp = 0x01;
             ptl_build_frame(A2M_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, &tmp, 1, ackbuff);
-			      #endif
+#endif
             return true;
         default:
             break;
         }
-			 
     }
     return false;
 }
@@ -505,84 +503,83 @@ bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
 void app_car_controller_sif_updating(void)
 {
-	  uint8_t res = SIF_ReadData(sif_buff, sizeof(sif_buff));	
-		//uint8_t lt_meter_current_gear = 0;
-	  uint16_t lt_meter_current_speed = 0;
-		
+    uint8_t res = SIF_ReadData(sif_buff, sizeof(sif_buff));
+    // uint8_t lt_meter_current_gear = 0;
+    uint16_t lt_meter_current_speed = 0;
+
 #ifdef TEST_LOG_DEBUG_SIF
-    if(res)
-        log_sif_data(sif_buff,sizeof(sif_buff));
-#endif 
-    if(res && sif_buff[0] == 0x08 && sif_buff[1] == 0x61)
+    if (res)
+        log_sif_data(sif_buff, sizeof(sif_buff));
+#endif
+    if (res && sif_buff[0] == 0x08 && sif_buff[1] == 0x61)
     {
-        lt_sif.sideStand                = ((sif_buff[2] & 0x08) ? 1 : 0);                      //µ¥³Å¶Ïµç¼ì²â  0:µ¥³ÅÊÕÆð     1:µ¥³Å·ÅÏÂ
-        lt_sif.bootGuard                = ((sif_buff[2] & 0x02) ? 1 : 0);                      //Æô¶¯±£»¤            0:·Ç±£»¤          1:±£»¤ÖÐ
-        lt_sif.hallFault                = ((sif_buff[3] & 0x40) ? 1 : 0);                      //»ô¶û¹ÊÕÏ(µç»ú)0:Õý³£            1:¹ÊÕÏ
-        lt_sif.throttleFault            = ((sif_buff[3] & 0x20) ? 1 : 0);                      //×ª°Ñ¹ÊÕÏ
-        lt_sif.controllerFault          = ((sif_buff[3] & 0x10) ? 1 : 0);                      //¿ØÖÆÆ÷¹ÊÕÏ
-        lt_sif.lowVoltageProtection     = ((sif_buff[3] & 0x08) ? 1 : 0);                      //Ç·Ñ¹±£»¤
-        lt_sif.cruise                   = ((sif_buff[3] & 0x04) ? 1 : 0);                      //Ñ²º½Ö¸Ê¾µÆ
-        lt_sif.assist                   = ((sif_buff[3] & 0x02) ? 1 : 0);                      //ÖúÁ¦Ö¸Ê¾µÆ
-        lt_sif.motorFault               = ((sif_buff[3] & 0x01) ? 1 : 0);                      //µç»ú¹ÊÕÏ
-        lt_sif.gear                     = ((sif_buff[4] & 0x80) >> 5) | (sif_buff[4] & 0x03);  //µ²Î»//0~7
-        lt_sif.motorRunning             = ((sif_buff[4] & 0x40) ? 1 : 0);                      //µç»úÔËÐÐ 1ÔËÐÐ
-        lt_sif.brake                    = ((sif_buff[4] & 0x20) ? 1 : 0);                      //É²³µ
-        lt_sif.controllerProtection     = ((sif_buff[4] & 0x10) ? 1 : 0);                      //¿ØÖÆÆ÷±£»¤
-        lt_sif.coastCharging            = ((sif_buff[4] & 0x08) ? 1 : 0);                      //»¬ÐÐ³äµç
-        lt_sif.antiSpeedProtection      = ((sif_buff[4] & 0x04) ? 1 : 0);                      //·À·É³µ±£»¤
-        lt_sif.seventyPercentCurrent    = ((sif_buff[5] & 0x80) ? 1 : 0);                      //70%µçÁ÷
-        lt_sif.pushToTalk               = ((sif_buff[5] & 0x40) ? 1 : 0);                      //ÆôÓÃÒ»¼üÍ¨
-        lt_sif.ekkBackupPower           = ((sif_buff[5] & 0x20) ? 1 : 0);                      //ÆôÓÃEKK±¸ÓÃµçÔ´
-        lt_sif.overCurrentProtection    = ((sif_buff[5] & 0x10) ? 1 : 0);                      //¹ýÁ÷±£»¤
-        lt_sif.motorShaftLockProtection = ((sif_buff[5] & 0x08) ? 1 : 0);                      //¶Â×ª±£»¤
-        lt_sif.reverse                  = ((sif_buff[5] & 0x04) ? 1 : 0);                      //µ¹³µ
-        lt_sif.electronicBrake          = ((sif_buff[5] & 0x02) ? 1 : 0);                      //µç×ÓÉ²³µ
-        lt_sif.speedLimit               = ((sif_buff[5] & 0x01) ? 1 : 0);                      //ÏÞËÙ
-        lt_sif.current                  = ((sif_buff[6] & 0xFF));                              //µçÁ÷ µ¥Î»£º1A
-        lt_sif.hallCounter              = MK_WORD(sif_buff[7],sif_buff[8]);                    //0.5sÄÚÈý¸ö»ô¶û±ä»¯µÄ¸öÊý
-        lt_sif.soc                      = ((sif_buff[9] & 0xFF));                              //µçÁ¿/µçÁ¿ 0-100% 5µÆÖ¸Ê¾Îª 90,70,50,30,20£¨°Ù·Ö±È£¬½¨Òé¶ÔÓ¦µÄµçÑ¹´óÌåÎª 47V£¬46V,44.5V,43V,41V)£¬4 µÆÖ¸Ê¾Îª 90,70,50,30
-        lt_sif.voltageSystem            = ((sif_buff[10] & 0xFF));                             //µçÑ¹ÏµÍ³  0x01:36V  0x02:48V  0x04:60V  0x08:64V  0x10:72V  0x20:80V  0x40:84V   0x80:96V
+        lt_sif.sideStand = ((sif_buff[2] & 0x08) ? 1 : 0);                // ï¿½ï¿½ï¿½Å¶Ïµï¿½ï¿½ï¿½  0:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½     1:ï¿½ï¿½ï¿½Å·ï¿½ï¿½ï¿½
+        lt_sif.bootGuard = ((sif_buff[2] & 0x02) ? 1 : 0);                // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½            0:ï¿½Ç±ï¿½ï¿½ï¿½          1:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        lt_sif.hallFault = ((sif_buff[3] & 0x40) ? 1 : 0);                // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½)0:ï¿½ï¿½ï¿½ï¿½            1:ï¿½ï¿½ï¿½ï¿½
+        lt_sif.throttleFault = ((sif_buff[3] & 0x20) ? 1 : 0);            // ×ªï¿½Ñ¹ï¿½ï¿½ï¿½
+        lt_sif.controllerFault = ((sif_buff[3] & 0x10) ? 1 : 0);          // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        lt_sif.lowVoltageProtection = ((sif_buff[3] & 0x08) ? 1 : 0);     // Ç·Ñ¹ï¿½ï¿½ï¿½ï¿½
+        lt_sif.cruise = ((sif_buff[3] & 0x04) ? 1 : 0);                   // Ñ²ï¿½ï¿½Ö¸Ê¾ï¿½ï¿½
+        lt_sif.assist = ((sif_buff[3] & 0x02) ? 1 : 0);                   // ï¿½ï¿½ï¿½ï¿½Ö¸Ê¾ï¿½ï¿½
+        lt_sif.motorFault = ((sif_buff[3] & 0x01) ? 1 : 0);               // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        lt_sif.gear = ((sif_buff[4] & 0x80) >> 5) | (sif_buff[4] & 0x03); // ï¿½ï¿½Î»//0~7
+        lt_sif.motorRunning = ((sif_buff[4] & 0x40) ? 1 : 0);             // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 1ï¿½ï¿½ï¿½ï¿½
+        lt_sif.brake = ((sif_buff[4] & 0x20) ? 1 : 0);                    // É²ï¿½ï¿½
+        lt_sif.controllerProtection = ((sif_buff[4] & 0x10) ? 1 : 0);     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        lt_sif.coastCharging = ((sif_buff[4] & 0x08) ? 1 : 0);            // ï¿½ï¿½ï¿½Ð³ï¿½ï¿½
+        lt_sif.antiSpeedProtection = ((sif_buff[4] & 0x04) ? 1 : 0);      // ï¿½ï¿½ï¿½É³ï¿½ï¿½ï¿½ï¿½ï¿½
+        lt_sif.seventyPercentCurrent = ((sif_buff[5] & 0x80) ? 1 : 0);    // 70%ï¿½ï¿½ï¿½ï¿½
+        lt_sif.pushToTalk = ((sif_buff[5] & 0x40) ? 1 : 0);               // ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Í¨
+        lt_sif.ekkBackupPower = ((sif_buff[5] & 0x20) ? 1 : 0);           // ï¿½ï¿½ï¿½ï¿½EKKï¿½ï¿½ï¿½Ãµï¿½Ô´
+        lt_sif.overCurrentProtection = ((sif_buff[5] & 0x10) ? 1 : 0);    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        lt_sif.motorShaftLockProtection = ((sif_buff[5] & 0x08) ? 1 : 0); // ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½
+        lt_sif.reverse = ((sif_buff[5] & 0x04) ? 1 : 0);                  // ï¿½ï¿½ï¿½ï¿½
+        lt_sif.electronicBrake = ((sif_buff[5] & 0x02) ? 1 : 0);          // ï¿½ï¿½ï¿½ï¿½É²ï¿½ï¿½
+        lt_sif.speedLimit = ((sif_buff[5] & 0x01) ? 1 : 0);               // ï¿½ï¿½ï¿½ï¿½
+        lt_sif.current = ((sif_buff[6] & 0xFF));                          // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Î»ï¿½ï¿½1A
+        lt_sif.hallCounter = MK_WORD(sif_buff[7], sif_buff[8]);           // 0.5sï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ä»¯ï¿½Ä¸ï¿½ï¿½ï¿½
+        lt_sif.soc = ((sif_buff[9] & 0xFF));                              // ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ 0-100% 5ï¿½ï¿½Ö¸Ê¾Îª 90,70,50,30,20ï¿½ï¿½ï¿½Ù·Ö±È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½Äµï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½Îª 47Vï¿½ï¿½46V,44.5V,43V,41V)ï¿½ï¿½4 ï¿½ï¿½Ö¸Ê¾Îª 90,70,50,30
+        lt_sif.voltageSystem = ((sif_buff[10] & 0xFF));                   // ï¿½ï¿½Ñ¹ÏµÍ³  0x01:36V  0x02:48V  0x04:60V  0x08:64V  0x10:72V  0x20:80V  0x40:84V   0x80:96V
 
         double rpm = lt_sif.hallCounter * (2.0 * 60 / 100.0);
-        double radius = 0.254 /2.0; 																														//ÂÖÌ¥°ë¾¶
-        double w = rpm * (2.0 * 3.14159265358979 / 60.0); 																			//×ª»»½ÇËÙ¶È£¬µ¥Î»£º»¡¶È/Ãë
-        double v = w * radius; 																																	//ÏßËÙ¶È£¬µ¥Î»:Ã×/Ãë
+        double radius = 0.254 / 2.0;                      // ï¿½ï¿½Ì¥ï¿½ë¾¶
+        double w = rpm * (2.0 * 3.14159265358979 / 60.0); // ×ªï¿½ï¿½ï¿½ï¿½ï¿½Ù¶È£ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½
+        double v = w * radius;                            // ï¿½ï¿½ï¿½Ù¶È£ï¿½ï¿½ï¿½Î»:ï¿½ï¿½/ï¿½ï¿½
 
-        lt_meter.rpm = rpm + 20000; //offset:-20000        
+        lt_meter.rpm = rpm + 20000; // offset:-20000
         lt_meter.speed = v * (10.0 * 3600.0 / 1000.0) * 1.1;
-				
-				lt_meter_current_speed = v * (10.0 * 3600.0 / 1000.0);
-								
+
+        lt_meter_current_speed = v * (10.0 * 3600.0 / 1000.0);
+
         lt_meter.voltageSystem = lt_sif.voltageSystem;
-        //lt_meter.soc = lt_sif.soc;
-        lt_meter.current = lt_sif.current * 10;  																								//test
-				
-      	
-				if(lt_sif.gear != lt_drivinfo.gear)
-				{		 
-					 //l_t_gear_changed = true;
-				 	 LOG_LEVEL("SIF DATA:lt_drivinfo.gear changed\r\n");
-					 send_message(TASK_ID_PTL, M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);	
-				}
-				lt_drivinfo.gear = (carinfo_drivinfo_gear_t)lt_sif.gear;
-				if(lt_meter.speed_real != lt_meter_current_speed)
-				{
-					//l_t_speed_changed=true;
-					LOG_LEVEL("SIF DATA:lt_drivinfo.speed_real changed\r\n");
-					send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);	
-				}
-				lt_meter.speed_real = lt_meter_current_speed;
+        // lt_meter.soc = lt_sif.soc;
+        lt_meter.current = lt_sif.current * 10; // test
+
+        if (lt_sif.gear != lt_drivinfo.gear)
+        {
+            // l_t_gear_changed = true;
+            LOG_LEVEL("SIF DATA:lt_drivinfo.gear changed\r\n");
+            send_message(TASK_ID_PTL, M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
+        }
+        lt_drivinfo.gear = (carinfo_drivinfo_gear_t)lt_sif.gear;
+        if (lt_meter.speed_real != lt_meter_current_speed)
+        {
+            // l_t_speed_changed=true;
+            LOG_LEVEL("SIF DATA:lt_drivinfo.speed_real changed\r\n");
+            send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);
+        }
+        lt_meter.speed_real = lt_meter_current_speed;
     }
 }
 #endif
 
-void app_car_controller_msg_handler( void )
+void app_car_controller_msg_handler(void)
 {
-   
-    lt_indicator.position = GPIO_PIN_READ_SKD()  ? 0 : 1;      /* Ê¾¿íµÆ */
-    lt_indicator.highBeam = GPIO_PIN_READ_DDD()  ? 0 : 1;      /* ´óµÆ   */
-    lt_indicator.leftTurn = GPIO_PIN_READ_ZZD()  ? 0 : 1;      /* ×ó×ªµÆ */
-    lt_indicator.rightTurn = GPIO_PIN_READ_YZD() ? 0 : 1;      /* ÓÒ×ªµÆ */
+
+    lt_indicator.position = GPIO_PIN_READ_SKD() ? 0 : 1;  /* Ê¾ï¿½ï¿½ï¿½ï¿½ */
+    lt_indicator.highBeam = GPIO_PIN_READ_DDD() ? 0 : 1;  /* ï¿½ï¿½ï¿½   */
+    lt_indicator.leftTurn = GPIO_PIN_READ_ZZD() ? 0 : 1;  /* ï¿½ï¿½×ªï¿½ï¿½ */
+    lt_indicator.rightTurn = GPIO_PIN_READ_YZD() ? 0 : 1; /* ï¿½ï¿½×ªï¿½ï¿½ */
 
     lt_indicator.ready = !lt_sif.bootGuard;
 
@@ -591,17 +588,17 @@ void app_car_controller_msg_handler( void )
     lt_indicator.motorFault = lt_sif.motorFault | lt_sif.hallFault;
 
     lt_indicator.parking = lt_sif.brake;
-    #ifdef BATTERY_MANAGER
+#ifdef BATTERY_MANAGER
     get_battery_voltage();
-    #endif
-	
-    Msg_t* msg = get_message(TASK_ID_CAR_INFOR);
-    if(msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_GPIO_EVENT)
+#endif
+
+    Msg_t *msg = get_message(TASK_ID_CAR_INFOR);
+    if (msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_GPIO_EVENT)
     {
-      send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
+        send_message(TASK_ID_PTL, M2A_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
     }
-		
-		#if 0
+
+#if 0
     if(l_t_speed_changed)
 		{
 			send_message(TASK_ID_PTL, M2A_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);	
@@ -612,9 +609,9 @@ void app_car_controller_msg_handler( void )
 			send_message(TASK_ID_PTL, M2A_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
 			l_t_gear_changed = false;
 		}
-	  #endif
-		#if 0
-		static uint8_t l_u8_op_step = 0;  // Operational step variable
+#endif
+#if 0
+	static uint8_t l_u8_op_step = 0;  // Operational step variable
     if(GetTickCounter(&l_t_msg_wait_100_timer) >= 300)
     {
         switch(l_u8_op_step)
@@ -641,203 +638,233 @@ void app_car_controller_msg_handler( void )
 					l_u8_op_step = 0;
         StartTickCounter(&l_t_msg_wait_100_timer);
     }
-		#endif
+#endif
 }
 
 #ifdef TEST_LOG_DEBUG_SIF
-void log_sif_data(uint8_t* data, uint8_t maxlen)
+void log_sif_data(uint8_t *data, uint8_t maxlen)
 {
     LOG_LEVEL("SIF DATA:");
-    for(int i = 0; i < maxlen; i++)
+    for (int i = 0; i < maxlen; i++)
     {
-        LOG_("0x%02x ",data[i]);
+        LOG_("0x%02x ", data[i]);
     }
     LOG_("\r\n");
 }
 #endif
+
 #ifdef BATTERY_MANAGER
-void get_battery_voltage( void )
+void get_battery_voltage(void)
 {
-    if(GetTickCounter(&l_t_soc_timer) < 1000)
+    if (GetTickCounter(&l_t_soc_timer) < 1000)
     {
         return;
     }
     StartTickCounter(&l_t_soc_timer);
-    uint8_t cellcount = 4;//Ä¬ÈÏ4¿Åµç³Ø
-    uint16_t vol = 0;//(uint32_t)SensorAdc_Get_BatVal() * 274 / 1000;
+    uint8_t cellcount = 4; // Ä¬ï¿½ï¿½4ï¿½Åµï¿½ï¿½
+    uint16_t vol = 0;      //(uint32_t)SensorAdc_Get_BatVal() * 274 / 1000;
 
     bool rise = vol > lt_meter.voltage;
     lt_meter.voltage = vol;
-    uint8_t  soc = 100;
+    uint8_t soc = 100;
 
-    if(rise)
+    if (rise)
     {
-        //¸ù¾Ý¿Í»§µÄµçÑ¹±í¸ñ¼ÆËã
+        // ï¿½ï¿½ï¿½Ý¿Í»ï¿½ï¿½Äµï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         switch (lt_sif.voltageSystem)
         {
         case 0x00:
-        case 0x02: //48V
+        case 0x02: // 48V
         {
             {
-                if(lt_meter.voltage >= 480)      soc = 100;
-                else if(lt_meter.voltage >= 465) soc = 80;
-                else if(lt_meter.voltage >= 445) soc = 40;
-                else if(lt_meter.voltage >= 415) soc = 20;
-                else                             soc = 10;
+                if (lt_meter.voltage >= 480)
+                    soc = 100;
+                else if (lt_meter.voltage >= 465)
+                    soc = 80;
+                else if (lt_meter.voltage >= 445)
+                    soc = 40;
+                else if (lt_meter.voltage >= 415)
+                    soc = 20;
+                else
+                    soc = 10;
             }
 
-            //if(soc < lt_meter.soc)
+            // if(soc < lt_meter.soc)
             {
                 lt_meter.soc = soc;
             }
 
             return;
         }
-        case 0x04: //60V
+        case 0x04: // 60V
         {
-            if(lt_meter.voltage >= 600)      soc = 100;
-            else if(lt_meter.voltage >= 574) soc = 80;
-            else if(lt_meter.voltage >= 550) soc = 40;
-            else if(lt_meter.voltage >= 526) soc = 20;
-            else                             soc = 10;
+            if (lt_meter.voltage >= 600)
+                soc = 100;
+            else if (lt_meter.voltage >= 574)
+                soc = 80;
+            else if (lt_meter.voltage >= 550)
+                soc = 40;
+            else if (lt_meter.voltage >= 526)
+                soc = 20;
+            else
+                soc = 10;
         }
 
-            //if(soc < lt_meter.soc)
+            // if(soc < lt_meter.soc)
+            {
+                lt_meter.soc = soc;
+            }
+            return;
+        case 0x10: // 72V
         {
-            lt_meter.soc = soc;
-        }
-        return;
-        case 0x10: //72V
-        {
-            if(lt_meter.voltage >= 719)      soc = 100;
-            else if(lt_meter.voltage >= 690) soc = 80;
-            else if(lt_meter.voltage >= 660) soc = 40;
-            else if(lt_meter.voltage >= 630) soc = 20;
-            else                             soc = 10;
+            if (lt_meter.voltage >= 719)
+                soc = 100;
+            else if (lt_meter.voltage >= 690)
+                soc = 80;
+            else if (lt_meter.voltage >= 660)
+                soc = 40;
+            else if (lt_meter.voltage >= 630)
+                soc = 20;
+            else
+                soc = 10;
         }
 
-            //if(soc < lt_meter.soc)
-        {
-            lt_meter.soc = soc;
-        }
-        return;
+            // if(soc < lt_meter.soc)
+            {
+                lt_meter.soc = soc;
+            }
+            return;
         }
     }
     else
     {
-        //¸ù¾Ý¿Í»§µÄµçÑ¹±í¸ñ¼ÆËã
+        // ï¿½ï¿½ï¿½Ý¿Í»ï¿½ï¿½Äµï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         switch (lt_sif.voltageSystem)
         {
         case 0x00:
-        case 0x02: //48V
+        case 0x02: // 48V
         {
             {
-                if(lt_meter.voltage >= 470)      soc = 100;
-                else if(lt_meter.voltage >= 455) soc = 80;
-                else if(lt_meter.voltage >= 435) soc = 40;
-                else if(lt_meter.voltage >= 405) soc = 20;
-                else                             soc = 10;
+                if (lt_meter.voltage >= 470)
+                    soc = 100;
+                else if (lt_meter.voltage >= 455)
+                    soc = 80;
+                else if (lt_meter.voltage >= 435)
+                    soc = 40;
+                else if (lt_meter.voltage >= 405)
+                    soc = 20;
+                else
+                    soc = 10;
             }
 
-            //if(soc < lt_meter.soc)
+            // if(soc < lt_meter.soc)
             {
                 lt_meter.soc = soc;
             }
 
             return;
         }
-        case 0x04: //60V
+        case 0x04: // 60V
         {
-            if(lt_meter.voltage >= 590)      soc = 100;
-            else if(lt_meter.voltage >= 564) soc = 80;
-            else if(lt_meter.voltage >= 540) soc = 40;
-            else if(lt_meter.voltage >= 516) soc = 20;
-            else                             soc = 10;
+            if (lt_meter.voltage >= 590)
+                soc = 100;
+            else if (lt_meter.voltage >= 564)
+                soc = 80;
+            else if (lt_meter.voltage >= 540)
+                soc = 40;
+            else if (lt_meter.voltage >= 516)
+                soc = 20;
+            else
+                soc = 10;
         }
 
-            //if(soc < lt_meter.soc)
+            // if(soc < lt_meter.soc)
+            {
+                lt_meter.soc = soc;
+            }
+            return;
+        case 0x10: // 72V
         {
-            lt_meter.soc = soc;
-        }
-        return;
-        case 0x10: //72V
-        {
-            if(lt_meter.voltage >= 709)      soc = 100;
-            else if(lt_meter.voltage >= 680) soc = 80;
-            else if(lt_meter.voltage >= 650) soc = 40;
-            else if(lt_meter.voltage >= 620) soc = 20;
-            else                             soc = 10;
+            if (lt_meter.voltage >= 709)
+                soc = 100;
+            else if (lt_meter.voltage >= 680)
+                soc = 80;
+            else if (lt_meter.voltage >= 650)
+                soc = 40;
+            else if (lt_meter.voltage >= 620)
+                soc = 20;
+            else
+                soc = 10;
         }
 
-            //if(soc < lt_meter.soc)
-        {
-            lt_meter.soc = soc;
-        }
-        return;
+            // if(soc < lt_meter.soc)
+            {
+                lt_meter.soc = soc;
+            }
+            return;
         }
     }
 
-    //Í¨ÓÃ¼ÆËã
+    // Í¨ï¿½Ã¼ï¿½ï¿½ï¿½
     switch (lt_sif.voltageSystem)
     {
-    case 0x01: //36V
+    case 0x01: // 36V
         cellcount = 3;
         break;
-    case 0x02: //48V
+    case 0x02: // 48V
         cellcount = 4;
         break;
-    case 0x04: //60V
+    case 0x04: // 60V
         cellcount = 5;
         break;
-    case 0x08: //64V
-        cellcount = 5; //·Ç12VµçÑ¹µç³Ø£¬ÁÙÊ±´¦Àí
+    case 0x08:         // 64V
+        cellcount = 5; // ï¿½ï¿½12Vï¿½ï¿½Ñ¹ï¿½ï¿½Ø£ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½
         break;
-    case 0x10: //72V
+    case 0x10: // 72V
         cellcount = 6;
         break;
-    case 0x20: //80V
-        cellcount = 6;//·Ç12VµçÑ¹µç³Ø£¬ÁÙÊ±´¦Àí
+    case 0x20:         // 80V
+        cellcount = 6; // ï¿½ï¿½12Vï¿½ï¿½Ñ¹ï¿½ï¿½Ø£ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½
         break;
-    case 0x40: //84V
+    case 0x40: // 84V
         cellcount = 7;
         break;
-    case 0x80: //96V
+    case 0x80: // 96V
         cellcount = 8;
         break;
     default:
         break;
     }
 
-
-    if(lt_meter.voltage > (CELL_VOL_90 * cellcount / 10))
+    if (lt_meter.voltage > (CELL_VOL_90 * cellcount / 10))
     {
         soc = 90;
     }
-    else if(lt_meter.voltage > (CELL_VOL_80 * cellcount / 10))
+    else if (lt_meter.voltage > (CELL_VOL_80 * cellcount / 10))
     {
         soc = 80;
     }
-    else if(lt_meter.voltage > (CELL_VOL_70 * cellcount / 10))
+    else if (lt_meter.voltage > (CELL_VOL_70 * cellcount / 10))
     {
         soc = 70;
     }
-    else if(lt_meter.voltage > (CELL_VOL_60 * cellcount / 10))
+    else if (lt_meter.voltage > (CELL_VOL_60 * cellcount / 10))
     {
         soc = 60;
     }
-    else if(lt_meter.voltage > (CELL_VOL_50 * cellcount / 10))
+    else if (lt_meter.voltage > (CELL_VOL_50 * cellcount / 10))
     {
         soc = 50;
     }
-    else if(lt_meter.voltage > (CELL_VOL_40 * cellcount / 10))
+    else if (lt_meter.voltage > (CELL_VOL_40 * cellcount / 10))
     {
         soc = 40;
     }
-    else if(lt_meter.voltage > (CELL_VOL_30 * cellcount / 10))
+    else if (lt_meter.voltage > (CELL_VOL_30 * cellcount / 10))
     {
         soc = 30;
     }
-    else if(lt_meter.voltage > (CELL_VOL_20 * cellcount / 10))
+    else if (lt_meter.voltage > (CELL_VOL_20 * cellcount / 10))
     {
         soc = 20;
     }
@@ -846,10 +873,9 @@ void get_battery_voltage( void )
         soc = 0;
     }
 
-    //if(soc < lt_meter.soc)
+    // if(soc < lt_meter.soc)
     {
         lt_meter.soc = soc;
     }
 }
 #endif
-

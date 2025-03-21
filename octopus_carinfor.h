@@ -3,18 +3,18 @@
  * All rights reserved.
  *
  * @file    octopus_task_manager_carinfo.h
- * @brief   This header file defines structures, macros, constants, and function 
- *          declarations related to managing car information within the Octopus 
+ * @brief   This header file defines structures, macros, constants, and function
+ *          declarations related to managing car information within the Octopus
  *          task manager system.
  *
- * @details This file contains the definitions for monitoring various car 
- *          parameters, including electrical and mechanical states such as 
- *          battery voltage, motor faults, gear positions, and more. It also 
- *          provides the necessary functions to manage and retrieve car information 
- *          during system operation. This is essential for vehicle control systems 
+ * @details This file contains the definitions for monitoring various car
+ *          parameters, including electrical and mechanical states such as
+ *          battery voltage, motor faults, gear positions, and more. It also
+ *          provides the necessary functions to manage and retrieve car information
+ *          during system operation. This is essential for vehicle control systems
  *          that require precise monitoring of the car's status in real-time.
  *
- * @note    This software (modified or not) and binary are intended for use 
+ * @note    This software (modified or not) and binary are intended for use
  *          with microcontrollers manufactured by Nanjing Qinheng Microelectronics.
  * @author  Octopus Team
  * @version 1.0.0
@@ -26,217 +26,216 @@
 /*******************************************************************************
  * INCLUDES
  */
- 
+
 #include "octopus_platform.h"
 
 #ifdef __cplusplus
-extern "C"{
+extern "C"
+{
 #endif
-/**
- * \defgroup APP_SETTING APP:SETTING
- * @{
- */
+    /**
+     * \defgroup APP_SETTING APP:SETTING
+     * @{
+     */
 
+    /*******************************************************************************
+     * DEBUG SWITCH MACROS
+     */
 
-/*******************************************************************************
- * DEBUG SWITCH MACROS
- */
+    /*******************************************************************************
+     * MACROS
+     */
 
+    /*******************************************************************************
+     * TYPEDEFS
+     */
+    typedef struct
+    {
+        uint8_t sideStand;                // ï¿½ï¿½ï¿½Å¶Ïµï¿½ï¿½ï¿½        0:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½     1:ï¿½ï¿½ï¿½Å·ï¿½ï¿½ï¿½
+        uint8_t bootGuard;                // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                0:ï¿½Ç±ï¿½ï¿½ï¿½          1:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t hallFault;                // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½) 0:ï¿½ï¿½ï¿½ï¿½            1:ï¿½ï¿½ï¿½ï¿½
+        uint8_t throttleFault;            // ×ªï¿½Ñ¹ï¿½ï¿½ï¿½
+        uint8_t controllerFault;          // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t lowVoltageProtection;     // Ç·Ñ¹ï¿½ï¿½ï¿½ï¿½
+        uint8_t cruise;                   // Ñ²ï¿½ï¿½Ö¸Ê¾ï¿½ï¿½
+        uint8_t assist;                   // ï¿½ï¿½ï¿½ï¿½Ö¸Ê¾ï¿½ï¿½
+        uint8_t motorFault;               // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t gear;                     // ï¿½ï¿½Î»//0~7
+        uint8_t motorRunning;             // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                 1ï¿½ï¿½ï¿½ï¿½
+        uint8_t brake;                    // É²ï¿½ï¿½
+        uint8_t controllerProtection;     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t coastCharging;            // ï¿½ï¿½ï¿½Ð³ï¿½ï¿½
+        uint8_t antiSpeedProtection;      // ï¿½ï¿½ï¿½É³ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t seventyPercentCurrent;    // 70%ï¿½ï¿½ï¿½ï¿½
+        uint8_t pushToTalk;               // ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Í¨
+        uint8_t ekkBackupPower;           // ï¿½ï¿½ï¿½ï¿½EKKï¿½ï¿½ï¿½Ãµï¿½Ô´
+        uint8_t overCurrentProtection;    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t motorShaftLockProtection; // ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½
+        uint8_t reverse;                  // ï¿½ï¿½ï¿½ï¿½
+        uint8_t electronicBrake;          // ï¿½ï¿½ï¿½ï¿½É²ï¿½ï¿½
+        uint8_t speedLimit;               // ï¿½ï¿½ï¿½ï¿½
+        uint8_t current;                  // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Î»ï¿½ï¿½A
+        uint16_t hallCounter;             // 0.5s ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ä»¯ï¿½Ä¸ï¿½ï¿½ï¿½
+        uint8_t soc;                      // ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ 0-100% 5ï¿½ï¿½Ö¸Ê¾Îª 90,70,50,30,20ï¿½ï¿½ï¿½Ù·Ö±È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½Äµï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½Îª 47Vï¿½ï¿½46V,44.5V,43V,41V)ï¿½ï¿½4 ï¿½ï¿½Ö¸Ê¾Îª 90,70,50,30
+        uint8_t voltageSystem;            // ï¿½ï¿½Ñ¹ÏµÍ³  0x01:36V  0x02:48V  0x04:60V  0x08:64V  0x10:72V  0x20:80V  0x40:84V   0x80:96V
+    } carinfo_sif_t;
 
-/*******************************************************************************
- * MACROS
- */
+    typedef struct
+    {
+        uint8_t SideStand;                // ï¿½ï¿½ï¿½Å¶Ïµï¿½ï¿½ï¿½        0:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½     1:ï¿½ï¿½ï¿½Å·ï¿½ï¿½ï¿½
+        uint8_t BootGuard;                // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                0:ï¿½Ç±ï¿½ï¿½ï¿½          1:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t hallFault;                // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½) 0:ï¿½ï¿½ï¿½ï¿½            1:ï¿½ï¿½ï¿½ï¿½
+        uint8_t throttleFault;            // ×ªï¿½Ñ¹ï¿½ï¿½ï¿½
+        uint8_t controllerFault;          // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t lowVoltageProtection;     // Ç·Ñ¹ï¿½ï¿½ï¿½ï¿½
+        uint8_t cruise;                   // Ñ²ï¿½ï¿½Ö¸Ê¾ï¿½ï¿½
+        uint8_t assist;                   // ï¿½ï¿½ï¿½ï¿½Ö¸Ê¾ï¿½ï¿½
+        uint8_t motorFault;               // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t gear;                     // ï¿½ï¿½Î»//0~7
+        uint8_t motorRunning;             // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                 1ï¿½ï¿½ï¿½ï¿½
+        uint8_t brake;                    // É²ï¿½ï¿½
+        uint8_t controllerProtection;     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t coastCharging;            // ï¿½ï¿½ï¿½Ð³ï¿½ï¿½
+        uint8_t antiSpeedProtection;      // ï¿½ï¿½ï¿½É³ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t seventyPercentCurrent;    // 70%ï¿½ï¿½ï¿½ï¿½
+        uint8_t pushToTalk;               // ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Í¨
+        uint8_t ekkBackupPower;           // ï¿½ï¿½ï¿½ï¿½EKKï¿½ï¿½ï¿½Ãµï¿½Ô´
+        uint8_t overCurrentProtection;    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t motorShaftLockProtection; // ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½
+        uint8_t reverse;                  // ï¿½ï¿½ï¿½ï¿½
+        uint8_t electronicBrake;          // ï¿½ï¿½ï¿½ï¿½É²ï¿½ï¿½
+        uint8_t speedLimit;               // ï¿½ï¿½ï¿½ï¿½
+        uint32_t current;                 // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Î»ï¿½ï¿½0.1A
+        uint32_t voltage;                 // ï¿½ï¿½Ñ¹ ï¿½ï¿½Î»ï¿½ï¿½0.1V
+        uint8_t voltageSystem;            // ï¿½ï¿½Ñ¹ÏµÍ³  0x01:36V  0x02:48V  0x04:60V  0x08:64V  0x10:72V  0x20:80V  0x40:84V   0x80:96V
+        uint8_t soc;                      // ï¿½ï¿½ï¿½ï¿½5 ï¿½ï¿½Ö¸Ê¾Îª 90,70,50,30,20ï¿½ï¿½ï¿½Ù·Ö±È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½Äµï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½Îª 47Vï¿½ï¿½46V,44.5V,43V,41V)
+        uint32_t speed;                   // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Î»ï¿½ï¿½0.1km/h
+        uint32_t speed_real;              // Êµï¿½Ê³ï¿½ï¿½ï¿½ ï¿½ï¿½Î»ï¿½ï¿½0.1km/h
+        uint32_t rpm;                     // ×ªï¿½ï¿½ ï¿½ï¿½Î»ï¿½ï¿½rpm
+    } carinfo_t;
 
+#pragma pack(push, 1)
+    typedef struct
+    {
+        uint16_t current;      // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Î»ï¿½ï¿½0.1A
+        uint16_t voltage;      // ï¿½ï¿½Ñ¹ ï¿½ï¿½Î»ï¿½ï¿½0.1V
+        uint8_t soc;           // ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ 0-100% 5ï¿½ï¿½Ö¸Ê¾Îª 90,70,50,30,20ï¿½ï¿½ï¿½Ù·Ö±È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½Äµï¿½Ñ¹ï¿½ï¿½ï¿½ï¿½Îª 47Vï¿½ï¿½46V,44.5V,43V,41V)ï¿½ï¿½4 ï¿½ï¿½Ö¸Ê¾Îª 90,70,50,30
+        uint16_t speed;        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Î»ï¿½ï¿½0.1km/h
+        uint16_t speed_real;   // Êµï¿½Ê³ï¿½ï¿½ï¿½ ï¿½ï¿½Î»ï¿½ï¿½0.1km/h
+        uint16_t rpm;          // ×ªï¿½ï¿½ ï¿½ï¿½Î»ï¿½ï¿½rpm offset:-20000
+        uint8_t voltageSystem; // ï¿½ï¿½Ñ¹ÏµÍ³  0x01:36V  0x02:48V  0x04:60V  0x08:64V  0x10:72V  0x20:80V  0x40:84V   0x80:96V
+    } carinfo_meter_t;
 
-/*******************************************************************************
- * TYPEDEFS
- */
-typedef struct
-{
-    uint8_t  sideStand;                  //µ¥³Å¶Ïµç¼ì²â        0:µ¥³ÅÊÕÆð     1:µ¥³Å·ÅÏÂ
-    uint8_t  bootGuard;                  //Æô¶¯±£»¤                0:·Ç±£»¤          1:±£»¤ÖÐ
-    uint8_t  hallFault;                  //»ô¶û¹ÊÕÏ(µç»ú) 0:Õý³£            1:¹ÊÕÏ
-    uint8_t  throttleFault;              //×ª°Ñ¹ÊÕÏ
-    uint8_t  controllerFault;            //¿ØÖÆÆ÷¹ÊÕÏ
-    uint8_t  lowVoltageProtection;       //Ç·Ñ¹±£»¤
-    uint8_t  cruise;                     //Ñ²º½Ö¸Ê¾µÆ
-    uint8_t  assist;                     //ÖúÁ¦Ö¸Ê¾µÆ
-    uint8_t  motorFault;                 //µç»ú¹ÊÕÏ
-    uint8_t  gear;                       //µ²Î»//0~7
-    uint8_t  motorRunning;               //µç»úÔËÐÐ                 1ÔËÐÐ
-    uint8_t  brake;                      //É²³µ
-    uint8_t  controllerProtection;       //¿ØÖÆÆ÷±£»¤
-    uint8_t  coastCharging;              //»¬ÐÐ³äµç
-    uint8_t  antiSpeedProtection;        //·À·É³µ±£»¤
-    uint8_t  seventyPercentCurrent;      //70%µçÁ÷
-    uint8_t  pushToTalk;                 //ÆôÓÃÒ»¼üÍ¨
-    uint8_t  ekkBackupPower;             //ÆôÓÃEKK±¸ÓÃµçÔ´
-    uint8_t  overCurrentProtection;      //¹ýÁ÷±£»¤
-    uint8_t  motorShaftLockProtection;   //¶Â×ª±£»¤
-    uint8_t  reverse;                    //µ¹³µ
-    uint8_t  electronicBrake;            //µç×ÓÉ²³µ
-    uint8_t  speedLimit;                 //ÏÞËÙ
-    uint8_t  current;                    //µçÁ÷ µ¥Î»£ºA
-    uint16_t hallCounter;                //0.5s ÄÚÈý¸ö»ô¶û±ä»¯µÄ¸öÊý
-    uint8_t  soc;                        //µçÁ¿/µçÁ¿ 0-100% 5µÆÖ¸Ê¾Îª 90,70,50,30,20£¨°Ù·Ö±È£¬½¨Òé¶ÔÓ¦µÄµçÑ¹´óÌåÎª 47V£¬46V,44.5V,43V,41V)£¬4 µÆÖ¸Ê¾Îª 90,70,50,30
-    uint8_t  voltageSystem;              //µçÑ¹ÏµÍ³  0x01:36V  0x02:48V  0x04:60V  0x08:64V  0x10:72V  0x20:80V  0x40:84V   0x80:96V
-}carinfo_sif_t;
+#pragma pack(push, 1)
+    typedef struct
+    {
+        uint8_t highBeam;    // Ô¶ï¿½ï¿½ï¿½
+        uint8_t lowBeam;     // ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t position;    // Î»ï¿½Ãµï¿½
+        uint8_t frontFog;    // Ç°ï¿½ï¿½ï¿½ï¿½
+        uint8_t rearFog;     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint8_t leftTurn;    // ï¿½ï¿½×ªï¿½ï¿½
+        uint8_t rightTurn;   // ï¿½ï¿½×ªï¿½ï¿½
+        uint8_t ready;       // Readyï¿½ï¿½
+        uint8_t charge;      // ï¿½ï¿½Ø³ï¿½Åµï¿½ï¿½
+        uint8_t parking;     // ×¤ï¿½ï¿½ï¿½ï¿½
+        uint8_t ecuFault;    // ECUï¿½ï¿½ï¿½Ïµï¿½
+        uint8_t sensorFault; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½
+        uint8_t motorFault;  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½
+        uint8_t bt;          // ï¿½ï¿½ï¿½ï¿½Ö¸Ê¾ï¿½ï¿½
+        uint8_t wifi;        // WIFIÖ¸Ê¾ï¿½ï¿½
 
-typedef struct
-{
-    uint8_t SideStand;                  //µ¥³Å¶Ïµç¼ì²â        0:µ¥³ÅÊÕÆð     1:µ¥³Å·ÅÏÂ
-    uint8_t BootGuard;                  //Æô¶¯±£»¤                0:·Ç±£»¤          1:±£»¤ÖÐ
-    uint8_t hallFault;                  //»ô¶û¹ÊÕÏ(µç»ú) 0:Õý³£            1:¹ÊÕÏ
-    uint8_t throttleFault;              //×ª°Ñ¹ÊÕÏ
-    uint8_t controllerFault;            //¿ØÖÆÆ÷¹ÊÕÏ
-    uint8_t lowVoltageProtection;       //Ç·Ñ¹±£»¤
-    uint8_t cruise;                     //Ñ²º½Ö¸Ê¾µÆ
-    uint8_t assist;                     //ÖúÁ¦Ö¸Ê¾µÆ
-    uint8_t motorFault;                 //µç»ú¹ÊÕÏ
-    uint8_t gear;                       //µ²Î»//0~7
-    uint8_t motorRunning;               //µç»úÔËÐÐ                 1ÔËÐÐ
-    uint8_t brake;                      //É²³µ
-    uint8_t controllerProtection;       //¿ØÖÆÆ÷±£»¤
-    uint8_t coastCharging;              //»¬ÐÐ³äµç
-    uint8_t antiSpeedProtection;        //·À·É³µ±£»¤
-    uint8_t seventyPercentCurrent;      //70%µçÁ÷
-    uint8_t pushToTalk;                 //ÆôÓÃÒ»¼üÍ¨
-    uint8_t ekkBackupPower;             //ÆôÓÃEKK±¸ÓÃµçÔ´
-    uint8_t overCurrentProtection;      //¹ýÁ÷±£»¤
-    uint8_t motorShaftLockProtection;   //¶Â×ª±£»¤
-    uint8_t reverse;                    //µ¹³µ
-    uint8_t electronicBrake;            //µç×ÓÉ²³µ
-    uint8_t speedLimit;                 //ÏÞËÙ
-    uint32_t current;                   //µçÁ÷ µ¥Î»£º0.1A
-    uint32_t voltage;                   //µçÑ¹ µ¥Î»£º0.1V
-    uint8_t voltageSystem;              //µçÑ¹ÏµÍ³  0x01:36V  0x02:48V  0x04:60V  0x08:64V  0x10:72V  0x20:80V  0x40:84V   0x80:96V
-    uint8_t soc;                        //µçÁ¿5 µÆÖ¸Ê¾Îª 90,70,50,30,20£¨°Ù·Ö±È£¬½¨Òé¶ÔÓ¦µÄµçÑ¹´óÌåÎª 47V£¬46V,44.5V,43V,41V)
-    uint32_t speed;                     //³µËÙ µ¥Î»£º0.1km/h
-    uint32_t speed_real;                //Êµ¼Ê³µËÙ µ¥Î»£º0.1km/h
-    uint32_t rpm;                       //×ªËÙ µ¥Î»£ºrpm
-}carinfo_t;
+    } carinfo_indicator_t;
 
-typedef struct
-{
-    uint16_t current;                   //µçÁ÷ µ¥Î»£º0.1A
-    uint16_t voltage;                   //µçÑ¹ µ¥Î»£º0.1V
-    uint8_t  soc;                        //µçÁ¿/µçÁ¿ 0-100% 5µÆÖ¸Ê¾Îª 90,70,50,30,20£¨°Ù·Ö±È£¬½¨Òé¶ÔÓ¦µÄµçÑ¹´óÌåÎª 47V£¬46V,44.5V,43V,41V)£¬4 µÆÖ¸Ê¾Îª 90,70,50,30
-    uint16_t speed;                     //³µËÙ µ¥Î»£º0.1km/h
-    uint16_t speed_real;                //Êµ¼Ê³µËÙ µ¥Î»£º0.1km/h
-    uint16_t rpm;                       //×ªËÙ µ¥Î»£ºrpm offset:-20000
-    uint8_t  voltageSystem;             //µçÑ¹ÏµÍ³  0x01:36V  0x02:48V  0x04:60V  0x08:64V  0x10:72V  0x20:80V  0x40:84V   0x80:96V
-}carinfo_meter_t;
+    typedef struct
+    {
+        uint16_t avgEnergyConsumption; // Æ½ï¿½ï¿½ï¿½Üºï¿½
+        uint16_t travelTime;           // ï¿½ï¿½Ê»ï¿½ï¿½Ê±ï¿½ï¿½,ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½
+        uint16_t avgSpeed;             // Æ½ï¿½ï¿½ï¿½Ù¶È£ï¿½ï¿½ï¿½Î»0.1km/h
+    } carinfo_drivinfo_form_t;
 
-typedef struct
-{
-    uint8_t highBeam;       //Ô¶¹âµÆ
-    uint8_t lowBeam;        //½ü¹âµÆ
-    uint8_t position;       //Î»ÖÃµÆ
-    uint8_t frontFog;       //Ç°ÎíµÆ
-    uint8_t rearFog;        //ºóÎíµÆ
-    uint8_t leftTurn;       //×ó×ªµÆ
-    uint8_t rightTurn;      //ÓÒ×ªµÆ
-    uint8_t ready;          //ReadyµÆ
-    uint8_t charge;         //µç³Ø³ä·ÅµçµÆ
-    uint8_t parking;        //×¤³µµÆ
-    uint8_t ecuFault;       //ECU¹ÊÕÏµÆ
-    uint8_t sensorFault;    //´«¸ÐÆ÷¹ÊÕÏµÆ
-    uint8_t motorFault;     //µç»ú¹ÊÕÏµÆ
-    uint8_t bt;             //À¶ÑÀÖ¸Ê¾µÆ
-    uint8_t wifi;           //WIFIÖ¸Ê¾µÆ
+    typedef enum
+    {
+        DRIVINFO_GEAR_UNKNOWN = 0x00,  // Î´Öª
+        DRIVINFO_GEAR_MANUAL_1 = 0x01, // ï¿½Ö¶ï¿½1ï¿½ï¿½
+        DRIVINFO_GEAR_MANUAL_2 = 0x02, // ï¿½Ö¶ï¿½2ï¿½ï¿½
+        DRIVINFO_GEAR_MANUAL_3 = 0x03, // ï¿½Ö¶ï¿½3ï¿½ï¿½
+        DRIVINFO_GEAR_MANUAL_4 = 0x04, // ï¿½Ö¶ï¿½4ï¿½ï¿½
+        DRIVINFO_GEAR_MANUAL_5 = 0x05, // ï¿½Ö¶ï¿½5ï¿½ï¿½
+        DRIVINFO_GEAR_MANUAL_6 = 0x06, // ï¿½Ö¶ï¿½6ï¿½ï¿½
+        DRIVINFO_GEAR_MANUAL_7 = 0x07, // ï¿½Ö¶ï¿½7ï¿½ï¿½
 
-}carinfo_indicator_t;
+        DRIVINFO_GEAR_REVERSE = 0x0A, //(R)ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        DRIVINFO_GEAR_PARK = 0x0B,    //(P)×¤ï¿½ï¿½ï¿½ï¿½
+        DRIVINFO_GEAR_NEUTRAL = 0x0C, //(N)ï¿½Õµï¿½
+        DRIVINFO_GEAR_DRIVE = 0x0D,   //(D)Ç°ï¿½ï¿½ï¿½ï¿½
+        DRIVINFO_GEAR_SPORT = 0x0E,   //(S)ï¿½Ë¶ï¿½ï¿½ï¿½
+        DRIVINFO_GEAR_FAULT = 0x0F,   //(F)ï¿½ï¿½ï¿½ï¿½
+    } carinfo_drivinfo_gear_t;
 
+    typedef enum
+    {
+        DRIVINFO_DRIVEMODE_Comfort = 0x00,  // Comfort
+        DRIVINFO_DRIVEMODE_ECO = 0x01,      // ECO
+        DRIVINFO_DRIVEMODE_AUTO = 0x02,     // AUTO
+        DRIVINFO_DRIVEMODE_Sport = 0x03,    // Sport
+        DRIVINFO_DRIVEMODE_SNOW = 0x04,     // SNOW
+        DRIVINFO_DRIVEMODE_OFF_ROAD = 0x05, // OFF ROAD
+    } carinfo_drivinfo_drivemode_t;
 
-typedef struct
-{
-    uint16_t avgEnergyConsumption; //Æ½¾ùÄÜºÄ
-    uint16_t travelTime;           //ÐÐÊ»×ÜÊ±¼ä,µ¥Î»·ÖÖÓ
-    uint16_t avgSpeed;             //Æ½¾ùËÙ¶È£¬µ¥Î»0.1km/h
-}carinfo_drivinfo_form_t;
+#pragma pack(push, 1)
+    typedef struct
+    {
+        uint32_t odo;                  // ï¿½ï¿½ï¿½ï¿½Ì£ï¿½ï¿½ï¿½Î»0.1km
+        uint16_t tripA;                // Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½ï¿½ï¿½ï¿½Î»0.1km
+        uint16_t tripB;                // Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½Bï¿½ï¿½ï¿½ï¿½Î»0.1km
+        uint8_t energyType;            // ï¿½ï¿½Ô´ï¿½ï¿½ï¿½ï¿½  0x00:È¼ï¿½ï¿½(0.L/100KM)  0x01ï¿½ï¿½ï¿½ï¿½(0.1kWh/100KM)
+        uint16_t enduranceMileage;     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        uint16_t insEnergyConsumption; // Ë²Ê±ï¿½Üºï¿½
 
-typedef enum{
-    DRIVINFO_GEAR_UNKNOWN          = 0x00,      //Î´Öª
-    DRIVINFO_GEAR_MANUAL_1         = 0x01,      //ÊÖ¶¯1µµ
-    DRIVINFO_GEAR_MANUAL_2         = 0x02,      //ÊÖ¶¯2µµ
-    DRIVINFO_GEAR_MANUAL_3         = 0x03,      //ÊÖ¶¯3µµ
-    DRIVINFO_GEAR_MANUAL_4         = 0x04,      //ÊÖ¶¯4µµ
-    DRIVINFO_GEAR_MANUAL_5         = 0x05,      //ÊÖ¶¯5µµ
-    DRIVINFO_GEAR_MANUAL_6         = 0x06,      //ÊÖ¶¯6µµ
-    DRIVINFO_GEAR_MANUAL_7         = 0x07,      //ÊÖ¶¯7µµ
+        carinfo_drivinfo_form_t odoForm;   // ï¿½ï¿½ï¿½Í³ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½
+        carinfo_drivinfo_form_t tripAForm; // Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½AÍ³ï¿½ï¿½ï¿½ï¿½Ï¢
+        carinfo_drivinfo_form_t tripBForm; // Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½BÍ³ï¿½ï¿½ï¿½ï¿½Ï¢
 
-    DRIVINFO_GEAR_REVERSE          = 0x0A,      //(R)µ¹³µµµ
-    DRIVINFO_GEAR_PARK             = 0x0B,      //(P)×¤³µµµ
-    DRIVINFO_GEAR_NEUTRAL          = 0x0C,      //(N)¿Õµµ
-    DRIVINFO_GEAR_DRIVE            = 0x0D,      //(D)Ç°½øµµ
-    DRIVINFO_GEAR_SPORT            = 0x0E,      //(S)ÔË¶¯µµ
-    DRIVINFO_GEAR_FAULT            = 0x0F,      //(F)¹ÊÕÏ
-}carinfo_drivinfo_gear_t;
+        carinfo_drivinfo_gear_t gear;           // ï¿½ï¿½Î»ï¿½ï¿½Ï¢
+        carinfo_drivinfo_drivemode_t driveMode; // ï¿½ï¿½Ê»Ä£Ê½
+    } carinfo_drivinfo_t;
 
-typedef enum{
-    DRIVINFO_DRIVEMODE_Comfort  = 0x00,    //Comfort
-    DRIVINFO_DRIVEMODE_ECO      = 0x01,    //ECO
-    DRIVINFO_DRIVEMODE_AUTO     = 0x02,    //AUTO
-    DRIVINFO_DRIVEMODE_Sport    = 0x03,    //Sport
-    DRIVINFO_DRIVEMODE_SNOW     = 0x04,    //SNOW
-    DRIVINFO_DRIVEMODE_OFF_ROAD = 0x05,    //OFF ROAD
-}carinfo_drivinfo_drivemode_t;
+    /*******************************************************************************
+     * CONSTANTS
+     */
 
-typedef struct
-{
-    uint32_t odo;                       //×ÜÀï³Ì£¬µ¥Î»0.1km
-    uint16_t tripA;                     //Ð¡¼ÆÀï³ÌA£¬µ¥Î»0.1km
-    uint16_t tripB;                     //Ð¡¼ÆÀï³ÌB£¬µ¥Î»0.1km
-    uint8_t energyType;                 //ÄÜÔ´ÀàÐÍ  0x00:È¼ÓÍ(0.L/100KM)  0x01µçÄÜ(0.1kWh/100KM)
-    uint16_t enduranceMileage;          //Ðøº½Àï³Ì
-    uint16_t insEnergyConsumption;      //Ë²Ê±ÄÜºÄ
+    /*******************************************************************************
+     * GLOBAL VARIABLES DECLEAR
+     */
 
-    carinfo_drivinfo_form_t odoForm;    //Àï³ÌÍ³¼ÆÐÅÏ¢±íµ¥
-    carinfo_drivinfo_form_t tripAForm;  //Ð¡¼ÆÀï³ÌAÍ³¼ÆÐÅÏ¢
-    carinfo_drivinfo_form_t tripBForm;  //Ð¡¼ÆÀï³ÌBÍ³¼ÆÐÅÏ¢
+    /*******************************************************************************
+     * GLOBAL FUNCTIONS DECLEAR
+     */
 
-    carinfo_drivinfo_gear_t gear;            //µµÎ»ÐÅÏ¢
-    carinfo_drivinfo_drivemode_t driveMode;  //¼ÝÊ»Ä£Ê½
-}carinfo_drivinfo_t;
+    void app_carinfo_init_running(void);
+    void app_carinfo_start_running(void);
+    void app_carinfo_assert_running(void);
+    void app_carinfo_running(void);
+    void app_carinfo_post_running(void);
+    void app_carinfo_stop_running(void);
 
-/*******************************************************************************
- * CONSTANTS
- */
+    /// void app_carinfo_on_enter_run(void);
 
+    /// void app_carinfo_on_exit_post_run(void);
 
-/*******************************************************************************
- * GLOBAL VARIABLES DECLEAR
- */
+    uint16_t app_carinfo_getSpeed(void);
+    carinfo_meter_t *app_carinfo_get_meter_info(void);
+    carinfo_indicator_t *app_carinfo_get_indicator_info(void);
+    carinfo_drivinfo_t *app_carinfo_get_drivinfo_info(void);
 
-/*******************************************************************************
- * GLOBAL FUNCTIONS DECLEAR
- */
-
-void app_carinfo_init_running(void);
-void app_carinfo_start_running(void);
-void app_carinfo_assert_running(void);
-void app_carinfo_running(void);
-void app_carinfo_post_running(void);
-void app_carinfo_stop_running(void);
-
-
-///void app_carinfo_on_enter_run(void);
-
-///void app_carinfo_on_exit_post_run(void);
-
-uint16_t app_carinfo_getSpeed(void);
-carinfo_meter_t* app_carinfo_get_meter_info(void);
-carinfo_indicator_t* app_carinfo_get_indicator_info(void);
-carinfo_drivinfo_t* app_carinfo_get_drivinfo_info(void);
-
-/**
- * end of group APP_SETTING
- * @}
- */
+    /**
+     * end of group APP_SETTING
+     * @}
+     */
 
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif

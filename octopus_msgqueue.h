@@ -27,7 +27,7 @@
  * INCLUDES
  */
 
-//#include "octopus_platform.h"     // General Octopus definitions
+// #include "octopus_platform.h"     // General Octopus definitions
 #include "octopus_task_manager.h" // Task manager definitions
 
 #ifdef __cplusplus
@@ -50,6 +50,7 @@ extern "C"
         MSG_DEVICE_POWER_EVENT = 0xA6,    //
         MSG_DEVICE_HANDSHAKE_EVENT = 0xA7,
         MSG_DEVICE_BLE_EVENT = 0xA8,
+        MSG_DEVICE_CAN_EVENT = 0xA9,
     } MsgId_t;
 
     /*******************************************************************************

@@ -95,7 +95,8 @@ extern "C"
         TASK_ID_UPDATE_MCU, /**< MCU update task. */
 
         TASK_ID_UPDATE_SOC, /**< SOC update task. */
-
+        
+        TASK_ID_IPC_SOCKET,
         TASK_ID_MAX_NUM /**< Maximum number of tasks. */
     } TaskModule_t;
 
