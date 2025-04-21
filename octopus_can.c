@@ -1,0 +1,127 @@
+// File: octopus_can.c
+// Description: Implementation for CAN data dispatching and parsing logic
+// Author: ak47
+// Created: 2025-04-17
+
+#include "octopus_can.h"
+#include "octopus_carinfor.h"
+
+#include "octopus_platform.h"     // Include platform-specific header for hardware platform details
+#include "octopus_log.h"          // Include logging functions for debugging
+#include "octopus_task_manager.h" // Include task manager for scheduling tasks
+#include "octopus_gpio.h"
+#include "octopus_system.h"
+#include "octopus_tickcounter.h"
+#include "octopus_msgqueue.h"
+
+#include "can/can_queue.h"
+#include "can/can_message_rx.h"
+#include "can/can_message_tx.h"
+#include "can/can_message_l.h"
+
+#include "can/can_function.h"
+///////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
+extern carinfo_meter_t lt_meter;         // Local meter data structure
+extern carinfo_indicator_t lt_indicator; // Local indicator data structure
+
+static bool can_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
+static bool can_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
+
+
+/*******************************************************************************
+ * Global Function Implementations
+ ******************************************************************************/
+
+/**
+ * @brief Initializes the system for running.
+ *
+ * This function registers the system module with the communication layer
+ * and transitions the system task to an invalid state.
+ */
+void app_can_init_running(void)
+{
+   LOG_LEVEL("app_can_init_running\r\n");
+   OTMS(TASK_ID_CAN, OTMS_S_INVALID);
+   ptl_register_module(MCU_TO_SOC_MOD_CAN, can_send_handler, can_receive_handler);
+	
+	 Can_Queue_Init(&CAN_rx_msg_queue);
+	
+	 can_fuction_init();
+	 can_message_case_init();
+}
+
+void app_can_start_running(void)
+{
+	  LOG_LEVEL("app_can_start_running\r\n");
+    OTMS(TASK_ID_CAN, OTMS_S_ASSERT_RUN);
+}
+
+void app_can_assert_running(void)
+{
+	  ptl_reqest_running(MCU_TO_SOC_MOD_CAN);
+    OTMS(TASK_ID_CAN, OTMS_S_RUNNING);
+}
+
+void app_can_running(void)
+{
+		can_fuction_loop_rt();
+		//can_ptl_loop_10ms();
+}
+
+void app_can_post_running(void)
+{
+	
+}
+
+void app_can_stop_running(void)
+{
+    OTMS(TASK_ID_CAN, OTMS_S_INVALID);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+static bool can_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
+{
+		return false;
+}
+static bool can_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
+{
+		return false;
+}
+///////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
+// Public API: dispatch CAN data from ISR or polling loop
+void octopus_can_dispatch(const CAN_Message_t* message)
+{
+    if (!message) return;
+
+    parse_can_message(message);
+}
+// Internal function to parse a received CAN message
+void parse_can_message(const CAN_Message_t* message)
+{
+    // Example: Check message ID and parse accordingly
+	  CanQueue_Push(&CAN_rx_msg_queue, 0, message->StdId, message->Data, message->DLC);
+
+    switch (message->StdId)
+    {
+    case 0x100:
+        ///printf("[CAN] Received control message. Data[0] = %02X\n", message->Data[0]);
+        break;
+
+    case 0x200:
+        ///printf("[CAN] Received telemetry message. Data = ");
+        for (uint8_t i = 0; i < message->DLC; i++)
+        {
+            ///printf("%02X ", message->Data[i]);
+        }
+        ///printf("\n");
+        break;
+
+    default:
+        ///printf("[CAN] Unknown message ID: 0x%03X\n", message->StdId);
+        break;
+    }
+}
+
+

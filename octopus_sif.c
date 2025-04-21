@@ -177,105 +177,13 @@ bool SIF_Is_Idle(void)
 		return 0;
 }
 
-void SIF_Delay_us(uint32_t us) {
-  DELAY_US(us);  
+void SIF_Delay_us(uint32_t delay_us) {
+  //DELAY_US(us);  
+	uint32_t start = system_timer_tick_50us;
+	uint32_t us = delay_us / 50;
+  while ((system_timer_tick_50us - start) < us);
 }
 
-uint8_t SIF_ReadData(uint8_t* data, uint8_t maxlen)
-{
-	assert(data);
-	if (!SIF_has_inited)
-	{
-		return 0;
-	}
-
-	if (SIF_receive_read_success && SIF_receive_check_OK)
-	{
-		uint8_t len = maxlen < SIF_REV_DATA_NUM ? maxlen : SIF_REV_DATA_NUM;
-		for (int i = 0; i < len; i++)
-		{
-			data[i] = SIF_receive_buf[i];
-		}
-		SIF_receive_read_success = false;
-		return len;
-	}
-	return 0;
-}
-
-uint8_t SIF_SendData_Sync(uint8_t* data, uint8_t len)
-{
-	assert(data);
-	assert(len);
-
-	if (!SIF_has_inited)
-	{
-		return 0;
-	}
-
-	uint8_t byte = 0;
-	uint8_t flag = 0;
-	//同步信号
-	SIF_SEND_DATA_BIT_LOW();
-	SIF_Delay_us(20000);
-	SIF_SEND_DATA_BIT_HIGH();
-	SIF_Delay_us(500);
-	for (int i = 0; i < len; i++)
-	{
-		byte = data[i];
-		for (int j = 0; j < 8; j++)
-		{
-			flag = byte & (0x80 >> j);
-			if (flag)
-			{
-				SIF_SEND_DATA_BIT_LOW();
-				SIF_Delay_us(500);
-				SIF_SEND_DATA_BIT_HIGH();
-				SIF_Delay_us(1000);
-			}
-			else
-			{
-				SIF_SEND_DATA_BIT_LOW();
-				SIF_Delay_us(1000);
-				SIF_SEND_DATA_BIT_HIGH();
-				SIF_Delay_us(500);
-			}
-		}
-	}
-	SIF_SEND_DATA_BIT_LOW();
-	SIF_Delay_us(5000);
-	return len;
-}
-
-uint8_t SIF_SendData(uint8_t* data, uint8_t len)
-{
-	#if 1
-	LOG_LEVEL("SIF_SendData:");
-	for (int i = 0; i < len; i++)
-	{
-		LOG_LEVEL("%02x ", data[i]);
-	}
-	LOG_LEVEL("\r\n");
-	#endif
-	assert(data);
-	assert(len);
-	assert(len <= SIF_SEND_DATA_MAX_NUM);
-	if (!SIF_has_inited)
-	{
-		return 0;
-	}
-
-	if (SIF_send_req_flag == false)
-	{
-		for (int i = 0; i < len; i++)
-		{
-			SIF_send_data_buf[i] = data[i];
-		}
-		SIF_send_data_num_target = len;
-		SIF_send_req_flag = true;
-		return len;
-	}
-	return 0;
-}
 
 /*********************************************************************
  * @fn      TIM2_IRQHandler
@@ -480,6 +388,101 @@ void SIF_Receive_Data_Handle(void)
 	}
 }
 
+uint8_t SIF_ReadData(uint8_t* data, uint8_t maxlen)
+{
+	MY_ASSERT(data);
+	if (!SIF_has_inited)
+	{
+		return 0;
+	}
+
+	if (SIF_receive_read_success && SIF_receive_check_OK)
+	{
+		uint8_t len = maxlen < SIF_REV_DATA_NUM ? maxlen : SIF_REV_DATA_NUM;
+		for (int i = 0; i < len; i++)
+		{
+			data[i] = SIF_receive_buf[i];
+		}
+		SIF_receive_read_success = false;
+		return len;
+	}
+	return 0;
+}
+
+uint8_t SIF_SendData_Sync(uint8_t* data, uint8_t len)
+{
+	MY_ASSERT(data);
+	MY_ASSERT(len);
+
+	if (!SIF_has_inited)
+	{
+		return 0;
+	}
+
+	uint8_t byte = 0;
+	uint8_t flag = 0;
+	//同步信号
+	SIF_SEND_DATA_BIT_LOW();
+	SIF_Delay_us(20000);
+	SIF_SEND_DATA_BIT_HIGH();
+	SIF_Delay_us(500);
+	for (int i = 0; i < len; i++)
+	{
+		byte = data[i];
+		for (int j = 0; j < 8; j++)
+		{
+			flag = byte & (0x80 >> j);
+			if (flag)
+			{
+				SIF_SEND_DATA_BIT_LOW();
+				SIF_Delay_us(500);
+				SIF_SEND_DATA_BIT_HIGH();
+				SIF_Delay_us(1000);
+			}
+			else
+			{
+				SIF_SEND_DATA_BIT_LOW();
+				SIF_Delay_us(1000);
+				SIF_SEND_DATA_BIT_HIGH();
+				SIF_Delay_us(500);
+			}
+		}
+	}
+	SIF_SEND_DATA_BIT_LOW();
+	SIF_Delay_us(5000);
+	return len;
+}
+
+uint8_t SIF_SendData(uint8_t* data, uint8_t len)
+{
+	#if 0
+	LOG_LEVEL("SIF_SendData:");
+	for (int i = 0; i < len; i++)
+	{
+		LOG_LEVEL("%02x ", data[i]);
+	}
+	LOG_LEVEL("\r\n");
+	#endif
+	MY_ASSERT(data);
+	MY_ASSERT(len);
+	MY_ASSERT(len <= SIF_SEND_DATA_MAX_NUM);
+	if (!SIF_has_inited)
+	{
+		return 0;
+	}
+
+	if (SIF_send_req_flag == false)
+	{
+		for (int i = 0; i < len; i++)
+		{
+			SIF_send_data_buf[i] = data[i];
+		}
+		SIF_send_data_num_target = len;
+		SIF_send_req_flag = true;
+		return len;
+	}
+	return 0;
+}
 ///__attribute__((section(".highcode")))
 void SIF_Send_Data_Handle(void)
 {

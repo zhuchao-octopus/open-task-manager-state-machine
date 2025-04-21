@@ -86,7 +86,7 @@ void send_message(TaskModule_t task_module, msgid_t id, uint16_t param1, uint16_
     }
     else
     {    
-        LOG_("message queue full,module:%d\r\n", task_module);  // Log an error if the queue is full
+        ///LOG_("message queue full,module:%d\r\n", task_module);  // Log an error if the queue is full
     }
 
     // Update the full flag in the enqueue index
