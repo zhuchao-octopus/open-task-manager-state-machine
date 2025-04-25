@@ -84,10 +84,28 @@ uint8_t GetTaskManagerStateMachineId(void)
  */
 void TaskManagerStateMachineInit(void)
 {
+	  LOG_NONE(" ----------------------------------------------------------------------\r\n");
+		LOG_NONE("     ____   ____   _____ _______  ____   _    _  _____  _    _ \r\n");
+		LOG_NONE("    |  _ \\ / __ \\ / ____|__   __|/ __ \\ | |  | ||  __ \\| |  | |\r\n");
+		LOG_NONE("    | |_) | |  | | (___    | |  | |  | || |  | || |__) | |  | |\r\n");
+		LOG_NONE("    |  _ <| |  | |\\___ \\   | |  | |  | || |  | ||  _  /| |  | |\r\n");
+		LOG_NONE("    | |_) | |__| |____) |  | |  | |__| || |__| || | \\ \\| |__| |\r\n");
+		LOG_NONE("    |____/ \\____/|_____/   |_|   \\____/  \\____/ |_|  \\_\\\\____/ \r\n");
+		LOG_NONE("\r\n");
+		LOG_NONE("                     🐙 Octopus Task Manager 🐙\r\n");
+		LOG_NONE("         Embedded Real-Time Task Scheduler + FSM Engine\r\n");
+		LOG_NONE("\r\n");
+		LOG_NONE(" ----------------------------------------------------------------------\r\n");
+		LOG_NONE(" MCU       : HK32F088KBT6\r\n");
+		LOG_NONE(" Firmware  : v1.0.0\r\n");
+		LOG_NONE(" Compiled  : %s %s\r\n", __DATE__, __TIME__);
+		LOG_NONE(" Author    : Octopus Dev Team\r\n");
+		LOG_NONE(" ----------------------------------------------------------------------\r\n");
+
     TaskManagerStateMachine_Id_ = 0; // Store the task ID in the global variable
     //LOG_NONE("\r\n\r\n");//[1B blob data]
 	  //printf("hello TaskManagerStateMachineInit");
-	  LOG_NONE("\r\n######################################BOOT  START######################################\r\n");
+	  //LOG_NONE("\r\n#####################################BOOT  START#####################################\r\n");
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     TaskManagerStateStopRunning();
 #endif
@@ -137,7 +155,7 @@ void TaskManagerStateMachineInit(void)
     TaskManagerStateGoRunning(void);
 #endif
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
+    //LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
 }
 
 void exit_cleanup()

@@ -13,56 +13,53 @@
 
 static uint32_t l_t_can_wait_timer;
 
-static void can_fuction_app_register(void);
+static void can_function_app_register(void);
 
-void can_fuction_init(void) {
-    can_fuction_load_data();
+void can_function_init(void) {
+    can_function_load_data();
     can_ml_init();
 
     StartTickCounter(&l_t_can_wait_timer);
 }
 
-void can_fuction_load_data(){
+void can_function_load_data(){
     //CAN_msg_rx_config_case
     uint8_t idx = 0;
     for (idx = 0; idx < CAN_MSG_RX_NUM; idx++) {
         CAN_msg_rx_config_case[idx].is_data_update = 1;
     }
-    can_fuction_app_register();
+    can_function_app_register();
 }
 
-void can_fuction_deinit(void) {
+void can_function_deinit(void) {
     can_ml_deinit();
 }
 
-void can_fuction_loop_rt(void) {
-    //接收CAN数据
+void can_function_loop_rt(void) {
     bool res = can_ml_receive();
     if(res)
     {
         StartTickCounter(&l_t_can_wait_timer);
     }
-   //发送CAN数据
     can_ml_transmit();
 }
 
-void can_fuction_loop_2ms(void) {
+void can_function_loop_2ms(void) {
 }
 
-void can_fuction_loop_10ms(void) {
-    //超时管理函数
+void can_function_loop_10ms(void) {
     can_ml_rx_timeout_manager();
 }
 
-void can_fuction_PowerOff(void) {
+void can_function_PowerOff(void) {
 
 }
 
-void can_fuction_PowerOn(void) {
+void can_function_PowerOn(void) {
 
 }
 
-bool can_fuction_isCanWKTimeout(void)
+bool can_function_isCanWKTimeout(void)
 {
     if(GetTickCounter(&l_t_can_wait_timer) > CAN_WAIT_TIMER_TIMEOUT)
     {
@@ -71,7 +68,7 @@ bool can_fuction_isCanWKTimeout(void)
     return false;
 }
 
-void can_fuction_tx_enable(bool enable)
+void can_function_tx_enable(bool enable)
 {
     if(enable)
     {
@@ -83,20 +80,20 @@ void can_fuction_tx_enable(bool enable)
     }
 }
 
-uint8_t can_fuction_timeout_reset_candata_callback(CAN_signal_config config) {
+uint8_t can_function_timeout_reset_candata_callback(CAN_signal_config config) {
     return can_ml_resetCanDataByCANID(config.id, config.invalid_val, config.byte_pos, config.bit_pos, config.sig_len);
 }
 
 
-uint8_t can_fuction_read_signal_value_callback(CAN_signal_config config, uint32_t *sig_val) {
+uint8_t can_function_read_signal_value_callback(CAN_signal_config config, uint32_t *sig_val) {
     return can_ml_readCanDataByMessageName(config.message_name, sig_val, config.byte_pos, config.bit_pos, config.sig_len);
 }
 
-uint8_t can_fuction_read_signal_timeout_flag(CanReceiveID canReceiveID) {
+uint8_t can_function_read_signal_timeout_flag(CanReceiveID canReceiveID) {
     return CAN_msg_rx_config_case[canReceiveID].error_status;
 }
 
-void can_fuction_write_signal_value(uint8_t sig_id, uint32_t sig_val) {
+void can_function_write_signal_value(uint8_t sig_id, uint32_t sig_val) {
     uint8_t byte_pos;
     uint8_t bit_pos;
     uint8_t sig_len;
@@ -109,7 +106,7 @@ void can_fuction_write_signal_value(uint8_t sig_id, uint32_t sig_val) {
     }
 }
 
-void can_fuction_read_signal_value(CanReceiveID sigId,uint8_t sig,uint32_t *sig_val) {
+void can_function_read_signal_value(CanReceiveID sigId,uint8_t sig,uint32_t *sig_val) {
     switch (sigId){
 
     case CAN_MSG_RX_ECU3:        //0x111
@@ -198,10 +195,10 @@ void can_message_case_init(){
     for (idx = 0; idx < CAN_MSG_RX_NUM; idx++) {
         CAN_msg_rx_config_case[idx].is_data_update = 1;
     }
-    can_fuction_app_register();
+    can_function_app_register();
 }
 
-void can_fuction_app_register(void) {
+void can_function_app_register(void) {
     can_ml_Register_CAN_id_rx_handle(CAN_msg_rx_config_case, CAN_MSG_RX_NUM);
     can_ml_Register_CAN_id_tx_handle(CAN_msg_tx_config_case, CAN_MSG_TX_NUM);
 }

@@ -31,7 +31,7 @@
 #include "octopus_uart_ptl.h"   // UART protocol functions.
 #include "octopus_update_soc.h" // SOC update functions.
 #include "octopus_update_mcu.h" // MCU update functions.
-
+#include "octopus_can.h"
 #include "octopus_ipc_socket.h"
 
 #ifdef __cplusplus
@@ -113,8 +113,9 @@ extern "C"
     const otms_t *otms_get_config(void);
 
     /** Static configuration for all tasks in the OTMS. */
-    const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
-#if 1
+    const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = 
+		{
+
         [TASK_ID_PTL] = {
             .state_limit = OTMS_S_INVALID,
             .func = {
@@ -138,7 +139,8 @@ extern "C"
                 [OTMS_S_STOP] = app_system_stop_running,
             },
         },
-
+				
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
         [TASK_ID_GPIO] = {
             .state_limit = OTMS_S_INVALID,
             .func = {
@@ -150,7 +152,8 @@ extern "C"
                 [OTMS_S_STOP] = app_gpio_stop_running,
             },
         },
-
+#endif
+				
         [TASK_ID_CAR_INFOR] = {
             .state_limit = OTMS_S_INVALID,
             .func = {
@@ -162,7 +165,6 @@ extern "C"
                 [OTMS_S_STOP] = app_carinfo_stop_running,
             },
         },
-#endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_BLE
         [TASK_ID_BLE] = {
@@ -220,6 +222,19 @@ extern "C"
 #endif
 #endif
 
+#ifdef TASK_MANAGER_STATE_MACHINE_CAN
+ [TASK_ID_CAN] = {
+            .state_limit = OTMS_S_INVALID,
+            .func = {
+                [OTMS_S_INIT] = app_can_init_running,
+                [OTMS_S_START] = app_can_start_running,
+                [OTMS_S_ASSERT_RUN] = app_can_assert_running,
+                [OTMS_S_RUNNING] = app_can_running,
+                [OTMS_S_POST_RUN] = app_can_post_running,
+                [OTMS_S_STOP] = app_can_stop_running,
+            },
+        },
+#endif
 #ifdef TASK_MANAGER_STATE_MACHINE_IPC_SOCKET
         [TASK_ID_IPC_SOCKET] = {
             .state_limit = OTMS_S_INVALID,
@@ -233,7 +248,7 @@ extern "C"
             },
         },
 #endif
-    };
+  };
 
     /*******************************************************************************
      * GLOBAL VARIABLES DECLARATION

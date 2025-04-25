@@ -30,7 +30,7 @@ CanQueue_t CAN_rx_msg_queue;
 
 static CAN_msg_rx_config* FindCanMsgRxConfigByMessageName(uint32_t message_name);
 //static void runDataUpdateByCANID(uint32_t can_id);
-static void runDataUpdate(uint32_t idx);
+static void can_config_data_update(uint32_t idx);
 static void can_ml_receive_app_data(CanQueueMsg_t* msg);
 
 static uint32_t getCanDataMotorola(volatile uint8_t data[],uint8_t data_len,uint8_t byte_pos,uint8_t bit_pos,uint8_t sig_len);
@@ -227,57 +227,84 @@ bool can_ml_transmit(void)
 }
 
 
-static void can_ml_receive_app_data(CanQueueMsg_t* msg){
-    //DEV_ASSERT(msg);
-    uint8_t i;
+/**
+ * @brief Process received CAN message from the CAN queue.
+ * 
+ * This function is called when a new CAN message is received. It searches for a matching
+ * message configuration by CAN ID and, if found, processes the data according to the message type.
+ * It supports periodic and network management (NM) frame handling, updates timeouts, and invokes
+ * user-defined callbacks for further processing.
+ *
+ * @param msg Pointer to the received CAN message structure.
+ */
+static void can_ml_receive_app_data(CanQueueMsg_t* msg)
+{
+    // DEV_ASSERT(msg);  // Optional runtime check (commented out)
 
-    int idx = findCanIdMessageNameRx(msg->id);
-    if(idx < 0 || idx >= CAN_msg_rx_config_count) {
-        /*没有查询到can id*/
+    int idx = findCanIdMessageNameRx(msg->id);  // Find message index by CAN ID
+    if (idx < 0 || idx >= CAN_msg_rx_config_count) {
+        // ID not found in configuration table, message ignored
         return;
     }
 
-    //PRINTF("can rev:");
-        for (i = 0; i < msg->data_len; i++) {
-            CAN_msg_rx_config_info[idx].data[i] = msg->data[i];
-            //PRINTF("%02x ",msg->data[i]);
-        }
-        //PRINTF("\n");
+    // Optional debug print
+    // PRINTF("CAN received: ");
+    // for (i = 0; i < msg->data_len; i++) {
+    //     CAN_msg_rx_config_info[idx].data[i] = msg->data[i];
+    //     PRINTF("%02x ", msg->data[i]);
+    // }
+    // PRINTF("\n");
 
-        //////uds_recv_frame(CAN_msg_rx_config_info[idx].id, (uint8_t*)CAN_msg_rx_config_info[idx].data, CAN_msg_rx_config_info[idx].data_len);
-
-        if (CAN_msg_rx_config_info[idx].data_len == msg->data_len )
+    // Example: forwarding data to UDS (commented out)
+    // uds_recv_frame(CAN_msg_rx_config_info[idx].id,
+    //                (uint8_t*)CAN_msg_rx_config_info[idx].data,
+    //                CAN_msg_rx_config_info[idx].data_len);
+		
+		LOG_BUFF_LEVEL((const uint8_t *)&msg->data,msg->data_len);
+		
+    // Only continue if expected length matches actual received length
+    if (CAN_msg_rx_config_info[idx].data_len == msg->data_len)
+    {
+        // If message type is periodic or NM, reset timeout and clear error
+        if (CAN_msg_rx_config_info[idx].type == CAN_MSG_TYPE_PERIOD ||
+            CAN_msg_rx_config_info[idx].type == CAN_MSG_TYPE_NM)
         {
-            if (CAN_msg_rx_config_info[idx].type == CAN_MSG_TYPE_PERIOD || CAN_msg_rx_config_info[idx].type == CAN_MSG_TYPE_NM)
-            {
-                CAN_msg_rx_config_info[idx].timeout = CAN_msg_rx_config_info[idx].timeout_max;
-                CAN_msg_rx_config_info[idx].error_status &= ~0x01;
-            }
-
-            if (CAN_msg_rx_config_info[idx].normalCallback != NULL) {
-                CAN_msg_rx_config_info[idx].normalCallback(&(CAN_msg_rx_config_info[idx]), 0);
-            }
-            CAN_msg_rx_config_info[idx].is_data_update = 0;
-            runDataUpdate(idx);
-            //刷新完成
-        } else {
-            /* 长度不匹配 */
+            CAN_msg_rx_config_info[idx].timeout = CAN_msg_rx_config_info[idx].timeout_max;
+            CAN_msg_rx_config_info[idx].error_status &= ~0x01;  // Clear timeout error bit
         }
+
+        // Call the registered callback if available
+        if (CAN_msg_rx_config_info[idx].normalCallback != NULL) {
+            CAN_msg_rx_config_info[idx].normalCallback(&(CAN_msg_rx_config_info[idx]), 0);
+        }
+
+        // Mark data update as handled
+        CAN_msg_rx_config_info[idx].is_data_update = 0;
+
+        // Trigger post-processing, e.g., notify other modules or update UI
+        can_config_data_update(idx);
+    }
+    else
+    {
+        // Length mismatch - received data does not match expected format
+        // Consider logging an error or setting a fault flag here
+    }
 }
 
 bool can_ml_receive(void)
 {
-    if(Can_GetMsgQueueSize())
-    {
-        CanQueueMsg_t* msg = Can_GetMsg();
+	uint16_t u16 = Can_GetMsgQueueSize();
+  if(u16)
+  {
+     CanQueueMsg_t* msg = Can_GetMsg();
     
-        if (NULL != msg)
-        {
-            can_ml_receive_app_data(msg);
-            return true;
-        }
-    }
-    return false;
+     if (NULL != msg)
+     {
+         can_ml_receive_app_data(msg);
+         return true;
+     }
+  }
+  return false;
 }
 
 void can_ml_Reset_rx_timeout_status()
@@ -313,7 +340,7 @@ void can_ml_rx_timeout_manager(void) {
                         CAN_msg_rx_config_info[idx].normalCallback(&(CAN_msg_rx_config_info[idx]), 1);
                     }
 
-                    runDataUpdate(idx);
+                    can_config_data_update(idx);
                 }
                 
                 CAN_msg_rx_config_info[idx].error_status |= 0x01;
@@ -372,7 +399,7 @@ static void runDataUpdateByCANID(uint32_t can_id)
 }
 #endif
 
-static void runDataUpdate(uint32_t idx)
+static void can_config_data_update(uint32_t idx)
 {
     for(int i = 0; i < CAM_MSG_DATA_LEN; i++)
     {
@@ -572,7 +599,6 @@ static uint8_t writeCanDataIntel(uint32_t sig_val,volatile uint8_t data[],uint8_
 #endif
     return ret;
 }
-
 
 CanQueueMsg_t *Can_GetMsg(void)
 {

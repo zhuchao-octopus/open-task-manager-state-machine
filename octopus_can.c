@@ -8,7 +8,7 @@
 
 #include "octopus_platform.h"     // Include platform-specific header for hardware platform details
 #include "octopus_log.h"          // Include logging functions for debugging
-#include "octopus_task_manager.h" // Include task manager for scheduling tasks
+//#include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_gpio.h"
 #include "octopus_system.h"
 #include "octopus_tickcounter.h"
@@ -47,7 +47,7 @@ void app_can_init_running(void)
 	
 	 Can_Queue_Init(&CAN_rx_msg_queue);
 	
-	 can_fuction_init();
+	 can_function_init();
 	 can_message_case_init();
 }
 
@@ -65,7 +65,7 @@ void app_can_assert_running(void)
 
 void app_can_running(void)
 {
-		can_fuction_loop_rt();
+		can_function_loop_rt();
 		//can_ptl_loop_10ms();
 }
 
@@ -90,34 +90,23 @@ static bool can_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
-// Public API: dispatch CAN data from ISR or polling loop
-void octopus_can_dispatch(const CAN_Message_t* message)
-{
-    if (!message) return;
 
-    parse_can_message(message);
-}
 // Internal function to parse a received CAN message
 void parse_can_message(const CAN_Message_t* message)
 {
     // Example: Check message ID and parse accordingly
+	  LOG_BUFF_LEVEL((const uint8_t *)&message,sizeof(CAN_Message_t));
+	  //LOG_BUFF_LEVEL((const uint8_t *)&message->Data,message->DLC);
 	  CanQueue_Push(&CAN_rx_msg_queue, 0, message->StdId, message->Data, message->DLC);
-
+   
     switch (message->StdId)
     {
     case 0x100:
         ///printf("[CAN] Received control message. Data[0] = %02X\n", message->Data[0]);
         break;
-
     case 0x200:
         ///printf("[CAN] Received telemetry message. Data = ");
-        for (uint8_t i = 0; i < message->DLC; i++)
-        {
-            ///printf("%02X ", message->Data[i]);
-        }
-        ///printf("\n");
         break;
-
     default:
         ///printf("[CAN] Unknown message ID: 0x%03X\n", message->StdId);
         break;

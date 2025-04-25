@@ -141,10 +141,12 @@ void app_system_running(void)
         break;
 
     case MSG_DEVICE_ACC_EVENT:
+				LOG_LEVEL("Event: MSG_DEVICE_ACC_EVENT\r\n");
         app_power_on_off(msg->param2);
         break;
 
     case MSG_DEVICE_POWER_EVENT:
+				LOG_LEVEL("Event: MSG_DEVICE_POWER_EVENT\r\n");
         if (msg->param1 == CMD_MODSYSTEM_POWER_ON)
             app_power_on_off(SYSTEM_POWER_ON_VALUE);
         else if (msg->param1 == CMD_MODSYSTEM_POWER_OFF)

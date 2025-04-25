@@ -17,14 +17,14 @@ const CAN_signal_config CAN_signal_rx_DCDC1[CAN_SIG_RX_DCDC1_COUNT] = {
 
 
 uint8_t can_msg_0x299_get_data(uint32_t sig, uint32_t *sig_val){
-    return can_fuction_read_signal_value_callback(CAN_signal_rx_DCDC1[sig], sig_val);
+    return can_function_read_signal_value_callback(CAN_signal_rx_DCDC1[sig], sig_val);
 }
 
 void can_msg_0x299_timeout_function(void) {
     CANMSG_TIMEROUT_DBG(PRINTF("%s\n", __FUNCTION__));
     uint8_t i = 0;
     for (i = 0; i < CAN_SIG_RX_DCDC1_COUNT; i++) {
-        can_fuction_timeout_reset_candata_callback(CAN_signal_rx_DCDC1[i]);
+        can_function_timeout_reset_candata_callback(CAN_signal_rx_DCDC1[i]);
     }
 }
 

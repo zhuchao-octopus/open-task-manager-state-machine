@@ -36,7 +36,9 @@
 #include "octopus_carinfor.h"
 #include "octopus_msgqueue.h"
 #include "octopus_sif.h"
+#include "can/can_message_rx.h"
 
+#include "can/can_function.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -55,6 +57,8 @@
 #define CELL_VOL_80 (1184) // Voltage corresponding to 80% battery charge
 #define CELL_VOL_90 (1206) // Voltage corresponding to 90% battery charge
 
+#define METER_AVG_BUFF_MAX (8)
+#define INDICATOR_TYPE_ARRAY_COUNT ((kIndicatorTypeCount - 1) / 8 + 1)
 /*******************************************************************************
  * TYPEDEFS
  */
@@ -110,6 +114,16 @@ static uint32_t l_t_soc_timer; // Timer for state of charge monitoring
 
 // static bool l_t_speed_changed = false;
 // static bool l_t_gear_changed = false;
+//static uint8_t  l_u8_rpm_index = 0;
+static uint16_t l_arr_rpm_buff[METER_AVG_BUFF_MAX] = {0};
+static uint8_t  l_u8_speed_index = 0;
+static uint16_t l_arr_speed_buff[METER_AVG_BUFF_MAX] = {0};
+
+static uint8_t g_indicatorFlag[INDICATOR_TYPE_ARRAY_COUNT];
+static uint8_t g_indicatorFlagChanged[INDICATOR_TYPE_ARRAY_COUNT];
+static uint8_t g_indicatorWarnFlag[INDICATOR_TYPE_ARRAY_COUNT];
+uint8_t g_hazardFlag = 0;
+static uint8_t             lrlight_flag = 0;
 /*******************************************************************************
  * EXTERNAL VARIABLES
  */
@@ -498,6 +512,363 @@ bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff
     return false;
 }
 
+
+void app_car_controller_msg_handler(void)
+{
+	#ifdef TASK_MANAGER_STATE_MACHINE_SIF
+    lt_indicator.position = GPIO_PIN_READ_SKD() ? 0 : 1; 
+    lt_indicator.highBeam = GPIO_PIN_READ_DDD() ? 0 : 1;  
+    lt_indicator.leftTurn = GPIO_PIN_READ_ZZD() ? 0 : 1; 
+    lt_indicator.rightTurn = GPIO_PIN_READ_YZD() ? 0 : 1; 
+
+    lt_indicator.ready = !lt_sif.bootGuard;
+
+    lt_indicator.ecuFault = lt_sif.controllerFault;
+    lt_indicator.sensorFault = lt_sif.throttleFault;
+    lt_indicator.motorFault = lt_sif.motorFault | lt_sif.hallFault;
+
+    lt_indicator.parking = lt_sif.brake;
+	#endif
+	#ifdef BATTERY_MANAGER
+    get_battery_voltage();
+	#endif
+	
+
+    Msg_t *msg = get_message(TASK_ID_CAR_INFOR);
+    if (msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_GPIO_EVENT)
+    {
+        send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
+    }
+
+		 if(car_indicator_get_indicatorflag_changed())
+     {
+        car_indicator_clear_indicatorflag_changed();
+        send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
+     }
+		 
+		if(GetTickCounter(&l_t_msg_wait_100_timer) >= 500)
+    {
+       StartTickCounter(&l_t_msg_wait_100_timer);
+       car_indicator_proc_turn_signal();  
+       car_meter_proc_speed_rpm();             
+    } 
+		 
+		 
+	#ifdef TASK_MANAGER_STATE_MACHINE_SIF
+    if(l_t_speed_changed)
+		{
+			send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);	
+			l_t_speed_changed=false;			
+		}
+		if(l_t_gear_changed)
+		{
+			send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
+			l_t_gear_changed = false;
+		}
+
+		static uint8_t l_u8_op_step = 0;  // Operational step variable
+    if(GetTickCounter(&l_t_msg_wait_100_timer) >= 300)
+    {
+        switch(l_u8_op_step)
+        {
+        case 0:
+            send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_METER, CMD_MODMETER_SOC, 0);
+            break;
+        case 1:
+            send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);		
+            break;
+        case 2:
+            send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
+            break;
+				case 3:
+            send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_INDICATOR, CMD_MODINDICATOR_ERROR_INFO, 0);
+            break;
+        default:
+            l_u8_op_step = (uint8_t)-1;
+            break;
+        }
+				
+        l_u8_op_step++;
+				if(l_u8_op_step >=4)
+					l_u8_op_step = 0;
+        StartTickCounter(&l_t_msg_wait_100_timer);
+    }
+	#endif
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef TASK_MANAGER_STATE_MACHINE_CAN
+
+// 指示灯自检
+#if 0
+static void car_indicator_proc_self_test(void)
+{
+    car_indicator_set_indicatorflag(kHazardSignal, true);
+    car_indicator_set_indicatorflag(kLeftTurnSignal, true);
+    car_indicator_set_indicatorflag(kRightTurnSignal, true);
+    car_indicator_set_indicatorflag(kLowBeam, true);
+    car_indicator_set_indicatorflag(kHighBeam, true);
+    car_indicator_set_indicatorflag(kPositionLight, true);
+    car_indicator_set_indicatorflag(kDrvSeatBeltRst, true);
+    car_indicator_set_indicatorflag(kParkingSignal, true);
+    car_indicator_set_indicatorflag(kBrakeFluidLow, true);
+    car_indicator_set_indicatorflag(kCharging, true);
+    car_indicator_set_indicatorflag(kEpsFault, true);
+
+    car_indicator_set_indicatorflag(kBattSOCUnder, true);
+    car_indicator_set_indicatorflag(kBattSOCChrg, true);
+    car_indicator_set_indicatorflag(kFrntMotTOver, true);
+    car_indicator_set_indicatorflag(kNormal, false);
+    car_indicator_set_indicatorflag(kSport, false);
+    car_indicator_set_indicatorflag(kEco, true);
+    car_indicator_set_indicatorflag(kObcCpValVld, true);
+    car_indicator_set_indicatorflag(kBCUChrgSts, true);
+    car_indicator_set_indicatorflag(kMotSysPwrLmtLp, true);
+    car_indicator_set_indicatorflag(kFrntIpuFltRnk, true);
+    car_indicator_set_indicatorflag(kBCUMILReq, true);
+    car_indicator_set_indicatorflag(kBCUCellTOver, true);
+    car_indicator_set_indicatorflag(kReadyLp, true);
+    //data_indicator_set_indicatorflag(kMotTempHight, true);
+    //data_indicator_set_indicatorflag(kCurrentG, true);
+}
+#endif
+//转向灯、危险警告灯
+static void car_indicator_proc_turn_signal(void)
+{
+    uint32_t sig_val_elsswitch = 0;
+    uint32_t sig_val_left = 0;
+    uint32_t sig_val_right = 0;
+    
+    uint8_t  valid = 0;
+    
+    valid = (can_function_read_signal_timeout_flag(CAN_MSG_RX_BCM5) == 0);
+ 
+    //应急灯开关
+    can_function_read_signal_value(CAN_MSG_RX_BCM5, BCM5_ElsSwitch, &sig_val_elsswitch);
+    //左转向灯
+    can_function_read_signal_value(CAN_MSG_RX_BCM5, BCM5_LeftTurnLamp, &sig_val_left);
+    //右转向灯
+    can_function_read_signal_value(CAN_MSG_RX_BCM5, BCM5_RightTurnLamp, &sig_val_right);
+    
+    if(valid && (sig_val_elsswitch || sig_val_left || sig_val_right))
+    {
+        lrlight_flag = !lrlight_flag;
+    }
+    else
+    {
+        lrlight_flag = 0;
+    }
+        
+    car_indicator_set_indicatorflag(kLeftTurnSignal, lrlight_flag && valid && (sig_val_left || sig_val_elsswitch));
+    car_indicator_set_indicatorflag(kRightTurnSignal, lrlight_flag && valid && (sig_val_right || sig_val_elsswitch));
+    car_indicator_set_indicatorflag(kHazardSignal, lrlight_flag && valid && sig_val_elsswitch);
+    
+    car_indicator_set_warnflag(kLeftTurnSignal, lrlight_flag && valid && (sig_val_left || sig_val_elsswitch));
+    car_indicator_set_warnflag(kRightTurnSignal, lrlight_flag && valid && (sig_val_right || sig_val_elsswitch));
+    car_indicator_set_warnflag(kHazardSignal, lrlight_flag && valid && sig_val_elsswitch);
+    
+    car_indicator_set_hazard(valid && sig_val_elsswitch);
+}
+// Process vehicle speed and engine RPM
+static void car_meter_proc_speed_rpm(void) {
+    uint32_t sig_val = 0;
+    uint8_t valid = 0;
+    uint32_t vehspd_vld = 0;
+    uint8_t flag = 0;
+    uint16_t speed = 0;
+    uint16_t rpm = 0;
+    uint64_t sum = 0;
+
+    //CarInfo* info = data_carinfo_get_carinfo();
+
+    //if (sys_pwr_mark_get_acc() == 1) 
+			{ // Only process when ACC is ON
+        // Read vehicle speed
+        can_function_read_signal_value(CAN_MSG_RX_IPU6, IPU6_IPUVehSpdVld, &vehspd_vld);
+        can_function_read_signal_value(CAN_MSG_RX_IPU6, IPU6_IPUVehSpd, &sig_val);
+        valid = (can_function_read_signal_timeout_flag(CAN_MSG_RX_IPU6) == 0) && sig_val && (!vehspd_vld);
+
+#if METER_AUTO_RUM
+        // Simulated speed for auto run mode
+        static uint32_t speed_auto = 0;
+        speed_auto += 10;
+        if (speed_auto > 1200) speed_auto = 0;
+        for (uint8_t i = 0; i < METER_AVG_BUFF_MAX; i++) {
+            l_arr_speed_buff[i] = speed_auto;
+        }
+#else
+        // Store speed sample in buffer
+        l_arr_speed_buff[l_u8_speed_index] = valid ? (sig_val * 10) : 0;
+        l_u8_speed_index++;
+        if (l_u8_speed_index >= METER_AVG_BUFF_MAX) {
+            l_u8_speed_index = 0;
+        }
+#endif
+
+        // Read engine RPM
+        can_function_read_signal_value(CAN_MSG_RX_IPU2, IPU2_FrntMotSpdVld, &vehspd_vld);
+        can_function_read_signal_value(CAN_MSG_RX_IPU2, IPU2_FrntMotSpd, &sig_val);
+        valid = (can_function_read_signal_timeout_flag(CAN_MSG_RX_IPU2) == 0) && sig_val && vehspd_vld;
+
+#if METER_AUTO_RUM
+        // Simulated RPM for auto run mode
+        static uint32_t rpm_auto = 0;
+        rpm_auto += 100;
+        if (rpm_auto > 9000) rpm_auto = 0;
+        for (uint8_t i = 0; i < METER_AVG_BUFF_MAX; i++) {
+            l_arr_rpm_buff[i] = rpm_auto;
+        }
+#else
+        // Store RPM sample in buffer
+				l_arr_speed_buff[l_u8_speed_index] = valid ? (sig_val * 10) : 0;
+        l_u8_speed_index++;
+        if(l_u8_speed_index >= METER_AVG_BUFF_MAX)
+        {
+            l_u8_speed_index = 0;
+        }
+#endif
+    } 
+
+    // Calculate average speed
+    sum = 0;
+    for (uint8_t i = 0; i < METER_AVG_BUFF_MAX; i++) {
+        sum += l_arr_speed_buff[i];
+    }
+    speed = sum / METER_AVG_BUFF_MAX;
+
+    // Calculate average RPM
+    sum = 0;
+    for (uint8_t i = 0; i < METER_AVG_BUFF_MAX; i++) {
+        sum += l_arr_rpm_buff[i];
+    }
+    rpm = sum / METER_AVG_BUFF_MAX;
+
+    // Check and update if speed changed
+		// if (lt_meter.speed_real != lt_meter_current_speed)
+    if (lt_meter.speed_real != speed) {
+        flag = true;
+       lt_meter.speed_real = speed;
+    }
+
+    // Apply different threshold for idle state
+    uint8_t threshold = lt_meter.speed_real ? 50 : 98;
+    if (abs(rpm - lt_meter.rpm) >= threshold) {
+        if (lt_meter.rpm != rpm) {
+            flag = true;
+            lt_meter.rpm = rpm;
+        }
+    }
+
+    if (flag) {
+         send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);
+    }
+}
+
+void car_indicator_init() {
+    uint8_t i = 0;
+    for (i = 0; i < INDICATOR_TYPE_ARRAY_COUNT; i++) {
+        g_indicatorFlag[i] = 0;
+        g_indicatorFlagChanged[i] = 0;
+        g_indicatorWarnFlag[i] = 0;
+    }
+}
+
+uint8_t car_indicator_get_indicator_type_array_count(){
+    return INDICATOR_TYPE_ARRAY_COUNT;
+}
+
+uint8_t car_indicator_get_indicator(uint8_t index, uint8_t *indicator) {
+    uint8_t ret = 0;
+    if (index < sizeof(g_indicatorFlag)) {
+        ret = 1;
+        *indicator = g_indicatorFlag[index];
+    } else {
+        ret = 0;
+    }
+    return ret;
+}
+
+uint8_t car_indicator_get_indicatorflag(IndicatorType type) {
+    return (g_indicatorFlag[type / 8] >> (type % 8)) & 0x01;
+}
+
+void car_indicator_set_indicatorflag(IndicatorType type, uint8_t flag) {
+    if (flag == car_indicator_get_indicatorflag(type)) {
+        return;
+    }
+
+    if (flag) {
+        g_indicatorFlag[type / 8] |= (0x01 << (type % 8));
+    } else {
+        g_indicatorFlag[type / 8] &= ~(0x01 << (type % 8));
+    }
+    g_indicatorFlagChanged[type / 8] |= (0x01 << (type % 8));
+}
+
+uint8_t car_indicator_get_indicatorflag_changed() {
+    uint8_t i = 0;
+    for (i = 0; i < INDICATOR_TYPE_ARRAY_COUNT; i++) {
+        if(g_indicatorFlagChanged[i] > 0){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void car_indicator_clear_indicatorflag_changed() {
+    uint8_t i = 0;
+    for (i = 0; i < INDICATOR_TYPE_ARRAY_COUNT; i++) {
+        g_indicatorFlagChanged[i] = 0;
+    }
+}
+
+uint8_t car_indicator_get_warnflag(IndicatorType type)
+{
+    return (g_indicatorWarnFlag[type / 8] >> (type % 8)) & 0x01;
+}
+
+void car_indicator_set_warnflag(IndicatorType type, uint8_t flag)
+{
+    if (flag) {
+        g_indicatorWarnFlag[type / 8] |= (0x01 << (type % 8));
+        //StartTickCounter(&lt_warn_wait_timer);
+    } else {
+        g_indicatorWarnFlag[type / 8] &= ~(0x01 << (type % 8));
+    }
+}
+
+uint8_t cat_indicator_get_warnflag_event() {
+#if 0
+    uint8_t i = 0;
+    for (i = 0; i < INDICATOR_TYPE_ARRAY_COUNT; i++) {
+        if(g_indicatorWarnFlag[i] > 0){
+            return 1;
+        }
+    }
+    
+    if(IsTimerStart(&lt_warn_wait_timer) && GetTimer(&lt_warn_wait_timer) < 5000)
+    {
+        return 1;
+    }
+#endif
+    return 0;
+}
+
+
+uint8_t cat_indicator_get_hazard(void )
+{
+    return g_hazardFlag;
+}
+void car_indicator_set_hazard(uint8_t flag)
+{
+    g_hazardFlag = flag;
+}
+#endif
+/////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
 void app_car_controller_sif_updating(void)
 {
@@ -571,74 +942,6 @@ void app_car_controller_sif_updating(void)
 }
 #endif
 
-void app_car_controller_msg_handler(void)
-{
-    lt_indicator.position = GPIO_PIN_READ_SKD() ? 0 : 1; 
-    lt_indicator.highBeam = GPIO_PIN_READ_DDD() ? 0 : 1;  
-    lt_indicator.leftTurn = GPIO_PIN_READ_ZZD() ? 0 : 1; 
-    lt_indicator.rightTurn = GPIO_PIN_READ_YZD() ? 0 : 1; 
-
-    lt_indicator.ready = !lt_sif.bootGuard;
-
-    lt_indicator.ecuFault = lt_sif.controllerFault;
-    lt_indicator.sensorFault = lt_sif.throttleFault;
-    lt_indicator.motorFault = lt_sif.motorFault | lt_sif.hallFault;
-
-    lt_indicator.parking = lt_sif.brake;
-	
-#ifdef BATTERY_MANAGER
-    get_battery_voltage();
-#endif
-
-    Msg_t *msg = get_message(TASK_ID_CAR_INFOR);
-    if (msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_GPIO_EVENT)
-    {
-        send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
-    }
-
-#if 0
-    if(l_t_speed_changed)
-		{
-			send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);	
-			l_t_speed_changed=false;			
-		}
-		if(l_t_gear_changed)
-		{
-			send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
-			l_t_gear_changed = false;
-		}
-#endif
-		
-#if 0
-	static uint8_t l_u8_op_step = 0;  // Operational step variable
-    if(GetTickCounter(&l_t_msg_wait_100_timer) >= 300)
-    {
-        switch(l_u8_op_step)
-        {
-        case 0:
-            send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_METER, CMD_MODMETER_SOC, 0);
-            break;
-        case 1:
-            send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);		
-            break;
-        case 2:
-            send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
-            break;
-				case 3:
-            send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_INDICATOR, CMD_MODINDICATOR_ERROR_INFO, 0);
-            break;
-        default:
-            l_u8_op_step = (uint8_t)-1;
-            break;
-        }
-				
-        l_u8_op_step++;
-				if(l_u8_op_step >=4)
-					l_u8_op_step = 0;
-        StartTickCounter(&l_t_msg_wait_100_timer);
-    }
-#endif
-}
 
 #ifdef TEST_LOG_DEBUG_SIF
 void log_sif_data(uint8_t *data, uint8_t maxlen)
@@ -669,7 +972,6 @@ void get_battery_voltage(void)
 
     if (rise)
     {
-        // ���ݿͻ��ĵ�ѹ�������
         switch (lt_sif.voltageSystem)
         {
         case 0x00:
@@ -737,7 +1039,6 @@ void get_battery_voltage(void)
     }
     else
     {
-        // ���ݿͻ��ĵ�ѹ�������
         switch (lt_sif.voltageSystem)
         {
         case 0x00:
@@ -804,7 +1105,6 @@ void get_battery_voltage(void)
         }
     }
 
-    // ͨ�ü���
     switch (lt_sif.voltageSystem)
     {
     case 0x01: // 36V
@@ -817,13 +1117,13 @@ void get_battery_voltage(void)
         cellcount = 5;
         break;
     case 0x08:         // 64V
-        cellcount = 5; // ��12V��ѹ��أ���ʱ����
+        cellcount = 5; //
         break;
     case 0x10: // 72V
         cellcount = 6;
         break;
     case 0x20:         // 80V
-        cellcount = 6; // ��12V��ѹ��أ���ʱ����
+        cellcount = 6; // 
         break;
     case 0x40: // 84V
         cellcount = 7;

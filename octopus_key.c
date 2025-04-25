@@ -36,7 +36,7 @@ static void app_do_key_action_hanlder(void);
 
 void KeySendKeyCodeEvent(uint8_t key_code, uint8_t key_state);
 void app_goto_bootloader(void);
-
+void power_onoff_f113(void);
 
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
@@ -90,12 +90,12 @@ static void app_do_key_action_hanlder(void)
     Msg_t* msg = get_message(TASK_ID_KEY);		
 		
 	if(msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_KEY_DOWN_EVENT)
-    {
-			uint8_t key = get_dummy_key(msg->param1);
+  {
+			uint8_t key = msg->param1;//get_dummy_key(msg->param1);
 			GPIO_KEY_STATUS *key_status = get_key_status_by_key(key);
 			
-			LOG_LEVEL("key pressed key=%d key_status=%d\r\n",key,msg->param2);
-             switch (key)
+			//LOG_LEVEL("key pressed key=%d key_status=%d\r\n",key,msg->param2);
+      switch (key)
 			{
 				 case OCTOPUS_KEY_0:
 						break;
@@ -123,15 +123,19 @@ static void app_do_key_action_hanlder(void)
 						 if(GetTickCounter(&l_t_msg_boot_wait_timer) <= 2000)
 								app_goto_bootloader();
 					 }			 
-					 break;				 
+					 break;		
+         case OCTOPUS_KEY_POWER:
+					 LOG_LEVEL("key OCTOPUS_KEY_POWER pressed key=%d key_status=%d\r\n",key,msg->param2);
+					 power_onoff_f113();
+					break;
 			}	
-    }		
+  }		
 		
 	else if(msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_KEY_UP_EVENT)
 	{
-			uint8_t key = get_dummy_key(msg->param1);
+			uint8_t key = msg->param1;//get_dummy_key(msg->param1);
 			GPIO_KEY_STATUS *key_status = get_key_status_by_key(key);
-			LOG_LEVEL("key released key=%d key_status=%d\r\n",key,msg->param2);
+			LOG_LEVEL("key release key=%d key_status=%d\r\n",key,msg->param2);
             switch (key)
 			{
 					 case OCTOPUS_KEY_0:
@@ -154,17 +158,30 @@ static void app_do_key_action_hanlder(void)
 void app_goto_bootloader(void)
 {
     
-	 LOG_LEVEL("reboot to dul ota to upgrade mcu ble sw.\r\n");
-     #if 1
-	 write_reg(ADDR_OTA_FLAG,0x55AAAA55);
-	 GAPRole_TerminateConnection();
-	 WaitMs(500);
-	 NVIC_SystemReset();	
-     #endif
+	LOG_LEVEL("reboot to dul ota to upgrade mcu ble sw.\r\n");
+	#if 0
+	write_reg(ADDR_OTA_FLAG,0x55AAAA55);
+	GAPRole_TerminateConnection();
+	WaitMs(500);
+	NVIC_SystemReset();	
+	#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
+void power_onoff_f113(void)
+{
+	if(IsPowerOn())
+	{
+		power_on_off(false);
+		LOG_LEVEL("power down f133 soc\r\n");
+	}
+	else
+	{
+		power_on_off(true);
+		LOG_LEVEL("power on f133 soc\r\n");
+	}
+}
 
 uint8_t get_dummy_key(uint8_t key)
 {
@@ -225,8 +242,7 @@ bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
             uint8_t code = payload->data[0];
             uint8_t state = payload->data[1];	
             LOG_LEVEL("CMD_MODSETUP_KEY key %02x state %02x\r\n", code, state);
-			
-            KeySendKeyCodeEvent(code, state);
+	
             tmp = 0x01;
             ///ptl_build_frame(SOC_TO_MCU_MOD_SETUP, CMD_MODSETUP_KEY, &tmp, 1, ackbuff);
             return true;
@@ -238,44 +254,6 @@ bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
     return false;
 }
 
-
-void KeySendKeyCodeEvent(uint8_t key_code, uint8_t key_state)
-{
-   #if 0
-    ExternalEvent ev;
-
-    int code = key_code;//EVENT_CUSTOM_KEY_PWR;
-    int param = key_state;//(KEY_STATE_PRESSED);
-
-    /*
-    switch (key_code)
-    {
-    case KEY_CODE_UP:    code = EVENT_CUSTOM_KEY_PLUS;  break;
-    case KEY_CODE_DOWN:  code = EVENT_CUSTOM_KEY_MINUS; break;
-    case KEY_CODE_POWER: code = EVENT_CUSTOM_KEY_PWR;   break;
-    case KEY_CODE_MENU:  code = EVENT_CUSTOM_KEY_INFO;  break;
-    case KEY_CODE_ILL:   code = EVENT_CUSTOM_KEY_LAMP;  break;
-    }
-
-    switch (key_state)
-    { 
-    case KEY_STATE_NONE:   param = (KEY_STATE_RELEASE);        break;
-    case KEY_STATE_DOWN:   param = (KEY_STATE_PRESSED);        break;
-    case KEY_STATE_DOUBLE: param = (KEY_STATE_DOUBLE_PRESSED); break;
-    case KEY_STATE_LONG:   param = (KEY_STATE_LONG_PRESSED);   break;
-    }*/
-    
-    ev.type = EXTERNAL_KEY_MSG;
-    ev.arg1 = code;
-    ev.arg2 = param;
-    ExternalInQueueSend(&ev);
-
-    theEnvInfo.key_click_flag = true;
-
-    theEnvInfo.key_code = code;
-    theEnvInfo.key_state = param;
-   #endif
-}
 
 
 #endif

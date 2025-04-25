@@ -20,14 +20,14 @@ const CAN_signal_config CAN_signal_rx_IPU1[CAN_SIG_RX_IPU1_COUNT] = {
 
 
 uint8_t can_msg_0x204_get_data(uint32_t sig, uint32_t *sig_val){
-    return can_fuction_read_signal_value_callback(CAN_signal_rx_IPU1[sig], sig_val);
+    return can_function_read_signal_value_callback(CAN_signal_rx_IPU1[sig], sig_val);
 }
 
 void can_msg_0x204_timeout_function(void) {
     CANMSG_TIMEROUT_DBG(PRINTF("%s\n", __FUNCTION__));
     uint8_t i = 0;
     for (i = 0; i < CAN_SIG_RX_IPU1_COUNT; i++) {
-        can_fuction_timeout_reset_candata_callback(CAN_signal_rx_IPU1[i]);
+        can_function_timeout_reset_candata_callback(CAN_signal_rx_IPU1[i]);
     }
 }
 
@@ -41,7 +41,7 @@ void can_msg_0x204_normal_function(CAN_msg_rx_config* can_info, uint8_t timeout)
         ///CarInfo* info = data_carinfo_get_carinfo();
         
         uint32_t sig_val = 0;
-        can_fuction_read_signal_value(CAN_MSG_RX_IPU1, IPU1_IPUInsttPwrCspt, &sig_val);
+        can_function_read_signal_value(CAN_MSG_RX_IPU1, IPU1_IPUInsttPwrCspt, &sig_val);
         
         ///info->pwr_inject_sum += ((int64_t)sig_val - 500);
         ///info->pwr_inject_count++; 

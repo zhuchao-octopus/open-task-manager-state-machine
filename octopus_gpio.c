@@ -19,8 +19,8 @@
  */
 
 void GPIOInit(void);
-void PollingGPIOStatus(uint8_t pin, GPIO_STATUS *gpio_status);
-void PollingGPIOKeyStatus(uint8_t pin,GPIO_KEY_STATUS *key_status);
+void PollingGPIOStatus(GPIO_GROUP *gpiox,uint16_t pin, GPIO_STATUS *gpio_status);
+void PollingGPIOKeyStatus(GPIO_GROUP *gpiox,uint16_t pin,GPIO_KEY_STATUS *key_status);
 void ProcessKeyEvent(GPIO_KEY_STATUS *key_status);
 
 static uint32_t           l_t_msg_wait_50_timer;
@@ -35,8 +35,8 @@ GPIO_STATUS zzd_status = {false,true,0,0};
 GPIO_STATUS yzd_status = {false,true,0,0};
 GPIO_STATUS skd_status = {false,true,0,0};
 
-GPIO_KEY_STATUS key_status_1 = {0};
-GPIO_KEY_STATUS *gpio_key_array[]={&key_status_1};
+GPIO_KEY_STATUS key_status_power = {OCTOPUS_KEY_POWER,0};
+GPIO_KEY_STATUS *gpio_key_array[]={&key_status_power};
 //static bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff);
 //static bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
@@ -46,7 +46,7 @@ GPIO_KEY_STATUS *gpio_key_array[]={&key_status_1};
 void app_gpio_init_running(void)
 {
     LOG_LEVEL("app_gpio_init_running\r\n");
-	GPIOInit();
+		GPIOInit();
     //com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
     OTMS(TASK_ID_GPIO, OTMS_S_INVALID);
 }
@@ -69,14 +69,14 @@ void app_gpio_running(void)
 {
    if(GetTickCounter(&l_t_msg_wait_50_timer) >= GPIO_POLLING_PERIOD_MS)
 	 {
-			PollingGPIOStatus(GPIO_ACC_PIN,&acc_status);
-			PollingGPIOStatus(GPIO_DDD_PIN,&ddd_status);
-			PollingGPIOStatus(GPIO_ZZD_PIN,&zzd_status);
-			PollingGPIOStatus(GPIO_YZD_PIN,&yzd_status);
-			PollingGPIOStatus(GPIO_SKD_PIN,&skd_status);
-			PollingGPIOKeyStatus(GPIO_KEY_PIN,&key_status_1);
+			//PollingGPIOStatus(GPIO_ACC_PIN,&acc_status);
+			//PollingGPIOStatus(GPIO_DDD_PIN,&ddd_status);
+			//PollingGPIOStatus(GPIO_ZZD_PIN,&zzd_status);
+			//PollingGPIOStatus(GPIO_YZD_PIN,&yzd_status);
+			//PollingGPIOStatus(GPIO_SKD_PIN,&skd_status);
+			PollingGPIOKeyStatus(GPIO_POWER_GROUP,GPIO_POWER_PIN,&key_status_power);
 		 
-      ProcessKeyEvent(&key_status_1);
+      ProcessKeyEvent(&key_status_power);
 			
 			if(acc_status.changed)
 			{
@@ -138,9 +138,9 @@ void GPIOInit(void)
 
 }
  
-void PollingGPIOStatus(uint8_t pin, GPIO_STATUS *gpio_status)
+void PollingGPIOStatus(GPIO_GROUP *gpiox,uint16_t pin, GPIO_STATUS *gpio_status)
 {
-	if(GPIO_PIN_READ(pin))
+	if(GPIO_PIN_READ(gpiox,pin))
 	{
 		gpio_status->count1++;
 		gpio_status->count2=0;
@@ -170,9 +170,10 @@ void PollingGPIOStatus(uint8_t pin, GPIO_STATUS *gpio_status)
 	}
 }
 
-void PollingGPIOKeyStatus(uint8_t pin,GPIO_KEY_STATUS *key_status)
+void PollingGPIOKeyStatus(GPIO_GROUP *gpiox,uint16_t pin,GPIO_KEY_STATUS *key_status)
 {
-	if(!GPIO_PIN_READ(pin))
+	uint8_t g_status = GPIO_PIN_READ(gpiox,pin);
+	if(!g_status)
 	{		
 		if(key_status->press_count < GPIO_KEY_STATUS_MAX_REDUNDANCY)
 		{
@@ -182,7 +183,7 @@ void PollingGPIOKeyStatus(uint8_t pin,GPIO_KEY_STATUS *key_status)
 													
 	  if(key_status->press_count > GPIO_KEY_STATUS_PRESS_PERIOD && !key_status->pressed)
 		{
-			key_status->key = hal_get_gpio_key_mask_code(pin);//key_status->key | GetGPIOKeyMask(pin);
+			//key_status->key = hal_get_gpio_key_mask_code(pin);//key_status->key | GetGPIOKeyMask(pin);
 			key_status->pressed=true;
 			key_status->release=false;
 			key_status->event_dispatched=false;
@@ -191,7 +192,7 @@ void PollingGPIOKeyStatus(uint8_t pin,GPIO_KEY_STATUS *key_status)
 		
 		if(key_status->press_count > GPIO_KEY_STATUS_LONG_PRESS_PERIOD && key_status->pressed)
 		{
-			key_status->key = hal_get_gpio_key_mask_code(pin);//key_status->key | GetGPIOKeyMask(pin);
+			//key_status->key = hal_get_gpio_key_mask_code(pin);//key_status->key | GetGPIOKeyMask(pin);
 			key_status->pressed=true;
 			key_status->release=false;
 			key_status->event_dispatched=false;
@@ -199,7 +200,7 @@ void PollingGPIOKeyStatus(uint8_t pin,GPIO_KEY_STATUS *key_status)
 		}	
 		if(key_status->press_count > GPIO_KEY_STATUS_LONG_LONG_PRESS_PERIOD && key_status->pressed)
 		{
-			key_status->key = hal_get_gpio_key_mask_code(pin);//key_status->key | GetGPIOKeyMask(pin);
+			//key_status->key = hal_get_gpio_key_mask_code(pin);//key_status->key | GetGPIOKeyMask(pin);
 			key_status->pressed=true;
 			key_status->release=false;
 			key_status->event_dispatched=false;
@@ -242,17 +243,31 @@ GPIO_KEY_STATUS* get_key_status_by_key(uint8_t key)
 	size_t array_size = sizeof(gpio_key_array) / sizeof(gpio_key_array[0]); 
   for (size_t i = 0; i < array_size; i++) 
 	{
-        if (gpio_key_array[i]->key == key) {
-            return gpio_key_array[i]; 
-        }
+     if (gpio_key_array[i]->key == key) {
+        return gpio_key_array[i]; 
+     }
   }
-    return NULL; 
+  return NULL; 
 }
 
 bool IsAccOn(void)
 {
 	return GPIO_PIN_READ_ACC();
 }
+
+bool IsPowerOn(void)
+{
+	return GPIO_PIN_READ(GPIO_POWER_F113_GROUP,GPIO_POWER_F113_PIN);
+}
+
+void power_on_off(bool onoff)
+{
+	if(onoff)
+		GPIO_PIN_WRITE(GPIO_POWER_F113_GROUP,GPIO_POWER_F113_PIN,Bit_SET);
+	else
+		GPIO_PIN_WRITE(GPIO_POWER_F113_GROUP,GPIO_POWER_F113_PIN,Bit_RESET);
+}
+
 /*
 bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff)
 {

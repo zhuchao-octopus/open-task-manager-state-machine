@@ -121,7 +121,12 @@ void dispatch_can_message(const CAN_Message_t *msg);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-
+void app_can_init_running(void);
+void app_can_start_running(void);
+void app_can_assert_running(void);
+void app_can_running(void);
+void app_can_post_running(void);
+void app_can_stop_running(void);
 
 #ifdef __cplusplus
 }
