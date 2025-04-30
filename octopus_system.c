@@ -24,6 +24,7 @@
 #include "octopus_system.h"
 #include "octopus_tickcounter.h"
 #include "octopus_msgqueue.h"
+#include "octopus_flash_hal.h"
 
 /*******************************************************************************
  * Debug Switch Macros
@@ -95,6 +96,8 @@ void app_system_init_running(void)
 void app_system_start_running(void)
 {
     LOG_LEVEL("app_system_start_running\r\n");
+	  hal_flash_read(0x00000000,(uint8_t *)app_carinfo_get_meter_info(),sizeof(carinfo_meter_t)); 
+	  LOG_BUFF_LEVEL((uint8_t *)app_carinfo_get_meter_info(),sizeof(carinfo_meter_t));
     OTMS(TASK_ID_SYSTEM, OTMS_S_ASSERT_RUN);
 }
 
@@ -354,6 +357,15 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         }
     }
 
+		if (SOC_TO_MCU_MOD_SYSTEM == payload->frame_type)
+		{ 
+			  if(CMD_MODSYSTEM_SAVE_DATA == payload->cmd)
+				{
+					 LOG_LEVEL("CMD_MODSYSTEM_SAVE_DATA ... \r\n");
+           hal_flash_save(0x00000000,(uint8_t *)app_carinfo_get_meter_info(),sizeof(carinfo_meter_t)); 
+				}
+		}
+		
     return false; // Command not processed
 }
 

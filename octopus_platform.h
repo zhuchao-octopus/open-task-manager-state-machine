@@ -65,6 +65,7 @@
 #include <string.h>  // String manipulation functions
 #include <assert.h>  // Debugging support for assertions
 #include <time.h>    // Time manipulation functions
+#include <stdlib.h>  // for rand()
 #include "octopus_log.h"       			// Include logging functions for debugging
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
@@ -116,7 +117,7 @@
 //#include "../HAL/octopus_serialport_c.h"
 
 #else 
-#include "../src/devices_uart.h"
+#include "../src/native_devices.h"
 #endif
 
 #ifdef __cplusplus

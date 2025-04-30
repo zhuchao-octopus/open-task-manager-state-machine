@@ -112,7 +112,7 @@ static uint8_t l_u8_next_empty_module = 0;                    // Index for the n
 void ptl_help(void)
 {
     uint8_t tmp[2] = {0};
-    LOG_LEVEL("app ptl help guide\r\n");
+    //LOG_LEVEL("app ptl help guide\r\n");
 
     tmp[0] = 0x00;
     ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
@@ -271,19 +271,24 @@ void ptl_build_frame_header(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, ui
 {
     // Assert that the process buffer pointer is not NULL
     MY_ASSERT(proc_buff);
-
-    // Optimize the check: if SOC_TO_MCU_MOD_START is 0, skip unnecessary comparison
-    if (SOC_TO_MCU_MOD_START > 0 && frame_type >= SOC_TO_MCU_MOD_START) {
-        // If the frame type is greater than or equal to SOC_TO_MCU_MOD_START, set the header to SOC_TO_MCU_PTL_HEADER
-        proc_buff->buff[0] = SOC_TO_MCU_PTL_HEADER;
-    } else if (MCU_TO_SOC_MOD_START > 0 && frame_type >= MCU_TO_SOC_MOD_START) {
-        // If the frame type is greater than or equal to MCU_TO_SOC_MOD_START, set the header to MCU_TO_SOC_PTL_HEADER
-        proc_buff->buff[0] = MCU_TO_SOC_PTL_HEADER;
-    } else {
-        // If the frame type does not meet any above conditions, set the header to DBG_PTL_HEADER
-        proc_buff->buff[0] = DBG_PTL_HEADER;
-    }
-
+    #ifdef TASK_MANAGER_STATE_MACHINE_MCU
+			proc_buff->buff[0] = MCU_TO_SOC_PTL_HEADER;
+	  #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
+			proc_buff->buff[0] = SOC_TO_MCU_PTL_HEADER;
+	  #else
+			// Optimize the check: if SOC_TO_MCU_MOD_START is 0, skip unnecessary comparison
+			if (frame_type >= SOC_TO_MCU_MOD_START) {
+			// If the frame type is greater than or equal to SOC_TO_MCU_MOD_START, set the header to SOC_TO_MCU_PTL_HEADER
+			proc_buff->buff[0] = SOC_TO_MCU_PTL_HEADER;
+			} else if (frame_type >= MCU_TO_SOC_MOD_START) {
+			// If the frame type is greater than or equal to MCU_TO_SOC_MOD_START, set the header to MCU_TO_SOC_PTL_HEADER
+			proc_buff->buff[0] = MCU_TO_SOC_PTL_HEADER;
+			} else {
+			// If the frame type does not meet any above conditions, set the header to DBG_PTL_HEADER
+			//proc_buff->buff[0] = DBG_PTL_HEADER;
+			}
+    #endif
+		
     // Store the frame type at position 1 of the buffer
     proc_buff->buff[1] = frame_type;
 
@@ -383,7 +388,6 @@ void ptl_tx_event_message_handler(void)
                 // DBG("[ ] msg_id:%02x cmd:%02x\r\n", (uint8_t)msg->id, (uint8_t)msg->param1);
                 LOG_BUFF(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
 #endif
-
                 ptl_hal_tx(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
             }
         }

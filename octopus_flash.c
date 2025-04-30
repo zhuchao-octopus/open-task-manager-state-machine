@@ -39,6 +39,6 @@ void FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t len)
 
 void FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t len)
 {
-
+	hal_flash_write_buff(addr,buf,len);
 }
 

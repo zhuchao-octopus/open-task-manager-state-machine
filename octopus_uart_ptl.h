@@ -109,9 +109,10 @@ extern "C"
         CMD_MODSYSTEM_HANDSHAKE = 0x00, ///< System handshake
         CMD_MODSYSTEM_ACC_STATE = 0x01, ///< ACC state
         CMD_MODSYSTEM_APP_STATE = 0x02, ///< Application state
-        CMD_MODSYSTEM_POWER_ON = 0x03,  ///< Power on
+        CMD_MODSYSTEM_POWER_ON 	= 0x03,  ///< Power on
         CMD_MODSYSTEM_POWER_OFF = 0x04, ///< Power off
-
+				CMD_MODSYSTEM_SAVE_DATA = 0x05, ///< Power off
+			
         /* MOD_UPDATE commands */
         CMD_MODUPDATE_CHECK_FW_STATE = 0x06,  ///< Check firmware state
         CMD_MODUPDATE_UPDATE_FW_STATE = 0x07, ///< Update firmware state
@@ -130,8 +131,10 @@ extern "C"
         CMD_MODMETER_SOC = 0x10,          ///< State of charge (SOC)
 
         /* MOD_INDICATOR commands */
+				
         CMD_MODINDICATOR_INDICATOR = 0x11,  ///< Indicator status
-        CMD_MODINDICATOR_ERROR_INFO = 0x12, ///< Error information
+				CMD_MODINDICATOR_METER = 0x12,  		///< Indicator status
+        CMD_MODINDICATOR_ERROR_INFO = 0x13, ///< Error information
 
         /* MOD_DRIV_INFO commands */
         CMD_MODDRIVINFO_ODO = 0x14,             ///< Odometer data
