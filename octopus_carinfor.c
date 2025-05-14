@@ -106,8 +106,8 @@ carinfo_error_t lt_carinfo_error;
 
 // Timer variables
 // static uint32_t l_t_msg_wait_meter_timer; // Timer for 10 ms message wait (not used currently)
-static uint32_t l_t_msg_wait_50_timer; // Timer for 50 ms message wait
-// static uint32_t l_t_msg_wait_100_timer;   // Timer for 100 ms message wait
+static uint32_t l_t_msg_wait_50_timer;  // Timer for 50 ms message wait
+static uint32_t l_t_msg_car_trip_timer; // Timer for 100 ms message wait
 
 static uint32_t l_t_soc_timer; // Timer for state of charge monitoring
 
@@ -139,6 +139,11 @@ void app_carinfo_start_running(void)
 {
     LOG_LEVEL("app_carinfo_start_running\r\n");
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_ASSERT_RUN);
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+    lt_carinfo_indicator.ready = 1; // ready flag
+    lt_carinfo_meter.trip_distance = 0;
+    lt_carinfo_meter.ride_time = 0;
+#endif
 }
 
 void app_carinfo_assert_running(void)
@@ -146,7 +151,6 @@ void app_carinfo_assert_running(void)
     ptl_reqest_running(MCU_TO_SOC_MOD_CARINFOR);
     // ptl_reqest_running(MCU_TO_SOC_MOD_INDICATOR);
     // ptl_reqest_running(MCU_TO_SOC_MOD_DRIV_INFO);
-    // StartTickCounter(&l_t_msg_wait_meter_timer);
     StartTickCounter(&l_t_msg_wait_50_timer);
     // StartTickCounter(&l_t_msg_wait_100_timer);
     StartTickCounter(&l_t_soc_timer);
@@ -259,7 +263,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
     MY_ASSERT(payload); // Ensure the payload pointer is valid
     MY_ASSERT(ackbuff); // Ensure the ack buffer pointer is valid
     // Handle M2A (Module to Application) frames — actual data updates
-    //LOG_LEVEL("payload->frame_type=%d payload->data_len=%d\r\n",payload->frame_type, payload->data_len);
+    // LOG_LEVEL("payload->frame_type=%d payload->data_len=%d\r\n",payload->frame_type, payload->data_len);
     if (MCU_TO_SOC_MOD_CARINFOR == payload->frame_type)
     {
         switch (payload->cmd)
@@ -307,7 +311,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             }
             else
             {
-                LOG_LEVEL("wrong error status data payload->data_len=%d sizeof(carinfo_error_t)=%d\r\n", payload->data_len,sizeof(carinfo_error_t));
+                LOG_LEVEL("wrong error status data payload->data_len=%d sizeof(carinfo_error_t)=%d\r\n", payload->data_len, sizeof(carinfo_error_t));
             }
             break;
         default:
@@ -321,13 +325,41 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Calculate the distance traveled based on speed and time.
+ *
+ * @param speedKmh Speed in kilometers per hour (km/h)
+ * @param timeSec Time in seconds (s)
+ * @return double Distance traveled in kilometers (km)
+ */
+double CalculateDistance(double speedKmh, double timeSec)
+{
+    if (speedKmh <= 0)
+        return 0;
+    // Convert speed from km/h to km/s (divide by 3600)
+    double speedKms = speedKmh / 3600.0;
+    // Distance = Speed * Time
+    return speedKms * timeSec;
+}
 
 void app_car_controller_msg_handler(void)
 {
-
+    uint32_t trip_timer = 0;
+    uint32_t trip_distances = 0;
     Msg_t *msg = get_message(TASK_ID_CAR_INFOR);
     if (msg->id == NO_MSG)
     {
+        trip_timer = GetTickCounter(&l_t_msg_car_trip_timer);
+        if (trip_timer > 2000)
+        {
+            trip_timer = trip_timer / 1000;
+            trip_distances = CalculateDistance(lt_carinfo_meter.speed, trip_timer);
+
+            lt_carinfo_meter.ride_time = lt_carinfo_meter.ride_time + trip_timer;
+            lt_carinfo_meter.trip_distance = lt_carinfo_meter.trip_distance + trip_distances;
+            lt_carinfo_meter.odo = lt_carinfo_meter.odo + trip_distances;
+            RestartTickCounter(&l_t_msg_car_trip_timer);
+        }
         return;
     }
     if (MCU_TO_SOC_MOD_CARINFOR == msg->id)
@@ -338,6 +370,14 @@ void app_car_controller_msg_handler(void)
             send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, 0);
             break;
         case CMD_MOD_CARINFOR_METER:
+            if ((lt_carinfo_meter.speed_actual > 0) && !IsTickCounterStart(&l_t_msg_car_trip_timer))
+            {
+                StartTickCounter(&l_t_msg_car_trip_timer);
+            }
+            else
+            {
+                StopTickCounter(&l_t_msg_car_trip_timer);
+            }
             send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_METER, 0);
             break;
         case CMD_MOD_CARINFOR_BATTERY:
@@ -351,12 +391,33 @@ void app_car_controller_msg_handler(void)
         }
     }
 }
-// 添加错误代码
-void app_carinfo_add_error_code(ERROR_CODE code)
+// ERROR_CODE_IDLE = 0X00,                                      // 无动作
+// ERROR_CODE_NORMAL = 0X01,                                    // 正常状态
+// ERROR_CODE_BRAKE = 0X03,                                     // 已刹车
+// ERROR_CODE_THROTTLE_NOT_ZERO = 0X04,                         // 转把没有归位（停在高位处）
+// ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY = 0X05,           // 转把故障
+// ERROR_CODE_LOW_VOLTAGE_PROTECTION = 0X06,                    // 低电压保护
+// ERROR_CODE_OVER_VOLTAGE_PROTECTION = 0X07,                   // 过电压保护
+// ERROR_CODE_HALLSENSOR_ABNORMALITY = 0X08,                    // 电机霍尔信号线故障
+// ERROR_CODE_MOTOR_ABNORMALITY = 0X09,                         // 电机相线故障
+// ERROR_CODE_CONTROLLER_OVERHEAT = 0X10,                       // 控制器温度高已达到保护点
+// ERROR_CODE_CONTROLLER_TEMPERATURE_SENSOR_ABNORMALITY = 0X11, // 控制器温度传感器故障
+// ERROR_CODE_CURRENT_SENSOR_ABNORMALITY = 0X12,                // 电流传感器故障
+// ERROR_CODE_BATTERY_OVERHEAT = 0X13,                          // 电池内温度故障
+// ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY = 0X14,      // 电机内温度传感器故障
+// ERROR_CODE_CONTROLLER_ABNORMALITY = 0X15,                    // 控制器故障
+// ERROR_CODE_ASSIST_POWER_SENSOR_ABNORMALITY = 0X16,           // 助力传感器故障
+// ERROR_CODE_SPEED_SENSOR_ABNORMALITY = 0X21,                  // 速度传感器故障
+// ERROR_CODE_BMS_ABNORMALITY = 0X22,                           // BMS通讯故障
+// ERROR_CODE_LAMP_ABNORMALITY = 0X23,                          // 大灯故障
+// ERROR_CODE_LAMP_SENSOR_ABNORMALITY = 0X24,                   // 大灯传感器故障
+// ERROR_CODE_COMMUNICATION_ABNORMALITY = 0X30,                 // 通讯故障
+//  添加错误代码
+void app_carinfo_add_error_code(ERROR_CODE error_code)
 {
-    if (code != app_carinfo_get_top_error_code())
+    if (error_code != lt_carinfo_error.error[0])
     {
-        if (code >= ERROR_CODE_BEGIN && code <= ERROR_CODE_END)
+        if (error_code >= ERROR_CODE_BEGIN && error_code <= ERROR_CODE_END)
         {
             // 历史故障信息顺位下移
             for (int i = 0; i < ERROR_CODE_COUNT - 1; i++)
@@ -364,16 +425,75 @@ void app_carinfo_add_error_code(ERROR_CODE code)
                 lt_carinfo_error.error[i + 1] = lt_carinfo_error.error[i];
             }
             // 插入置顶的最新故障信息
-            lt_carinfo_error.error[0] = code;
+            lt_carinfo_error.error[0] = error_code;
         }
     }
     /// theIndicatorFlag.error = true;
-}
+    /// notify send error status
+    if (error_code < ERROR_CODE_BEGIN)
+    {
+        lt_carinfo_error.ecuFault = 0;
+        lt_carinfo_error.sensorFault = 0;
+        lt_carinfo_error.motorFault = 0;
+        lt_carinfo_error.fuse_fault = 0;
+        lt_carinfo_error.plug_fault = 0;
+        lt_carinfo_error.battery_fault = 0;
+        lt_carinfo_error.brake_fault = 0;
+        lt_carinfo_error.throttle_fault = 0;
+        send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR);
+    }
+    switch (error_code)
+    {
+    case ERROR_CODE_IDLE:
+    case ERROR_CODE_NORMAL:
+        break;
 
-// 获取置顶的错误代码
-uint8_t app_carinfo_get_top_error_code(void)
-{
-    return lt_carinfo_error.error[0];
+    case ERROR_CODE_THROTTLE_NOT_ZERO:
+    case ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY:
+        lt_carinfo_error.throttle_fault = lt_carinfo_error.error[0];
+        send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR); // CMD_MOD_CARINFOR_ERROR
+        break;
+
+    case ERROR_CODE_HALLSENSOR_ABNORMALITY:
+    case ERROR_CODE_MOTOR_ABNORMALITY:
+    case ERROR_CODE_CONTROLLER_ABNORMALITY:
+        lt_carinfo_error.motorFault = lt_carinfo_error.error[0];
+        send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR); // CMD_MOD_CARINFOR_ERROR
+        break;
+
+    case ERROR_CODE_BATTERY_OVERHEAT:
+        lt_carinfo_error.battery_fault = lt_carinfo_error.error[0];
+        lt_carinfo_error.fuse_fault = lt_carinfo_error.error[0];
+        send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR); // CMD_MOD_CARINFOR_ERROR
+        break;
+
+    case ERROR_CODE_LOW_VOLTAGE_PROTECTION:
+    case ERROR_CODE_OVER_VOLTAGE_PROTECTION:
+        lt_carinfo_error.plug_fault = lt_carinfo_error.error[0];
+        send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR); // CMD_MOD_CARINFOR_ERROR
+        break;
+
+    case ERROR_CODE_CONTROLLER_OVERHEAT:
+    case ERROR_CODE_CONTROLLER_TEMPERATURE_SENSOR_ABNORMALITY:
+    case ERROR_CODE_CURRENT_SENSOR_ABNORMALITY:
+    case ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY:
+    case ERROR_CODE_ASSIST_POWER_SENSOR_ABNORMALITY:
+    case ERROR_CODE_SPEED_SENSOR_ABNORMALITY:
+    case ERROR_CODE_LAMP_SENSOR_ABNORMALITY:
+        lt_carinfo_error.sensorFault = lt_carinfo_error.error[0];
+        send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR); // CMD_MOD_CARINFOR_ERROR
+        break;
+
+    case ERROR_CODE_LAMP_ABNORMALITY:
+    case ERROR_CODE_COMMUNICATION_ABNORMALITY:
+    case ERROR_CODE_BMS_ABNORMALITY:
+        lt_carinfo_error.ecuFault = lt_carinfo_error.error[0];
+        send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR); // CMD_MOD_CARINFOR_ERROR
+        break;
+
+    default:
+        break;
+    }
 }
 
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF

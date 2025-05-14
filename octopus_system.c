@@ -299,8 +299,9 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         switch (payload->cmd)
         {
         case CMD_MODSYSTEM_HANDSHAKE:
-            LOG_LEVEL("system got handshake from xxx payload->frame_type=%02x\r\n",payload->frame_type);
+            LOG_LEVEL("system got handshake from mcu payload->frame_type=%02x\r\n",payload->frame_type);
             //ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
+				     
             return false;
 
         case CMD_MODSYSTEM_ACC_STATE:
@@ -342,8 +343,9 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 			 switch (payload->cmd)
         {
         case CMD_MODSYSTEM_HANDSHAKE:
-            LOG_LEVEL("system got handshake from xxx payload->frame_type=%02x\r\n",payload->frame_type);
+            LOG_LEVEL("system got handshake from soc payload->frame_type=%02x\r\n",payload->frame_type);
             //ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
+				    send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, 0);//after got handshake then send indicate respond
             return false; 
 				 default:
             break;
@@ -434,3 +436,4 @@ mb_state_t system_get_mb_state(void)
 {
     return lt_mb_state;
 }
+

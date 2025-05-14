@@ -684,7 +684,7 @@ void ptl_1_hal_tx(uint8_t *data, uint16_t length)
 {
     // Send the processed data over UART
 #ifdef TEST_LOG_DEBUG_PTL_TX_FRAME
-    LOG_LEVEL("data[%d] = ", length);
+    LOG_LEVEL("data[%02d] ", length);
     LOG_BUFF(data, length);
 #endif
     hal_com_uart_send_buffer_1(data, length);

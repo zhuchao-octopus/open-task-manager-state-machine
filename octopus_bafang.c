@@ -605,16 +605,11 @@ bool proc_protocol_frame_system_state(uint8_t* buff, int count)
             {
                 lt_carinfo_indicator.brake = true;
 							  send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR);//CMD_MOD_CARINFOR_INDICATOR	
-            }
-            else if (code >= ERROR_CODE_BEGIN && code <= ERROR_CODE_END)
-            {
-                app_carinfo_add_error_code(code);
-							  send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR);	
-							  send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR);	//CMD_MOD_CARINFOR_ERROR
-            }
+            }    					
 						else
 						{
-								//send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR);	
+							 send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR);//CMD_MOD_CARINFOR_INDICATOR	
+							 app_carinfo_add_error_code(code);		
 						}
 					
             return true;
