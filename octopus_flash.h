@@ -12,8 +12,14 @@
 #ifndef __OCTOPUS_TASK_MANAGER_FLASH_H__
 #define __OCTOPUS_TASK_MANAGER_FLASH_H__
 
-#include "octopus_platform.h"  ///< Include platform-specific configurations
+#include "octopus_platform.h"   ///< Include platform-specific configurations
 #include "octopus_flash_hal.h"  ///< Include Flash Hardware Abstraction Layer (HAL) for low-level operations
+
+#define EEROM_DATAS_ADDRESS_VALID_FLAG  (0xaa55)
+#define EEROM_START_ADDRESS        			(0x0000)
+#define EEROM_DATAS_ADDRESS         			(EEROM_START_ADDRESS + 4)
+#define CARINFOR_METER_EE_READ_ADDRESS  (EEROM_DATAS_ADDRESS + 0)
+
 
 #ifdef __cplusplus
 extern "C" {

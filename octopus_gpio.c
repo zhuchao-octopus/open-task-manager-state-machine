@@ -45,7 +45,7 @@
 void GPIOInit(void);
 void PollingGPIOStatus(GPIO_GROUP *gpiox,uint16_t pin, GPIO_STATUS *gpio_status);
 void PollingGPIOKeyStatus(GPIO_GROUP *gpiox,uint16_t pin,GPIO_KEY_STATUS *key_status);
-void ProcessKeyEvent(GPIO_KEY_STATUS *key_status);
+void ProcessKeyDispatchedEvent(GPIO_KEY_STATUS *key_status);
 
 static uint32_t           l_t_msg_wait_50_timer;
  
@@ -99,8 +99,7 @@ void app_gpio_running(void)
 			//PollingGPIOStatus(GPIO_YZD_PIN,&yzd_status);
 			//PollingGPIOStatus(GPIO_SKD_PIN,&skd_status);
 			PollingGPIOKeyStatus(GPIO_POWER_GROUP,GPIO_POWER_PIN,&key_status_power);
-		 
-      ProcessKeyEvent(&key_status_power);
+      ProcessKeyDispatchedEvent(&key_status_power);
 		  //////////////////////////////////////////////////////////////////////////////////////////////////////
 		  //////////////////////////////////////////////////////////////////////////////////////////////////////
 		  //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -269,7 +268,8 @@ void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_
         {
             key_status->pressed = true;
             key_status->release = false;
-            key_status->event_dispatched = false;
+            key_status->dispatched = false;
+						key_status->ignore = false;
             key_status->state = KEY_STATE_PRESSED;
         }
 
@@ -278,7 +278,7 @@ void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_
         {
             key_status->pressed = true;
             key_status->release = false;
-            key_status->event_dispatched = false;
+            key_status->dispatched = false;
             key_status->state = KEY_STATE_LONG_PRESSED;
         }
 
@@ -287,7 +287,7 @@ void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_
         {
             key_status->pressed = true;
             key_status->release = false;
-            key_status->event_dispatched = false;
+            key_status->dispatched = false;
             key_status->state = KEY_STATE_LONG_LONG_PRESSED;
         }
     }
@@ -297,7 +297,7 @@ void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_
         if (key_status->pressed)
         {
             key_status->release = true;
-            key_status->event_dispatched = false;
+            key_status->dispatched = false;
         }
 
         // Reset the pressed status and the counter
@@ -316,10 +316,10 @@ void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_
  *
  * @param key_status Pointer to the `GPIO_KEY_STATUS` structure representing the key's status.
  */
-void ProcessKeyEvent(GPIO_KEY_STATUS *key_status)
+void ProcessKeyDispatchedEvent(GPIO_KEY_STATUS *key_status)
 {
-    // Check if the event has not been dispatched already
-    if (!key_status->event_dispatched)
+    // Check if the event has not been dispatched already or is ignored by user
+    if (!key_status->dispatched && !key_status->ignore)
     {
         // If the key is in the "pressed" state, send a "key down" event
         if (key_status->pressed)
@@ -330,10 +330,11 @@ void ProcessKeyEvent(GPIO_KEY_STATUS *key_status)
              * key_status->key        - The key identifier.
              * KEY_STATE_PRESSED      - The current state of the key.
              */
+					  
             send_message(TASK_ID_KEY, MSG_DEVICE_KEY_DOWN_EVENT, key_status->key, KEY_STATE_PRESSED);
 
             // Mark the event as dispatched to prevent duplicate messages
-            key_status->event_dispatched = true;
+            key_status->dispatched = true;
         }
         // If the key is in the "release" state, send a "key up" event
         else if (key_status->release)
@@ -347,7 +348,7 @@ void ProcessKeyEvent(GPIO_KEY_STATUS *key_status)
             send_message(TASK_ID_KEY, MSG_DEVICE_KEY_UP_EVENT, key_status->key, KEY_STATE_RELEASED);
 
             // Mark the event as dispatched to prevent duplicate messages
-            key_status->event_dispatched = true;
+            key_status->dispatched = true;
         }
     }
 }

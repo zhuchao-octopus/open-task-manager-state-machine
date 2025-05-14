@@ -10,6 +10,7 @@
 #include "octopus_tickcounter.h"
 #include "octopus_msgqueue.h"
 #include "octopus_gpio.h"   // Include GPIO HAL for hardware-specific functionality
+#include "octopus_carinfor.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
 */
@@ -36,7 +37,7 @@ static void app_do_key_action_hanlder(void);
 
 void KeySendKeyCodeEvent(uint8_t key_code, uint8_t key_state);
 void app_goto_bootloader(void);
-void power_onoff_f113(void);
+void polling_power_onoff_soc(void);
 
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
@@ -125,8 +126,15 @@ static void app_do_key_action_hanlder(void)
 					 }			 
 					 break;		
          case OCTOPUS_KEY_POWER:
-					 LOG_LEVEL("key OCTOPUS_KEY_POWER pressed key=%d key_status=%d\r\n",key,msg->param2);
-					 power_onoff_f113();
+					 if(key_status->long_press_duration >= GPIO_KEY_STATUS_LONG_LONG_PRESS_PERIOD)
+					 {	 
+						 if(!key_status->ignore)
+						 {
+								LOG_LEVEL("OCTOPUS_KEY_POWER long pressed key=%d key_status=%d\r\n",key,msg->param2);
+								polling_power_onoff_soc();
+								key_status->ignore=true;
+						 }
+					 }
 					break;
 			}	
   }		
@@ -169,10 +177,13 @@ void app_goto_bootloader(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
-void power_onoff_f113(void)
+void polling_power_onoff_soc(void)
 {
 	if(IsPowerOn())
 	{
+		#ifdef USE_EEROM_FOR_DATA_SAVING
+			carinfor_save_to_flash();
+		#endif
 		power_on_off(false);
 		LOG_LEVEL("power down f133 soc\r\n");
 	}

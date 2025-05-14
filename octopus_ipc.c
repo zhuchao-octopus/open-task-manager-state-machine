@@ -228,9 +228,9 @@ bool ipc_socket_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
         {
         case CMD_MODSYSTEM_SAVE_DATA:
 					  lt_carinfo_meter.unit_type = payload->data[0];
-					  LOG_BUFF_LEVEL((uint8_t *)app_carinfo_get_meter_info(),sizeof(carinfo_meter_t));
-					  E2ROMWriteBuffTo(0,(uint8_t*)&lt_carinfo_meter,sizeof(carinfo_meter_t));
-				    
+				    #ifdef USE_EEROM_FOR_DATA_SAVING
+					  carinfor_save_to_flash();
+				    #endif
 						return true;
         case CMD_MODCAR_SET_LIGHT:
 				    if(payload->data[0] ==1)

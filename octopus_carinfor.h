@@ -429,11 +429,13 @@ extern "C"
     // void car_indicator_proc_turn_signal(void);
     // void car_meter_proc_speed_rpm(void);
     void app_carinfo_add_error_code(ERROR_CODE error_code);
+		void carinfor_save_to_flash(void);
 
     extern carinfo_meter_t lt_carinfo_meter;         // Local meter data structure
     extern carinfo_indicator_t lt_carinfo_indicator; // Local indicator data structure
     extern carinfo_battery_t lt_carinfo_battery;
     extern carinfo_error_t lt_carinfo_error;
+		
 
 #ifdef __cplusplus
 }

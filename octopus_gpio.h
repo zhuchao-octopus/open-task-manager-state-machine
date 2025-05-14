@@ -44,10 +44,12 @@ typedef struct {
     uint8_t key;             			///< The GPIO key identifier.
     bool pressed;            			///< Whether the key is currently pressed.
     bool release;           			///< Whether the key has been released.
-    bool event_dispatched;   			///< Whether the key event has been dispatched.
+    bool dispatched;   			///< Whether the key event has been dispatched.
+	  bool ignore;                  ///ignore the key until press again
 	  uint8_t state;
     uint8_t long_press_duration ; ///< Duration for long-press detection.
     uint8_t press_count;     			///< Counter for tracking press actions.
+	 
 } GPIO_KEY_STATUS;
 
 /*******************************************************************************
