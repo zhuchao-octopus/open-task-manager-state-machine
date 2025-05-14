@@ -181,16 +181,17 @@ void polling_power_onoff_soc(void)
 {
 	if(IsPowerOn())
 	{
+		LOG_LEVEL("power down f133 soc\r\n");
 		#ifdef USE_EEROM_FOR_DATA_SAVING
 			carinfor_save_to_flash();
 		#endif
-		power_on_off(false);
-		LOG_LEVEL("power down f133 soc\r\n");
+		send_message(TASK_ID_SYSTEM, MSG_DEVICE_POWER_EVENT, CMD_MODSYSTEM_POWER_OFF, 0);
+		power_on_off(false);	
 	}
 	else
 	{
-		power_on_off(true);
 		LOG_LEVEL("power on f133 soc\r\n");
+		power_on_off(true);
 	}
 }
 

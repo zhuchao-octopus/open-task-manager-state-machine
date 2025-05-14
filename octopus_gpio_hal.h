@@ -124,11 +124,14 @@ typedef GPIO_TypeDef GPIO_GROUP;
 #define GPIO_YZD_PIN                        (0x00) /**< YZD pin */
 #define GPIO_SKD_PIN                        (0x00) /**< SKD pin */
 
-#define GPIO_POWER_GROUP GPIOA
-#define GPIO_POWER_PIN GPIO_Pin_12
+#define GPIO_POWER_KEY_GROUP GPIOA
+#define GPIO_POWER_KEY_PIN GPIO_Pin_12
+
+#define GPIO_SWB_GROUP GPIOB
+#define GPIO_SWB_PIN   GPIO_Pin_4
 
 #define GPIO_POWER_F113_GROUP GPIOB
-#define GPIO_POWER_F113_PIN GPIO_Pin_4
+#define GPIO_POWER_F113_PIN   GPIO_Pin_4
 // Macros for controlling GPIO pin states (Low/High)
 #define GPIO_ACC_SOC_LOW()                  // Set GPIO_ACC_SOC_PIN to Low
 #define GPIO_ACC_SOC_HIGH()                 // Set GPIO_ACC_SOC_PIN to High

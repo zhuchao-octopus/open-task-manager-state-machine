@@ -98,7 +98,7 @@ void app_gpio_running(void)
 			//PollingGPIOStatus(GPIO_ZZD_PIN,&zzd_status);
 			//PollingGPIOStatus(GPIO_YZD_PIN,&yzd_status);
 			//PollingGPIOStatus(GPIO_SKD_PIN,&skd_status);
-			PollingGPIOKeyStatus(GPIO_POWER_GROUP,GPIO_POWER_PIN,&key_status_power);
+			PollingGPIOKeyStatus(GPIO_POWER_KEY_GROUP,GPIO_POWER_KEY_PIN,&key_status_power);
       ProcessKeyDispatchedEvent(&key_status_power);
 		  //////////////////////////////////////////////////////////////////////////////////////////////////////
 		  //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -382,11 +382,6 @@ GPIO_KEY_STATUS* get_key_status_by_key(uint8_t key)
     return NULL;
 }
 
-bool IsAccOn(void)
-{
-	return GPIO_PIN_READ_ACC();
-}
-
 bool IsPowerOn(void)
 {
 	return GPIO_PIN_READ(GPIO_POWER_F113_GROUP,GPIO_POWER_F113_PIN);
@@ -400,6 +395,13 @@ void power_on_off(bool onoff)
 		GPIO_PIN_WRITE(GPIO_POWER_F113_GROUP,GPIO_POWER_F113_PIN,Bit_RESET);
 }
 
+void gpio_on_off(GPIO_GROUP *gpiox, uint16_t pin,bool onoff)
+{
+	if(onoff)
+		GPIO_PIN_WRITE(gpiox,pin,Bit_SET);
+	else
+		GPIO_PIN_WRITE(gpiox,pin,Bit_RESET);
+}
 /*
 bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff)
 {

@@ -78,8 +78,8 @@ void app_gpio_running(void);          ///< Manages GPIO tasks during runtime.
 void app_gpio_post_running(void);     ///< Handles post-processing of GPIO tasks.
 void app_gpio_stop_running(void);     ///< Stops GPIO tasks during runtime.
 
-bool IsAccOn(void);                    ///< Checks if the ACC (Accessory) pin is ON.
 GPIO_KEY_STATUS* get_key_status_by_key(uint8_t key);
+void gpio_on_off(GPIO_GROUP *gpiox, uint16_t pin,bool onoff);
 
 #ifdef __cplusplus
 }

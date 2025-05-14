@@ -132,6 +132,7 @@ void app_system_running(void)
 
     switch (msg->id)
     {
+
     case MSG_DEVICE_NORMAL_EVENT:
         break;
 
@@ -141,11 +142,15 @@ void app_system_running(void)
         break;
 
     case MSG_DEVICE_POWER_EVENT:
-				LOG_LEVEL("Event MSG_DEVICE_POWER_EVENT\r\n");
+				LOG_LEVEL("Got Event MSG_DEVICE_POWER_EVENT\r\n");
+		  #ifdef TASK_MANAGER_STATE_MACHINE_SOC
         if (msg->param1 == CMD_MODSYSTEM_POWER_ON)
             app_power_on_off(SYSTEM_POWER_ON_VALUE);
         else if (msg->param1 == CMD_MODSYSTEM_POWER_OFF)
             app_power_on_off(SYSTEM_POWER_OFF_VALUE);
+			#else
+				send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_SYSTEM, msg->param1, msg->param1);
+			#endif
         break;
     }
 }
@@ -316,6 +321,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             return true;
 
         case CMD_MODSYSTEM_POWER_OFF:
+					
             return false; // Acknowledgment, no action required
 
         case CMD_MODSETUP_UPDATE_TIME:
