@@ -2,11 +2,8 @@
 // Description: Implementation for CAN data dispatching and parsing logic
 // Author: ak47
 // Created: 2025-04-17
-
-#include "octopus_can.h"
-#include "octopus_carinfor.h"
-
 #include "octopus_platform.h"     // Include platform-specific header for hardware platform details
+#include "octopus_carinfor.h"
 #include "octopus_log.h"          // Include logging functions for debugging
 //#include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_gpio.h"
@@ -14,12 +11,14 @@
 #include "octopus_tickcounter.h"
 #include "octopus_msgqueue.h"
 
+#include "octopus_can.h"
 #include "can/can_queue.h"
 #include "can/can_message_rx.h"
 #include "can/can_message_tx.h"
 #include "can/can_message_l.h"
 
 #include "can/can_function.h"
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
 extern carinfo_meter_t lt_meter;         // Local meter data structure

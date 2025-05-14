@@ -55,8 +55,8 @@ void hal_flash_init(uint8_t task_id);
  */
 void hal_flash_read_to_buff(uint32_t startaddr, uint8_t *buffer, uint8_t length);
 void hal_flash_write_buff(uint32_t startaddr, uint8_t *buffer, uint8_t length);
-void hal_flash_save(uint32_t startaddr, uint8_t *buffer, uint8_t length);
-void hal_flash_read(uint32_t startaddr, uint8_t *buffer, uint8_t length);
+void hal_eeprom_save(uint32_t startaddr, uint8_t *buffer, uint8_t length);
+void hal_eeprom_read(uint32_t startaddr, uint8_t *buffer, uint8_t length);
 
 
 #ifdef __cplusplus

@@ -84,7 +84,6 @@ uint8_t GetTaskManagerStateMachineId(void)
  */
 void TaskManagerStateMachineInit(void)
 {
-
     LOG_NONE("---------------------------------------------------------------------------\r\n");
     LOG_NONE("               _____                                 \r\n");
     LOG_NONE(" ______ _________  /_______ ________ ____  __________\r\n");
@@ -94,16 +93,14 @@ void TaskManagerStateMachineInit(void)
     LOG_NONE("                            /_/                       \r\n");
     LOG_NONE(" Embedded Real-Time Task Scheduler + FSM Engine\r\n");
 
-		LOG_NONE(" Firmware  : v1.0.0\r\n");
-		LOG_NONE(" Compiled  : %s %s\r\n", __DATE__, __TIME__);
-		LOG_NONE(" Author    : Octopus Dev Team\r\n");
-		LOG_NONE("---------------------------------------------------------------------------\r\n");
-
+    LOG_NONE(" Firmware  : v1.0.0\r\n");
+    LOG_NONE(" Compiled  : %s %s\r\n", __DATE__, __TIME__);
+    LOG_NONE(" Author    : Octopus Dev Team\r\n");
+    LOG_NONE("---------------------------------------------------------------------------\r\n");
     TaskManagerStateMachine_Id_ = 0; // Store the task ID in the global variable
-    //LOG_NONE("\r\n\r\n");//[1B blob data]
-	  //printf("hello TaskManagerStateMachineInit");
-	  //LOG_NONE("\r\n#####################################BOOT  START#####################################\r\n");
+    /// LOG_NONE("\r\n\r\n");//[1B blob data]
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
+    //LOG_NONE("\r\n######################################BOOT  START######################################\r\n");
     TaskManagerStateStopRunning();
 #endif
     LOG_LEVEL("OTMS task_id :%02x initializing...\r\n", TaskManagerStateMachine_Id_);
@@ -117,7 +114,7 @@ void TaskManagerStateMachineInit(void)
     hal_timer_init(5); // Initialize timer with interval of 5 (could be milliseconds)
 #endif
     hal_flash_init(0);
-    hal_com_uart_init(0); // Initialize UART communication protocol
+    hal_uart_init(0); // Initialize UART communication protocol
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize the necessary modules
@@ -149,10 +146,11 @@ void TaskManagerStateMachineInit(void)
 #endif
 
 #if defined(PLATFORM_ITE_OPEN_RTOS) || defined(PLATFORM_LINUX_RISC)
-    TaskManagerStateGoRunning(void);
+    TaskManagerStateGoRunning();
 #endif
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     //LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
+	 LOG_NONE("---------------------------------------------------------------------------\r\n");
 }
 
 void exit_cleanup()

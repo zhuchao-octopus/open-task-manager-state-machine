@@ -51,6 +51,7 @@ extern "C"
         MSG_DEVICE_HANDSHAKE_EVENT = 0xA7,
         MSG_DEVICE_BLE_EVENT = 0xA8,
         MSG_DEVICE_CAN_EVENT = 0xA9,
+        MSG_DEVICE_CAR_INFOR_EVENT = 0xAA,
     } MsgId_t;
 
     /*******************************************************************************
@@ -58,13 +59,14 @@ extern "C"
      */
     typedef uint8_t msgid_t; // Message ID type
 
-#define QUEUE_LENGTH 100 // Maximum size of the message queue
+#define QUEUE_LENGTH 50 // Maximum size of the message queue
 #define NO_MSG 0xFF      // Constant for indicating no message
 
     /*******************************************************************************
      * MESSAGE STRUCTURE
      * Represents a message with an ID and two parameters.
      */
+#pragma pack(1)
     typedef struct
     {
         msgid_t id;      // The message identifier
@@ -82,16 +84,18 @@ extern "C"
         uint8_t nDeque;            // Index for the next message to be dequeued
         Msg_t queue[QUEUE_LENGTH]; // Array to store messages in the queue
     } MsgQueue_t;
-
+#pragma pack()
     /*******************************************************************************
      * FUNCTION PROTOTYPES
      * Functions for managing the message queues
      */
     Msg_t *get_message(TaskModule_t task_module);                                              // Retrieve a message from the task module's queue
     void send_message(TaskModule_t task_module, msgid_t id, uint16_t param1, uint16_t param2); // Send a message to the task module's queue
+   
     void clear_message(TaskModule_t task_module);                                              // Clear the task module's message queue
     void message_queue_init(void);                                                             // Initialize all message queues for the task manager
 
+    void send_message_adapter(uint16_t task_module, uint16_t id, uint16_t param1, uint16_t param2); // Send a message to the task module's queue
 #ifdef __cplusplus
 }
 #endif

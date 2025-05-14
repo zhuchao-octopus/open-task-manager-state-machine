@@ -50,9 +50,37 @@
 // #define PLATFORM_ITE_OPEN_RTOS   // Enable ITE platform with OPEN RTOS
 // #define PLATFORM_CST_OSAL_RTOS   // Uncomment to use CST platform with OSAL RTOS
 // #define PLATFORM_X86_WIND_RTOS   // Uncomment to use XB6 platform with WIND RTOS
+#define PLATFORM_STM32_RTOS
 // PLATFORM_LINUX_RISC         // X86 ARM linux
 
-/*******************************************************************************
+
+
+/********************************************************************************
+ * @brief Task Manager state machine modes.
+ */
+#define TASK_MANAGER_STATE_MACHINE_MCU 1 /**< Main control mode. */
+//#define TASK_MANAGER_STATE_MACHINE_SOC 1 /**< (Reserved) SOC mode. */
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
+//#define TASK_MANAGER_STATE_MACHINE_SIF 1 /**< Secondary interface mode. */
+//#define TASK_MANAGER_STATE_MACHINE_BLE 1 
+//#define TASK_MANAGER_STATE_MACHINE_BMS 1 
+//#define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
+#define TASK_MANAGER_STATE_MACHINE_PTL2 1 
+
+#define TASK_MANAGER_STATE_MACHINE_KEY 1 
+#define TASK_MANAGER_STATE_MACHINE_GPIO 1 
+
+//#define TASK_MANAGER_STATE_MACHINE_CAN 1 
+#define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
+
+#define TASK_MANAGER_STATE_MACHINE_IPC_SOCKET 1 
+
+///////////////////////////////////////////////////////////////////////////////////
+#define USE_EEROM_FOR_DATA_SAVING
+/***********************************************************************************
  * INCLUDE FILES
  * Include necessary standard libraries and platform-specific headers.
  ******************************************************************************/
@@ -66,7 +94,9 @@
 #include <assert.h>  // Debugging support for assertions
 #include <time.h>    // Time manipulation functions
 #include <stdlib.h>  // for rand()
+
 #include "octopus_log.h"       			// Include logging functions for debugging
+#include "octopus_uart_ptl_1.h"    // Include UART protocol header
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
 #include <sys/ioctl.h>         // System I/O control definitions
@@ -114,7 +144,7 @@
 #elif defined(PLATFORM_LINUX_RISC)
 #include <pthread.h>
 #include <unistd.h>
-//#include "../HAL/octopus_serialport_c.h"
+#include "../HAL/octopus_serialport_c.h"
 
 #else 
 #include "../src/native_devices.h"

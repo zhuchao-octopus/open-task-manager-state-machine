@@ -44,9 +44,6 @@
 static bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
-static bool debug_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
-static bool debug_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
-
 void app_power_on_off(bool onoff);
 
 /*******************************************************************************
@@ -78,7 +75,7 @@ void app_system_init_running(void)
     LOG_LEVEL("app_system_init_running\r\n");
     OTMS(TASK_ID_SYSTEM, OTMS_S_INVALID);
 
-    ptl_register_module(P2M_MOD_DEBUG, debug_send_handler, debug_receive_handler);
+    //ptl_register_module(P2M_MOD_DEBUG, debug_send_handler, debug_receive_handler);
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_register_module(MCU_TO_SOC_MOD_SYSTEM, system_send_handler, system_receive_handler);
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
@@ -96,8 +93,6 @@ void app_system_init_running(void)
 void app_system_start_running(void)
 {
     LOG_LEVEL("app_system_start_running\r\n");
-	  hal_flash_read(0x00000000,(uint8_t *)app_carinfo_get_meter_info(),sizeof(carinfo_meter_t)); 
-	  LOG_BUFF_LEVEL((uint8_t *)app_carinfo_get_meter_info(),sizeof(carinfo_meter_t));
     OTMS(TASK_ID_SYSTEM, OTMS_S_ASSERT_RUN);
 }
 
@@ -110,8 +105,6 @@ void app_system_start_running(void)
 void app_system_assert_running(void)
 {
     StartTickCounter(&l_t_msg_wait_10_timer);
-
-    ptl_reqest_running(P2M_MOD_DEBUG);
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_reqest_running(MCU_TO_SOC_MOD_SYSTEM);
@@ -140,7 +133,6 @@ void app_system_running(void)
     switch (msg->id)
     {
     case MSG_DEVICE_NORMAL_EVENT:
-        send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_INDICATOR, CMD_MODINDICATOR_INDICATOR, 0);
         break;
 
     case MSG_DEVICE_ACC_EVENT:
@@ -149,7 +141,7 @@ void app_system_running(void)
         break;
 
     case MSG_DEVICE_POWER_EVENT:
-				LOG_LEVEL("Event: MSG_DEVICE_POWER_EVENT\r\n");
+				LOG_LEVEL("Event MSG_DEVICE_POWER_EVENT\r\n");
         if (msg->param1 == CMD_MODSYSTEM_POWER_ON)
             app_power_on_off(SYSTEM_POWER_ON_VALUE);
         else if (msg->param1 == CMD_MODSYSTEM_POWER_OFF)
@@ -176,18 +168,6 @@ void app_system_stop_running(void)
  */
 void app_power_on_off(bool onoff)
 {
-    const char *power_state = onoff ? "on" : "off";
-    const char *acc_state = IsAccOn() ? "true" : "false";
-    LOG_LEVEL("power status=%s, acc=%s\r\n", power_state, acc_state);
-
-    if (onoff)
-    {
-        GPIO_ACC_SOC_HIGH();
-    }
-    else
-    {
-        GPIO_ACC_SOC_LOW();
-    }
 }
 /*******************************************************************************
  * FUNCTION: system_send_handler
@@ -216,9 +196,9 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         switch (param1)
         {
         case CMD_MODSYSTEM_HANDSHAKE:
-            tmp[0] = 0x55;
-            tmp[1] = 0xAA;
-            LOG_LEVEL("system handshake param1=%02x param2=%02x\n", tmp[0], tmp[1]);
+            tmp[0] = 0;
+            tmp[1] = 0;
+            LOG_LEVEL("system handshake frame_type=%02x param1=%02x param2=%02x\n",frame_type, tmp[0], tmp[1]);
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, buff);
             return true;
 
@@ -263,8 +243,8 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         switch (param1)
         {
         case CMD_MODSYSTEM_HANDSHAKE:
-            tmp[0] = 0xAA;
-            tmp[1] = 0x55;
+            tmp[0] = 0;
+            tmp[1] = 0;
             LOG_LEVEL("system handshake param1=%02x param2=%02x\n", tmp[0], tmp[1]);
             ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, buff);
             return true;
@@ -319,13 +299,13 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         switch (payload->cmd)
         {
         case CMD_MODSYSTEM_HANDSHAKE:
-            LOG_LEVEL("system got handshake from mcu Ok\r\n");
-            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
-            return true;
+            LOG_LEVEL("system got handshake from xxx payload->frame_type=%02x\r\n",payload->frame_type);
+            //ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
+            return false;
 
         case CMD_MODSYSTEM_ACC_STATE:
             LOG_LEVEL("CMD_MODSYSTEM_ACC_STATE\r\n");
-            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
+            //ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
             return false;
 
         case CMD_MODSYSTEM_APP_STATE:
@@ -356,34 +336,23 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             break;
         }
     }
-
-		if (SOC_TO_MCU_MOD_SYSTEM == payload->frame_type)
-		{ 
-			  if(CMD_MODSYSTEM_SAVE_DATA == payload->cmd)
-				{
-					 LOG_LEVEL("CMD_MODSYSTEM_SAVE_DATA ... \r\n");
-           hal_flash_save(0x00000000,(uint8_t *)app_carinfo_get_meter_info(),sizeof(carinfo_meter_t)); 
-				}
-		}
 		
+	  if (SOC_TO_MCU_MOD_SYSTEM == payload->frame_type)
+		 {
+			 switch (payload->cmd)
+        {
+        case CMD_MODSYSTEM_HANDSHAKE:
+            LOG_LEVEL("system got handshake from xxx payload->frame_type=%02x\r\n",payload->frame_type);
+            //ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
+            return false; 
+				 default:
+            break;
+				}
+		 }
+
     return false; // Command not processed
 }
 
-static bool debug_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
-{
-    return false;
-}
-
-static bool debug_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
-{
-    if (P2M_MOD_DEBUG == payload->frame_type)
-    {
-        LOG_LEVEL("debug_receive_handler\r\n");
-        /// ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, (uint8_t*)VER_STR, sizeof(VER_STR), ackbuff);
-        return true;
-    }
-    return false;
-}
 /*******************************************************************************
  * FUNCTION: system_handshake_with_mcu
  *
@@ -392,8 +361,8 @@ static bool debug_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
  ******************************************************************************/
 void system_handshake_with_mcu(void)
 {
-    LOG_LEVEL("system send handshake data to mcu\r\n");
-    send_message(TASK_ID_PTL, SOC_TO_MCU_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, 0);
+    LOG_LEVEL("system send handshake data to xxx\r\n");
+    send_message(TASK_ID_PTL_1, SOC_TO_MCU_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, 0);
 }
 
 /*******************************************************************************
@@ -404,8 +373,8 @@ void system_handshake_with_mcu(void)
  ******************************************************************************/
 void system_handshake_with_app(void)
 {
-    LOG_LEVEL("system send handshake data to app\r\n");
-    send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, 0);
+    LOG_LEVEL("system send handshake data to xxx\r\n");
+    send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, 0);
 }
 
 /*******************************************************************************

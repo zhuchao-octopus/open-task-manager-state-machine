@@ -9,7 +9,7 @@
 #include "octopus_key.h"
 #include "octopus_tickcounter.h"
 #include "octopus_msgqueue.h"
-
+#include "octopus_gpio.h"   // Include GPIO HAL for hardware-specific functionality
 /*******************************************************************************
  * DEBUG SWITCH MACROS
 */
@@ -116,7 +116,7 @@ static void app_do_key_action_hanlder(void)
 					 if(key_status->long_press_duration <= GPIO_KEY_STATUS_PRESS_PERIOD)
 					 {
 							param = MK_WORD(KEY_CODE_MENU,KEY_STATE_PRESSED);
-							send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_KEY, CMD_MODSETUP_KEY, param);
+							send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_KEY, CMD_MODSETUP_KEY, param);
 					 }	
 					 else if(key_status->long_press_duration >= GPIO_KEY_STATUS_LONG_LONG_PRESS_PERIOD)
 					 {	 
@@ -147,7 +147,7 @@ static void app_do_key_action_hanlder(void)
 					 if(key_status->long_press_duration >= GPIO_KEY_STATUS_LONG_PRESS_PERIOD)
 					 {
 							param = MK_WORD(KEY_CODE_MENU,KEY_STATE_LONG_PRESSED);
-							send_message(TASK_ID_PTL, MCU_TO_SOC_MOD_KEY, CMD_MODSETUP_KEY, param);
+							send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_KEY, CMD_MODSETUP_KEY, param);
 					 }			 	
 					 break;				 
 			}	

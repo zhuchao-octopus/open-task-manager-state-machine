@@ -113,7 +113,7 @@ extern "C" {
 #define GPIO_PIN_SIF_SET_HIGH()             // Set GPIO_SIF_S_PIN to High
 #define GPIO_PIN_READ_SIF()                 (0x00) // Read the state of SIF_R_PIN
 
-#else
+#elif defined(PLATFORM_STM32_RTOS)
 typedef GPIO_TypeDef GPIO_GROUP;
 // Default GPIO pin definitions for unsupported platforms
 #define GPIO_ACC_SOC_PIN                    (0x00) /**< ACC_SOC pin */

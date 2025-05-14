@@ -1,22 +1,46 @@
+/******************************************************************************
+	* @file    gpio_implementation.c
+	* @brief   GPIO management implementation for hardware platform.
+	*          This module handles GPIO initialization, status polling, and key
+	*          event processing, as well as interaction with the task manager.
+	* @version 1.0
+	* @date    2025-05-10
+	*
+	* @note    Platform-specific functions are defined in octopus_platform.h
+	*          and GPIO configuration is handled for status and key polling.
+	*          Interrupt-based handling can be added for real-time event capture.
+	*          This implementation uses polling for simplicity and clarity.
+	*
+	*          Key Features:
+	*          - GPIO Initialization
+	*          - Polling for GPIO status
+	*          - Polling for Key Press status
+	*          - Event processing for key press and release
+	*          - Task management state transitions
+	*
+	* @author  [ak47]
+	******************************************************************************/
 
-/*******************************************************************************
+/******************************************************************************
  * INCLUDES
- */
-#include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
-#include "octopus_log.h"       			// Include logging functions for debugging
-#include "octopus_task_manager.h" 	// Include task manager for scheduling tasks
-#include "octopus_gpio.h"
-#include "octopus_tickcounter.h"
-#include "octopus_msgqueue.h"
-#include "octopus_flash.h"
-#include "octopus_key.h"
-/*******************************************************************************
- * DEBUG SWITCH MACROS
-*/
+ ******************************************************************************/
+#include "octopus_platform.h"	  // Include platform-specific header for hardware platform details
+#include "octopus_log.h"		  // Include logging functions for debugging
+#include "octopus_task_manager.h" // Include task manager for scheduling tasks
+#include "octopus_gpio.h"		  // Include GPIO control and configuration
+#include "octopus_tickcounter.h"  // Include tick counter for timing operations
+#include "octopus_msgqueue.h"	  // Include message queue for inter-task communication
+#include "octopus_flash.h"		  // Include flash memory access functions
+#include "octopus_key.h"		  // Include key status and event handling
 
-/*******************************************************************************
- * LOCAL FUNCTIONS DECLEAR
- */
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
+	/*******************************************************************************
+	 * DEBUG SWITCH MACROS
+	 */
+
+	/*******************************************************************************
+	 * LOCAL FUNCTIONS DECLEAR
+	 */
 
 void GPIOInit(void);
 void PollingGPIOStatus(GPIO_GROUP *gpiox,uint16_t pin, GPIO_STATUS *gpio_status);
@@ -77,7 +101,10 @@ void app_gpio_running(void)
 			PollingGPIOKeyStatus(GPIO_POWER_GROUP,GPIO_POWER_PIN,&key_status_power);
 		 
       ProcessKeyEvent(&key_status_power);
-			
+		  //////////////////////////////////////////////////////////////////////////////////////////////////////
+		  //////////////////////////////////////////////////////////////////////////////////////////////////////
+		  //////////////////////////////////////////////////////////////////////////////////////////////////////
+		  #if 0
 			if(acc_status.changed)
 			{
 				LOG_LEVEL("get acc status=%d\r\n",acc_status.offon);
@@ -117,6 +144,7 @@ void app_gpio_running(void)
 				send_message(TASK_ID_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_SKD_PIN, skd_status.offon);
 				skd_status.changed=false;
 			}
+			#endif
 			
 		StartTickCounter(&l_t_msg_wait_50_timer); 
 	 }
@@ -280,4 +308,4 @@ bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
   return true;	
 }*/
 
-
+#endif
