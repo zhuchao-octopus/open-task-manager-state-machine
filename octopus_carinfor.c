@@ -332,29 +332,30 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
  * @param timeSec Time in seconds (s)
  * @return double Distance traveled in kilometers (km)
  */
-double CalculateDistance(double speedKmh, double timeSec)
-{
-    if (speedKmh <= 0)
-        return 0;
-    // Convert speed from km/h to km/s (divide by 3600)
-    double speedKms = speedKmh / 3600.0;
-    // Distance = Speed * Time
-    return speedKms * timeSec;
+uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec) {
+    // speed_kmh is in km/h, time_sec is in seconds
+    // Convert speed to m/s (1 km/h = 1000 m / 3600 s)
+    uint32_t speed_ms = (speed_kmh * 1000) / 3600;
+
+    // Calculate distance in meters
+    uint32_t distance_m = speed_ms * time_sec;
+
+    return distance_m;
 }
 
 void app_car_controller_msg_handler(void)
 {
     uint32_t trip_timer = 0;
-	  uint32_t trip_distances = 0;
+    uint32_t trip_distances = 0;
     Msg_t *msg = get_message(TASK_ID_CAR_INFOR);
     if (msg->id == NO_MSG)
     {
         trip_timer = GetTickCounter(&l_t_msg_car_trip_timer);
         if (trip_timer > 2000)
         {
-					  trip_timer = trip_timer / 1000;
-					  trip_distances = CalculateDistance(lt_carinfo_meter.speed, trip_timer);
-					
+            trip_timer = trip_timer / 1000;
+            trip_distances = calculateTotalDistance(lt_carinfo_meter.speed, trip_timer);
+
             lt_carinfo_meter.ride_time = lt_carinfo_meter.ride_time + trip_timer;
             lt_carinfo_meter.trip_distance = lt_carinfo_meter.trip_distance + trip_distances;
             lt_carinfo_meter.odo = lt_carinfo_meter.odo + trip_distances;
