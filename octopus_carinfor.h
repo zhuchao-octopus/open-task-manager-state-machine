@@ -70,10 +70,11 @@ extern "C"
         ERROR_CODE_LAMP_SENSOR_ABNORMALITY = 0X24,                   // 大灯传感器故障
         ERROR_CODE_COMMUNICATION_ABNORMALITY = 0X30,                 // 通讯故障
 
-        ERROR_CODE_BEGIN = ERROR_CODE_THROTTLE_NOT_ZERO,       // 故障码开始
-        ERROR_CODE_END = ERROR_CODE_COMMUNICATION_ABNORMALITY, // 故障码结束
     } __attribute__((packed)) ERROR_CODE;
 
+#define	ERROR_CODE_BEGIN  ERROR_CODE_THROTTLE_NOT_ZERO       // 故障码开始
+#define ERROR_CODE_END    ERROR_CODE_COMMUNICATION_ABNORMALITY // 故障码结束
+		
     typedef struct
     {
         uint8_t sideStand;                // Side stand status        0: off     1: on
@@ -193,7 +194,7 @@ extern "C"
 
     typedef struct
     {
-        uint16_t odo;           // Total distance traveled (unit: 0.1 km) Trip Odometer
+        uint32_t odo;           // Total distance traveled (unit: 0.1 km) Trip Odometer
         uint16_t rpm;           // Motor RPM (raw value, offset by -20000)
         uint16_t speed;         // Displayed speed (unit: 0.1 km/h)
         uint16_t speed_actual;  // Actual wheel speed (unit: 0.1 km/h)
@@ -427,8 +428,7 @@ extern "C"
 
     // void car_indicator_proc_turn_signal(void);
     // void car_meter_proc_speed_rpm(void);
-    void app_carinfo_add_error_code(ERROR_CODE code);
-    uint8_t app_carinfo_get_top_error_code(void);
+    void app_carinfo_add_error_code(ERROR_CODE error_code);
 
     extern carinfo_meter_t lt_carinfo_meter;         // Local meter data structure
     extern carinfo_indicator_t lt_carinfo_indicator; // Local indicator data structure

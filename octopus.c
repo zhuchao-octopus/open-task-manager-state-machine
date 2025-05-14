@@ -133,7 +133,7 @@ void TaskManagerStateMachineInit(void)
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Nofify Initialize complete
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    system_handshake_with_app();
+    //system_handshake_with_app();
 #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     system_handshake_with_mcu();

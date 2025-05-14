@@ -161,121 +161,224 @@ void app_gpio_stop_running(void)
 }
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Initializes the GPIO configuration.
+ *
+ * This function is used to initialize the configuration of General Purpose
+ * Input/Output (GPIO) pins. This includes setting the pin modes, directions,
+ * and any pull-up or pull-down configurations. This function is currently empty
+ * and should be implemented based on specific hardware requirements.
+ */
 void GPIOInit(void)
 {
-
-}
- 
-void PollingGPIOStatus(GPIO_GROUP *gpiox,uint16_t pin, GPIO_STATUS *gpio_status)
-{
-	if(GPIO_PIN_READ(gpiox,pin))
-	{
-		gpio_status->count1++;
-		gpio_status->count2=0;
-		if(gpio_status->count1 > GPIO_STATUS_REDUNDANCY)
-		{
-			if(!gpio_status->offon)
-		  	gpio_status->changed=true;
-			else
-				gpio_status->changed=false;
-			gpio_status->offon=true;
-			gpio_status->count1=0;
-		}
-	}
-	else
-	{
-		gpio_status->count1 = 0;
-		gpio_status->count2++;
-		if(gpio_status->count2 > GPIO_STATUS_REDUNDANCY)
-		{
-			if(gpio_status->offon)
-		  	gpio_status->changed=true;
-			else
-				gpio_status->changed=false;
-		  gpio_status->offon=false;
-			gpio_status->count2=0;
-		}
-	}
+    // TODO: Implement GPIO initialization here
 }
 
-void PollingGPIOKeyStatus(GPIO_GROUP *gpiox,uint16_t pin,GPIO_KEY_STATUS *key_status)
+/**
+ * @brief Polls the status of a specified GPIO pin and updates its status structure.
+ *
+ * This function continuously checks the state of a specified GPIO pin and
+ * applies a redundancy mechanism to filter out noise or glitches. If the pin
+ * remains in the same state for a predefined number of polling cycles
+ * (`GPIO_STATUS_REDUNDANCY`), the status is considered stable and is reflected
+ * in the `gpio_status` structure.
+ *
+ * @param gpiox Pointer to the GPIO group (port) to which the pin belongs.
+ * @param pin The specific GPIO pin number to be polled.
+ * @param gpio_status Pointer to the `GPIO_STATUS` structure to be updated with the current status.
+ */
+void PollingGPIOStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_STATUS *gpio_status)
 {
-	uint8_t g_status = GPIO_PIN_READ(gpiox,pin);
-	if(!g_status)
-	{		
-		if(key_status->press_count < GPIO_KEY_STATUS_MAX_REDUNDANCY)
-		{
-		   key_status->press_count++;
-			 key_status->long_press_duration =key_status->press_count;
-		}
-													
-	  if(key_status->press_count > GPIO_KEY_STATUS_PRESS_PERIOD && !key_status->pressed)
-		{
-			//key_status->key = hal_get_gpio_key_mask_code(pin);//key_status->key | GetGPIOKeyMask(pin);
-			key_status->pressed=true;
-			key_status->release=false;
-			key_status->event_dispatched=false;
-			key_status->state=KEY_STATE_PRESSED;
-		}	
-		
-		if(key_status->press_count > GPIO_KEY_STATUS_LONG_PRESS_PERIOD && key_status->pressed)
-		{
-			//key_status->key = hal_get_gpio_key_mask_code(pin);//key_status->key | GetGPIOKeyMask(pin);
-			key_status->pressed=true;
-			key_status->release=false;
-			key_status->event_dispatched=false;
-			key_status->state=KEY_STATE_LONG_PRESSED;
-		}	
-		if(key_status->press_count > GPIO_KEY_STATUS_LONG_LONG_PRESS_PERIOD && key_status->pressed)
-		{
-			//key_status->key = hal_get_gpio_key_mask_code(pin);//key_status->key | GetGPIOKeyMask(pin);
-			key_status->pressed=true;
-			key_status->release=false;
-			key_status->event_dispatched=false;
-			key_status->state=KEY_STATE_LONG_LONG_PRESSED;
-		}	
-	}
-	else
-	{
-		if(key_status->pressed)
-		{
-			key_status->release=true;
-			key_status->event_dispatched=false;
-		}
-		key_status->pressed=false;
-		key_status->press_count = 0;
-		///key_status->key = key_status->key & (~GetGPIOKeyMask(pin));
-	}
-} 
+    // Check the current state of the GPIO pin
+    if (GPIO_PIN_READ(gpiox, pin))
+    {
+        // If the pin is high, increment the high state counter and reset the low counter
+        gpio_status->count1++;
+        gpio_status->count2 = 0;
 
+        // If the high state is consistent for more than the redundancy threshold
+        if (gpio_status->count1 > GPIO_STATUS_REDUNDANCY)
+        {
+            // If the state has changed from low to high, mark it as changed
+            if (!gpio_status->offon)
+                gpio_status->changed = true;
+            else
+                gpio_status->changed = false;
+
+            // Update the status
+            gpio_status->offon = true;
+            gpio_status->count1 = 0;
+        }
+    }
+    else
+    {
+        // If the pin is low, reset the high counter and increment the low counter
+        gpio_status->count1 = 0;
+        gpio_status->count2++;
+
+        // If the low state is consistent for more than the redundancy threshold
+        if (gpio_status->count2 > GPIO_STATUS_REDUNDANCY)
+        {
+            // If the state has changed from high to low, mark it as changed
+            if (gpio_status->offon)
+                gpio_status->changed = true;
+            else
+                gpio_status->changed = false;
+
+            // Update the status
+            gpio_status->offon = false;
+            gpio_status->count2 = 0;
+        }
+    }
+}
+
+/**
+ * @brief Polls the status of a specified GPIO pin configured as a key (button).
+ *
+ * This function checks the current status of a button connected to a GPIO pin.
+ * It identifies different button states including:
+ * - Pressed
+ * - Long Pressed
+ * - Long-Long Pressed
+ * - Released
+ *
+ * The status is updated in the provided `key_status` structure. The function
+ * uses debounce logic to ensure reliable detection.
+ *
+ * @param gpiox Pointer to the GPIO group (port) to which the pin belongs.
+ * @param pin The specific GPIO pin number to be polled.
+ * @param key_status Pointer to the `GPIO_KEY_STATUS` structure to be updated with the current status.
+ */
+void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_status)
+{
+    // Read the current status of the GPIO pin (1 for high, 0 for low)
+    uint8_t g_status = GPIO_PIN_READ(gpiox, pin);
+
+    // If the key is pressed (GPIO pin is low, assuming active-low logic)
+    if (!g_status)
+    {
+        // Increment the press counter with redundancy protection
+        if (key_status->press_count < GPIO_KEY_STATUS_MAX_REDUNDANCY)
+        {
+            key_status->press_count++;
+            key_status->long_press_duration = key_status->press_count;
+        }
+
+        // If the press duration exceeds the defined short-press period
+        if (key_status->press_count > GPIO_KEY_STATUS_PRESS_PERIOD && !key_status->pressed)
+        {
+            key_status->pressed = true;
+            key_status->release = false;
+            key_status->event_dispatched = false;
+            key_status->state = KEY_STATE_PRESSED;
+        }
+
+        // If the press duration exceeds the defined long-press period
+        if (key_status->press_count > GPIO_KEY_STATUS_LONG_PRESS_PERIOD && key_status->pressed)
+        {
+            key_status->pressed = true;
+            key_status->release = false;
+            key_status->event_dispatched = false;
+            key_status->state = KEY_STATE_LONG_PRESSED;
+        }
+
+        // If the press duration exceeds the defined long-long-press period
+        if (key_status->press_count > GPIO_KEY_STATUS_LONG_LONG_PRESS_PERIOD && key_status->pressed)
+        {
+            key_status->pressed = true;
+            key_status->release = false;
+            key_status->event_dispatched = false;
+            key_status->state = KEY_STATE_LONG_LONG_PRESSED;
+        }
+    }
+    else
+    {
+        // If the key is released (GPIO pin is high)
+        if (key_status->pressed)
+        {
+            key_status->release = true;
+            key_status->event_dispatched = false;
+        }
+
+        // Reset the pressed status and the counter
+        key_status->pressed = false;
+        key_status->press_count = 0;
+    }
+}
+
+/**
+ * @brief Processes key press and release events for a specified GPIO key.
+ *
+ * This function checks the status of the key (`GPIO_KEY_STATUS`). If an event
+ * (press or release) has not been dispatched yet, it sends the appropriate
+ * message using `send_message()` and marks the event as dispatched to prevent
+ * redundant messages for the same event.
+ *
+ * @param key_status Pointer to the `GPIO_KEY_STATUS` structure representing the key's status.
+ */
 void ProcessKeyEvent(GPIO_KEY_STATUS *key_status)
 {
-	if(!key_status->event_dispatched)	
-	{	
-		///LOG_LEVEL("press status key=%d %d\r\n",key_status->key,key_status->state);
-		if(key_status->pressed)
-		{
-   			send_message(TASK_ID_KEY, MSG_DEVICE_KEY_DOWN_EVENT , key_status->key, KEY_STATE_PRESSED );
-        key_status->event_dispatched=true; 										
-		}
-    else if(key_status->release)
-		{
-		    send_message(TASK_ID_KEY, MSG_DEVICE_KEY_UP_EVENT , key_status->key, KEY_STATE_RELEASED );
-        key_status->event_dispatched=true;	
-		}
-	}	
+    // Check if the event has not been dispatched already
+    if (!key_status->event_dispatched)
+    {
+        // If the key is in the "pressed" state, send a "key down" event
+        if (key_status->pressed)
+        {
+            /**
+             * TASK_ID_KEY            - Identifier for the task handling key events.
+             * MSG_DEVICE_KEY_DOWN_EVENT - Message type indicating a key press.
+             * key_status->key        - The key identifier.
+             * KEY_STATE_PRESSED      - The current state of the key.
+             */
+            send_message(TASK_ID_KEY, MSG_DEVICE_KEY_DOWN_EVENT, key_status->key, KEY_STATE_PRESSED);
+
+            // Mark the event as dispatched to prevent duplicate messages
+            key_status->event_dispatched = true;
+        }
+        // If the key is in the "release" state, send a "key up" event
+        else if (key_status->release)
+        {
+            /**
+             * TASK_ID_KEY            - Identifier for the task handling key events.
+             * MSG_DEVICE_KEY_UP_EVENT - Message type indicating a key release.
+             * key_status->key        - The key identifier.
+             * KEY_STATE_RELEASED     - The current state of the key.
+             */
+            send_message(TASK_ID_KEY, MSG_DEVICE_KEY_UP_EVENT, key_status->key, KEY_STATE_RELEASED);
+
+            // Mark the event as dispatched to prevent duplicate messages
+            key_status->event_dispatched = true;
+        }
+    }
 }
 
-GPIO_KEY_STATUS* get_key_status_by_key(uint8_t key) 
+/**
+ * @brief Retrieves the status structure for a specific key.
+ *
+ * This function searches through an array of GPIO key status structures
+ * (`gpio_key_array`) to find the matching key. If the key is found, a pointer
+ * to its status structure is returned; otherwise, the function returns `NULL`.
+ *
+ * @param key The key identifier to search for.
+ * @return GPIO_KEY_STATUS* Pointer to the key's status structure if found; otherwise, `NULL`.
+ */
+GPIO_KEY_STATUS* get_key_status_by_key(uint8_t key)
 {
-	size_t array_size = sizeof(gpio_key_array) / sizeof(gpio_key_array[0]); 
-  for (size_t i = 0; i < array_size; i++) 
-	{
-     if (gpio_key_array[i]->key == key) {
-        return gpio_key_array[i]; 
-     }
-  }
-  return NULL; 
+    // Calculate the size of the array
+    size_t array_size = sizeof(gpio_key_array) / sizeof(gpio_key_array[0]);
+
+    // Iterate over the array to find the key
+    for (size_t i = 0; i < array_size; i++)
+    {
+        // If the key matches, return its status structure
+        if (gpio_key_array[i]->key == key)
+        {
+            return gpio_key_array[i];
+        }
+    }
+
+    // If the key is not found, return NULL
+    return NULL;
 }
 
 bool IsAccOn(void)

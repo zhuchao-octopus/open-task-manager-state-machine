@@ -62,7 +62,8 @@ void hal_flash_write_buff_dma(uint32_t startaddr, uint8_t *buffer, uint8_t lengt
 void hal_eeprom_save(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {
 	#ifdef USE_EEROM_FOR_DATA_SAVING
-	I2C_EepromPageWrite(startaddr,buffer,length);
+	uint8_t ret =I2C_EepromPageWrite(startaddr,buffer,length);
+	LOG_LEVEL("write data to eeprom status=%d\r\n",ret);		
 	#endif
 }
 
