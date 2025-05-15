@@ -44,7 +44,8 @@
 static bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
-void app_power_on_off(bool onoff);
+void system_power_on_off(bool onoff);
+void system_reboot_system(void);
 
 /*******************************************************************************
  * Global Variables
@@ -75,7 +76,7 @@ void app_system_init_running(void)
     LOG_LEVEL("app_system_init_running\r\n");
     OTMS(TASK_ID_SYSTEM, OTMS_S_INVALID);
 
-    //ptl_register_module(P2M_MOD_DEBUG, debug_send_handler, debug_receive_handler);
+    // ptl_register_module(P2M_MOD_DEBUG, debug_send_handler, debug_receive_handler);
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_register_module(MCU_TO_SOC_MOD_SYSTEM, system_send_handler, system_receive_handler);
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
@@ -132,25 +133,24 @@ void app_system_running(void)
 
     switch (msg->id)
     {
-
     case MSG_DEVICE_NORMAL_EVENT:
         break;
 
     case MSG_DEVICE_ACC_EVENT:
-				LOG_LEVEL("Event: MSG_DEVICE_ACC_EVENT\r\n");
-        app_power_on_off(msg->param2);
+        LOG_LEVEL("Event: MSG_DEVICE_ACC_EVENT\r\n");
+        system_power_on_off(msg->param2);
         break;
 
     case MSG_DEVICE_POWER_EVENT:
-				LOG_LEVEL("Got Event MSG_DEVICE_POWER_EVENT\r\n");
-		  #ifdef TASK_MANAGER_STATE_MACHINE_SOC
+        LOG_LEVEL("Got Event MSG_DEVICE_POWER_EVENT\r\n");
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
         if (msg->param1 == CMD_MODSYSTEM_POWER_ON)
-            app_power_on_off(SYSTEM_POWER_ON_VALUE);
+            system_power_on_off(SYSTEM_POWER_ON_VALUE);
         else if (msg->param1 == CMD_MODSYSTEM_POWER_OFF)
-            app_power_on_off(SYSTEM_POWER_OFF_VALUE);
-			#else
-				send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_SYSTEM, msg->param1, msg->param1);
-			#endif
+            system_power_on_off(SYSTEM_POWER_OFF_VALUE);
+#else
+        send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_SYSTEM, msg->param1, msg->param1);
+#endif
         break;
     }
 }
@@ -164,16 +164,6 @@ void app_system_stop_running(void)
     OTMS(TASK_ID_SYSTEM, OTMS_S_INVALID);
 }
 
-/**
- * @brief Handles the system power on/off state.
- *
- * Logs the power state and updates GPIO pins accordingly.
- *
- * @param onoff Boolean indicating power state (true for on, false for off).
- */
-void app_power_on_off(bool onoff)
-{
-}
 /*******************************************************************************
  * FUNCTION: system_send_handler
  *
@@ -192,7 +182,7 @@ void app_power_on_off(bool onoff)
  ******************************************************************************/
 bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
 {
-    MY_ASSERT(buff);         // Ensure the buffer is valid
+    MY_ASSERT(buff);      // Ensure the buffer is valid
     uint8_t tmp[8] = {0}; // Temporary buffer for command parameters
 
     // Handle commands for MCU_TO_SOC_MOD_SYSTEM frame type
@@ -203,7 +193,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         case CMD_MODSYSTEM_HANDSHAKE:
             tmp[0] = 0;
             tmp[1] = 0;
-            LOG_LEVEL("system handshake frame_type=%02x param1=%02x param2=%02x\n",frame_type, tmp[0], tmp[1]);
+            LOG_LEVEL("system handshake frame_type=%02x param1=%02x param2=%02x\n", frame_type, tmp[0], tmp[1]);
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, buff);
             return true;
 
@@ -296,7 +286,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 {
     MY_ASSERT(payload); // Ensure payload is valid
     MY_ASSERT(ackbuff); // Ensure acknowledgment buffer is valid
-    uint8_t tmp;     // Temporary variable for holding command data
+    uint8_t tmp;        // Temporary variable for holding command data
 
     // Handle received commands for MCU_TO_SOC_MOD_SYSTEM frame type
     if (MCU_TO_SOC_MOD_SYSTEM == payload->frame_type)
@@ -304,14 +294,13 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         switch (payload->cmd)
         {
         case CMD_MODSYSTEM_HANDSHAKE:
-            LOG_LEVEL("system got handshake from mcu payload->frame_type=%02x\r\n",payload->frame_type);
-            //ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
-				     
+            LOG_LEVEL("system got handshake from mcu payload->frame_type=%02x\r\n", payload->frame_type);
+            // ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
             return false;
 
         case CMD_MODSYSTEM_ACC_STATE:
             LOG_LEVEL("CMD_MODSYSTEM_ACC_STATE\r\n");
-            //ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
+            // ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
             return false;
 
         case CMD_MODSYSTEM_APP_STATE:
@@ -321,9 +310,8 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             return true;
 
         case CMD_MODSYSTEM_POWER_OFF:
-					
+            system_power_on_off(true);
             return false; // Acknowledgment, no action required
-
         case CMD_MODSETUP_UPDATE_TIME:
             tmp = 0x01;
             ptl_build_frame(SOC_TO_MCU_MOD_SETUP, CMD_MODSETUP_UPDATE_TIME, &tmp, 1, ackbuff);
@@ -343,20 +331,20 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             break;
         }
     }
-		
-	  if (SOC_TO_MCU_MOD_SYSTEM == payload->frame_type)
-		 {
-			 switch (payload->cmd)
+
+    if (SOC_TO_MCU_MOD_SYSTEM == payload->frame_type)
+    {
+        switch (payload->cmd)
         {
         case CMD_MODSYSTEM_HANDSHAKE:
-            LOG_LEVEL("system got handshake from soc payload->frame_type=%02x\r\n",payload->frame_type);
-            //ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
-				    send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, 0);//after got handshake then send indicate respond
-            return false; 
-				 default:
+            LOG_LEVEL("system got handshake from soc payload->frame_type=%02x\r\n", payload->frame_type);
+            // ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
+            send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, 0); // after got handshake then send indicate respond
+            return false;
+        default:
             break;
-				}
-		 }
+        }
+    }
 
     return false; // Command not processed
 }
@@ -443,3 +431,33 @@ mb_state_t system_get_mb_state(void)
     return lt_mb_state;
 }
 
+void system_reboot_system(void)
+{
+    LOG_LEVEL("System is rebooting...\n");
+    int result = -1;
+#ifdef PLATFORM_LINUX_RISC
+    // Execute the reboot command
+    result = system("reboot");
+#endif
+    // Check if the command executed successfully
+    if (result == -1)
+    {
+        LOG_LEVEL("Failed to execute reboot command");
+    }
+    else
+    {
+        LOG_LEVEL("Reboot command executed successfully.\n");
+    }
+}
+
+/**
+ * @brief Handles the system power on/off state.
+ *
+ * Logs the power state and updates GPIO pins accordingly.
+ *
+ * @param onoff Boolean indicating power state (true for on, false for off).
+ */
+void system_power_on_off(bool onoff)
+{
+    system_reboot_system();
+}
