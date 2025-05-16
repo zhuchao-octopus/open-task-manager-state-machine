@@ -29,16 +29,11 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"     // Include platform-specific header for hardware platform details
-#include "octopus_log.h"          // Include logging functions for debugging
-#include "octopus_task_manager.h" // Include task manager for scheduling tasks
-#include "octopus_tickcounter.h"
+#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_carinfor.h"
-#include "octopus_msgqueue.h"
 #include "octopus_sif.h"
 #include "octopus_flash.h"
 #include "octopus_ipc.h"
-#include "octopus_message.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -130,8 +125,12 @@ void app_carinfo_init_running(void)
     // srand(1234); // Seed the random number generator
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_INVALID);
 #ifdef USE_EEROM_FOR_DATA_SAVING
-    E2ROMReadToBuff(0, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
-    LOG_BUFF_LEVEL((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+    if (app_meta_data.user_meter_data_flag == EEROM_DATAS_VALID_FLAG)
+    {
+        LOG_LEVEL("load meter data[%02d] ", sizeof(carinfo_meter_t));
+        E2ROMReadToBuff(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+        LOG_BUFF((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+    }
 #endif
 }
 
@@ -330,9 +329,10 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
  *
  * @param speedKmh Speed in kilometers per hour (km/h)
  * @param timeSec Time in seconds (s)
- * @return double Distance traveled in kilometers (km)
+ * @return double Distance traveled in meters (m)
  */
-uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec) {
+uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec)
+{
     // speed_kmh is in km/h, time_sec is in seconds
     // Convert speed to m/s (1 km/h = 1000 m / 3600 s)
     uint32_t speed_ms = (speed_kmh * 1000) / 3600;
@@ -388,6 +388,16 @@ void app_car_controller_msg_handler(void)
             send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, 0);
             break;
         default:
+            break;
+        }
+    }
+
+    else if (MSG_DEVICE_CAR_INFOR_EVENT == msg->id)
+    {
+        switch (msg->param1)
+        {
+        case CMD_MODSYSTEM_SAVE_DATA:
+            carinfor_save_to_flash();
             break;
         }
     }
@@ -495,6 +505,16 @@ void app_carinfo_add_error_code(ERROR_CODE error_code)
     default:
         break;
     }
+}
+
+void carinfor_save_to_flash(void)
+{
+	#ifdef USE_EEROM_FOR_DATA_SAVING
+    LOG_BUFF_LEVEL((uint8_t *)app_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
+	  app_meta_data.user_meter_data_flag=EEROM_DATAS_VALID_FLAG;
+    E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
+    E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+	#endif
 }
 
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF

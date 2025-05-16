@@ -21,71 +21,73 @@
  * INCLUDES
  * Include necessary headers for BLE management.
  *******************************************************************************/
-#include "octopus_platform.h"  // Platform-specific definitions and utilities
-#include "octopus_system.h" 
+#include "octopus_platform.h" // Platform-specific definitions and utilities
+#include "octopus_system.h"
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
-*/
+ */
 #ifdef TASK_MANAGER_STATE_MACHINE_BLE
-/*******************************************************************************
- * MACROS
- * Define commonly used macros for this module.
- *******************************************************************************/
+    /*******************************************************************************
+     * MACROS
+     * Define commonly used macros for this module.
+     *******************************************************************************/
 
-/*******************************************************************************
- * TYPEDEFS
- * Define types used in the BLE management process.
- *******************************************************************************/
+    /*******************************************************************************
+     * TYPEDEFS
+     * Define types used in the BLE management process.
+     *******************************************************************************/
 
-/**
- * @struct BLE_STATUS
- * @brief  Structure representing the status of the BLE module.
- */
-typedef struct {
-    uint8_t mode;       /**< Current mode of the BLE module. */
-    bool locked;        /**< Indicates if the BLE module is locked. */
-    bool to_lock;       /**< Indicates if the BLE module should be locked. */
-    uint8_t mac[6];     /**< MAC address associated with the BLE module. */
-} BLE_STATUS;
+    /**
+     * @struct BLE_STATUS
+     * @brief  Structure representing the status of the BLE module.
+     */
+    typedef struct
+    {
+        uint8_t mode;   /**< Current mode of the BLE module. */
+        bool locked;    /**< Indicates if the BLE module is locked. */
+        bool to_lock;   /**< Indicates if the BLE module should be locked. */
+        uint8_t mac[6]; /**< MAC address associated with the BLE module. */
+    } BLE_STATUS;
 
-/*******************************************************************************
- * GLOBAL FUNCTIONS DECLARATION
- * Declare the public functions provided by this module.
- *******************************************************************************/
+    /*******************************************************************************
+     * GLOBAL FUNCTIONS DECLARATION
+     * Declare the public functions provided by this module.
+     *******************************************************************************/
 
-/**
- * @brief Initialize BLE functionality.
- */
-void app_ble_init_running(void);
+    /**
+     * @brief Initialize BLE functionality.
+     */
+    void app_ble_init_running(void);
 
-/**
- * @brief Start BLE operations.
- */
-void app_ble_start_running(void);
+    /**
+     * @brief Start BLE operations.
+     */
+    void app_ble_start_running(void);
 
-/**
- * @brief Assert and verify the BLE module is running correctly.
- */
-void app_ble_assert_running(void);
+    /**
+     * @brief Assert and verify the BLE module is running correctly.
+     */
+    void app_ble_assert_running(void);
 
-/**
- * @brief Handle the main logic for BLE operations.
- */
-void app_ble_running(void);
+    /**
+     * @brief Handle the main logic for BLE operations.
+     */
+    void app_ble_running(void);
 
-/**
- * @brief Perform post-processing for BLE operations.
- */
-void app_ble_post_running(void);
+    /**
+     * @brief Perform post-processing for BLE operations.
+     */
+    void app_ble_post_running(void);
 
-/**
- * @brief Stop BLE operations.
- */
-void app_ble_stop_running(void);
+    /**
+     * @brief Stop BLE operations.
+     */
+    void app_ble_stop_running(void);
 
 #ifdef __cplusplus
 }
@@ -94,4 +96,3 @@ void app_ble_stop_running(void);
 #endif
 
 #endif // __OCTOPUS_TASK_MANAGER_BLE_H__
-

@@ -12,8 +12,36 @@
  */
 
 #include "octopus_platform.h" // Include Octopus module header
-#include "octopus_log.h"
 #include "octopus_gpio_hal.h" // Include the GPIO hardware abstraction layer header
+
+bool hal_gpio_read(GPIO_GROUP *gpiox, uint16_t pin)
+{
+// Macros for writing to and reading from GPIO pins
+#ifdef PLATFORM_STM32_RTOS
+    return (GPIO_ReadInputDataBit(gpiox, pin)); // Read the state of the specified GPIO pin
+#elif defined(PLATFORM_CST_OSAL_RTOS)
+    return HalGpioGet((GpioPin_t)pin);
+#elif defined(PLATFORM_ITE_OPEN_RTOS)
+    return 0;
+#else
+    return 0;
+#endif
+}
+
+bool hal_gpio_write(GPIO_GROUP *gpiox, uint16_t pin, uint8_t value)
+{
+// Macros for writing to and reading from GPIO pins
+#ifdef PLATFORM_STM32_RTOS
+    GPIO_WriteBit(gpiox, pin, (BitAction)value); // Write to the specified GPIO pin
+#elif defined(PLATFORM_CST_OSAL_RTOS)
+    HalGpioSet((GpioPin_t)pin, (bit_action_e)value);
+#elif defined(PLATFORM_ITE_OPEN_RTOS)
+
+#else
+
+#endif
+    return value;
+}
 
 #ifdef PLATFORM_CST_OSAL_RTOS
 // Function to handle GPIO callback for different events on specific pins
@@ -72,39 +100,6 @@ void hal_gpio_init(uint8_t task_id)
     LOG_LEVEL("hal gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
 }
 
-// Function to get the GPIO key mask code based on the pin number
-uint8_t hal_get_gpio_key_mask_code(uint8_t pin)
-{
-    // Return a corresponding key mask based on the pin number
-    switch (pin)
-    {
-    case P0:
-        return 0;
-    case P1:
-        return 1;
-    case P2:
-        return 2;
-    case P3:
-        return 3;
-    // case P4:    return 4;
-    // case P5:    return 5;
-    // case P6:    return 6;
-    case P7:
-        return 7;
-    // case P8:    return 8;
-    case P9:
-        return 9;
-    case P10:
-        return 10;
-    case P11:
-        return 11;
-    // case P12:   return 12;
-    // case P13:   return 13;
-    case P14:
-        return 14;
-    }
-    return 0; // Default return value if pin doesn't match any case
-}
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
 // GPIO initialization function for ITE Open RTOS (currently no implementation)
 void hal_gpio_init(uint8_t task_id)
@@ -113,12 +108,6 @@ void hal_gpio_init(uint8_t task_id)
     ithGpioSetMode(GPIO_MCU_SDIO_PWR_OUTPUT_PIN, ITH_GPIO_MODE0);
     hal_gpio_set_wifi_onoff(true);
     LOG_LEVEL("hal gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
-}
-
-// Function to get the GPIO key mask code (ITE Open RTOS version, returns 0)
-uint8_t hal_get_gpio_key_mask_code(uint8_t pin)
-{
-    return 0; // Always return 0 for ITE Open RTOS
 }
 
 void hal_gpio_set_wifi_onoff(bool onoff)
@@ -136,10 +125,4 @@ void hal_gpio_init(uint8_t task_id)
     LOG_LEVEL("hal gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
 }
 
-// Function to get the GPIO key mask code (ITE Open RTOS version, returns 0)
-uint8_t hal_get_gpio_key_mask_code(uint8_t pin)
-{
-   // Return a corresponding key mask based on the pin number
-   return 0; // Default return value if pin doesn't match any case
-}
 #endif
