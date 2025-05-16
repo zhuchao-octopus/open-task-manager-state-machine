@@ -20,13 +20,8 @@
  */
  
 #include "octopus_platform.h"
-#include "octopus_log.h"
 #include "octopus_ble_hal.h"   // Include Bluetooth Low Energy Hardware Abstraction Layer (HAL) header
- 
 #include "octopus_ble.h"       // Include Bluetooth Low Energy functionality
-#include "octopus_tickcounter.h"
-#include "octopus_msgqueue.h"
-#include "octopus_task_manager.h"
 #include "octopus_flash.h"
 
 
@@ -58,7 +53,7 @@ uint8_t ble_bonded_mac[6][6] = {
 { 0xae, 0xd8, 0xb4, 0xf6, 0x40, 0xc4 },	
 };
 
-static uint32_t 		  		l_t_msg_wait_timer=0;
+static uint32_t			  l_t_msg_wait_timer=0;
 static uint32_t           l_t_msg_wait_10_timer=0;
 static uint32_t           l_t_msg_wait_50_timer=0;
 
@@ -70,17 +65,17 @@ static uint32_t           l_t_msg_wait_50_timer=0;
  */
 void app_ble_init_running(void)
 { 
-  OTMS(TASK_ID_BLE, OTMS_S_INVALID);
- 	#ifdef TASK_MANAGER_STATE_MACHINE_BLE
-	LOG_LEVEL("app_ble_init\r\n");
-	//com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
-	hal_disable_bLe_pair_mode();
-	#endif
+    OTMS(TASK_ID_BLE, OTMS_S_INVALID);
+    #ifdef TASK_MANAGER_STATE_MACHINE_BLE
+    LOG_LEVEL("app_ble_init_running\r\n");
+    //com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
+    hal_disable_bLe_pair_mode();
+    #endif
 }
 
 void app_ble_start_running(void)
 {
-    LOG_LEVEL("app_ble_start\r\n");
+    LOG_LEVEL("app_ble_start_running\r\n");
     OTMS(TASK_ID_BLE, OTMS_S_ASSERT_RUN);
 }
 
@@ -117,13 +112,13 @@ void app_ble_running(void)
 			}
 		  else if((MsgId_t)msg->id == MSG_DEVICE_ACC_EVENT)
 			{
-					if(IsAccOn())		
+					//if(is_gpio_high(0,0))		
 					{
 						ble_status.mode=hal_set_pairing_mode_onoff(true,ble_status.mode);
 					}
-					else
+					//else
 					{
-						ble_status.mode=hal_set_pairing_mode_onoff(false,ble_status.mode);
+						//ble_status.mode=hal_set_pairing_mode_onoff(false,ble_status.mode);
 					}
 		  }
 }

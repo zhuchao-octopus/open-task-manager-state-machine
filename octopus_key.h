@@ -51,11 +51,12 @@ extern "C" {
 #define OCTOPUS_KEY_12 12
 #define OCTOPUS_KEY_13 13
 #define OCTOPUS_KEY_14 14
-
+#define OCTOPUS_KEY_POWER 20
 /*******************************************************************************
  * TYPEDEFS
  * The following defines key codes representing different actions or states of the keys.
  */
+ //key action
 #define KEY_ACTION_NONE          0 
 #define KEY_ACTION_DOWN          1
 #define	KEY_ACTION_UP            2
@@ -63,7 +64,7 @@ extern "C" {
 #define	KEY_ACTION_DUBDOW        4
 #define	KEY_ACTION_DOUBLE        5
 
-// Key action codes
+// Key codes
 #define KEY_CODE_IDLE               (0x00)  /**< No key action detected */
 #define KEY_CODE_MENU               (0x01)  /**< Menu button pressed */
 #define KEY_CODE_UP                 (0x02)  /**< Up button pressed */
@@ -77,7 +78,7 @@ extern "C" {
 #define KEY_CODE_POWER              (0x0A)  /**< Power button pressed */
 
 // Key states
-#define KEY_STATE_NONE         			(0x00)  /**< Key is released */
+#define KEY_STATE_NONE         		(0x00)  /**< Key is released */
 #define KEY_STATE_RELEASED          (0x01)  /**< Key is released */
 #define KEY_STATE_PRESSED           (0x02)  /**< Key is pressed */
 #define KEY_STATE_LONG_PRESSED      (0x03)  /**< Key is long pressed */

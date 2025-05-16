@@ -50,7 +50,12 @@ void hal_flash_init(uint8_t task_id);
  *          into the provided buffer. The function will read up to the length
  *          specified by the `len` parameter. The data is stored in `buf`.
  */
-void hal_flash_read_to_buff(uint32_t addr, uint8_t *buf, uint32_t len);
+uint32_t hal_flash_erase_page(uint32_t startaddr, uint8_t page_count);
+uint32_t hal_flash_erase_area(uint32_t startaddr, uint32_t endaddr);
+uint32_t hal_flash_read(uint32_t startaddr, uint8_t *buffer, uint8_t length);
+uint32_t hal_flash_write(uint32_t startaddr, uint8_t *buffer, uint32_t length);
+void hal_eeprom_write(uint32_t startaddr, uint8_t *buffer, uint8_t length);
+void hal_eeprom_read(uint32_t startaddr, uint8_t *buffer, uint8_t length);
 
 #ifdef __cplusplus
 }

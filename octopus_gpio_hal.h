@@ -30,8 +30,20 @@ extern "C" {
  * MACRO DEFINITIONS
  * The following macros define GPIO pin mappings and their operations for different platforms.
  */
+typedef enum
+{
+    BIT_RESET = 0,
+    BIT_SET
+} BitAction;
 
 #ifdef PLATFORM_CST_OSAL_RTOS
+typedef uint8_t GPIO_GROUP;
+
+#define GPIO_POWER_KEY_GROUP 0
+#define GPIO_POWER_KEY_PIN 0
+
+#define GPIO_POWER_SWITCH_GROUP 0
+#define GPIO_POWER_SWITCH_PIN   0
 
 // Event identifiers for user test timers
 #define USR_TEST_TIMER1_EVT                 0x0001  /**< Event identifier for test timer 1 */
@@ -58,10 +70,6 @@ extern "C" {
 #define GPIO_ACC_SOC_LOW()                  (HalGpioSet(GPIO_ACC_SOC_PIN, Bit_DISABLE))  /**< Set GPIO_ACC_SOC_PIN to Low */
 #define GPIO_ACC_SOC_HIGH()                 (HalGpioSet(GPIO_ACC_SOC_PIN, Bit_ENABLE))   /**< Set GPIO_ACC_SOC_PIN to High */
 
-// Macros for writing to and reading from GPIO pins
-#define GPIO_PIN_WRITE(pin)                 (HalGpioSet((GpioPin_t)pin))    /**< Write to the specified GPIO pin */
-#define GPIO_PIN_READ(pin)                  (HalGpioGet((GpioPin_t)pin))    /**< Read the state of the specified GPIO pin */
-
 // Specific macros for reading GPIO states for various pins
 #define GPIO_PIN_READ_ACC()                 (HalGpioGet(GPIO_ACC_PIN))      /**< Read the state of ACC_PIN */
 #define GPIO_PIN_READ_DDD()                 (HalGpioGet(GPIO_DDD_PIN))      /**< Read the state of DDD_PIN */
@@ -80,10 +88,9 @@ extern "C" {
 #define GPIO_PIN_READ_BMS()                 (HalGpioGet(GPIO_BMS_R_PIN))    					 	 /**< Read the state of BMS_R_PIN */
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
-
+typedef uint8_t GPIO_GROUP;
 // Define macros for ITE Open RTOS platform (example macros; to be implemented as needed)
 #define GPIO_MCU_SDIO_PWR_OUTPUT_PIN        21     /**< SDIO Power Output pin for MCU */
-
 // Placeholder GPIO pins for ITE Open RTOS platform
 #define GPIO_ACC_SOC_PIN                    (0x00) /**< ACC_SOC pin */
 #define GPIO_ACC_PIN                        (0x00) /**< ACC pin */
@@ -97,10 +104,6 @@ extern "C" {
 #define GPIO_ACC_SOC_LOW()                  // Set GPIO_ACC_SOC_PIN to Low
 #define GPIO_ACC_SOC_HIGH()                 // Set GPIO_ACC_SOC_PIN to High
 
-// Macros for writing to and reading from GPIO pins (platform-specific implementation)
-#define GPIO_PIN_WRITE(pin)                 (0x00) // Write to the specified GPIO pin
-#define GPIO_PIN_READ(pin)                  (0x00) // Read the state of the specified GPIO pin
-
 // Macros for reading GPIO states for various pins (platform-specific)
 #define GPIO_PIN_READ_ACC()                 (0x00) // Read the state of ACC_PIN
 #define GPIO_PIN_READ_DDD()                 (0x00) // Read the state of DDD_PIN
@@ -113,8 +116,8 @@ extern "C" {
 #define GPIO_PIN_SIF_SET_HIGH()             // Set GPIO_SIF_S_PIN to High
 #define GPIO_PIN_READ_SIF()                 (0x00) // Read the state of SIF_R_PIN
 
-#else
-
+#elif defined(PLATFORM_STM32_RTOS)
+typedef GPIO_TypeDef GPIO_GROUP;
 // Default GPIO pin definitions for unsupported platforms
 #define GPIO_ACC_SOC_PIN                    (0x00) /**< ACC_SOC pin */
 #define GPIO_ACC_PIN                        (0x00) /**< ACC pin */
@@ -124,13 +127,14 @@ extern "C" {
 #define GPIO_YZD_PIN                        (0x00) /**< YZD pin */
 #define GPIO_SKD_PIN                        (0x00) /**< SKD pin */
 
+#define GPIO_POWER_KEY_GROUP GPIOA
+#define GPIO_POWER_KEY_PIN GPIO_Pin_12
+
+#define GPIO_POWER_SWITCH_GROUP GPIOB
+#define GPIO_POWER_SWITCH_PIN   GPIO_Pin_4
 // Macros for controlling GPIO pin states (Low/High)
 #define GPIO_ACC_SOC_LOW()                  // Set GPIO_ACC_SOC_PIN to Low
 #define GPIO_ACC_SOC_HIGH()                 // Set GPIO_ACC_SOC_PIN to High
-
-// Macros for writing to and reading from GPIO pins
-#define GPIO_PIN_WRITE(pin)                 (0x00) // Write to the specified GPIO pin
-#define GPIO_PIN_READ(pin)                  (0x00) // Read the state of the specified GPIO pin
 
 // Macros for reading GPIO states for various pins
 #define GPIO_PIN_READ_ACC()                 (0x00) // Read the state of ACC_PIN
@@ -144,22 +148,23 @@ extern "C" {
 #define GPIO_PIN_SIF_SET_HIGH()             // Set GPIO_SIF_S_PIN to High
 #define GPIO_PIN_READ_SIF()                 (0x00) // Read the state of SIF_R_PIN
 
+#else
+typedef uint8_t GPIO_GROUP;
+#define GPIO_POWER_KEY_GROUP 0
+#define GPIO_POWER_KEY_PIN 0
+
+#define GPIO_POWER_SWITCH_GROUP 0
+#define GPIO_POWER_SWITCH_PIN   0
 #endif
 
 /*********************************************************************
  * FUNCTION DECLARATIONS
  */
 
-// Function for turning Wi-Fi on or off (platform-specific)
-#ifdef PLATFORM_ITE_OPEN_RTOS
-void hal_gpio_set_wifi_onoff(bool onoff);
-#endif
-
 // Function to initialize GPIOs for the task
 void hal_gpio_init(uint8_t task_id);
-
-// Function to get the GPIO key mask code based on the pin number
-uint8_t hal_get_gpio_key_mask_code(uint8_t pin);
+bool hal_gpio_read(GPIO_GROUP *gpiox,uint16 pin);
+bool hal_gpio_write(GPIO_GROUP *gpiox,uint16 pin,uint8 value);
 
 #ifdef __cplusplus
 }

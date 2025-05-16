@@ -32,9 +32,6 @@
  */
  
 #include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
-#include "octopus_log.h"       			// Include logging functions for debugging
-
-#include "octopus_msgqueue.h"  // Include message queue for inter-process communication
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLARATION
  */
@@ -86,7 +83,7 @@ void send_message(TaskModule_t task_module, msgid_t id, uint16_t param1, uint16_
     }
     else
     {    
-        LOG_("message queue full,module:%d\r\n", task_module);  // Log an error if the queue is full
+        ///LOG_("message queue full,module:%d\r\n", task_module);  // Log an error if the queue is full
     }
 
     // Update the full flag in the enqueue index
@@ -151,6 +148,10 @@ Msg_t *get_message(TaskModule_t task_module)
     return &s_msg;  // Return a pointer to the retrieved message
 }
 
+void send_message_adapter(uint16_t task_module, uint16_t id, uint16_t param1, uint16_t param2)
+{
+    send_message((TaskModule_t)task_module,(msgid_t)id,param1,param2);
+}
 /**
  * @brief Clear the message queue for the specified task module.
  *
