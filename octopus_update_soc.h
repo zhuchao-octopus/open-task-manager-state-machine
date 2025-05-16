@@ -22,11 +22,12 @@
  * INCLUDE FILES
  * Include standard libraries and platform-specific headers.
  ******************************************************************************/
-#include "octopus_platform.h"          // Platform-specific definitions
-#include "octopus_system.h" 
+#include "octopus_platform.h" // Platform-specific definitions
+#include "octopus_system.h"
 
 #ifdef __cplusplus
-extern "C"{
+extern "C"
+{
 #endif
 
 /**
@@ -40,101 +41,101 @@ extern "C"{
  * Define macros to enable or disable debug functionality.
  ******************************************************************************/
 #ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
-/*******************************************************************************
- * MACROS
- * Define commonly used macros for this module.
- ******************************************************************************/
+    /*******************************************************************************
+     * MACROS
+     * Define commonly used macros for this module.
+     ******************************************************************************/
 
-/*******************************************************************************
- * TYPEDEFS
- * Define types used in the MCU update process.
- ******************************************************************************/
+    /*******************************************************************************
+     * TYPEDEFS
+     * Define types used in the MCU update process.
+     ******************************************************************************/
 
-/*******************************************************************************
- * CONSTANTS
- * Define any module-specific constants.
- ******************************************************************************/
+    /*******************************************************************************
+     * CONSTANTS
+     * Define any module-specific constants.
+     ******************************************************************************/
 
-/*******************************************************************************
- * GLOBAL VARIABLES DECLARATION
- * Declare external variables used across the module.
- ******************************************************************************/
+    /*******************************************************************************
+     * GLOBAL VARIABLES DECLARATION
+     * Declare external variables used across the module.
+     ******************************************************************************/
 
-/*******************************************************************************
- * GLOBAL FUNCTIONS DECLARATION
- * Declare the public functions provided by this module.
- ******************************************************************************/
+    /*******************************************************************************
+     * GLOBAL FUNCTIONS DECLARATION
+     * Declare the public functions provided by this module.
+     ******************************************************************************/
 
-/**
- * @brief Initialize the update process.
- */
-void app_update_soc_init_running(void);
+    /**
+     * @brief Initialize the update process.
+     */
+    void app_update_soc_init_running(void);
 
-/**
- * @brief Start the update process.
- */
-void app_update_soc_start_running(void);
+    /**
+     * @brief Start the update process.
+     */
+    void app_update_soc_start_running(void);
 
-/**
- * @brief Assert and verify the update process is running.
- */
-void app_update_soc_assert_running(void);
+    /**
+     * @brief Assert and verify the update process is running.
+     */
+    void app_update_soc_assert_running(void);
 
-/**
- * @brief Handle the main logic for the update process.
- */
-void app_update_soc_running(void);
+    /**
+     * @brief Handle the main logic for the update process.
+     */
+    void app_update_soc_running(void);
 
-/**
- * @brief Perform post-update operations.
- */
-void app_update_soc_post_running(void);
+    /**
+     * @brief Perform post-update operations.
+     */
+    void app_update_soc_post_running(void);
 
-/**
- * @brief Stop the update process.
- */
-void app_update_soc_stop_running(void);
+    /**
+     * @brief Stop the update process.
+     */
+    void app_update_soc_stop_running(void);
 
-/**
- * @brief Confirm the update process.
- */
-void app_update_confirm(void);
+    /**
+     * @brief Confirm the update process.
+     */
+    void app_update_confirm(void);
 
-/**
- * @brief Get the time of the last confirmation.
- * @return The timestamp of the last confirmation.
- */
-uint32_t app_update_get_confirm_time(void);
+    /**
+     * @brief Get the time of the last confirmation.
+     * @return The timestamp of the last confirmation.
+     */
+    uint32_t app_update_get_confirm_time(void);
 
-/**
- * @brief Get the total number of firmware lines.
- * @return The total number of lines in the firmware.
- */
-uint32_t app_update_get_fw_total_line(void);
+    /**
+     * @brief Get the total number of firmware lines.
+     * @return The total number of lines in the firmware.
+     */
+    uint32_t app_update_get_fw_total_line(void);
 
-/**
- * @brief Get the current firmware line being processed.
- * @return The current line number.
- */
-uint32_t app_update_get_fw_curr_line(void);
+    /**
+     * @brief Get the current firmware line being processed.
+     * @return The current line number.
+     */
+    uint32_t app_update_get_fw_curr_line(void);
 
 /**
  * @brief Get the error code from the update process.
  * @return The error code indicating the reason for failure.
  */
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
-uint32_t app_update_get_error_code(void);
+    uint32_t app_update_get_error_code(void);
 #endif
-/**
- * @brief Get the current status of the update process.
- * @return The current state of the MCU update.
- */
-mcu_update_state_t app_update_get_status(void);
+    /**
+     * @brief Get the current status of the update process.
+     * @return The current state of the MCU update.
+     */
+    mcu_update_state_t app_update_get_status(void);
 
-/**
- * @}
- * End of group APP_SETTING
- */
+    /**
+     * @}
+     * End of group APP_SETTING
+     */
 
 #ifdef __cplusplus
 }
@@ -143,4 +144,3 @@ mcu_update_state_t app_update_get_status(void);
 #endif
 
 #endif // ___OCTOPUS_TASK_MANAGER_UPDATE_H___
-

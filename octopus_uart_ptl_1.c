@@ -20,9 +20,9 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"     // Include platform-specific header for hardware platform details
-#include "octopus_uart_ptl_1.h"  // Include UART protocol header
-#include "octopus_uart_hal.h"    // Include UART hardware abstraction layer header
+#include "octopus_platform.h"   // Include platform-specific header for hardware platform details
+#include "octopus_uart_ptl_1.h" // Include UART protocol header
+#include "octopus_uart_hal.h"   // Include UART hardware abstraction layer header
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS

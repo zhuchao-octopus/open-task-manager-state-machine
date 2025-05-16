@@ -46,7 +46,7 @@ extern "C"
      * TYPEDEFS
      */
     // 故障-故障信息
-    typedef enum  __attribute__((packed))
+    typedef enum __attribute__((packed))
     {
         ERROR_CODE_IDLE = 0X00,                                      // 无动作
         ERROR_CODE_NORMAL = 0X01,                                    // 正常状态
@@ -72,9 +72,9 @@ extern "C"
 
     } __attribute__((packed)) ERROR_CODE;
 
-#define	ERROR_CODE_BEGIN  ERROR_CODE_THROTTLE_NOT_ZERO       // 故障码开始
-#define ERROR_CODE_END    ERROR_CODE_COMMUNICATION_ABNORMALITY // 故障码结束
-		
+#define ERROR_CODE_BEGIN ERROR_CODE_THROTTLE_NOT_ZERO       // 故障码开始
+#define ERROR_CODE_END ERROR_CODE_COMMUNICATION_ABNORMALITY // 故障码结束
+
     typedef struct
     {
         uint8_t sideStand;                // Side stand status        0: off     1: on
@@ -235,7 +235,7 @@ extern "C"
         uint8_t throttle_fault; // Throttle fault status
         uint8_t error[ERROR_CODE_COUNT];
     } __attribute__((packed)) carinfo_error_t;
-#pragma pack(pop) 	
+#pragma pack(pop)
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -429,13 +429,12 @@ extern "C"
     // void car_indicator_proc_turn_signal(void);
     // void car_meter_proc_speed_rpm(void);
     void app_carinfo_add_error_code(ERROR_CODE error_code);
-		void carinfor_save_to_flash(void);
+    void carinfor_save_to_flash(void);
 
     extern carinfo_meter_t lt_carinfo_meter;         // Local meter data structure
     extern carinfo_indicator_t lt_carinfo_indicator; // Local indicator data structure
     extern carinfo_battery_t lt_carinfo_battery;
     extern carinfo_error_t lt_carinfo_error;
-		
 
 #ifdef __cplusplus
 }

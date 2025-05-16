@@ -5,8 +5,8 @@
  *          managing a circular FIFO.
  *
  * @details
- * This file defines the `cFifo_t` structure and its associated operations, 
- * including initialization, push, pop, and utility macros for capacity and data size 
+ * This file defines the `cFifo_t` structure and its associated operations,
+ * including initialization, push, pop, and utility macros for capacity and data size
  * calculations. It is designed to support efficient data management in embedded systems.
  *
  * @version  1.0.0
@@ -29,7 +29,8 @@
  */
 #pragma pack(push)
 #pragma pack(1) // Ensure structure is packed for memory alignment
-typedef struct {
+typedef struct
+{
     volatile uint32_t head;     /**< Input index (read pointer). */
     volatile uint32_t tail;     /**< Output index (write pointer). */
     volatile uint32_t capacity; /**< FIFO capacity (size of the buffer). */
@@ -77,17 +78,15 @@ typedef struct {
  * @param ptFifo Pointer to the circular FIFO structure.
  */
 #define cFifo_DataSize(ptFifo) \
-    (((ptFifo)->tail >= (ptFifo)->head) ? (ptFifo)->tail - (ptFifo)->head : \
-     (ptFifo)->capacity - (ptFifo)->head + (ptFifo)->tail)
+    (((ptFifo)->tail >= (ptFifo)->head) ? (ptFifo)->tail - (ptFifo)->head : (ptFifo)->capacity - (ptFifo)->head + (ptFifo)->tail)
 
 /**
  * @brief Get the number of free bytes available in the FIFO.
  * @param ptFifo Pointer to the circular FIFO structure.
  */
 #define cFifo_FreeSize(ptFifo) \
-    (((ptFifo)->capacity) - \
-     (((ptFifo)->tail >= (ptFifo)->head) ? (ptFifo)->tail - (ptFifo)->head : \
-      (ptFifo)->capacity - (ptFifo)->head + (ptFifo)->tail))
+    (((ptFifo)->capacity) -    \
+     (((ptFifo)->tail >= (ptFifo)->head) ? (ptFifo)->tail - (ptFifo)->head : (ptFifo)->capacity - (ptFifo)->head + (ptFifo)->tail))
 
 /*******************************************************************************
  * FUNCTION DECLARATIONS
@@ -118,5 +117,3 @@ bool cFifo_Push(cFifo_t *a_ptFifo, uint8_t a_u8Data);
 bool cFifo_Pop(cFifo_t *a_ptFifo, uint8_t *a_pu8Data);
 
 #endif // __OCTOPUS_TASK_MANAGER_CFIFO_H__
-
-

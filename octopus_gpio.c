@@ -24,10 +24,10 @@
 /******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include "octopus_platform.h"     // Include platform-specific header for hardware platform details
-#include "octopus_gpio.h"         // Include GPIO control and configuration
-#include "octopus_flash.h"        // Include flash memory access functions
-#include "octopus_key.h"          // Include key status and event handling
+#include "octopus_platform.h" // Include platform-specific header for hardware platform details
+#include "octopus_gpio.h"     // Include GPIO control and configuration
+#include "octopus_flash.h"    // Include flash memory access functions
+#include "octopus_key.h"      // Include key status and event handling
 
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
 /*******************************************************************************
@@ -49,13 +49,14 @@ static uint32_t l_t_msg_wait_50_timer;
  * GLOBAL VARIABLES
  */
 
-//GPIO_STATUS acc_status = {false, true, 0, 0};
-//GPIO_STATUS ddd_status = {false, true, 0, 0};
-//GPIO_STATUS zzd_status = {false, true, 0, 0};
-//GPIO_STATUS yzd_status = {false, true, 0, 0};
-//GPIO_STATUS skd_status = {false, true, 0, 0};
+// GPIO_STATUS acc_status = {false, true, 0, 0};
+// GPIO_STATUS ddd_status = {false, true, 0, 0};
+// GPIO_STATUS zzd_status = {false, true, 0, 0};
+// GPIO_STATUS yzd_status = {false, true, 0, 0};
+// GPIO_STATUS skd_status = {false, true, 0, 0};
 
 GPIO_KEY_STATUS key_status_power = {OCTOPUS_KEY_POWER, 0};
+
 GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_power};
 // static bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff);
 // static bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
@@ -184,7 +185,7 @@ void GPIOInit(void)
 void PollingGPIOStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_STATUS *gpio_status)
 {
     // Check the current state of the GPIO pin
-    if (GPIO_PIN_READ(gpiox, pin))
+    if (hal_gpio_read(gpiox, pin))
     {
         // If the pin is high, increment the high state counter and reset the low counter
         gpio_status->count1++;
@@ -246,7 +247,7 @@ void PollingGPIOStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_STATUS *gpio_status
 void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_status)
 {
     // Read the current status of the GPIO pin (1 for high, 0 for low)
-    uint8_t g_status = GPIO_PIN_READ(gpiox, pin);
+    uint8_t g_status = hal_gpio_read(gpiox, pin);
 
     // If the key is pressed (GPIO pin is low, assuming active-low logic)
     if (!g_status)
@@ -379,23 +380,28 @@ GPIO_KEY_STATUS *get_key_status_by_key(uint8_t key)
 
 bool is_power_on(void)
 {
-    return GPIO_PIN_READ(GPIO_POWER_F113_GROUP, GPIO_POWER_F113_PIN);
+    return hal_gpio_read(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN);
 }
 
 void power_on_off(bool onoff)
 {
     if (onoff)
-        GPIO_PIN_WRITE(GPIO_POWER_F113_GROUP, GPIO_POWER_F113_PIN, Bit_SET);
+		{
+        hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
+			  hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET);
+		}
     else
-        GPIO_PIN_WRITE(GPIO_POWER_F113_GROUP, GPIO_POWER_F113_PIN, Bit_RESET);
+		{
+        hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_RESET);
+			  hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_RESET);
+		}
 }
 
-void gpio_on_off(GPIO_GROUP *gpiox, uint16_t pin, bool onoff)
+bool is_gpio_high(GPIO_GROUP *gpiox, uint16_t pin)
 {
-    if (onoff)
-        GPIO_PIN_WRITE(gpiox, pin, Bit_SET);
-    else
-        GPIO_PIN_WRITE(gpiox, pin, Bit_RESET);
+    if (gpiox == 0 && pin == 0)
+        return 0;
+    return hal_gpio_read(gpiox, pin);
 }
 /*
 bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff)

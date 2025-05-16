@@ -29,7 +29,7 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"     // Include platform-specific header for hardware platform details
+#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_carinfor.h"
 #include "octopus_sif.h"
 #include "octopus_flash.h"
@@ -125,15 +125,15 @@ void app_carinfo_init_running(void)
     // srand(1234); // Seed the random number generator
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_INVALID);
 #ifdef USE_EEROM_FOR_DATA_SAVING
-	  uint32_t data_valid_flag = 0;
-  	E2ROMReadToBuff(EEROM_START_ADDRESS, (uint8_t *)&data_valid_flag, sizeof(uint32_t));
-	  if(data_valid_flag == EEROM_DATAS_VALID_FLAG)
-		{
-	  LOG_LEVEL("load meter data[%02d] ",sizeof(carinfo_meter_t));
-    E2ROMReadToBuff(CARINFOR_METER_EE_READ_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
-    LOG_BUFF((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
-		}
-	  //LOG_NONE("\r\n");
+    uint32_t data_valid_flag = 0;
+    E2ROMReadToBuff(EEROM_START_ADDRESS, (uint8_t *)&data_valid_flag, sizeof(uint32_t));
+    if (data_valid_flag == EEROM_DATAS_VALID_FLAG)
+    {
+        LOG_LEVEL("load meter data[%02d] ", sizeof(carinfo_meter_t));
+        E2ROMReadToBuff(CARINFOR_METER_EE_READ_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+        LOG_BUFF((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+    }
+    // LOG_NONE("\r\n");
 #endif
 }
 
@@ -334,7 +334,8 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
  * @param timeSec Time in seconds (s)
  * @return double Distance traveled in meters (m)
  */
-uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec) {
+uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec)
+{
     // speed_kmh is in km/h, time_sec is in seconds
     // Convert speed to m/s (1 km/h = 1000 m / 3600 s)
     uint32_t speed_ms = (speed_kmh * 1000) / 3600;
@@ -393,17 +394,16 @@ void app_car_controller_msg_handler(void)
             break;
         }
     }
-		
-		else if(MSG_DEVICE_CAR_INFOR_EVENT == msg->id)
-		{
-			 switch (msg->param1)
-			 {
-				 case CMD_MODSYSTEM_SAVE_DATA:
-					 carinfor_save_to_flash();
-					 break;
-			 }
-		}
-		
+
+    else if (MSG_DEVICE_CAR_INFOR_EVENT == msg->id)
+    {
+        switch (msg->param1)
+        {
+        case CMD_MODSYSTEM_SAVE_DATA:
+            carinfor_save_to_flash();
+            break;
+        }
+    }
 }
 // ERROR_CODE_IDLE = 0X00,                                      // 无动作
 // ERROR_CODE_NORMAL = 0X01,                                    // 正常状态
@@ -512,10 +512,10 @@ void app_carinfo_add_error_code(ERROR_CODE error_code)
 
 void carinfor_save_to_flash(void)
 {
-		LOG_BUFF_LEVEL((uint8_t *)app_carinfo_get_meter_info(),sizeof(carinfo_meter_t));
-		uint32_t data_valid_flag = EEROM_DATAS_VALID_FLAG;
-		E2ROMWriteBuffTo(CARINFOR_METER_EE_READ_ADDRESS,(uint8_t*)&data_valid_flag,4);
-		E2ROMWriteBuffTo(CARINFOR_METER_EE_READ_ADDRESS,(uint8_t*)&lt_carinfo_meter,sizeof(carinfo_meter_t));
+    LOG_BUFF_LEVEL((uint8_t *)app_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
+    uint32_t data_valid_flag = EEROM_DATAS_VALID_FLAG;
+    E2ROMWriteBuffTo(CARINFOR_METER_EE_READ_ADDRESS, (uint8_t *)&data_valid_flag, 4);
+    E2ROMWriteBuffTo(CARINFOR_METER_EE_READ_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
 }
 
 #ifdef USE_EEROM_FOR_DATA_SAVING

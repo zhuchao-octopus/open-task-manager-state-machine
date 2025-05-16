@@ -81,8 +81,11 @@ extern "C"
     void app_gpio_stop_running(void);   ///< Stops GPIO tasks during runtime.
 
     GPIO_KEY_STATUS *get_key_status_by_key(uint8_t key);
-    void gpio_on_off(GPIO_GROUP *gpiox, uint16_t pin, bool onoff);
-	bool is_power_on(void);
+
+    void power_on_off(bool onoff);
+    bool is_power_on(void);
+    bool is_gpio_high(GPIO_GROUP *gpiox, uint16_t pin);
+
 #ifdef __cplusplus
 }
 #endif

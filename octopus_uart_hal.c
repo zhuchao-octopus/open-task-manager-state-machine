@@ -47,8 +47,10 @@ com_uart_data_buff_t com_uart_data_buff; // Buffer structure for received UART d
 static cFifo_t *ptl_1_usart_rx_fifo = NULL;
 static uint8_t ptl_1_usart_rx_fifo_buff[cFifo_ObjSize(FIFO_BUFFER_MAX_SIZE)];
 
+#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
 static cFifo_t *ptl_2_usart_rx_fifo = NULL;
 static uint8_t ptl_2_usart_rx_fifo_buff[cFifo_ObjSize(FIFO_BUFFER_MAX_SIZE)];
+#endif
 
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLARATION
@@ -70,6 +72,7 @@ static void hal_com_uart_receive_callback(const uint8_t *data, int length);
 static void *linux_uart_serial_handle = NULL;
 #endif
 #endif
+
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
@@ -113,7 +116,7 @@ static void ptl_uart_init(void)
  * @return  None.
  */
 
-static void uart_init(void)
+void uart_init(void)
 {
     // Configure UART settings.
     ////////////////////////////////////////////////////////////////////////////////
@@ -127,7 +130,6 @@ void hal_uart_init(uint8 task_id)
     Hal_TaskID = task_id;
     if (task_id == 0)
     {
-        uart_init();
         LOG_LEVEL("hal uart1 init for protocol\r\n");
     }
 }
@@ -325,13 +327,13 @@ static void hal_com_uart_receive_callback(const uint8_t *data, int length)
 #else
 void uart_init(void)
 {
-  hal_uart_init(0);
+    hal_uart_init(0);
 }
 
 void hal_uart_init(uint8_t task_id)
 {
     LOG_LEVEL("hal init for protocol\r\n");
-	  cFifo_Init(&ptl_1_usart_rx_fifo, ptl_1_usart_rx_fifo_buff, sizeof(ptl_1_usart_rx_fifo_buff));
+    cFifo_Init(&ptl_1_usart_rx_fifo, ptl_1_usart_rx_fifo_buff, sizeof(ptl_1_usart_rx_fifo_buff));
     cFifo_Init(&ptl_2_usart_rx_fifo, ptl_2_usart_rx_fifo_buff, sizeof(ptl_2_usart_rx_fifo_buff));
 }
 
@@ -417,6 +419,7 @@ uint8_t hal_com_uart_get_fifo_data_1(uint8_t *buffer, uint16_t length)
     // Return the number of bytes actually read from the FIFO
     return index;
 }
+#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
 uint8_t hal_com_uart_get_fifo_data_2(uint8_t *buffer, uint16_t length)
 {
     uint8_t data = 0;  // Variable to hold each byte read from the FIFO
@@ -454,6 +457,7 @@ uint8_t hal_com_uart_get_fifo_data_2(uint8_t *buffer, uint16_t length)
     // Return the number of bytes actually read from the FIFO
     return index;
 }
+#endif
 /**
  * @brief   Sends a string over UART.
  * @param   str     Pointer to the string.
@@ -494,7 +498,7 @@ uint8_t hal_com_uart_send_buffer_1(const uint8_t *buffer, uint16_t length)
         LOG_LEVEL("buffer.length=%d linux_uart_serial_handle is null %d\r\n", length, (linux_uart_serial_handle == NULL) ? true : false);
 #endif
 #ifdef PLATFORM_CST_OSAL_RTOS
-    ret_code = HalUartSendBuf(UART1, buff, length);
+    ret_code = HalUartSendBuf(UART1, (uint8_t *)buffer, length);
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
     ret_code = write(PROTOCOL_UART_PORT, buff, length);
 #elif defined(PLATFORM_LINUX_RISC)
@@ -512,7 +516,7 @@ uint8_t hal_com_uart_send_buffer_1(const uint8_t *buffer, uint16_t length)
 #endif
     return ret_code;
 }
-
+#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
 uint8_t hal_com_uart_send_buffer_2(const uint8_t *buffer, uint16_t length)
 {
     uint8_t ret_code = length;
@@ -522,7 +526,7 @@ uint8_t hal_com_uart_send_buffer_2(const uint8_t *buffer, uint16_t length)
 #endif
 
 #ifdef PLATFORM_CST_OSAL_RTOS
-    ret_code = HalUartSendBuf(UART1, buff, length);
+    ret_code = HalUartSendBuf(UART1, (uint8_t *)buffer, length);
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
     ret_code = write(PROTOCOL_UART_PORT, buff, length);
 #elif defined(PLATFORM_LINUX_RISC)
@@ -536,3 +540,4 @@ uint8_t hal_com_uart_send_buffer_2(const uint8_t *buffer, uint16_t length)
 #endif
     return ret_code;
 }
+#endif
