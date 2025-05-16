@@ -9,7 +9,6 @@
 /* Header file contains */
 
 #include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
-#include "octopus_log.h"       			// Include logging functions for debugging
 #include "octopus_system.h"
 #include "octopus_sif.h"
 

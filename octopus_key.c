@@ -3,14 +3,12 @@
  * INCLUDES
  */
 #include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
-#include "octopus_log.h"       			// Include logging functions for debugging
-#include "octopus_task_manager.h" 	// Include task manager for scheduling tasks
 #include "octopus_flash.h"
 #include "octopus_key.h"
-#include "octopus_tickcounter.h"
-#include "octopus_msgqueue.h"
 #include "octopus_gpio.h"   // Include GPIO HAL for hardware-specific functionality
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
 #include "octopus_carinfor.h"
+#endif
 /*******************************************************************************
  * DEBUG SWITCH MACROS
 */
@@ -36,9 +34,8 @@ static bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
 static void app_do_key_action_hanlder(void);
 
 void KeySendKeyCodeEvent(uint8_t key_code, uint8_t key_state);
-void app_goto_bootloader(void);
 void polling_power_onoff_soc(void);
-
+void app_goto_bootloader(void);
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
@@ -99,21 +96,8 @@ static void app_do_key_action_hanlder(void)
       switch (key)
 			{
 				 case OCTOPUS_KEY_0:
-						break;
 				 case OCTOPUS_KEY_1:
-					 break;
 				 case OCTOPUS_KEY_14:
-						//FlashReadToBuff(0x1107c004,bt_mac,6);
-						//PrintfBuffHex(__func__, __LINE__, "read bt mac", bt_mac, 6);
-						#if 0
-						#ifdef TASK_MANAGER_STATE_MACHINE_MCU
-						system_handshake_with_app();
-						#endif
-						#ifdef TASK_MANAGER_STATE_MACHINE_SOC
-						system_handshake_with_mcu();
-						#endif
-						#endif
-				 
 					 if(key_status->long_press_duration <= GPIO_KEY_STATUS_PRESS_PERIOD)
 					 {
 							param = MK_WORD(KEY_CODE_MENU,KEY_STATE_PRESSED);
@@ -125,6 +109,7 @@ static void app_do_key_action_hanlder(void)
 								app_goto_bootloader();
 					 }			 
 					 break;		
+					 
          case OCTOPUS_KEY_POWER:
 					 if(key_status->long_press_duration >= GPIO_KEY_STATUS_LONG_LONG_PRESS_PERIOD)
 					 {	 
@@ -179,14 +164,16 @@ void app_goto_bootloader(void)
 ////////////////////////////////////////////////////////////////////////////////////
 void polling_power_onoff_soc(void)
 {
-	if(IsPowerOn())
+	if(is_power_on())
 	{
 		LOG_LEVEL("power down f133 soc\r\n");
 		#ifdef USE_EEROM_FOR_DATA_SAVING
-			carinfor_save_to_flash();
+			send_message(TASK_ID_CAR_INFOR, MSG_DEVICE_CAR_INFOR_EVENT, CMD_MODSYSTEM_SAVE_DATA, CMD_MODSYSTEM_SAVE_DATA);
 		#endif
 		send_message(TASK_ID_SYSTEM, MSG_DEVICE_POWER_EVENT, CMD_MODSYSTEM_POWER_OFF, 0);
 		power_on_off(false);	
+		if(!is_power_on())
+			LOG_LEVEL("power down f133 soc succesfuly\r\n");
 	}
 	else
 	{

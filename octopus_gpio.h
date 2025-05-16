@@ -82,7 +82,7 @@ extern "C"
 
     GPIO_KEY_STATUS *get_key_status_by_key(uint8_t key);
     void gpio_on_off(GPIO_GROUP *gpiox, uint16_t pin, bool onoff);
-
+	bool is_power_on(void);
 #ifdef __cplusplus
 }
 #endif

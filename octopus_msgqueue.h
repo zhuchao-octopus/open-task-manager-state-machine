@@ -27,33 +27,12 @@
  * INCLUDES
  */
 
-// #include "octopus_platform.h"     // General Octopus definitions
-#include "octopus_task_manager.h" // Task manager definitions
+#include "octopus_platform.h"     // General Octopus definitions
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-    /*******************************************************************************
-     * MODULE IDs (Message Types)
-     * These are the message IDs associated with different events or types of messages.
-     */
-    typedef enum
-    {
-        MSG_DEVICE_NORMAL_EVENT = 0xA0, // Normal device event message 160
-        MSG_DEVICE_ACC_EVENT = 0xA1,
-        MSG_DEVICE_KEY_DOWN_EVENT = 0xA2, // Key event message
-        MSG_DEVICE_KEY_UP_EVENT = 0xA3,   // Key event message
-        MSG_DEVICE_KEY_EVENT = 0xA4,      // Key event message
-        MSG_DEVICE_GPIO_EVENT = 0xA5,     // GPIO event message
-        MSG_DEVICE_POWER_EVENT = 0xA6,    //
-        MSG_DEVICE_HANDSHAKE_EVENT = 0xA7,
-        MSG_DEVICE_BLE_EVENT = 0xA8,
-        MSG_DEVICE_CAN_EVENT = 0xA9,
-        MSG_DEVICE_CAR_INFOR_EVENT = 0xAA,
-    } MsgId_t;
-
     /*******************************************************************************
      * DEFINITIONS AND MACROS
      */

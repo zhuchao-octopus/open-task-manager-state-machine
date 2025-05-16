@@ -51,7 +51,7 @@
 // #define PLATFORM_CST_OSAL_RTOS   // Uncomment to use CST platform with OSAL RTOS
 // #define PLATFORM_X86_WIND_RTOS   // Uncomment to use XB6 platform with WIND RTOS
 #define PLATFORM_STM32_RTOS
-// PLATFORM_LINUX_RISC         // X86 ARM linux
+// #define PLATFORM_LINUX_RISC         // X86 ARM linux
 
 
 
@@ -63,27 +63,26 @@
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
-
+#define TASK_MANAGER_STATE_MACHINE_FLASH 1 
+#define TASK_MANAGER_STATE_MACHINE_KEY 1 
+#define TASK_MANAGER_STATE_MACHINE_GPIO 1 
 //#define TASK_MANAGER_STATE_MACHINE_SIF 1 /**< Secondary interface mode. */
 //#define TASK_MANAGER_STATE_MACHINE_BLE 1 
 //#define TASK_MANAGER_STATE_MACHINE_BMS 1 
 //#define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
-#define TASK_MANAGER_STATE_MACHINE_PTL2 1 
 
-#define TASK_MANAGER_STATE_MACHINE_KEY 1 
-#define TASK_MANAGER_STATE_MACHINE_GPIO 1 
+#define TASK_MANAGER_STATE_MACHINE_CARINFOR 1
 
 //#define TASK_MANAGER_STATE_MACHINE_CAN 1 
+#define TASK_MANAGER_STATE_MACHINE_PTL2 1 
 #define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
-
 #define TASK_MANAGER_STATE_MACHINE_IPC_SOCKET 1 
 
 ///////////////////////////////////////////////////////////////////////////////////
-#define USE_EEROM_FOR_DATA_SAVING
 /***********************************************************************************
- * INCLUDE FILES
+ * BASE INCLUDE FILES
  * Include necessary standard libraries and platform-specific headers.
- ******************************************************************************/
+ ***********************************************************************************/
 #include <stddef.h>  // Standard definitions for NULL and size_t
 #include <stdint.h>  // Standard integer type definitions
 #include <stdbool.h> // Boolean type definitions
@@ -95,8 +94,16 @@
 #include <time.h>    // Time manipulation functions
 #include <stdlib.h>  // for rand()
 
+/****************************************************************************************
+ * OCTOPUS INCLUDES
+ ****************************************************************************************/
+#include "octopus_task_manager.h"   // Include task manager for scheduling tasks
 #include "octopus_log.h"       			// Include logging functions for debugging
-#include "octopus_uart_ptl_1.h"    // Include UART protocol header
+#include "octopus_tickcounter.h"    // Include tick counter for timing operations
+#include "octopus_uart_ptl_1.h"     // Include UART protocol header
+#include "octopus_tickcounter.h"    // Include tick counter for timing operations
+#include "octopus_msgqueue.h"       // Include message queue header for task communication
+#include "octopus_message.h"        // Include message id for inter-task communication
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
 #include <sys/ioctl.h>         // System I/O control definitions

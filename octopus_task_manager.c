@@ -21,7 +21,6 @@
  * INCLUDES
  */
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
-#include "octopus_log.h"          // Include logging functions for debugging
 #include "octopus_system.h"
 #include "octopus_gpio.h"
 #include "octopus_carinfor.h"

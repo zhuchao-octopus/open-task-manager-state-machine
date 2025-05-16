@@ -30,15 +30,10 @@
  * INCLUDES
  */
 #include "octopus_platform.h"     // Include platform-specific header for hardware platform details
-#include "octopus_log.h"          // Include logging functions for debugging
-#include "octopus_task_manager.h" // Include task manager for scheduling tasks
-#include "octopus_tickcounter.h"
 #include "octopus_carinfor.h"
-#include "octopus_msgqueue.h"
 #include "octopus_sif.h"
 #include "octopus_flash.h"
 #include "octopus_ipc.h"
-#include "octopus_message.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -132,7 +127,7 @@ void app_carinfo_init_running(void)
 #ifdef USE_EEROM_FOR_DATA_SAVING
 	  uint32_t data_valid_flag = 0;
   	E2ROMReadToBuff(EEROM_START_ADDRESS, (uint8_t *)&data_valid_flag, sizeof(uint32_t));
-	  if(data_valid_flag == EEROM_DATAS_ADDRESS_VALID_FLAG)
+	  if(data_valid_flag == EEROM_DATAS_VALID_FLAG)
 		{
 	  LOG_LEVEL("load meter data[%02d] ",sizeof(carinfo_meter_t));
     E2ROMReadToBuff(CARINFOR_METER_EE_READ_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
@@ -398,6 +393,17 @@ void app_car_controller_msg_handler(void)
             break;
         }
     }
+		
+		else if(MSG_DEVICE_CAR_INFOR_EVENT == msg->id)
+		{
+			 switch (msg->param1)
+			 {
+				 case CMD_MODSYSTEM_SAVE_DATA:
+					 carinfor_save_to_flash();
+					 break;
+			 }
+		}
+		
 }
 // ERROR_CODE_IDLE = 0X00,                                      // 无动作
 // ERROR_CODE_NORMAL = 0X01,                                    // 正常状态
@@ -507,7 +513,7 @@ void app_carinfo_add_error_code(ERROR_CODE error_code)
 void carinfor_save_to_flash(void)
 {
 		LOG_BUFF_LEVEL((uint8_t *)app_carinfo_get_meter_info(),sizeof(carinfo_meter_t));
-		uint32_t data_valid_flag = EEROM_DATAS_ADDRESS_VALID_FLAG;
+		uint32_t data_valid_flag = EEROM_DATAS_VALID_FLAG;
 		E2ROMWriteBuffTo(CARINFOR_METER_EE_READ_ADDRESS,(uint8_t*)&data_valid_flag,4);
 		E2ROMWriteBuffTo(CARINFOR_METER_EE_READ_ADDRESS,(uint8_t*)&lt_carinfo_meter,sizeof(carinfo_meter_t));
 }

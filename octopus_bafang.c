@@ -3,8 +3,6 @@
  * INCLUDES
  */
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_tickcounter.h"
-#include "octopus_msgqueue.h"
 #include "octopus_bafang.h"
 #include "octopus_uart_hal.h"
 #include "octopus_uart_ptl_2.h"    // Include UART protocol header

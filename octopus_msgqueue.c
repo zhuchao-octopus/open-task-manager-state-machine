@@ -32,9 +32,6 @@
  */
  
 #include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
-#include "octopus_log.h"       			// Include logging functions for debugging
-
-#include "octopus_msgqueue.h"  // Include message queue for inter-process communication
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLARATION
  */

@@ -152,6 +152,8 @@ typedef GPIO_TypeDef GPIO_GROUP;
 #define GPIO_PIN_SIF_SET_HIGH()             // Set GPIO_SIF_S_PIN to High
 #define GPIO_PIN_READ_SIF()                 (0x00) // Read the state of SIF_R_PIN
 
+#else 
+ typedef uint8_t GPIO_GROUP;
 #endif
 
 /*********************************************************************

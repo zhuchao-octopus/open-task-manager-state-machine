@@ -25,11 +25,7 @@
  * INCLUDES
  ******************************************************************************/
 #include "octopus_platform.h"     // Include platform-specific header for hardware platform details
-#include "octopus_log.h"          // Include logging functions for debugging
-#include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_gpio.h"         // Include GPIO control and configuration
-#include "octopus_tickcounter.h"  // Include tick counter for timing operations
-#include "octopus_msgqueue.h"     // Include message queue for inter-task communication
 #include "octopus_flash.h"        // Include flash memory access functions
 #include "octopus_key.h"          // Include key status and event handling
 
@@ -53,11 +49,11 @@ static uint32_t l_t_msg_wait_50_timer;
  * GLOBAL VARIABLES
  */
 
-GPIO_STATUS acc_status = {false, true, 0, 0};
-GPIO_STATUS ddd_status = {false, true, 0, 0};
-GPIO_STATUS zzd_status = {false, true, 0, 0};
-GPIO_STATUS yzd_status = {false, true, 0, 0};
-GPIO_STATUS skd_status = {false, true, 0, 0};
+//GPIO_STATUS acc_status = {false, true, 0, 0};
+//GPIO_STATUS ddd_status = {false, true, 0, 0};
+//GPIO_STATUS zzd_status = {false, true, 0, 0};
+//GPIO_STATUS yzd_status = {false, true, 0, 0};
+//GPIO_STATUS skd_status = {false, true, 0, 0};
 
 GPIO_KEY_STATUS key_status_power = {OCTOPUS_KEY_POWER, 0};
 GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_power};
@@ -381,7 +377,7 @@ GPIO_KEY_STATUS *get_key_status_by_key(uint8_t key)
     return NULL;
 }
 
-bool IsPowerOn(void)
+bool is_power_on(void)
 {
     return GPIO_PIN_READ(GPIO_POWER_F113_GROUP, GPIO_POWER_F113_PIN);
 }

@@ -12,7 +12,6 @@
  */
 
 #include "octopus_platform.h"
-#include "octopus_log.h"
 #include "octopus_sif.h"
 #include "octopus_timer_hal.h"
 

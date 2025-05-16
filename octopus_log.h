@@ -26,7 +26,10 @@
  * INCLUDES
  */
 
-#include "octopus_platform.h"
+//#include "octopus_platform.h"
+#include <stdint.h>  // Standard integer type definitions
+#include <stdarg.h>  // Variable argument list handling
+
 
 #ifdef __cplusplus
 extern "C"

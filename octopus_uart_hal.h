@@ -84,7 +84,7 @@ uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events);
 void* hal_com_uart_event_handler(void* arg);
 #endif
 
-
+void uart_init(void);
 /*******************************************************************************/
 
 #ifdef __cplusplus

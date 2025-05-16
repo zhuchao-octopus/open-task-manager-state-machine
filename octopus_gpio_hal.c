@@ -12,7 +12,6 @@
  */
 
 #include "octopus_platform.h" // Include Octopus module header
-#include "octopus_log.h"
 #include "octopus_gpio_hal.h" // Include the GPIO hardware abstraction layer header
 
 #ifdef PLATFORM_CST_OSAL_RTOS

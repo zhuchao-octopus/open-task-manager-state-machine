@@ -13,10 +13,7 @@
  */
 #include "octopus_platform.h"
 #include "octopus_cfifo.h"
-
-#include "octopus_log.h"
 #include "octopus_uart_hal.h"
-#include "octopus_uart_ptl_1.h"
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
@@ -326,16 +323,16 @@ static void hal_com_uart_receive_callback(const uint8_t *data, int length)
 }
 
 #else
-static void uart_init(void)
+void uart_init(void)
 {
-    cFifo_Init(&ptl_1_usart_rx_fifo, ptl_1_usart_rx_fifo_buff, sizeof(ptl_1_usart_rx_fifo_buff));
-    cFifo_Init(&ptl_2_usart_rx_fifo, ptl_2_usart_rx_fifo_buff, sizeof(ptl_2_usart_rx_fifo_buff));
+  hal_uart_init(0);
 }
 
 void hal_uart_init(uint8_t task_id)
 {
-    LOG_LEVEL("hal uart2 init for protocol\r\n");
-    uart_init();
+    LOG_LEVEL("hal init for protocol\r\n");
+	  cFifo_Init(&ptl_1_usart_rx_fifo, ptl_1_usart_rx_fifo_buff, sizeof(ptl_1_usart_rx_fifo_buff));
+    cFifo_Init(&ptl_2_usart_rx_fifo, ptl_2_usart_rx_fifo_buff, sizeof(ptl_2_usart_rx_fifo_buff));
 }
 
 void hal_com_uart_receive_callback_ptl_1(const uint8_t *buffer, uint16_t length)

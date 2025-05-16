@@ -25,12 +25,8 @@
  * INCLUDES
  */
 #include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
-#include "octopus_log.h"       			// Include logging functions for debugging
-#include "octopus_task_manager.h" 	// Include task manager for scheduling tasks
-
 #include "octopus_update_soc.h" 
-#include "octopus_tickcounter.h" 		// Include tick counter for timing operations
-#include "octopus_msgqueue.h"  			// Include message queue for inter-process communication
+
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
 #include "../update/intelhexupdate.h"

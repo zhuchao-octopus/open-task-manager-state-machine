@@ -22,15 +22,7 @@
  /*******************************************************************************
   * INCLUDES
   ******************************************************************************/
- #include "octopus_platform.h"
- //#include "octopus_system.h"
- //#include "octopus_gpio.h"
- //#include "octopus_carinfor.h"
- //#include "octopus_ble.h"
- //#include "octopus_key.h"
- //#include "octopus_update_soc.h"
- //#include "octopus_update_mcu.h"
- //#include "octopus_ipc.h"
+#include <stdint.h>  // Standard integer type definitions
  
  /*******************************************************************************
   * MACROS

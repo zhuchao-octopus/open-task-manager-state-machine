@@ -20,10 +20,7 @@
  * INCLUDES
  */
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
-
-#include "octopus_task_manager.h" // Include task manager for scheduling tasks
-#include "octopus_tickcounter.h"
-#include "octopus_log.h" // Include logging functions for debugging
+#include "octopus_flash.h"
 #include "octopus.h"
 
 /*******************************************************************************
@@ -113,8 +110,8 @@ void TaskManagerStateMachineInit(void)
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     hal_timer_init(5); // Initialize timer with interval of 5 (could be milliseconds)
 #endif
-    hal_flash_init(0);
-    hal_uart_init(0); // Initialize UART communication protocol
+    flash_init();
+    uart_init(); // Initialize UART communication protocol
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize the necessary modules
@@ -150,7 +147,8 @@ void TaskManagerStateMachineInit(void)
 #endif
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     //LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
-	 LOG_NONE("---------------------------------------------------------------------------\r\n");
+	 LOG_NONE("----------------------------------------------------------------------------------\r\n");
+	 flash_print_user_data_infor();
 }
 
 void exit_cleanup()
