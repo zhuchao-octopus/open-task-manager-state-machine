@@ -33,21 +33,21 @@ void flash_init(void)
 #endif
 }
 
-void flash_print_user_data_infor(void)
+void flash_load_user_data_infor(void)
 {
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	DEBUG_BOOTLOADER_ADDR_INFO();
-	DEBUG_MAIN_APP_ADDR_INFO();
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef USE_EEROM_FOR_DATA_SAVING
-	E2ROMReadToBuff(EEROM_START_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
-
-	LOG_LEVEL("eeprom data address    : 0x%08X\n", EEROM_DATAS_ADDRESS);
-	LOG_LEVEL("eeprom apppp valid flag: 0x%08X\n", app_meta_data.user_APP_flag);
-	LOG_LEVEL("eeprom datas valid flag: 0x%08X\n", app_meta_data.user_data_flag);
-	LOG_LEVEL("eeprom apppp code crc  : 0x%08X\n", app_meta_data.crc);
+	E2ROMReadToBuff(EEROM_APP_MATA_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
+  LOG_LEVEL("   bootloader address: 0x%08X,0x%08X\n", BOOTLOADER_START_ADDR, BOOTLOADER_END_ADDR);
+	LOG_LEVEL("     user app address: 0x%08X,0x%08X\n", MAIN_APP_START_ADDR, MAIN_APP_END_ADDR);
+	LOG_LEVEL("user apppp valid flag: 0x%08X\n", app_meta_data.user_app_flag);
+	LOG_LEVEL("  user apppp code crc: 0x%08X\n", app_meta_data.user_app_crc);
+	LOG_LEVEL("user datas valid flag: 0x%08X\n", app_meta_data.user_meter_data_flag);
+	LOG_LEVEL(" user other data flag: 0x%08X\n", app_meta_data.user_other_data_flag);
+	LOG_LEVEL("   user data  address: 0x%08X\n", EEROM_DATAS_ADDRESS);
 #endif
 }
 /*******************************************************************************
@@ -57,8 +57,9 @@ void JumpToMainApplication(void)
 {
 	// Deinitialize hardware if needed
 	// Disable interrupts
+	#ifdef TASK_MANAGER_STATE_MACHINE_BOOTLOADER
 	__disable_irq();
-
+    
 	// Get the main stack pointer (MSP) value from the application vector table
 	uint32_t mainStackPointer = *(volatile uint32_t *)(MAIN_APP_START_ADDR);
 
@@ -73,6 +74,7 @@ void JumpToMainApplication(void)
 
 	// Jump to the application
 	appEntry();
+	#endif
 }
 /*******************************************************************************
  * CRC Calculation
@@ -115,10 +117,10 @@ bool VerifyMainAppIntegrity(uint32_t expected_crc)
 void BootloaderMainLoopEvent(void)
 {
 	// uint32_t expected_crc = 0xDEADBEEF; // This should be replaced with real CRC
-	if (app_meta_data.crc == 0)
+	if (app_meta_data.user_app_crc == 0)
 		E2ROMReadToBuff(EEROM_START_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
 
-	if (VerifyMainAppIntegrity(app_meta_data.crc))
+	if (VerifyMainAppIntegrity(app_meta_data.user_app_crc))
 	{
 		// If application is valid, jump to it
 		LOG_LEVEL("verify user applicaton success jump to %08x ...\r\n", MAIN_APP_START_ADDR);

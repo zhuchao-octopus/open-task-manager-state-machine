@@ -97,13 +97,13 @@
 /****************************************************************************************
  * OCTOPUS INCLUDES
  ****************************************************************************************/
-#include "octopus_task_manager.h"   // Include task manager for scheduling tasks
-#include "octopus_log.h"       			// Include logging functions for debugging
-#include "octopus_tickcounter.h"    // Include tick counter for timing operations
-#include "octopus_uart_ptl_1.h"     // Include UART protocol header
-#include "octopus_tickcounter.h"    // Include tick counter for timing operations
-#include "octopus_msgqueue.h"       // Include message queue header for task communication
-#include "octopus_message.h"        // Include message id for inter-task communication
+#include "octopus_task_manager.h" // Include task manager for scheduling tasks
+#include "octopus_log.h"          // Include logging functions for debugging
+#include "octopus_tickcounter.h"  // Include tick counter for timing operations
+#include "octopus_uart_ptl_1.h"   // Include UART protocol header
+#include "octopus_tickcounter.h"  // Include tick counter for timing operations
+#include "octopus_msgqueue.h"     // Include message queue header for task communication
+#include "octopus_message.h"      // Include message id for inter-task communication
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
 #include <sys/ioctl.h>         // System I/O control definitions

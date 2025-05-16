@@ -110,7 +110,7 @@ static void app_do_key_action_hanlder(void)
             break;
 
         case OCTOPUS_KEY_POWER:
-            if (key_status->long_press_duration >= GPIO_KEY_STATUS_LONG_LONG_PRESS_PERIOD)
+            if (key_status->long_press_duration >= GPIO_KEY_STATUS_LONG_PRESS_PERIOD)
             {
                 if (!key_status->ignore)
                 {

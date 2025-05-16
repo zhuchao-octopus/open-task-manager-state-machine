@@ -125,15 +125,12 @@ void app_carinfo_init_running(void)
     // srand(1234); // Seed the random number generator
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_INVALID);
 #ifdef USE_EEROM_FOR_DATA_SAVING
-    uint32_t data_valid_flag = 0;
-    E2ROMReadToBuff(EEROM_START_ADDRESS, (uint8_t *)&data_valid_flag, sizeof(uint32_t));
-    if (data_valid_flag == EEROM_DATAS_VALID_FLAG)
+    if (app_meta_data.user_meter_data_flag == EEROM_DATAS_VALID_FLAG)
     {
         LOG_LEVEL("load meter data[%02d] ", sizeof(carinfo_meter_t));
-        E2ROMReadToBuff(CARINFOR_METER_EE_READ_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+        E2ROMReadToBuff(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
         LOG_BUFF((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
     }
-    // LOG_NONE("\r\n");
 #endif
 }
 
@@ -513,9 +510,9 @@ void app_carinfo_add_error_code(ERROR_CODE error_code)
 void carinfor_save_to_flash(void)
 {
     LOG_BUFF_LEVEL((uint8_t *)app_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-    uint32_t data_valid_flag = EEROM_DATAS_VALID_FLAG;
-    E2ROMWriteBuffTo(CARINFOR_METER_EE_READ_ADDRESS, (uint8_t *)&data_valid_flag, 4);
-    E2ROMWriteBuffTo(CARINFOR_METER_EE_READ_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+	  app_meta_data.user_meter_data_flag=EEROM_DATAS_VALID_FLAG;
+    E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
+    E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
 }
 
 #ifdef USE_EEROM_FOR_DATA_SAVING

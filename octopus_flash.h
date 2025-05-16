@@ -8,43 +8,40 @@
  * @version  1.0
  * @date     2024-12-12
  * @author   Octopus Team
- ******************************************************************************/
+ ***************************************************************************************/
 #ifndef __OCTOPUS_TASK_MANAGER_FLASH_H__
 #define __OCTOPUS_TASK_MANAGER_FLASH_H__
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
 #include "octopus_platform.h"  ///< Include platform-specific configurations
 #include "octopus_flash_hal.h" ///< Include Flash Hardware Abstraction Layer (HAL) for low-level operations
+
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
-/*******************************************************
- * Struct Definition
- *******************************************************/
-typedef struct
-{
-    uint32_t user_APP_flag;
-    uint32_t user_data_flag;
-    uint32_t crc; // CRC32 value for data integrity
-
-    uint32_t flag; // Status flag for application state
-} app_meta_data_t;
-
-extern app_meta_data_t app_meta_data;
-
+/***************************************************************************************
+ * User Data EEPROM Struct Definition
+ ***************************************************************************************/
 #define USE_EEROM_FOR_DATA_SAVING
+#define EEPROM_APP_META_SIZE (128) //128byte app meta struct total 2kb
 
-#define EEROM_START_ADDRESS (0x00000000)
+#define EEROM_START_ADDRESS  (0x00000000)
+#define EEROM_APP_MATA_ADDRESS  (EEROM_START_ADDRESS)
+#define EEROM_DATAS_ADDRESS  (EEROM_APP_MATA_ADDRESS + EEPROM_APP_META_SIZE)  //user data area from app meta struct
 
-// #define EEROM_APPPP_VALID_ADDRESS       (EEROM_START_ADDRESS)
-// #define EEROM_APPPP_CRC_ADDRESS        	(EEROM_START_ADDRESS + 4)
-// #define EEROM_DATAS_VALID_ADDRESS       (EEROM_START_ADDRESS + 8)
-
-#define EEROM_DATAS_ADDRESS (EEROM_START_ADDRESS + 1024)
-#define CARINFOR_METER_EE_READ_ADDRESS (EEROM_DATAS_ADDRESS + 0)
+#define EEROM_CARINFOR_METER_ADDRESS (EEROM_DATAS_ADDRESS + 0)
 
 #define EEROM_DATAS_VALID_FLAG (0xAA55)
 #define EEROM_APPPP_VALID_FLAG (0x55AA)
 
+typedef struct
+{
+    uint32_t user_app_flag;
+	  uint32_t user_app_crc; // CRC32 value for data integrity
+    uint32_t user_meter_data_flag;
+    uint32_t user_other_data_flag; // Status flag for application state
+} app_meta_data_t;
+
+extern app_meta_data_t app_meta_data;
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
 /*******************************************************
@@ -99,7 +96,7 @@ extern "C"
     extern void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length);
     extern void BootloaderMainLoopEvent(void);
 
-    void flash_print_user_data_infor(void);
+    void flash_load_user_data_infor(void);
     void flash_init(void);
     uint32_t Flash_erase_user_app_arear(void);
 #ifdef __cplusplus
