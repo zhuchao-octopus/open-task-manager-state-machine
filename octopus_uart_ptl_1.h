@@ -83,7 +83,7 @@ extern "C"
         MCU_TO_SOC_MOD_KEY = 0x05,      ///< KEY
         MCU_TO_SOC_MOD_CAN = 0x06,      ///< CAN
         MCU_TO_SOC_MOD_IPC = 0x07,      ///< IPC socket
-
+						
         /* SOC -> MCU module IDs */
         SOC_TO_MCU_MOD_SYSTEM = 0x80,   ///< System initialization
         SOC_TO_MCU_MOD_UPDATE = 0x81,   ///< System update
@@ -143,9 +143,6 @@ extern "C"
         CMD_MODSETUP_UPDATE_TIME = 0x1A, ///< Update time
         CMD_MODSETUP_SET_TIME = 0x1B,    ///< Set time
         CMD_MODSETUP_KEY = 0x1C,         ///< Key input
-
-        CMD_MODCAR_SET_LIGHT = 0x1D, ///< set car light
-        CMD_MODCAR_SET_GEAR = 0x1E,
 
     } ptl_frame_cmd_t;
 
@@ -284,7 +281,7 @@ extern "C"
     uint8_t ptl_get_checksum(uint8_t *data, uint8_t length);
 
     void ptl_help(void);
-
+    void print_all_registered_module(void);
 #ifdef __cplusplus
 }
 #endif

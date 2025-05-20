@@ -79,7 +79,7 @@ uint8_t GetTaskManagerStateMachineId(void)
  * @param task_id The task ID to initialize.
  * @return 0 on success, non-zero on failure.
  */
-void TaskManagerStateMachineInit(void)
+void TaskManagerStateMachineInit(uint8 task_id)
 {
     LOG_NONE("---------------------------------------------------------------------------\r\n");
     LOG_NONE("               _____                                 \r\n");
@@ -94,7 +94,7 @@ void TaskManagerStateMachineInit(void)
     LOG_NONE(" Compiled  : %s %s\r\n", __DATE__, __TIME__);
     LOG_NONE(" Author    : Octopus Dev Team\r\n");
     LOG_NONE("---------------------------------------------------------------------------\r\n");
-    TaskManagerStateMachine_Id_ = 0; // Store the task ID in the global variable
+    TaskManagerStateMachine_Id_ = task_id; // Store the task ID in the global variable
     /// LOG_NONE("\r\n\r\n");//[1B blob data]
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     //LOG_NONE("\r\n######################################BOOT  START######################################\r\n");
@@ -106,29 +106,27 @@ void TaskManagerStateMachineInit(void)
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize hardware abstraction layers (HAL)
-    hal_gpio_init(0); // Initialize GPIO
+    gpio_init(); // Initialize GPIO
+	flash_init();
+    uart_init(); // Initialize UART communication protocol
+		
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     hal_timer_init(5); // Initialize timer with interval of 5 (could be milliseconds)
-#endif
-    flash_init();
-    uart_init(); // Initialize UART communication protocol
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Initialize the necessary modules
-    message_queue_init(); // Initialize the task message queue.
-#ifdef TASK_MANAGER_STATE_MACHINE_SIF
     sif_init();
 #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_BMS
     bms_init();
 #endif
     /////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Initialize the necessary modules
+    message_queue_init(); // Initialize the task message queue.
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize user task manager state machine
     task_manager_init();  // Initialize the task manager
     task_manager_start(); // Start the task manager
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Nofify Initialize complete
+    //Nofify Initialize complete
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     //system_handshake_with_app();
 #endif
@@ -136,6 +134,7 @@ void TaskManagerStateMachineInit(void)
     system_handshake_with_mcu();
 #endif
     ptl_help();
+		
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Enable task manager state matching main loop
 #ifdef PLATFORM_CST_OSAL_RTOS
@@ -148,7 +147,7 @@ void TaskManagerStateMachineInit(void)
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     //LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
 	 LOG_NONE("----------------------------------------------------------------------------------\r\n");
-	 flash_print_user_data_infor();
+	 flash_load_user_data_infor();
 }
 
 void exit_cleanup()
@@ -179,25 +178,25 @@ uint16 TaskManagerStateEventLoop(uint8 task_id, uint16 events)
     else if (events & DEVICE_BLE_PAIR) // If BLE pairing event is triggered
     {
         LOG_LEVEL("task_id=%d events=%d ble pair\r\n", task_id, events);
-        send_message(TASK_ID_BLE, MSG_DEVICE_BLE_EVENT, events, events); // Send BLE pair event to BLE task
+        send_message(TASK_ID_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_PAIRING, events); // Send BLE pair event to BLE task
         return (events ^ DEVICE_BLE_PAIR);                               // Remove the BLE pair event from the active events
     }
     else if (events & DEVICE_BLE_BONDED) // If BLE bonded event is triggered
     {
         LOG_LEVEL("task_id=%d events=%d ble bonded\r\n", task_id, events);
-        send_message(TASK_ID_BLE, MSG_DEVICE_BLE_EVENT, events, events); // Send BLE bonded event to BLE task
+        send_message(TASK_ID_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_BONDED, events); // Send BLE bonded event to BLE task
         return (events ^ DEVICE_BLE_BONDED);                             // Remove the BLE bonded event from the active events
     }
     else if (events & DEVICE_BLE_CONNECTED) // If BLE connected event is triggered
     {
         LOG_LEVEL("task_id=%d events=%d ble connected\r\n", task_id, events);
-        send_message(TASK_ID_BLE, MSG_DEVICE_BLE_EVENT, events, events); // Send BLE connected event to BLE task
+        send_message(TASK_ID_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, events); // Send BLE connected event to BLE task
         return (events ^ DEVICE_BLE_CONNECTED);                          // Remove the BLE connected event from the active events
     }
     else if (events & DEVICE_BLE_DISCONNECTED) // If BLE disconnected event is triggered
     {
         LOG_LEVEL("task_id=%d events=%d ble disconnected\r\n", task_id, events);
-        send_message(TASK_ID_BLE, MSG_DEVICE_BLE_EVENT, events, events); // Send BLE disconnected event to BLE task
+        send_message(TASK_ID_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, events); // Send BLE disconnected event to BLE task
         return (events ^ DEVICE_BLE_DISCONNECTED);                       // Remove the BLE disconnected event from the active events
     }
     else

@@ -1,6 +1,6 @@
 /********************************** (C) COPYRIGHT *******************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
+ * Attention: This software (modified or not) and binary are used for
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************
  */
@@ -8,113 +8,113 @@
 /******************************************************************************/
 /* Header file contains */
 
-#include "octopus_platform.h"  			// Include platform-specific header for hardware platform details
+#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_system.h"
 #include "octopus_sif.h"
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
-*/
+ */
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
 /********************************** (C) COPYRIGHT *******************************
  * CONSTANTS
  */
 
-#define SIF_LOW                    			0      	//µÍµçÆ½
-#define SIF_HIGH                    		1      	//¸ßµçÆ½
+#define SIF_LOW 0  // ï¿½Íµï¿½Æ½
+#define SIF_HIGH 1 // ï¿½ßµï¿½Æ½
 
-#define SIF_REV_SYNC_L_TIME_NUM         500     //Í¬²½ÐÅºÅµÍµçÆ½Ê±¼ä£º30ms = 30000us / 50us = 600
+#define SIF_REV_SYNC_L_TIME_NUM 500 // Í¬ï¿½ï¿½ï¿½ÅºÅµÍµï¿½Æ½Ê±ï¿½ä£º30ms = 30000us / 50us = 600
 
-#define SIF_REV_SYNC_H_TIME_NUM_MIN     18      //Í¬²½ÐÅºÅ¸ßµçÆ½×îÐ¡Ê±¼ä£º1000-100us = 900us / 50us = 18
-#define SIF_REV_SYNC_H_TIME_NUM_MAX     42      //Í¬²½ÐÅºÅ¸ßµçÆ½×î´óÊ±¼ä£º1000+100us = 1000us / 50us = 22
+#define SIF_REV_SYNC_H_TIME_NUM_MIN 18 // Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½ï¿½ï¿½Ð¡Ê±ï¿½ä£º1000-100us = 900us / 50us = 18
+#define SIF_REV_SYNC_H_TIME_NUM_MAX 42 // Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½ï¿½ï¿½ï¿½Ê±ï¿½ä£º1000+100us = 1000us / 50us = 22
 
-//#define SIF_REV_SHORT_TIME_NUM_MIN      18      //Ò»¸öÂß¼­ÖÜÆÚÖÐ¶ÌµÄÊ±¼ä×îÐ¡Öµ£º1000-100us = 900us / 50us = 18
-//#define SIF_REV_SHORT_TIME_NUM_MAX      22      //Ò»¸öÂß¼­ÖÜÆÚÖÐ¶ÌµÄÊ±¼ä×î´óÖµ£º1000+100us = 1000us / 50us = 22
+// #define SIF_REV_SHORT_TIME_NUM_MIN      18      //Ò»ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ìµï¿½Ê±ï¿½ï¿½ï¿½ï¿½Ð¡Öµï¿½ï¿½1000-100us = 900us / 50us = 18
+// #define SIF_REV_SHORT_TIME_NUM_MAX      22      //Ò»ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ìµï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½1000+100us = 1000us / 50us = 22
 
-//#define SIF_REV_LONG_TIME_NUM_MIN       36      //Ò»¸öÂß¼­ÖÜÆÚÖÐ³¤µÄÊ±¼ä×îÐ¡Öµ£º2ms-200us = 1800us / 50us = 36
-//#define SIF_REV_LONG_TIME_NUM_MAX       44      //Ò»¸öÂß¼­ÖÜÆÚÖÐ³¤µÄÊ±¼ä×î´óÖµ£º2ms+200us = 2200us / 50us = 44
+// #define SIF_REV_LONG_TIME_NUM_MIN       36      //Ò»ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð³ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Ð¡Öµï¿½ï¿½2ms-200us = 1800us / 50us = 36
+// #define SIF_REV_LONG_TIME_NUM_MAX       44      //Ò»ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð³ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½2ms+200us = 2200us / 50us = 44
 
-#define SIF_REV_LOGIC_CYCLE_NUM_MIN     54      //Ò»¸öÂß¼­ÖÜÆÚ×îÐ¡Ê±¼ä£º3ms-300us = 2700us / 50us = 54
-#define SIF_REV_LOGIC_CYCLE_NUM_MAX     66      //Ò»¸öÂß¼­ÖÜÆÚ×î´óÊ±¼ä£º3ms+300us = 3300us / 50us = 66
+#define SIF_REV_LOGIC_CYCLE_NUM_MIN 54 // Ò»ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¡Ê±ï¿½ä£º3ms-300us = 2700us / 50us = 54
+#define SIF_REV_LOGIC_CYCLE_NUM_MAX 66 // Ò»ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ä£º3ms+300us = 3300us / 50us = 66
 
-#define SIF_REV_HALF_LOGIC_CYCLE_MIN    27      //Ò»¸öÂß¼­ÖÜÆÚµÄ1/2×îÐ¡Ê±¼ä£º1.5ms-150us = 1350us / 50us = 27
-#define SIF_REV_HALF_LOGIC_CYCLE_MAX    33      //Ò»¸öÂß¼­ÖÜÆÚµÄ1/2×î´óÊ±¼ä£º1.5ms+150us = 1650us / 50us = 33
+#define SIF_REV_HALF_LOGIC_CYCLE_MIN 27 // Ò»ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½Úµï¿½1/2ï¿½ï¿½Ð¡Ê±ï¿½ä£º1.5ms-150us = 1350us / 50us = 27
+#define SIF_REV_HALF_LOGIC_CYCLE_MAX 33 // Ò»ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½Úµï¿½1/2ï¿½ï¿½ï¿½Ê±ï¿½ä£º1.5ms+150us = 1650us / 50us = 33
 
-#define SIF_REV_END_SIGNAL_TIME_NUM     60      //½áÊøÐÅºÅµçÆ½Ê±¼ä£º5msµÍµçÆ½ + Nms¸ßµçÆ½£¬Êµ¼Ê¼ì²â5msµÍµçÆ½¾ÍÐÐ£¬Ò»Ö¡Êý¾Ý·¢ËÍÍê³Éºó¼ì²â5msµÍµçÆ½¾Í´ú±íÍê³ÉÁË£¬²»·¢Êý¾ÝµÄÊ±ºòÉÏÀ­µç×èÀ­¸ßÁË
+#define SIF_REV_END_SIGNAL_TIME_NUM 60 // ï¿½ï¿½ï¿½ï¿½ï¿½ÅºÅµï¿½Æ½Ê±ï¿½ä£º5msï¿½Íµï¿½Æ½ + Nmsï¿½ßµï¿½Æ½ï¿½ï¿½Êµï¿½Ê¼ï¿½ï¿½5msï¿½Íµï¿½Æ½ï¿½ï¿½ï¿½Ð£ï¿½Ò»Ö¡ï¿½ï¿½ï¿½Ý·ï¿½ï¿½ï¿½ï¿½ï¿½Éºï¿½ï¿½ï¿½5msï¿½Íµï¿½Æ½ï¿½Í´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ýµï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-#define SIF_REV_BIT_NUM                 8       //½ÓÊÕµÄbitÎ»¸öÊý£¬1×Ö½Ú=8bit
+#define SIF_REV_BIT_NUM 8 // ï¿½ï¿½ï¿½Õµï¿½bitÎ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1ï¿½Ö½ï¿½=8bit
 
-#define SIF_REV_DATA_NUM                12      //½ÓÊÕµÄÊý¾Ý¸öÊý
+#define SIF_REV_DATA_NUM 12 // ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½ï¿½
 
-#define SIF_SEND_SYNC_L_TIME_NUM        600     //Í¬²½ÐÅºÅµÍµçÆ½Ê±¼ä£º30ms = 30000us / 50us = 600
-#define SIF_SEND_SYNC_H_TIME_NUM        10      //Í¬²½ÐÅºÅ¸ßµçÆ½Ê±¼ä£º500us = 500us / 50us = 10
-#define SIF_SEND_SHORT_TIME_NUM         10      //Ò»¸öÂß¼­ÖÜÆÚÖÐ¶ÌµÄÊ±¼ä£º500us = 500us / 50us = 10
-#define SIF_SEND_LONG_TIME_NUM          20      //Ò»¸öÂß¼­ÖÜÆÚÖÐ³¤µÄÊ±¼ä£º1ms = 1000us / 50us = 20
+#define SIF_SEND_SYNC_L_TIME_NUM 600 // Í¬ï¿½ï¿½ï¿½ÅºÅµÍµï¿½Æ½Ê±ï¿½ä£º30ms = 30000us / 50us = 600
+#define SIF_SEND_SYNC_H_TIME_NUM 10	 // Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½Ê±ï¿½ä£º500us = 500us / 50us = 10
+#define SIF_SEND_SHORT_TIME_NUM 10	 // Ò»ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ìµï¿½Ê±ï¿½ä£º500us = 500us / 50us = 10
+#define SIF_SEND_LONG_TIME_NUM 20	 // Ò»ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð³ï¿½ï¿½ï¿½Ê±ï¿½ä£º1ms = 1000us / 50us = 20
 
-#define SIF_SEND_BIT_NUM                8       //·¢ËÍµÄbitÎ»¸öÊý£¬1×Ö½Ú=8bit
+#define SIF_SEND_BIT_NUM 8 // ï¿½ï¿½ï¿½Íµï¿½bitÎ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1ï¿½Ö½ï¿½=8bit
 
-#define SIF_SEND_DATA_MAX_NUM           12      //·¢ËÍµÄÊý¾Ý×î´ó¸öÊý
+#define SIF_SEND_DATA_MAX_NUM 12 // ï¿½ï¿½ï¿½Íµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 /***************************************************************************************************
  *                                           GLOBAL VARIABLES
  ***************************************************************************************************/
 
-/* ÀàÐÍ¶¨Òå -------------------------------------------------------------------*/
+/* ï¿½ï¿½ï¿½Í¶ï¿½ï¿½ï¿½ -------------------------------------------------------------------*/
 typedef enum
 {
-	SIF_REV_STATE_INITIAL = 0,    //³õÊ¼×´Ì¬£¬µÈ´ý½ÓÊÕÍ¬²½ÐÅºÅ
-	SIF_REV_STATE_SYNC_L = 1,    //½ÓÊÕÍ¬²½µÍµçÆ½ÐÅºÅ×´Ì¬
-	SIF_REV_STATE_SYNC_H = 2,    //½ÓÊÕÍ¬²½¸ßµçÆ½ÐÅºÅ×´Ì¬
-	SIF_REV_STATE_REV_BIT = 3,    //¶ÁÈ¡Êý¾ÝÂëµçÆ½×´Ì¬
-	SIF_REV_STATE_BUILD_DATA = 4,    //¹¹½¨×Ö½ÚÊý¾Ý
-	SIF_REV_STATE_END_SIGNAL = 5,    //½ÓÊÕ½áÊøµçÆ½ÐÅºÅ×´Ì¬
+	SIF_REV_STATE_INITIAL = 0,	  // ï¿½ï¿½Ê¼×´Ì¬ï¿½ï¿½ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½Åºï¿½
+	SIF_REV_STATE_SYNC_L = 1,	  // ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½Åºï¿½×´Ì¬
+	SIF_REV_STATE_SYNC_H = 2,	  // ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ßµï¿½Æ½ï¿½Åºï¿½×´Ì¬
+	SIF_REV_STATE_REV_BIT = 3,	  // ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ½×´Ì¬
+	SIF_REV_STATE_BUILD_DATA = 4, // ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
+	SIF_REV_STATE_END_SIGNAL = 5, // ï¿½ï¿½ï¿½Õ½ï¿½ï¿½ï¿½ï¿½ï¿½Æ½ï¿½Åºï¿½×´Ì¬
 	SIF_REV_STATE_IDLE_SIGNAL = 6,
-	SIF_REV_STATE_RESTART = 7,     //½ÓÊÕ¹ý³Ì³ö´íÖØÐÂ½ÓÊÕ×´Ì¬
+	SIF_REV_STATE_RESTART = 7, // ï¿½ï¿½ï¿½Õ¹ï¿½ï¿½Ì³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½×´Ì¬
 	SIF_REV_STATE_STOP = 8
-} SIF_REV_STATE_T;   //½ÓÊÕÊý¾Ý×´Ì¬Ã¶¾Ù
+} SIF_REV_STATE_T; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬Ã¶ï¿½ï¿½
 
 typedef enum
 {
-	SIF_SEND_STATE_INITIAL = 0,    //³õÊ¼×´Ì¬£¬µÈ´ý·¢ËÍÊý¾Ý±êÖ¾
-	SIF_SEND_STATE_SYNC_L = 1,    //·¢ËÍÍ¬²½µÍµçÆ½ÐÅºÅ×´Ì¬
-	SIF_SEND_STATE_SYNC_H = 2,    //·¢ËÍÍ¬²½¸ßµçÆ½ÐÅºÅ×´Ì¬
-	SIF_SEND_STATE_GET_BIT = 3,    //»ñÈ¡Êý¾ÝÎ»
-	SIF_SEND_STATE_BIT_L = 4,    //·¢ËÍÊý¾ÝÂëµÍµçÆ½ÐÅºÅ×´Ì¬
-	SIF_SEND_STATE_BIT_H = 5,    //·¢ËÍÊý¾ÝÂë¸ßµçÆ½ÐÅºÅ×´Ì¬
-	SIF_SEND_STATE_CHECK_BIT = 6,    //¼ì²éÊý¾ÝÎ»×´Ì¬
-	SIF_SEND_STATE_END_SIGNAL = 7,    //·¢ËÍ½áÊøµçÆ½ÐÅºÅ×´Ì¬
+	SIF_SEND_STATE_INITIAL = 0,	   // ï¿½ï¿½Ê¼×´Ì¬ï¿½ï¿½ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý±ï¿½Ö¾
+	SIF_SEND_STATE_SYNC_L = 1,	   // ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½Åºï¿½×´Ì¬
+	SIF_SEND_STATE_SYNC_H = 2,	   // ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ßµï¿½Æ½ï¿½Åºï¿½×´Ì¬
+	SIF_SEND_STATE_GET_BIT = 3,	   // ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½Î»
+	SIF_SEND_STATE_BIT_L = 4,	   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½Åºï¿½×´Ì¬
+	SIF_SEND_STATE_BIT_H = 5,	   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ßµï¿½Æ½ï¿½Åºï¿½×´Ì¬
+	SIF_SEND_STATE_CHECK_BIT = 6,  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»×´Ì¬
+	SIF_SEND_STATE_END_SIGNAL = 7, // ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Æ½ï¿½Åºï¿½×´Ì¬
 
-} SIF_SEND_STATE_T;  //·¢ËÍÊý¾Ý×´Ì¬Ã¶¾Ù
+} SIF_SEND_STATE_T; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬Ã¶ï¿½ï¿½
 
-/* ½ÓÊÕ±äÁ¿¶¨Òå -------------------------------------------------------------------*/
-uint32_t SIF_receive_H_L_Level_time_cnt = 0; //¸ßµÍµçÆ½Ê±¼ä¼ÆÊý
-uint8_t SIF_receive_start_H_L_Level_timming_flag = 0; //¿ªÊ¼¸ßµÍµçÆ½¼ÆÊ±±ê¼Ç
+/* ï¿½ï¿½ï¿½Õ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ -------------------------------------------------------------------*/
+uint32_t SIF_receive_H_L_Level_time_cnt = 0;		  // ï¿½ßµÍµï¿½Æ½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½
+uint8_t SIF_receive_start_H_L_Level_timming_flag = 0; // ï¿½ï¿½Ê¼ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½
 
-uint8_t SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //½ÓÊÕÊý¾Ý×´Ì¬
-uint8_t SIF_receive_bit_num = 0;    //½ÓÊÕµÄbitÎ»¸öÊý
-uint8_t SIF_receive_data_num = 0;   //½ÓÊÕµÄÊý¾Ý¸öÊý
+uint8_t SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
+uint8_t SIF_receive_bit_num = 0;					   // ï¿½ï¿½ï¿½Õµï¿½bitÎ»ï¿½ï¿½ï¿½ï¿½
+uint8_t SIF_receive_data_num = 0;					   // ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½ï¿½
 
-//½ÓÊÕÊý¾Ý»º´æÊý×é-ÓÃÒ»¸öÊý×éÀ´»º´æÊý¾Ý£¬51¸öÊý¾Ý×Ö½Ú
-uint8_t SIF_receive_data_buf[SIF_REV_DATA_NUM] = { 0 };
-uint8_t SIF_receive_buf[SIF_REV_DATA_NUM] = { 0 };
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½-ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½51ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö½ï¿½
+uint8_t SIF_receive_data_buf[SIF_REV_DATA_NUM] = {0};
+uint8_t SIF_receive_buf[SIF_REV_DATA_NUM] = {0};
 
-uint8_t SIF_receive_has_read_bit = 0;               //1-ÒÑ¾­¶ÁÈ¡Ò»¸öbitÎ»
-uint8_t SIF_receive_check_OK = 0;                   //1-Ð£ÑéºÍÕýÈ·£¬0-Ð£ÑéºÍÊ§°Ü
-uint8_t SIF_receive_read_success = 0;                 //Ò»Ö¡Êý¾ÝÊÇ·ñ¶ÁÈ¡³É¹¦£¬0-²»³É¹¦£¬1-³É¹¦
+uint8_t SIF_receive_has_read_bit = 0; // 1-ï¿½Ñ¾ï¿½ï¿½ï¿½È¡Ò»ï¿½ï¿½bitÎ»
+uint8_t SIF_receive_check_OK = 0;	  // 1-Ð£ï¿½ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½0-Ð£ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
+uint8_t SIF_receive_read_success = 0; // Ò»Ö¡ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½È¡ï¿½É¹ï¿½ï¿½ï¿½0-ï¿½ï¿½ï¿½É¹ï¿½ï¿½ï¿½1-ï¿½É¹ï¿½
 
-/* ·¢ËÍ±äÁ¿¶¨Òå -------------------------------------------------------------------*/
-uint32_t SIF_send_H_L_Level_time_cnt = 0; //¸ßµÍµçÆ½Ê±¼ä¼ÆÊý
-uint8_t SIF_send_start_H_L_Level_timming_flag = 0; //¿ªÊ¼¸ßµÍµçÆ½¼ÆÊ±±ê¼Ç
+/* ï¿½ï¿½ï¿½Í±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ -------------------------------------------------------------------*/
+uint32_t SIF_send_H_L_Level_time_cnt = 0;		   // ï¿½ßµÍµï¿½Æ½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½
+uint8_t SIF_send_start_H_L_Level_timming_flag = 0; // ï¿½ï¿½Ê¼ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½
 
-uint8_t SIF_send_state = 0;      //½ÓÊÕÊý¾Ý×´Ì¬
-uint8_t SIF_send_bit_num = 0;    //½ÓÊÕµÄbitÎ»¸öÊý
-uint8_t SIF_send_data_num = 0;   //½ÓÊÕµÄÊý¾Ý¸öÊý
+uint8_t SIF_send_state = 0;	   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
+uint8_t SIF_send_bit_num = 0;  // ï¿½ï¿½ï¿½Õµï¿½bitÎ»ï¿½ï¿½ï¿½ï¿½
+uint8_t SIF_send_data_num = 0; // ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½ï¿½
 
-uint8_t SIF_send_bit = 0;               //1-ÒÑ¾­¶ÁÈ¡Ò»¸öbitÎ»
+uint8_t SIF_send_bit = 0; // 1-ï¿½Ñ¾ï¿½ï¿½ï¿½È¡Ò»ï¿½ï¿½bitÎ»
 
-uint8_t SIF_send_data_buf[SIF_SEND_DATA_MAX_NUM] = { 0 };
+uint8_t SIF_send_data_buf[SIF_SEND_DATA_MAX_NUM] = {0};
 uint8_t SIF_send_data_num_target = 0;
-uint8_t SIF_send_req_flag = 0;               //´æÔÚ·¢ËÍÇëÇó
+uint8_t SIF_send_req_flag = 0; // ï¿½ï¿½ï¿½Ú·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 static bool SIF_has_inited = false;
 /*************************************************************************************************
@@ -122,11 +122,11 @@ static bool SIF_has_inited = false;
  */
 /*************************************************************************************************/
 
-static void SIF_GPIO_Init(void);                //GPIO³õÊ¼»¯º¯Êý
-static uint8_t SIF_Get_Input_Pin_Data(void);    //¶ÁÈ¡SIF½ÓÊÕ¶Ë¿ÚµçÆ½£¬´øÏû¶¶´¦Àí
-static void SIF_Receive_Data_Handle(void);      //½ÓÊÕÊý¾Ý´¦Àí¡ª´øÐ£×¼Î»£¬¼´²¨ÌØÂÊ×ÔÊÊÓ¦
-static void SIF_Send_Data_Handle(void);         //½ÓÊÕÊý¾Ý´¦Àí¡ª´øÐ£×¼Î»£¬¼´²¨ÌØÂÊ×ÔÊÊÓ¦
-static void SIF_Checksum_Handle(void);         //Ð£ÑéºÍ´¦Àí
+static void SIF_GPIO_Init(void);			 // GPIOï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+static uint8_t SIF_Get_Input_Pin_Data(void); // ï¿½ï¿½È¡SIFï¿½ï¿½ï¿½Õ¶Ë¿Úµï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+static void SIF_Receive_Data_Handle(void);	 // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£×¼Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦
+static void SIF_Send_Data_Handle(void);		 // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£×¼Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦
+static void SIF_Checksum_Handle(void);		 // Ð£ï¿½ï¿½Í´ï¿½ï¿½ï¿½
 
 bool SIF_Is_Idle(void);
 /***************************************************************************************************
@@ -134,7 +134,7 @@ bool SIF_Is_Idle(void);
  ***************************************************************************************************/
 bool SIF_IsInit(void)
 {
-  return SIF_has_inited;
+	return SIF_has_inited;
 }
 
 void SIF_GPIO_Init(void)
@@ -144,10 +144,10 @@ void SIF_GPIO_Init(void)
 
 void sif_init(void)
 {
-if (!SIF_has_inited)
+	if (!SIF_has_inited)
 	{
 		SIF_GPIO_Init();
-		///SIF_TIM2_Int_Init(50 - 1, 96 - 1);
+		/// SIF_TIM2_Int_Init(50 - 1, 96 - 1);
 		SIF_has_inited = true;
 		LOG_LEVEL("sif init\r\n");
 	}
@@ -155,10 +155,10 @@ if (!SIF_has_inited)
 
 void SIF_DeInit(void)
 {
-if (SIF_has_inited)
+	if (SIF_has_inited)
 	{
-		///TIM_ITConfig(TIM2, TIM_IT_Update, DISABLE);
-		///TIM_Cmd(TIM2, DISABLE);
+		/// TIM_ITConfig(TIM2, TIM_IT_Update, DISABLE);
+		/// TIM_Cmd(TIM2, DISABLE);
 		SIF_has_inited = false;
 	}
 }
@@ -176,13 +176,14 @@ bool SIF_Is_Idle(void)
 		return 0;
 }
 
-void SIF_Delay_us(uint32_t delay_us) {
-  //DELAY_US(us);  
+void SIF_Delay_us(uint32_t delay_us)
+{
+	// DELAY_US(us);
 	uint32_t start = system_timer_tick_50us;
 	uint32_t us = delay_us / 50;
-  while ((system_timer_tick_50us - start) < us);
+	while ((system_timer_tick_50us - start) < us)
+		;
 }
-
 
 /*********************************************************************
  * @fn      TIM2_IRQHandler
@@ -194,94 +195,93 @@ void SIF_Delay_us(uint32_t delay_us) {
 
 void SIF_IO_IRQHandler(void)
 {
-		//SIF ½ÓÊÕ´¦Àí
-		if (SIF_receive_start_H_L_Level_timming_flag == 1) //¿ªÊ¼¸ßµÍµçÆ½¼ÆÊ±±ê¼Ç
-		{
-			SIF_receive_H_L_Level_time_cnt++;     //¸ßµÍµçÆ½Î¬³ÖÊ±¼ä¼ÆÊý±äÁ¿
-		}
-		/////////////////////////////////////////////////////////////////////////////////////
+	// SIF ï¿½ï¿½ï¿½Õ´ï¿½ï¿½ï¿½
+	if (SIF_receive_start_H_L_Level_timming_flag == 1) // ï¿½ï¿½Ê¼ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½
+	{
+		SIF_receive_H_L_Level_time_cnt++; // ï¿½ßµÍµï¿½Æ½Î¬ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	}
+	/////////////////////////////////////////////////////////////////////////////////////
 
-		SIF_Receive_Data_Handle();      //½ÓÊÕÊý¾Ý´¦Àí
+	SIF_Receive_Data_Handle(); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½
 
-		/////////////////////////////////////////////////////////////////////////////////////
-		//SIF ·¢ËÍ´¦Àí
-		#if 1
-		if (SIF_send_start_H_L_Level_timming_flag == 1)
-		{
-			SIF_send_H_L_Level_time_cnt++;     //¸ßµÍµçÆ½Î¬³ÖÊ±¼ä¼ÆÊý±äÁ¿
-		}
-		SIF_Send_Data_Handle();     //·¢ËÍÊý¾Ý´¦Àí
-		#endif
-    /////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+// SIF ï¿½ï¿½ï¿½Í´ï¿½ï¿½ï¿½
+#if 1
+	if (SIF_send_start_H_L_Level_timming_flag == 1)
+	{
+		SIF_send_H_L_Level_time_cnt++; // ï¿½ßµÍµï¿½Æ½Î¬ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	}
+	SIF_Send_Data_Handle(); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½
+#endif
+	/////////////////////////////////////////////////////////////////////////////////////
 }
 
 ///__attribute__((section(".highcode")))
 void SIF_Receive_Data_Handle(void)
 {
 
-	switch (SIF_receive_state)													//¼ì²âµ±Ç°½ÓÊÕÊý¾Ý×´Ì¬
+	switch (SIF_receive_state) // ï¿½ï¿½âµ±Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
 	{
-	case SIF_REV_STATE_INITIAL:                         //³õÊ¼×´Ì¬£¬Î´½ÓÊÕµ½Í¬²½ÐÅÏ¢£¬½øÐÐÍ¬²½ÅÐ¶Ï
-		if (SIF_Get_Input_Pin_Data() == SIF_LOW)          //ÅÐ¶Ï½ÓÊÕÒý½ÅµÄµçÆ½×´Ì¬£¬µ±¶Áµ½µÍµçÆ½Ê±£¬¿ªÊ¼¼ÆÊ±
+	case SIF_REV_STATE_INITIAL:					 // ï¿½ï¿½Ê¼×´Ì¬ï¿½ï¿½Î´ï¿½ï¿½ï¿½Õµï¿½Í¬ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½Ð¶ï¿½
+		if (SIF_Get_Input_Pin_Data() == SIF_LOW) // ï¿½Ð¶Ï½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÅµÄµï¿½Æ½×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½Ê±ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½Ê±
 		{
-			SIF_receive_bit_num = 0;                				//ÖØÖÃbitÎ»¼ÆÊýÆ÷
-			SIF_receive_data_num = 0;               				//ÖØÖÃ½ÓÊÕÊý¾Ý¸öÊý
-			SIF_receive_H_L_Level_time_cnt = 0;             //¸ßµÍµçÆ½¼ÆÊ±±äÁ¿Çå0
-			SIF_receive_start_H_L_Level_timming_flag = 1;   //¿ªÊ¼¸ßµÍµçÆ½¼ÆÊ±
-			SIF_receive_state = SIF_REV_STATE_SYNC_L;       //½øÈë¶ÁÈ¡Í¬²½µÍµçÆ½ÐÅºÅ×´Ì¬
+			SIF_receive_bit_num = 0;					  // ï¿½ï¿½ï¿½ï¿½bitÎ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+			SIF_receive_data_num = 0;					  // ï¿½ï¿½ï¿½Ã½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½ï¿½
+			SIF_receive_H_L_Level_time_cnt = 0;			  // ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0
+			SIF_receive_start_H_L_Level_timming_flag = 1; // ï¿½ï¿½Ê¼ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±
+			SIF_receive_state = SIF_REV_STATE_SYNC_L;	  // ï¿½ï¿½ï¿½ï¿½ï¿½È¡Í¬ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½Åºï¿½×´Ì¬
 
 			memset(SIF_receive_data_buf, 0, SIF_REV_DATA_NUM);
 		}
 		break;
 
-	case SIF_REV_STATE_SYNC_L:                          //ÔÚ¶ÁÈ¡Í¬²½µÍµçÆ½ÐÅºÅÆÚ¼ä
-		if (SIF_Get_Input_Pin_Data() == SIF_HIGH)         //Í¬²½ÐÅºÅµÍµçÆ½¼ì²âÆÚ¼ä¶Áµ½¸ßµçÆ½
+	case SIF_REV_STATE_SYNC_L:					  // ï¿½Ú¶ï¿½È¡Í¬ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½Åºï¿½ï¿½Ú¼ï¿½
+		if (SIF_Get_Input_Pin_Data() == SIF_HIGH) // Í¬ï¿½ï¿½ï¿½ÅºÅµÍµï¿½Æ½ï¿½ï¿½ï¿½ï¿½Ú¼ï¿½ï¿½ï¿½ï¿½ï¿½ßµï¿½Æ½
 		{
-			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_SYNC_L_TIME_NUM) //Èç¹ûÍ¬²½ÐÅºÅµÍµçÆ½Ê±¼ä>=SYNC_L_TIME_NUM
-			{                                       				//Í¬²½ÐÅºÅµÍµçÆ½Ê±¼äÒª>=10ms
-				SIF_receive_H_L_Level_time_cnt = 0;         	//¸ßµÍµçÆ½¼ÆÊ±±äÁ¿Çå0
-				SIF_receive_state = SIF_REV_STATE_SYNC_H;   	//½øÈë¶ÁÈ¡Í¬²½ÐÅºÅ¸ßµçÆ½×´Ì¬
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_SYNC_L_TIME_NUM) // ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ÅºÅµÍµï¿½Æ½Ê±ï¿½ï¿½>=SYNC_L_TIME_NUM
+			{															   // Í¬ï¿½ï¿½ï¿½ÅºÅµÍµï¿½Æ½Ê±ï¿½ï¿½Òª>=10ms
+				SIF_receive_H_L_Level_time_cnt = 0;						   // ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0
+				SIF_receive_state = SIF_REV_STATE_SYNC_H;				   // ï¿½ï¿½ï¿½ï¿½ï¿½È¡Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½×´Ì¬
 			}
 			else
 			{
-				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL; //½øÈëÖØÐÂ½ÓÊÕ×´Ì¬
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½×´Ì¬
 			}
 		}
 		break;
 
-	case SIF_REV_STATE_SYNC_H:                          //ÔÚ¶ÁÈ¡Í¬²½ÐÅºÅ¸ßµçÆ½ÆÚ¼ä
-		if (SIF_Get_Input_Pin_Data() == SIF_LOW)          //Í¬²½ÐÅºÅ¸ßµçÆ½¼ì²âÆÚ¼ä¶Áµ½µÍµçÆ½
+	case SIF_REV_STATE_SYNC_H:					 // ï¿½Ú¶ï¿½È¡Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½ï¿½Ú¼ï¿½
+		if (SIF_Get_Input_Pin_Data() == SIF_LOW) // Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½ï¿½ï¿½ï¿½ï¿½Ú¼ï¿½ï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½
 		{
-			//ÅÐ¶ÏÍ¬²½ÐÅºÅ¸ßµçÆ½Ê±¼äÊÇ·ñÔÚ1ms¡À100usÖ®¼ä
-			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_SYNC_H_TIME_NUM_MIN
-					&& SIF_receive_H_L_Level_time_cnt <= SIF_REV_SYNC_H_TIME_NUM_MAX)
+			// ï¿½Ð¶ï¿½Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½Ê±ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½1msï¿½ï¿½100usÖ®ï¿½ï¿½
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_SYNC_H_TIME_NUM_MIN && SIF_receive_H_L_Level_time_cnt <= SIF_REV_SYNC_H_TIME_NUM_MAX)
 			{
-				SIF_receive_H_L_Level_time_cnt = 0;          //¸ßµÍµçÆ½¼ÆÊ±±äÁ¿Çå0
+				SIF_receive_H_L_Level_time_cnt = 0; // ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0
 				SIF_receive_has_read_bit = 0;
-				SIF_receive_state = SIF_REV_STATE_REV_BIT;   //½øÈë¶ÁÈ¡Êý¾Ý×´Ì¬
+				SIF_receive_state = SIF_REV_STATE_REV_BIT; // ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½×´Ì¬
 			}
 			else
 			{
-				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;//½øÈëÖØÐÂ½ÓÊÕ×´Ì¬
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½×´Ì¬
 			}
 		}
-		else            																	//Èç¹ûÔÚÍ¬²½ÐÅºÅ¸ßµçÆ½¼ì²âÆÚ¼ä£¬Ê±¼ä³¬¹ý2ms¡À200us£¬ÈÏÎª³¬Ê±
+		else // ï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½ï¿½ï¿½ï¿½ï¿½Ú¼ä£¬Ê±ï¿½ä³¬ï¿½ï¿½2msï¿½ï¿½200usï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½Ê±
 		{
-			//ÅÐ¶ÏÊ±¼äÊÇ·ñ³¬Ê± 2ms¡À200us
+			// ï¿½Ð¶ï¿½Ê±ï¿½ï¿½ï¿½Ç·ï¿½Ê± 2msï¿½ï¿½200us
 			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
 			{
-				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //½øÈëÖØÐÂ½ÓÊÕ×´Ì¬
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½×´Ì¬
 			}
 		}
 		break;
 
-	case SIF_REV_STATE_REV_BIT:          //ÔÚ¶ÁÈ¡Êý¾ÝÂëµçÆ½ÆÚ¼ä
-		if (SIF_Get_Input_Pin_Data() == SIF_HIGH)               //Í¬²½ÐÅºÅµÍµçÆ½¼ì²âÆÚ¼ä¶Áµ½¸ßµçÆ½
+	case SIF_REV_STATE_REV_BIT:					  // ï¿½Ú¶ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ½ï¿½Ú¼ï¿½
+		if (SIF_Get_Input_Pin_Data() == SIF_HIGH) // Í¬ï¿½ï¿½ï¿½ÅºÅµÍµï¿½Æ½ï¿½ï¿½ï¿½ï¿½Ú¼ï¿½ï¿½ï¿½ï¿½ï¿½ßµï¿½Æ½
 		{
-			//ÅÐ¶ÏÊ±¼äÊÇ·ñ³¬Ê± 2ms¡À200us
+			// ï¿½Ð¶ï¿½Ê±ï¿½ï¿½ï¿½Ç·ï¿½Ê± 2msï¿½ï¿½200us
 			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
 			{
-				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //½øÈëÖØÐÂ½ÓÊÕ×´Ì¬
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½×´Ì¬
 			}
 			else
 			{
@@ -300,94 +300,94 @@ void SIF_Receive_Data_Handle(void)
 		{
 			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
 			{
-				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //½øÈëÖØÐÂ½ÓÊÕ×´Ì¬
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½×´Ì¬
 			}
 		}
 		break;
 
 	case SIF_REV_STATE_BUILD_DATA:
-		if (SIF_Get_Input_Pin_Data() == SIF_LOW)                //Í¬²½ÐÅºÅ¸ßµçÆ½¼ì²âÆÚ¼ä¶Áµ½µÍµçÆ½
+		if (SIF_Get_Input_Pin_Data() == SIF_LOW) // Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½ï¿½ï¿½ï¿½ï¿½Ú¼ï¿½ï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½
 		{
-			//ÅÐ¶ÏÍ¬²½ÐÅºÅ¸ßµçÆ½Ê±¼äÊÇ·ñÔÚ1ms¡À100usÖ®¼ä
+			// ï¿½Ð¶ï¿½Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½Ê±ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½1msï¿½ï¿½100usÖ®ï¿½ï¿½
 			if (SIF_receive_has_read_bit == 1)
 			{
-				SIF_receive_H_L_Level_time_cnt = 0;         //¸ßµÍµçÆ½¼ÆÊ±±äÁ¿Çå0
+				SIF_receive_H_L_Level_time_cnt = 0; // ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0
 
-				SIF_receive_has_read_bit = 0;                   //Çå0£¬¶ÁÈ¡ÏÂÒ»¸öbitÎ»
-				SIF_receive_bit_num++;                  //½ÓÊÕµÄbitÊý++
+				SIF_receive_has_read_bit = 0; // ï¿½ï¿½0ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½Ò»ï¿½ï¿½bitÎ»
+				SIF_receive_bit_num++;		  // ï¿½ï¿½ï¿½Õµï¿½bitï¿½ï¿½++
 
-				if (SIF_receive_bit_num == SIF_REV_BIT_NUM)   //Èç¹ûÒ»¸ö×Ö½Ú8¸öbitÎ»½ÓÊÕÍê³É
+				if (SIF_receive_bit_num == SIF_REV_BIT_NUM) // ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ö½ï¿½8ï¿½ï¿½bitÎ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 				{
-					SIF_receive_data_num++;             //½ÓÊÕµÄÊý¾Ý¸öÊý++
-					SIF_receive_bit_num = 0;            //½ÓÊÕbitÎ»¸öÊýÇå0ÖØÐÂ½ÓÊÕ
-					if (SIF_receive_data_num == SIF_REV_DATA_NUM)   //Èç¹ûÊý¾Ý²É¼¯Íê±Ï
+					SIF_receive_data_num++;						  // ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½ï¿½++
+					SIF_receive_bit_num = 0;					  // ï¿½ï¿½ï¿½ï¿½bitÎ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½
+					if (SIF_receive_data_num == SIF_REV_DATA_NUM) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý²É¼ï¿½ï¿½ï¿½ï¿½
 					{
-						SIF_receive_state = SIF_REV_STATE_END_SIGNAL; //½øÈë½ÓÊÕ½áÊøµÍµçÆ½ÐÅºÅ×´Ì¬
+						SIF_receive_state = SIF_REV_STATE_END_SIGNAL; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ½ï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½Åºï¿½×´Ì¬
 					}
 					else
 					{
-						SIF_receive_state = SIF_REV_STATE_REV_BIT; //½øÈë¶ÁÈ¡Êý¾Ý×´Ì¬
+						SIF_receive_state = SIF_REV_STATE_REV_BIT; // ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½×´Ì¬
 					}
 				}
-				else                                //Èç¹ûÒ»¸ö×Ö½Ú8¸öbitÎ»»¹Ã»ÓÐ½ÓÊÕÍê³É
+				else // ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ö½ï¿½8ï¿½ï¿½bitÎ»ï¿½ï¿½Ã»ï¿½Ð½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 				{
-					//½«½ÓÊÕÊý¾Ý»º´æ×óÒÆÒ»Î»£¬Êý¾Ý´ÓµÍbitÎ»¿ªÊ¼½ÓÊÕ
+					// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»Î»ï¿½ï¿½ï¿½ï¿½ï¿½Ý´Óµï¿½bitÎ»ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½
 					SIF_receive_data_buf[SIF_receive_data_num] =
-							SIF_receive_data_buf[SIF_receive_data_num] << 1;
-					SIF_receive_state = SIF_REV_STATE_REV_BIT; //½øÈë¶ÁÈ¡Êý¾Ý×´Ì¬
+						SIF_receive_data_buf[SIF_receive_data_num] << 1;
+					SIF_receive_state = SIF_REV_STATE_REV_BIT; // ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½×´Ì¬
 				}
 			}
 		}
-		else            //Èç¹ûÔÚÍ¬²½ÐÅºÅ¸ßµçÆ½¼ì²âÆÚ¼ä£¬Ê±¼ä³¬¹ý2ms¡À200us£¬ÈÏÎª³¬Ê±
+		else // ï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½ï¿½ï¿½ï¿½ï¿½Ú¼ä£¬Ê±ï¿½ä³¬ï¿½ï¿½2msï¿½ï¿½200usï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½Ê±
 		{
-			//ÅÐ¶ÏÊ±¼äÊÇ·ñ³¬Ê± 2ms¡À200us
+			// ï¿½Ð¶ï¿½Ê±ï¿½ï¿½ï¿½Ç·ï¿½Ê± 2msï¿½ï¿½200us
 			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
 			{
-				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //½øÈëÖØÐÂ½ÓÊÕ×´Ì¬
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½×´Ì¬
 			}
 		}
 		break;
 
-	case SIF_REV_STATE_END_SIGNAL:                              //ÔÚ½ÓÊÕ½áÊøÐÅºÅµÍµçÆ½ÆÚ¼ä
+	case SIF_REV_STATE_END_SIGNAL: // ï¿½Ú½ï¿½ï¿½Õ½ï¿½ï¿½ï¿½ï¿½ÅºÅµÍµï¿½Æ½ï¿½Ú¼ï¿½
 		if (SIF_Get_Input_Pin_Data() == SIF_LOW)
 		{
-			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_END_SIGNAL_TIME_NUM) //Èç¹û¶Áµ½µÍµçÆ½Ê±¼ä>=5ms
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_END_SIGNAL_TIME_NUM) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½Ê±ï¿½ï¿½>=5ms
 			{
 
 				memcpy(SIF_receive_buf, SIF_receive_data_buf, SIF_REV_DATA_NUM);
 				SIF_Checksum_Handle();
 
-				SIF_receive_read_success = 1;                   //Ò»Ö¡Êý¾Ý¶ÁÈ¡³É¹¦
-				SIF_receive_start_H_L_Level_timming_flag = 0;   //Í£Ö¹¸ßµÍµçÆ½¼ÆÊ±
-				SIF_receive_H_L_Level_time_cnt = 0;             //¶¨Ê±Æ÷¼ÆÊýÖµÇå0
-				SIF_receive_state = SIF_REV_STATE_INITIAL;      //½ÓÊÕ×´Ì¬Çå0
+				SIF_receive_read_success = 1;				  // Ò»Ö¡ï¿½ï¿½ï¿½Ý¶ï¿½È¡ï¿½É¹ï¿½
+				SIF_receive_start_H_L_Level_timming_flag = 0; // Í£Ö¹ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±
+				SIF_receive_H_L_Level_time_cnt = 0;			  // ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0
+				SIF_receive_state = SIF_REV_STATE_INITIAL;	  // ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½0
 			}
 		}
-		else    //½áÊøÐÅºÅµÍµçÆ½¼ì²âÆÚ¼äÒ»Ö±ÎªµÍ
+		else // ï¿½ï¿½ï¿½ï¿½ï¿½ÅºÅµÍµï¿½Æ½ï¿½ï¿½ï¿½ï¿½Ú¼ï¿½Ò»Ö±Îªï¿½ï¿½
 		{
-			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX) //Èç¹û¶Áµ½µÍµçÆ½Ê±¼ä>=10ms£¬ÈÏÎª³¬Ê±
-			{                               //Ò»Ö¡Êý¾Ý·¢ËÍÍê³ÉºóÐèÒª¼ä¸ô50ms²Å·¢ËÍµÚ¶þÖ¡Êý¾Ý£¬ÆÚ¼ä¿Ï¶¨»á±»À­¸ß
-				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;      //½øÈëÖØÐÂ½ÓÊÕ×´Ì¬
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½Ê±ï¿½ï¿½>=10msï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½Ê±
+			{																   // Ò»Ö¡ï¿½ï¿½ï¿½Ý·ï¿½ï¿½ï¿½ï¿½ï¿½Éºï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½50msï¿½Å·ï¿½ï¿½ÍµÚ¶ï¿½Ö¡ï¿½ï¿½ï¿½Ý£ï¿½ï¿½Ú¼ï¿½Ï¶ï¿½ï¿½á±»ï¿½ï¿½ï¿½ï¿½
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;				   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½×´Ì¬
 			}
 		}
 		break;
-	#if 1
+#if 1
 	case SIF_REV_STATE_IDLE_SIGNAL:
-		//SIF_receive_state = SIF_REV_STATE_RESTART;
-		//break;
-	case SIF_REV_STATE_RESTART:                      		//ÖØÐÂ½ÓÊÕÊý¾Ý×´Ì¬
-		SIF_receive_start_H_L_Level_timming_flag = 0;     //Í£Ö¹¸ßµÍµçÆ½¼ÆÊ±
-		SIF_receive_H_L_Level_time_cnt = 0;          			//¶¨Ê±Æ÷¼ÆÊýÖµÇå0
-		SIF_receive_has_read_bit = 0;                			//Çå0£¬¶ÁÈ¡ÏÂÒ»¸öbitÎ»
+		// SIF_receive_state = SIF_REV_STATE_RESTART;
+		// break;
+	case SIF_REV_STATE_RESTART:						  // ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
+		SIF_receive_start_H_L_Level_timming_flag = 0; // Í£Ö¹ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±
+		SIF_receive_H_L_Level_time_cnt = 0;			  // ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0
+		SIF_receive_has_read_bit = 0;				  // ï¿½ï¿½0ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½Ò»ï¿½ï¿½bitÎ»
 		SIF_receive_bit_num = 0;
 		SIF_receive_data_num = 0;
-		SIF_receive_state = SIF_REV_STATE_INITIAL;        //½ÓÊÕ×´Ì¬Çå0
+		SIF_receive_state = SIF_REV_STATE_INITIAL; // ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½0
 		break;
-	#endif
+#endif
 	}
 }
 
-uint8_t SIF_ReadData(uint8_t* data, uint8_t maxlen)
+uint8_t SIF_ReadData(uint8_t *data, uint8_t maxlen)
 {
 	MY_ASSERT(data);
 	if (!SIF_has_inited)
@@ -408,7 +408,7 @@ uint8_t SIF_ReadData(uint8_t* data, uint8_t maxlen)
 	return 0;
 }
 
-uint8_t SIF_SendData_Sync(uint8_t* data, uint8_t len)
+uint8_t SIF_SendData_Sync(uint8_t *data, uint8_t len)
 {
 	MY_ASSERT(data);
 	MY_ASSERT(len);
@@ -420,7 +420,7 @@ uint8_t SIF_SendData_Sync(uint8_t* data, uint8_t len)
 
 	uint8_t byte = 0;
 	uint8_t flag = 0;
-	//Í¬²½ÐÅºÅ
+	// Í¬ï¿½ï¿½ï¿½Åºï¿½
 	SIF_SEND_DATA_BIT_LOW();
 	SIF_Delay_us(20000);
 	SIF_SEND_DATA_BIT_HIGH();
@@ -452,16 +452,16 @@ uint8_t SIF_SendData_Sync(uint8_t* data, uint8_t len)
 	return len;
 }
 
-uint8_t SIF_SendData(uint8_t* data, uint8_t len)
+uint8_t SIF_SendData(uint8_t *data, uint8_t len)
 {
-	#if 0
+#if 0
 	LOG_LEVEL("SIF_SendData:");
 	for (int i = 0; i < len; i++)
 	{
 		LOG_LEVEL("%02x ", data[i]);
 	}
 	LOG_LEVEL("\r\n");
-	#endif
+#endif
 	MY_ASSERT(data);
 	MY_ASSERT(len);
 	MY_ASSERT(len <= SIF_SEND_DATA_MAX_NUM);
@@ -485,43 +485,43 @@ uint8_t SIF_SendData(uint8_t* data, uint8_t len)
 ///__attribute__((section(".highcode")))
 void SIF_Send_Data_Handle(void)
 {
-	switch (SIF_send_state)															 //¼ì²âµ±Ç°½ÓÊÕÊý¾Ý×´Ì¬
+	switch (SIF_send_state) // ï¿½ï¿½âµ±Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
 	{
-	case SIF_SEND_STATE_INITIAL:                         //³õÊ¼×´Ì¬£¬Î´½ÓÊÕµ½Í¬²½ÐÅÏ¢£¬½øÐÐÍ¬²½ÅÐ¶Ï
-		if (SIF_send_req_flag == true)             			   //ÅÐ¶Ï½ÓÊÕÒý½ÅµÄµçÆ½×´Ì¬£¬µ±¶Áµ½µÍµçÆ½Ê±£¬¿ªÊ¼¼ÆÊ±
+	case SIF_SEND_STATE_INITIAL:	   // ï¿½ï¿½Ê¼×´Ì¬ï¿½ï¿½Î´ï¿½ï¿½ï¿½Õµï¿½Í¬ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½Ð¶ï¿½
+		if (SIF_send_req_flag == true) // ï¿½Ð¶Ï½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÅµÄµï¿½Æ½×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½Ê±ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½Ê±
 		{
-			SIF_send_bit_num = 0;                						 //ÖØÖÃbitÎ»¼ÆÊýÆ÷
-			SIF_send_data_num = 0;               						 //ÖØÖÃ½ÓÊÕÊý¾Ý¸öÊý
-			SIF_send_H_L_Level_time_cnt = 0;                 //¸ßµÍµçÆ½¼ÆÊ±±äÁ¿Çå0
-			SIF_send_start_H_L_Level_timming_flag = 1;       //¿ªÊ¼¸ßµÍµçÆ½¼ÆÊ±
-			SIF_send_state = SIF_SEND_STATE_SYNC_L;          //½øÈë¶ÁÈ¡Í¬²½µÍµçÆ½ÐÅºÅ×´Ì¬
+			SIF_send_bit_num = 0;					   // ï¿½ï¿½ï¿½ï¿½bitÎ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+			SIF_send_data_num = 0;					   // ï¿½ï¿½ï¿½Ã½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½ï¿½
+			SIF_send_H_L_Level_time_cnt = 0;		   // ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0
+			SIF_send_start_H_L_Level_timming_flag = 1; // ï¿½ï¿½Ê¼ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±
+			SIF_send_state = SIF_SEND_STATE_SYNC_L;	   // ï¿½ï¿½ï¿½ï¿½ï¿½È¡Í¬ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½Åºï¿½×´Ì¬
 			SIF_SEND_DATA_BIT_LOW();
 		}
 		break;
 
-	case SIF_SEND_STATE_SYNC_L:                          //ÔÚ¶ÁÈ¡Í¬²½µÍµçÆ½ÐÅºÅÆÚ¼ä
-		if (SIF_send_H_L_Level_time_cnt >= SIF_SEND_SYNC_L_TIME_NUM) //Èç¹ûÍ¬²½ÐÅºÅµÍµçÆ½Ê±¼ä>=SYNC_L_TIME_NUM
-		{                                                  //Í¬²½ÐÅºÅµÍµçÆ½Ê±¼äÒª>=10ms
-			SIF_send_H_L_Level_time_cnt = 0;                 //¸ßµÍµçÆ½¼ÆÊ±±äÁ¿Çå0
+	case SIF_SEND_STATE_SYNC_L:										 // ï¿½Ú¶ï¿½È¡Í¬ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½Åºï¿½ï¿½Ú¼ï¿½
+		if (SIF_send_H_L_Level_time_cnt >= SIF_SEND_SYNC_L_TIME_NUM) // ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ÅºÅµÍµï¿½Æ½Ê±ï¿½ï¿½>=SYNC_L_TIME_NUM
+		{															 // Í¬ï¿½ï¿½ï¿½ÅºÅµÍµï¿½Æ½Ê±ï¿½ï¿½Òª>=10ms
+			SIF_send_H_L_Level_time_cnt = 0;						 // ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0
 			SIF_SEND_DATA_BIT_HIGH();
-			SIF_send_state = SIF_SEND_STATE_SYNC_H;          //½øÈë¶ÁÈ¡Í¬²½ÐÅºÅ¸ßµçÆ½×´Ì¬
+			SIF_send_state = SIF_SEND_STATE_SYNC_H; // ï¿½ï¿½ï¿½ï¿½ï¿½È¡Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½×´Ì¬
 		}
 		break;
 
-	case SIF_SEND_STATE_SYNC_H:                          //ÔÚ¶ÁÈ¡Í¬²½ÐÅºÅ¸ßµçÆ½ÆÚ¼ä
-		//ÅÐ¶ÏÍ¬²½ÐÅºÅ¸ßµçÆ½Ê±¼äÊÇ·ñÔÚ1ms¡À100usÖ®¼ä
+	case SIF_SEND_STATE_SYNC_H: // ï¿½Ú¶ï¿½È¡Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½ï¿½Ú¼ï¿½
+		// ï¿½Ð¶ï¿½Í¬ï¿½ï¿½ï¿½ÅºÅ¸ßµï¿½Æ½Ê±ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½1msï¿½ï¿½100usÖ®ï¿½ï¿½
 		if (SIF_send_H_L_Level_time_cnt >= SIF_SEND_SYNC_H_TIME_NUM)
 		{
-			SIF_send_H_L_Level_time_cnt = 0;                 //¸ßµÍµçÆ½¼ÆÊ±±äÁ¿Çå0
+			SIF_send_H_L_Level_time_cnt = 0; // ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0
 			SIF_SEND_DATA_BIT_LOW();
-			SIF_send_state = SIF_SEND_STATE_GET_BIT;         //½øÈë¶ÁÈ¡Êý¾Ý×´Ì¬
+			SIF_send_state = SIF_SEND_STATE_GET_BIT; // ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½×´Ì¬
 		}
 		break;
 
-	case SIF_SEND_STATE_GET_BIT:                         //ÔÚ¶ÁÈ¡Êý¾ÝÂëµçÆ½ÆÚ¼ä
+	case SIF_SEND_STATE_GET_BIT: // ï¿½Ú¶ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ½ï¿½Ú¼ï¿½
 		SIF_send_H_L_Level_time_cnt = 0;
 		SIF_send_bit = SIF_send_data_buf[SIF_send_data_num] & (0x80 >> SIF_send_bit_num);
-		SIF_send_state = SIF_SEND_STATE_BIT_L; 						 //½øÈë¶ÁÈ¡Êý¾Ý×´Ì¬
+		SIF_send_state = SIF_SEND_STATE_BIT_L; // ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½×´Ì¬
 		break;
 
 	case SIF_SEND_STATE_BIT_L:
@@ -531,7 +531,7 @@ void SIF_Send_Data_Handle(void)
 			{
 				SIF_send_H_L_Level_time_cnt = 0;
 				SIF_SEND_DATA_BIT_HIGH();
-				SIF_send_state = SIF_SEND_STATE_BIT_H;      	 //½øÈëÖØÐÂ½ÓÊÕ×´Ì¬
+				SIF_send_state = SIF_SEND_STATE_BIT_H; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½×´Ì¬
 			}
 		}
 		else
@@ -540,7 +540,7 @@ void SIF_Send_Data_Handle(void)
 			{
 				SIF_send_H_L_Level_time_cnt = 0;
 				SIF_SEND_DATA_BIT_HIGH();
-				SIF_send_state = SIF_SEND_STATE_BIT_H;      		//½øÈëÖØÐÂ½ÓÊÕ×´Ì¬
+				SIF_send_state = SIF_SEND_STATE_BIT_H; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½×´Ì¬
 			}
 		}
 		break;
@@ -552,7 +552,7 @@ void SIF_Send_Data_Handle(void)
 			{
 				SIF_send_H_L_Level_time_cnt = 0;
 				SIF_SEND_DATA_BIT_LOW();
-				SIF_send_state = SIF_SEND_STATE_CHECK_BIT;      //½øÈëÖØÐÂ½ÓÊÕ×´Ì¬
+				SIF_send_state = SIF_SEND_STATE_CHECK_BIT; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½×´Ì¬
 			}
 		}
 		else
@@ -561,50 +561,50 @@ void SIF_Send_Data_Handle(void)
 			{
 				SIF_send_H_L_Level_time_cnt = 0;
 				SIF_SEND_DATA_BIT_LOW();
-				SIF_send_state = SIF_SEND_STATE_CHECK_BIT;      //½øÈëÖØÐÂ½ÓÊÕ×´Ì¬
+				SIF_send_state = SIF_SEND_STATE_CHECK_BIT; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½×´Ì¬
 			}
 		}
 		break;
 
 	case SIF_SEND_STATE_CHECK_BIT:
 		SIF_send_bit_num++;
-		if (SIF_send_bit_num == SIF_SEND_BIT_NUM)   				//Èç¹ûÒ»¸ö×Ö½Ú8¸öbitÎ»½ÓÊÕÍê³É
+		if (SIF_send_bit_num == SIF_SEND_BIT_NUM) // ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ö½ï¿½8ï¿½ï¿½bitÎ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		{
-			SIF_send_data_num++;             									//½ÓÊÕµÄÊý¾Ý¸öÊý++
-			SIF_send_bit_num = 0;            									//½ÓÊÕbitÎ»¸öÊýÇå0ÖØÐÂ½ÓÊÕ
-			if (SIF_send_data_num == SIF_send_data_num_target)//Èç¹ûÊý¾Ý²É¼¯Íê±Ï
+			SIF_send_data_num++;							   // ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½ï¿½++
+			SIF_send_bit_num = 0;							   // ï¿½ï¿½ï¿½ï¿½bitÎ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0ï¿½ï¿½ï¿½Â½ï¿½ï¿½ï¿½
+			if (SIF_send_data_num == SIF_send_data_num_target) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý²É¼ï¿½ï¿½ï¿½ï¿½
 			{
-				SIF_send_state = SIF_SEND_STATE_END_SIGNAL;   	//½øÈë½ÓÊÕ½áÊøµÍµçÆ½ÐÅºÅ×´Ì¬
+				SIF_send_state = SIF_SEND_STATE_END_SIGNAL; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ½ï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½Åºï¿½×´Ì¬
 			}
 			else
 			{
 				SIF_SEND_DATA_BIT_LOW();
-				SIF_send_state = SIF_SEND_STATE_GET_BIT; 				//½øÈë¶ÁÈ¡Êý¾Ý×´Ì¬
+				SIF_send_state = SIF_SEND_STATE_GET_BIT; // ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½×´Ì¬
 			}
 		}
-		else                                								//Èç¹ûÒ»¸ö×Ö½Ú8¸öbitÎ»»¹Ã»ÓÐ½ÓÊÕÍê³É
+		else // ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ö½ï¿½8ï¿½ï¿½bitÎ»ï¿½ï¿½Ã»ï¿½Ð½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		{
 			SIF_SEND_DATA_BIT_LOW();
-			SIF_send_state = SIF_SEND_STATE_GET_BIT; 					//½øÈë¶ÁÈ¡Êý¾Ý×´Ì¬
+			SIF_send_state = SIF_SEND_STATE_GET_BIT; // ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½×´Ì¬
 		}
 		break;
 
-	case SIF_SEND_STATE_END_SIGNAL:                       //ÔÚ½ÓÊÕ½áÊøÐÅºÅµÍµçÆ½ÆÚ¼ä
+	case SIF_SEND_STATE_END_SIGNAL: // ï¿½Ú½ï¿½ï¿½Õ½ï¿½ï¿½ï¿½ï¿½ÅºÅµÍµï¿½Æ½ï¿½Ú¼ï¿½
 		SIF_send_req_flag = false;
-		SIF_send_start_H_L_Level_timming_flag = 0;       		//Í£Ö¹¸ßµÍµçÆ½¼ÆÊ±
-		SIF_send_H_L_Level_time_cnt = 0;                 		//¶¨Ê±Æ÷¼ÆÊýÖµÇå0
+		SIF_send_start_H_L_Level_timming_flag = 0; // Í£Ö¹ï¿½ßµÍµï¿½Æ½ï¿½ï¿½Ê±
+		SIF_send_H_L_Level_time_cnt = 0;		   // ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½0
 		SIF_send_bit_num = 0;
 		SIF_send_data_num = 0;
-		SIF_send_state = SIF_SEND_STATE_INITIAL;          	//½ÓÊÕ×´Ì¬Çå0
+		SIF_send_state = SIF_SEND_STATE_INITIAL; // ï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½0
 		break;
 	}
 }
 
 /*******************************************************************************
- *º¯ÊýÃû³Æ : Check_Sum_Handle
- *º¯Êý¹¦ÄÜ : Ð£ÑéºÍ´¦Àí
- *ÊäÈë²ÎÊý : void
- *Êä³ö·µ»Ø : void
+ *ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : Check_Sum_Handle
+ *ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : Ð£ï¿½ï¿½Í´ï¿½ï¿½ï¿½
+ *ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : void
+ *ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : void
  *******************************************************************************/
 ///__attribute__((section(".highcode")))
 void SIF_Checksum_Handle(void)
@@ -616,14 +616,14 @@ void SIF_Checksum_Handle(void)
 		checkXor = checkXor ^ SIF_receive_buf[i];
 	}
 
-	checkByte = (unsigned char) checkXor;
-	if (checkByte == SIF_receive_buf[SIF_REV_DATA_NUM - 1])//Ð£ÑéºÍÕýÈ·
+	checkByte = (unsigned char)checkXor;
+	if (checkByte == SIF_receive_buf[SIF_REV_DATA_NUM - 1]) // Ð£ï¿½ï¿½ï¿½ï¿½ï¿½È·
 	{
-		SIF_receive_check_OK = 1;           								 //±ê¼ÇÐ£Ñé³É¹¦
+		SIF_receive_check_OK = 1; // ï¿½ï¿½ï¿½Ð£ï¿½ï¿½É¹ï¿½
 	}
 	else
 	{
-		SIF_receive_check_OK = 0;           								 //±ê¼ÇÐ£ÑéÊ§°Ü
+		SIF_receive_check_OK = 0; // ï¿½ï¿½ï¿½Ð£ï¿½ï¿½Ê§ï¿½ï¿½
 	}
 }
 

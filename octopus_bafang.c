@@ -5,7 +5,7 @@
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_bafang.h"
 #include "octopus_uart_hal.h"
-#include "octopus_uart_ptl_2.h"    // Include UART protocol header
+#include "octopus_uart_ptl_2.h" // Include UART protocol header
 #include "octopus_carinfor.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
@@ -32,7 +32,7 @@ typedef enum
     PTL_BAFANG_CMD_SYMBOL_LAMP = 0x161A,
     PTL_BAFANG_CMD_SYMBOL_SPEED_LIMIT = 0x161F,
     PTL_BAFANG_CMD_SYMBOL_GEAR = 0x160B,
-}PTL_BAFANG_CMD_SYMBOL;
+} PTL_BAFANG_CMD_SYMBOL;
 
 typedef enum
 {
@@ -42,17 +42,16 @@ typedef enum
     PTL_BAFANG_PROCESS_STATE_CHECK_RESPONSE,
     PTL_BAFANG_PROCESS_STATE_NEXT_CMD,
     PTL_BAFANG_PROCESS_STATE_DEINIT,
-}PTL_BAFANG_PROCESS_STATE;
+} PTL_BAFANG_PROCESS_STATE;
 
 typedef void (*UartSendPtlBafangCmdFun_f)(void);
 
 typedef struct UartSendProtocolCmdCtrl
 {
-    uint16_t                    cmdSymbol;        //√¸¡Ó±Ì æ
-    UartSendPtlBafangCmdFun_f   pfnSendFun;       //–Ë“™µ˜”√µƒ∑¢ÀÕ√¸¡Ó∫Ø ˝
-    uint16_t                    delayTime;        //—” ± ±º‰£¨µ•Œªms
+    uint16_t                    cmdSymbol;        //ÂëΩ‰ª§Ë°®Á§∫
+    UartSendPtlBafangCmdFun_f   pfnSendFun;       //ÈúÄË¶ÅË∞ÉÁî®ÁöÑÂèëÈÄÅÂëΩ‰ª§ÂáΩÊï∞
+    uint16_t                    delayTime;        //Âª∂Êó∂Êó∂Èó¥ÔºåÂçï‰Ωçms
 }UartSendPtlBafangCmdCtrl_t;
-
 
 /*******************************************************************************
  * CONSTANTS
@@ -63,35 +62,34 @@ typedef struct UartSendProtocolCmdCtrl
  */
 static void com_uart_ptl_bafang_tx_process(void);
 
-//static bool bafang_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
-static bool bafang_receive_handler(ptl_2_proc_buff_t* ptl_2_proc_buff);
+// static bool bafang_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
+static bool bafang_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff);
 
-//static bool com_uart_ptl_bafang_receive_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
-//static bool com_uart_ptl_bafang_send_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
+// static bool com_uart_ptl_bafang_receive_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
+// static bool com_uart_ptl_bafang_send_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
-//∏√±Í÷æ∑˚∫≈ «∑Ò–Ë“™µ»¥˝œÏ”¶ ˝æ›
+//ËØ•Ê†áÂøóÁ¨¶Âè∑ÊòØÂê¶ÈúÄË¶ÅÁ≠âÂæÖÂìçÂ∫îÊï∞ÊçÆ
 static bool uart_protocol_symbol_need_response(uint16_t symbol);
-//∑¢ÀÕ∂¡»°œµÕ≥◊¥Ã¨√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÁ≥ªÁªüÁä∂ÊÄÅÂëΩ‰ª§
 static void uart_send_protocol_cmd_system_state(void);
-//∑¢ÀÕ∂¡»°π§◊˜◊¥Ã¨√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÂ∑•‰ΩúÁä∂ÊÄÅÂëΩ‰ª§
 static void uart_send_protocol_cmd_working_state(void);
-//∑¢ÀÕ∂¡»°À≤ ±µÁ¡˜√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÁû¨Êó∂ÁîµÊµÅÂëΩ‰ª§
 static void uart_send_protocol_cmd_current(void);
-//∑¢ÀÕ∂¡»°µÁ≥ÿµÁ¡ø√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÁîµÊ±†ÁîµÈáèÂëΩ‰ª§
 static void uart_send_protocol_cmd_soc(void);
-//∑¢ÀÕ∂¡»°ÀŸ∂»√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÈÄüÂ∫¶ÂëΩ‰ª§
 static void uart_send_protocol_cmd_speed(void);
-//∑¢ÀÕ–¥»ÎœﬁÀŸ√¸¡Ó
+//ÂèëÈÄÅÂÜôÂÖ•ÈôêÈÄüÂëΩ‰ª§
 static void uart_send_protocol_cmd_speed_limit(void);
-//∑¢ÀÕ–¥»ÎµµŒª√¸¡Ó
+//ÂèëÈÄÅÂÜôÂÖ•Ê°£‰ΩçÂëΩ‰ª§
 static void uart_send_protocol_cmd_gear(void);
-//∑¢ÀÕ–¥»Î¥Ûµ∆√¸¡Ó
+//ÂèëÈÄÅÂÜôÂÖ•Â§ßÁÅØÂëΩ‰ª§
 static void uart_send_protocol_cmd_lamp(void);
-//∑¢ÀÕ∂¡»°µÁ≥ÿ√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÁîµÊ±†ÂëΩ‰ª§
 static void uart_send_protocol_cmd_battery_info(void);
-//∑¢ÀÕ∂¡»°µÁ–æ√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÁîµËäØÂëΩ‰ª§
 static void uart_send_protocol_cmd_cell_info(void);
-
 
 static void bike_Uart_Send(unsigned char data);
 
@@ -99,39 +97,38 @@ static void Bike_pas_level_send_depend_max_9_level(void);
 static void Bike_pas_level_send_depend_max_5_level(void);
 static void Bike_pas_level_send_depend_max_3_level(void);
 
-//œµÕ≥◊¥Ã¨–≠“È÷°¥¶¿Ì
+//Á≥ªÁªüÁä∂ÊÄÅÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 static bool proc_protocol_frame_system_state(uint8_t* buff, int count);
-//π§◊˜◊¥Ã¨–≠“È÷°¥¶¿Ì
+//Â∑•‰ΩúÁä∂ÊÄÅÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 static bool proc_protocol_frame_working_state(uint8_t* buff, int count);
-//µÁ≥ÿµÁ¡ø–≠“È÷°¥¶¿Ì
+//ÁîµÊ±†ÁîµÈáèÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 static bool proc_protocol_frame_soc(uint8_t* buff, int count);
-//ÀŸ∂»–≠“È÷°¥¶¿Ì
+//ÈÄüÂ∫¶ÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 static bool proc_protocol_frame_speed(uint8_t* buff, int count);
-//À≤ ±µÁ¡˜–≠“È÷°¥¶¿Ì
+//Áû¨Êó∂ÁîµÊµÅÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 static bool proc_protocol_frame_instantaneous_current(uint8_t* buff, int count);
-//µÁ≥ÿ–≈œ¢–≠“È÷°¥¶¿Ì
+//ÁîµÊ±†‰ø°ÊÅØÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 static bool proc_protocol_frame_battery_info(uint8_t* buff, int count);
-//µÁ–æ–≈œ¢–≠“È÷°¥¶¿Ì
+//ÁîµËäØ‰ø°ÊÅØÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 static bool proc_protocol_frame_cell_info(uint8_t* buff, int count);
 
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
 
-
-//METER_INFO_T        theMeterInfo;       
-//INDICATOR_FLAG_T    theIndicatorFlag;   
-//SETTING_INFO_T      theSettingInfo;     
-//ERROR_INFO_T        theErrorInfo;       
-//BATTERY_INFO_T      theBatteryInfo;     
-//ENV_INFO_T          theEnvInfo;         
+// METER_INFO_T        theMeterInfo;
+// INDICATOR_FLAG_T    theIndicatorFlag;
+// SETTING_INFO_T      theSettingInfo;
+// ERROR_INFO_T        theErrorInfo;
+// BATTERY_INFO_T      theBatteryInfo;
+// ENV_INFO_T          theEnvInfo;
 /*******************************************************************************
  * STATIC VARIABLES
  */
 static uint32_t lt_timer;
 
-//∆Ô––∏®÷˙µ»º∂
-//µµŒª√¸¡Ó£∫
+//È™ëË°åËæÖÂä©Á≠âÁ∫ß
+//Ê°£‰ΩçÂëΩ‰ª§Ôºö
 static const uint8_t protocol_cmd_pas_gear_00[4] = { 0x16, 0x0B, 0x00, 0x21 }; //gear 0
 static const uint8_t protocol_cmd_pas_gear_01[4] = { 0x16, 0x0B, 0x01, 0x22 }; //gear 1
 static const uint8_t protocol_cmd_pas_gear_02[4] = { 0x16, 0x0B, 0x02, 0x23 }; //gear 2
@@ -146,54 +143,54 @@ static const uint8_t protocol_cmd_pas_gear_22[4] = { 0x16, 0x0B, 0x16, 0x37 }; /
 static const uint8_t protocol_cmd_pas_gear_23[4] = { 0x16, 0x0B, 0x17, 0x38 }; //gear 23
 
 
-//¥Ûµ∆÷∏ æµ∆
-static const uint8_t protocol_cmd_lamp_on[3] = { 0x16, 0x1A, 0xF1 };   //ø™µ∆
-static const uint8_t protocol_cmd_lamp_off[3] = { 0x16, 0x1A, 0xF0 };  //πÿµ∆
+//Â§ßÁÅØÊåáÁ§∫ÁÅØ
+static const uint8_t protocol_cmd_lamp_on[3] = { 0x16, 0x1A, 0xF1 };   //ÂºÄÁÅØ
+static const uint8_t protocol_cmd_lamp_off[3] = { 0x16, 0x1A, 0xF0 };  //ÂÖ≥ÁÅØ
 
-//µÁ≥ÿ–≈œ¢
-static const uint8_t protocol_cmd_battery_info[3] = { 0x11, 0x60, 0x71 };   //µÁ≥ÿ–≈œ¢
-static const uint8_t protocol_cmd_cell_info[3] = { 0x11, 0x61, 0x72 };      //µÁ–æ–≈œ¢
+//ÁîµÊ±†‰ø°ÊÅØ
+static const uint8_t protocol_cmd_battery_info[3] = { 0x11, 0x60, 0x71 };   //ÁîµÊ±†‰ø°ÊÅØ
+static const uint8_t protocol_cmd_cell_info[3] = { 0x11, 0x61, 0x72 };      //ÁîµËäØ‰ø°ÊÅØ
 
 
-static uint32_t protocolResponseLose = 0;                                       //–≠“ÈÕ®—∂“Ï≥£¥Œ ˝
-static PTL_BAFANG_CMD_SYMBOL protocolCmdSymbol = PTL_BAFANG_CMD_SYMBOL_IDLE;    //∑¢ÀÕ√¸¡Óµƒ±Í ∂∑˚
-static PTL_BAFANG_CMD_SYMBOL protocolResponse = PTL_BAFANG_CMD_SYMBOL_IDLE;     //Ω” ’√¸¡Óµƒ±Í ∂∑˚
+static uint32_t protocolResponseLose = 0;                                       //ÂçèËÆÆÈÄöËÆØÂºÇÂ∏∏Ê¨°Êï∞
+static PTL_BAFANG_CMD_SYMBOL protocolCmdSymbol = PTL_BAFANG_CMD_SYMBOL_IDLE;    //ÂèëÈÄÅÂëΩ‰ª§ÁöÑÊ†áËØÜÁ¨¶
+static PTL_BAFANG_CMD_SYMBOL protocolResponse = PTL_BAFANG_CMD_SYMBOL_IDLE;     //Êé•Êî∂ÂëΩ‰ª§ÁöÑÊ†áËØÜÁ¨¶
 
-static size_t protocolProcessCurrentIndex = 0;                                  //µ±«∞√¸¡Óµƒ–Ú∫≈
-static uint32_t protocolProcessTimer = 0;                                      //µ±«∞√¸¡Ó∑¢ÀÕ ±º‰
+static size_t protocolProcessCurrentIndex = 0;                                  //ÂΩìÂâçÂëΩ‰ª§ÁöÑÂ∫èÂè∑
+static uint32_t protocolProcessTimer = 0;                                      //ÂΩìÂâçÂëΩ‰ª§ÂèëÈÄÅÊó∂Èó¥
 
 static PTL_BAFANG_PROCESS_STATE protocolProcessState = PTL_BAFANG_PROCESS_STATE_INIT;
 static const UartSendPtlBafangCmdCtrl_t protocolProcessCmdTable[] =
-{
-    {PTL_BAFANG_CMD_SYMBOL_SYSTEM_STATE,  uart_send_protocol_cmd_system_state,   100},  //11 08 
-    {PTL_BAFANG_CMD_SYMBOL_CURRENT,       uart_send_protocol_cmd_current,        100},  //11 0A
-    {PTL_BAFANG_CMD_SYMBOL_SPEED,         uart_send_protocol_cmd_speed,          100},  //11 20
-    {PTL_BAFANG_CMD_SYMBOL_SOC,           uart_send_protocol_cmd_soc,            100},  //11 11
-    {PTL_BAFANG_CMD_SYMBOL_WORKING_STATE, uart_send_protocol_cmd_working_state,  100},  //11 31
-    {PTL_BAFANG_CMD_SYMBOL_LAMP,          uart_send_protocol_cmd_lamp,           100},  //16 1A
+    {
+        {PTL_BAFANG_CMD_SYMBOL_SYSTEM_STATE, uart_send_protocol_cmd_system_state, 100},   // 11 08
+        {PTL_BAFANG_CMD_SYMBOL_CURRENT, uart_send_protocol_cmd_current, 100},             // 11 0A
+        {PTL_BAFANG_CMD_SYMBOL_SPEED, uart_send_protocol_cmd_speed, 100},                 // 11 20
+        {PTL_BAFANG_CMD_SYMBOL_SOC, uart_send_protocol_cmd_soc, 100},                     // 11 11
+        {PTL_BAFANG_CMD_SYMBOL_WORKING_STATE, uart_send_protocol_cmd_working_state, 100}, // 11 31
+        {PTL_BAFANG_CMD_SYMBOL_LAMP, uart_send_protocol_cmd_lamp, 100},                   // 16 1A
 
-    {PTL_BAFANG_CMD_SYMBOL_SYSTEM_STATE,  uart_send_protocol_cmd_system_state,   100},  //11 08 
-    {PTL_BAFANG_CMD_SYMBOL_CURRENT,       uart_send_protocol_cmd_current,        100},  //11 0A
-    {PTL_BAFANG_CMD_SYMBOL_SPEED,         uart_send_protocol_cmd_speed,          100},  //11 20
-    {PTL_BAFANG_CMD_SYMBOL_SOC,           uart_send_protocol_cmd_soc,            100},  //11 11
-    {PTL_BAFANG_CMD_SYMBOL_WORKING_STATE, uart_send_protocol_cmd_working_state,  100},  //11 31
-    {PTL_BAFANG_CMD_SYMBOL_SPEED_LIMIT,   uart_send_protocol_cmd_speed_limit,    100},  //16 1F
+        {PTL_BAFANG_CMD_SYMBOL_SYSTEM_STATE, uart_send_protocol_cmd_system_state, 100},   // 11 08
+        {PTL_BAFANG_CMD_SYMBOL_CURRENT, uart_send_protocol_cmd_current, 100},             // 11 0A
+        {PTL_BAFANG_CMD_SYMBOL_SPEED, uart_send_protocol_cmd_speed, 100},                 // 11 20
+        {PTL_BAFANG_CMD_SYMBOL_SOC, uart_send_protocol_cmd_soc, 100},                     // 11 11
+        {PTL_BAFANG_CMD_SYMBOL_WORKING_STATE, uart_send_protocol_cmd_working_state, 100}, // 11 31
+        {PTL_BAFANG_CMD_SYMBOL_SPEED_LIMIT, uart_send_protocol_cmd_speed_limit, 100},     // 16 1F
 
-    {PTL_BAFANG_CMD_SYMBOL_SYSTEM_STATE,  uart_send_protocol_cmd_system_state,   100},  //11 08 
-    {PTL_BAFANG_CMD_SYMBOL_CURRENT,       uart_send_protocol_cmd_current,        100},  //11 0A
-    {PTL_BAFANG_CMD_SYMBOL_SPEED,         uart_send_protocol_cmd_speed,          100},  //11 20
-    {PTL_BAFANG_CMD_SYMBOL_SOC,           uart_send_protocol_cmd_soc,            100},  //11 11
-    {PTL_BAFANG_CMD_SYMBOL_WORKING_STATE, uart_send_protocol_cmd_working_state,  100},  //11 31
-    {PTL_BAFANG_CMD_SYMBOL_GEAR,          uart_send_protocol_cmd_gear,           100},  //16 0B
+        {PTL_BAFANG_CMD_SYMBOL_SYSTEM_STATE, uart_send_protocol_cmd_system_state, 100},   // 11 08
+        {PTL_BAFANG_CMD_SYMBOL_CURRENT, uart_send_protocol_cmd_current, 100},             // 11 0A
+        {PTL_BAFANG_CMD_SYMBOL_SPEED, uart_send_protocol_cmd_speed, 100},                 // 11 20
+        {PTL_BAFANG_CMD_SYMBOL_SOC, uart_send_protocol_cmd_soc, 100},                     // 11 11
+        {PTL_BAFANG_CMD_SYMBOL_WORKING_STATE, uart_send_protocol_cmd_working_state, 100}, // 11 31
+        {PTL_BAFANG_CMD_SYMBOL_GEAR, uart_send_protocol_cmd_gear, 100},                   // 16 0B
 
-    {PTL_BAFANG_CMD_SYMBOL_SYSTEM_STATE,  uart_send_protocol_cmd_system_state,   100},  //11 08 
-    {PTL_BAFANG_CMD_SYMBOL_CURRENT,       uart_send_protocol_cmd_current,        100},  //11 0A
-    {PTL_BAFANG_CMD_SYMBOL_SPEED,         uart_send_protocol_cmd_speed,          100},  //11 20
-    {PTL_BAFANG_CMD_SYMBOL_SOC,           uart_send_protocol_cmd_soc,            100},  //11 11
-    {PTL_BAFANG_CMD_SYMBOL_WORKING_STATE, uart_send_protocol_cmd_working_state,  100},  //11 31
+        {PTL_BAFANG_CMD_SYMBOL_SYSTEM_STATE, uart_send_protocol_cmd_system_state, 100},   // 11 08
+        {PTL_BAFANG_CMD_SYMBOL_CURRENT, uart_send_protocol_cmd_current, 100},             // 11 0A
+        {PTL_BAFANG_CMD_SYMBOL_SPEED, uart_send_protocol_cmd_speed, 100},                 // 11 20
+        {PTL_BAFANG_CMD_SYMBOL_SOC, uart_send_protocol_cmd_soc, 100},                     // 11 11
+        {PTL_BAFANG_CMD_SYMBOL_WORKING_STATE, uart_send_protocol_cmd_working_state, 100}, // 11 31
 
-	  {PTL_BAFANG_CMD_SYMBOL_BATTERY,       uart_send_protocol_cmd_battery_info,   100},  //11 60 71
-	  {PTL_BAFANG_CMD_SYMBOL_CELL,          uart_send_protocol_cmd_cell_info,      100},  //11 60 72
+        {PTL_BAFANG_CMD_SYMBOL_BATTERY, uart_send_protocol_cmd_battery_info, 100}, // 11 60 71
+        {PTL_BAFANG_CMD_SYMBOL_CELL, uart_send_protocol_cmd_cell_info, 100},       // 11 60 72
 
 };
 
@@ -201,25 +198,24 @@ static const UartSendPtlBafangCmdCtrl_t protocolProcessCmdTable[] =
  * EXTERNAL VARIABLES
  */
 
-
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
 void app_bafang_ptl_init_running(void)
 {
     OTMS(TASK_ID_PTL_BAFANG, OTMS_S_INVALID);
-	  LOG_LEVEL("app_bafang_ptl_init_running\r\n");
+    LOG_LEVEL("app_bafang_ptl_init_running\r\n");
 }
 
 void app_bafang_ptl_start_running(void)
 {
-	  LOG_LEVEL("app_bafang_ptl_start_running\r\n");
-    //÷ª”– «∞À∑Ω–≠“Èµƒ«Èøˆœ¬≤≈‘À––∏√◊¥Ã¨ª˙
-    //if (SETTING_PTL_BAFANG == theEnvInfo.ptl) 
-		{
-      ///ptl_register_module(SETTING_PTL_BAFANG, bafang_send_handler,bafang_receive_handler);
-			ptl_2_register_module(SETTING_PTL_BAFANG, bafang_receive_handler);
-      OTMS(TASK_ID_PTL_BAFANG, OTMS_S_ASSERT_RUN);
+    LOG_LEVEL("app_bafang_ptl_start_running\r\n");
+    // ÷ªÔøΩÔøΩÔøΩ«∞À∑ÔøΩ–≠ÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩ¬≤ÔøΩÔøΩÔøΩÔøΩ–∏ÔøΩ◊¥Ã¨ÔøΩÔøΩ
+    // if (SETTING_PTL_BAFANG == theEnvInfo.ptl)
+    {
+        /// ptl_register_module(SETTING_PTL_BAFANG, bafang_send_handler,bafang_receive_handler);
+        ptl_2_register_module(SETTING_PTL_BAFANG, bafang_receive_handler);
+        OTMS(TASK_ID_PTL_BAFANG, OTMS_S_ASSERT_RUN);
     }
 }
 
@@ -237,24 +233,23 @@ void app_bafang_ptl_running(void)
     }
     StartTickCounter(&lt_timer);
 
-    //if(true == system_get_power_off_req())
+    // if(true == system_get_power_off_req())
     {
         OTMS(TASK_ID_PTL_BAFANG, OTMS_S_POST_RUN);
     }
 
-     //lt_indicator.walk_assist = theMeterInfo.walk_assist;
-     com_uart_ptl_bafang_tx_process();
+    // lt_indicator.walk_assist = theMeterInfo.walk_assist;
+    com_uart_ptl_bafang_tx_process();
 }
 
 void app_bafang_ptl_post_running(void)
 {
-    //printf("%s\n", __FUNCTION__);
-    //if(true != system_get_power_off_req())
+    // printf("%s\n", __FUNCTION__);
+    // if(true != system_get_power_off_req())
     {
         OTMS(TASK_ID_PTL_BAFANG, OTMS_S_ASSERT_RUN);
     }
 }
-
 
 void app_bafang_ptl_stop_running(void)
 {
@@ -266,17 +261,16 @@ void app_bafang_ptl_stop_running(void)
  * LOCAL FUNCTIONS IMPLEMENTATION
  */
 
-
 void com_uart_ptl_bafang_tx_process(void)
 {
     size_t tableLen = (sizeof(protocolProcessCmdTable) / sizeof(UartSendPtlBafangCmdCtrl_t));
-    ///assert((protocolProcessCurrentIndex >= 0) && (protocolProcessCurrentIndex < tableLen));
+    /// assert((protocolProcessCurrentIndex >= 0) && (protocolProcessCurrentIndex < tableLen));
 
     switch (protocolProcessState)
     {
     case PTL_BAFANG_PROCESS_STATE_INIT:
     {
-        ///if (power_is_power_on())
+        /// if (power_is_power_on())
         {
             protocolProcessState = PTL_BAFANG_PROCESS_STATE_SEND_CMD;
             StartTickCounter(&protocolProcessTimer);
@@ -288,7 +282,7 @@ void com_uart_ptl_bafang_tx_process(void)
         ////rec_buff_offset = 0;
         ////com_uart_ptl_clear_revice_buff();
         protocolProcessCmdTable[protocolProcessCurrentIndex].pfnSendFun();
-        protocolCmdSymbol =(PTL_BAFANG_CMD_SYMBOL)protocolProcessCmdTable[protocolProcessCurrentIndex].cmdSymbol;
+        protocolCmdSymbol = (PTL_BAFANG_CMD_SYMBOL)protocolProcessCmdTable[protocolProcessCurrentIndex].cmdSymbol;
         StartTickCounter(&protocolProcessTimer);
 
         protocolProcessState = PTL_BAFANG_PROCESS_STATE_WAIT_TIME;
@@ -322,11 +316,10 @@ void com_uart_ptl_bafang_tx_process(void)
                     protocolResponseLose++;
                     if (protocolResponseLose == 3)
                     {
-                        //TODO
-                        //add_error_code;
-                        ///printf("add_error_code\n");
-                        ///add_error_code(ERROR_CODE_COMMUNICATION_ABNORMALITY);
-
+                        // TODO
+                        // add_error_code;
+                        /// printf("add_error_code\n");
+                        /// add_error_code(ERROR_CODE_COMMUNICATION_ABNORMALITY);
                     }
                     protocolProcessState = PTL_BAFANG_PROCESS_STATE_NEXT_CMD;
                 }
@@ -345,14 +338,14 @@ void com_uart_ptl_bafang_tx_process(void)
         {
             protocolProcessCurrentIndex = 0;
         }
-        ///if (power_is_power_on())
+        /// if (power_is_power_on())
         {
             protocolProcessState = PTL_BAFANG_PROCESS_STATE_SEND_CMD;
         }
-        ///else
+        /// else
         ///{
-        ///    protocolProcessState = PTL_BAFANG_PROCESS_STATE_DEINIT;
-        ///}
+        ///     protocolProcessState = PTL_BAFANG_PROCESS_STATE_DEINIT;
+        /// }
         break;
     }
     case PTL_BAFANG_PROCESS_STATE_DEINIT:
@@ -364,42 +357,42 @@ void com_uart_ptl_bafang_tx_process(void)
     }
 }
 
-static bool bafang_receive_handler(ptl_2_proc_buff_t* ptl_2_proc_buff)
+static bool bafang_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff)
 {
     bool res = false;
     if (res == false)
     {
-        //œµÕ≥◊¥Ã¨–≠“È÷°¥¶¿Ì
+        //Á≥ªÁªüÁä∂ÊÄÅÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
         res = proc_protocol_frame_system_state(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
-        //π§◊˜◊¥Ã¨–≠“È÷°¥¶¿Ì
+        //Â∑•‰ΩúÁä∂ÊÄÅÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
         res = proc_protocol_frame_working_state(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
-        //µÁ≥ÿµÁ¡ø–≠“È÷°¥¶¿Ì
+        //ÁîµÊ±†ÁîµÈáèÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
         res = proc_protocol_frame_soc(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
-        //ÀŸ∂»–≠“È÷°¥¶¿Ì
+        //ÈÄüÂ∫¶ÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
         res = proc_protocol_frame_speed(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
-        //À≤ ±µÁ¡˜–≠“È÷°¥¶¿Ì
+        //Áû¨Êó∂ÁîµÊµÅÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
         res = proc_protocol_frame_instantaneous_current(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
-        //µÁ≥ÿ–≈œ¢–≠“È÷°¥¶¿Ì
+        //ÁîµÊ±†‰ø°ÊÅØÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
         res = proc_protocol_frame_battery_info(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
-        //µÁ–æ–≈œ¢–≠“È÷°¥¶¿Ì
+        //ÁîµËäØ‰ø°ÊÅØÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
         res = proc_protocol_frame_cell_info(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
 
@@ -417,37 +410,37 @@ bool uart_protocol_symbol_need_response(uint16_t symbol)
     return ((symbol & 0xFF00) == 0x1100);
 }
 
-//∑¢ÀÕ∂¡»°œµÕ≥◊¥Ã¨√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÁ≥ªÁªüÁä∂ÊÄÅÂëΩ‰ª§
 void uart_send_protocol_cmd_system_state(void)
 {
     bike_Uart_Send(0x08);
 }
 
-//∑¢ÀÕ∂¡»°π§◊˜◊¥Ã¨√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÂ∑•‰ΩúÁä∂ÊÄÅÂëΩ‰ª§
 void uart_send_protocol_cmd_working_state(void)
 {
     bike_Uart_Send(0x31);
 }
 
-//∑¢ÀÕ∂¡»°À≤ ±µÁ¡˜√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÁû¨Êó∂ÁîµÊµÅÂëΩ‰ª§
 void uart_send_protocol_cmd_current(void)
 {
     bike_Uart_Send(0x0A);
 }
 
-//∑¢ÀÕ∂¡»°µÁ≥ÿµÁ¡ø√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÁîµÊ±†ÁîµÈáèÂëΩ‰ª§
 void uart_send_protocol_cmd_soc(void)
 {
     bike_Uart_Send(0x11);
 }
 
-//∑¢ÀÕ∂¡»°ÀŸ∂»√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÈÄüÂ∫¶ÂëΩ‰ª§
 void uart_send_protocol_cmd_speed(void)
 {
     bike_Uart_Send(0x20);
 }
 
-//∑¢ÀÕ–¥»ÎœﬁÀŸ√¸¡Ó
+//ÂèëÈÄÅÂÜôÂÖ•ÈôêÈÄüÂëΩ‰ª§
 void uart_send_protocol_cmd_speed_limit(void)
 {
     static uint16_t speed_limit_rpm = 241;
@@ -457,13 +450,13 @@ void uart_send_protocol_cmd_speed_limit(void)
     {
         speed_limit = lt_carinfo_meter.speed_limit;
 
-        double radius = get_wheel_radius_mm() / 1000.0; //¬÷Ï±∞Îæ∂£¨µ•Œª£∫√◊
+        double radius = get_wheel_radius_mm() / 1000.0; //ËΩÆÊØÇÂçäÂæÑÔºåÂçï‰ΩçÔºöÁ±≥
         if (radius)
         {
-            double kph = speed_limit / 10.0;                //œﬁÀŸ,µ•Œªkm/h
-            double v = kph * 1000.0 / 3600.0;               //œﬂÀŸ∂»,µ•Œª£∫√◊/√Î
-            double w = v / radius;                          //◊™ªªΩ«ÀŸ∂»£¨µ•Œª£∫ª°∂»/√Î
-            double rpm = w * 60.0 / 2.0 / PI_FLOAT;         //◊™ÀŸrpm
+            double kph = speed_limit / 10.0;                //ÈôêÈÄü,Âçï‰Ωçkm/h
+            double v = kph * 1000.0 / 3600.0;               //Á∫øÈÄüÂ∫¶,Âçï‰ΩçÔºöÁ±≥/Áßí
+            double w = v / radius;                          //ËΩ¨Êç¢ËßíÈÄüÂ∫¶ÔºåÂçï‰ΩçÔºöÂºßÂ∫¶/Áßí
+            double rpm = w * 60.0 / 2.0 / PI_FLOAT;         //ËΩ¨ÈÄürpm
             speed_limit_rpm = (uint16_t)rpm;
         }
     }
@@ -480,7 +473,7 @@ void uart_send_protocol_cmd_speed_limit(void)
     hal_com_uart_send_buffer_2(send_data, 5);
 }
 
-//∑¢ÀÕ–¥»ÎµµŒª√¸¡Ó
+//ÂèëÈÄÅÂÜôÂÖ•Ê°£‰ΩçÂëΩ‰ª§
 void uart_send_protocol_cmd_gear(void)
 {
     if (lt_carinfo_indicator.walk_assist)
@@ -499,17 +492,17 @@ void uart_send_protocol_cmd_gear(void)
     {
         Bike_pas_level_send_depend_max_9_level();
     }
-		else
-		{
-			 Bike_pas_level_send_depend_max_5_level();
-		}
+    else
+    {
+        Bike_pas_level_send_depend_max_5_level();
+    }
 }
 
-//∑¢ÀÕ–¥»Î¥Ûµ∆√¸¡Ó
+//ÂèëÈÄÅÂÜôÂÖ•Â§ßÁÅØÂëΩ‰ª§
 void uart_send_protocol_cmd_lamp(void)
 {
-    //if (theIndicatorFlag.lamp)
-	  if(lt_carinfo_indicator.highBeam > 0 )
+    // if (theIndicatorFlag.lamp)
+    if (lt_carinfo_indicator.highBeam > 0)
     {
         hal_com_uart_send_buffer_2(protocol_cmd_lamp_on, 3);
     }
@@ -519,13 +512,13 @@ void uart_send_protocol_cmd_lamp(void)
     }
 }
 
-//∑¢ÀÕ∂¡»°µÁ≥ÿ√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÁîµÊ±†ÂëΩ‰ª§
 void uart_send_protocol_cmd_battery_info(void)
 {
     hal_com_uart_send_buffer_2(protocol_cmd_battery_info, 3);
 }
 
-//∑¢ÀÕ∂¡»°µÁ–æ√¸¡Ó
+//ÂèëÈÄÅËØªÂèñÁîµËäØÂëΩ‰ª§
 void uart_send_protocol_cmd_cell_info(void)
 {
     hal_com_uart_send_buffer_2(protocol_cmd_cell_info, 3);
@@ -542,7 +535,7 @@ void bike_Uart_Send(unsigned char data)
 
     if (data == 0x20)
     {
-        //printf("bike_Uart_Send data: %02x %02x tick:%u\n", send_data[0], send_data[1], SDL_GetTicks());
+        // printf("bike_Uart_Send data: %02x %02x tick:%u\n", send_data[0], send_data[1], SDL_GetTicks());
     }
 }
 
@@ -550,17 +543,39 @@ void Bike_pas_level_send_depend_max_9_level(void)
 {
     switch (lt_carinfo_meter.gear)
     {
-    case 0:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_00, 4); return;
-    case 1:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_01, 4); return;
-    case 2:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_11, 4); return;
-    case 3:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_12, 4); return;
-    case 4:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_13, 4); return;
-    case 5:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_02, 4); return;
-    case 6:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_21, 4); return;
-    case 7:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_22, 4); return;
-    case 8:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_23, 4); return;
-    case 9:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_03, 4); return;
-    default: hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_01, 4); return;
+    case 0:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_00, 4);
+        return;
+    case 1:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_01, 4);
+        return;
+    case 2:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_11, 4);
+        return;
+    case 3:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_12, 4);
+        return;
+    case 4:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_13, 4);
+        return;
+    case 5:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_02, 4);
+        return;
+    case 6:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_21, 4);
+        return;
+    case 7:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_22, 4);
+        return;
+    case 8:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_23, 4);
+        return;
+    case 9:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_03, 4);
+        return;
+    default:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_01, 4);
+        return;
     }
 }
 
@@ -568,55 +583,79 @@ void Bike_pas_level_send_depend_max_5_level(void)
 {
     switch (lt_carinfo_meter.gear)
     {
-    case 0:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_00, 4); return;
-    case 1:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_11, 4); return;
-    case 2:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_13, 4); return;
-    case 3:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_21, 4); return;
-    case 4:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_23, 4); return;
-    case 5:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_03, 4); return;
-    default: hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_11, 4); return;
+    case 0:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_00, 4);
+        return;
+    case 1:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_11, 4);
+        return;
+    case 2:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_13, 4);
+        return;
+    case 3:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_21, 4);
+        return;
+    case 4:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_23, 4);
+        return;
+    case 5:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_03, 4);
+        return;
+    default:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_11, 4);
+        return;
     }
 }
 
 void Bike_pas_level_send_depend_max_3_level(void)
 {
-   switch (lt_carinfo_meter.gear)
+    switch (lt_carinfo_meter.gear)
     {
-    case 0:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_00, 4); return;
-    case 1:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_12, 4); return;
-    case 2:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_02, 4); return;
-    case 3:  hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_03, 4); return;
-    default: hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_12, 4); return;
+    case 0:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_00, 4);
+        return;
+    case 1:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_12, 4);
+        return;
+    case 2:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_02, 4);
+        return;
+    case 3:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_03, 4);
+        return;
+    default:
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_12, 4);
+        return;
     }
 }
 
-//œµÕ≥◊¥Ã¨–≠“È÷°¥¶¿Ì
+//Á≥ªÁªüÁä∂ÊÄÅÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 bool proc_protocol_frame_system_state(uint8_t* buff, int count)
 {
-    if (protocolCmdSymbol == PTL_BAFANG_CMD_SYMBOL_SYSTEM_STATE)//??
+    if (protocolCmdSymbol == PTL_BAFANG_CMD_SYMBOL_SYSTEM_STATE) //??
     {
         if (count == 1)
         {
             ERROR_CODE code = (ERROR_CODE)buff[0];
-					   lt_carinfo_indicator.brake = false;
+            lt_carinfo_indicator.brake = false;
             if (code == ERROR_CODE_BRAKE)
             {
                 lt_carinfo_indicator.brake = true;
-							  send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR);//CMD_MOD_CARINFOR_INDICATOR	
-            }    					
-						else
-						{
-							 send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR);//CMD_MOD_CARINFOR_INDICATOR	
-							 app_carinfo_add_error_code(code);		
-						}
-					
+                send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR); // CMD_MOD_CARINFOR_INDICATOR
+            }
+            else
+            {
+                send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR); // CMD_MOD_CARINFOR_INDICATOR
+                app_carinfo_add_error_code(code);
+            }
+
             return true;
         }
     }
     return false;
 }
 
-//π§◊˜◊¥Ã¨–≠“È÷°¥¶¿Ì
+//Â∑•‰ΩúÁä∂ÊÄÅÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 bool proc_protocol_frame_working_state(uint8_t* buff, int count)
 {
     if (protocolCmdSymbol == PTL_BAFANG_CMD_SYMBOL_WORKING_STATE)
@@ -628,26 +667,26 @@ bool proc_protocol_frame_working_state(uint8_t* buff, int count)
     }
     return false;
 }
-//ÀŸ∂»–≠“È÷°¥¶¿Ì
+//ÈÄüÂ∫¶ÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 bool proc_protocol_frame_speed(uint8_t* buff, int count)
 {
-    if (protocolCmdSymbol == PTL_BAFANG_CMD_SYMBOL_SPEED)//speed	 ÀŸ∂»
+    if (protocolCmdSymbol == PTL_BAFANG_CMD_SYMBOL_SPEED)//speed	 ÈÄüÂ∫¶
     {
         if (count == 3)
         {
-            //printf("proc_protocol_frame_speed count:%d  buff: %02x %02x %02x %02x  tick:%u\n", count, buff[0], buff[1], buff[2], buff[3], SDL_GetTicks());
+            // printf("proc_protocol_frame_speed count:%d  buff: %02x %02x %02x %02x  tick:%u\n", count, buff[0], buff[1], buff[2], buff[3], SDL_GetTicks());
             uint8_t checksum = buff[0] + buff[1] + 0x20;
             if (checksum == buff[2])
             {
-							//Ω«ÀŸ∂»º∆À„π´ Ω£¨ŒÔ¿Ì¡ø◊÷ƒ∏¶ÿ µ•Œª rad/s (ª°∂»/√Î)
-							//¶ÿ = rpm * 2¶– / 60
-							//œﬂÀŸ∂»£¨ŒÔ¿Ì¡ø◊÷ƒ∏V µ•Œª m/s
-							//v£®œﬂÀŸ∂»£© = ¶ÿ* r
+							//ËßíÈÄüÂ∫¶ËÆ°ÁÆóÂÖ¨ÂºèÔºåÁâ©ÁêÜÈáèÂ≠óÊØçœâ Âçï‰Ωç rad/s (ÂºßÂ∫¶/Áßí)
+							//œâ = rpm * 2œÄ / 60
+							//Á∫øÈÄüÂ∫¶ÔºåÁâ©ÁêÜÈáèÂ≠óÊØçV Âçï‰Ωç m/s
+							//vÔºàÁ∫øÈÄüÂ∫¶Ôºâ = œâ* r
 
 							uint16_t rpm = MK_WORD(buff[0], buff[1]);
-							double radius = get_wheel_radius_mm() / 1000.0; //¬÷Ï±∞Îæ∂£¨µ•Œª£∫√◊
-							double w = rpm * (2.0 * PI_FLOAT / 60.0);//◊™ªªΩ«ÀŸ∂»£¨µ•Œª£∫ª°∂»/√Î
-							double v = w * radius; //œﬂÀŸ∂»,µ•Œª£∫√◊/√Î
+							double radius = get_wheel_radius_mm() / 1000.0; //ËΩÆÊØÇÂçäÂæÑÔºåÂçï‰ΩçÔºöÁ±≥
+							double w = rpm * (2.0 * PI_FLOAT / 60.0);//ËΩ¨Êç¢ËßíÈÄüÂ∫¶ÔºåÂçï‰ΩçÔºöÂºßÂ∫¶/Áßí
+							double v = w * radius; //Á∫øÈÄüÂ∫¶,Âçï‰ΩçÔºöÁ±≥/Áßí
 							double kph = v * 3600.0 / 1000.0 * 10;
 
 							//theMeterInfo.rpm = (uint32_t)rpm;
@@ -663,10 +702,10 @@ bool proc_protocol_frame_speed(uint8_t* buff, int count)
     }
     return false;
 }
-//µÁ≥ÿµÁ¡ø–≠“È÷°¥¶¿Ì
+//ÁîµÊ±†ÁîµÈáèÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 bool proc_protocol_frame_soc(uint8_t* buff, int count)
 {
-    if (protocolCmdSymbol == PTL_BAFANG_CMD_SYMBOL_SOC)//batteryµÁ≥ÿ»›¡ø
+    if (protocolCmdSymbol == PTL_BAFANG_CMD_SYMBOL_SOC) // batteryÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩ
     {
         if (count == 2)
         {
@@ -677,7 +716,7 @@ bool proc_protocol_frame_soc(uint8_t* buff, int count)
 
                 lt_carinfo_battery.soc = soc;
                 lt_carinfo_battery.range = (lt_carinfo_battery.max_range * soc) / 100;
-							  send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR,CMD_MOD_CARINFOR_BATTERY, 0);
+                send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
             }
             return true;
         }
@@ -685,10 +724,10 @@ bool proc_protocol_frame_soc(uint8_t* buff, int count)
     return false;
 }
 
-//À≤ ±µÁ¡˜–≠“È÷°¥¶¿Ì
+//Áû¨Êó∂ÁîµÊµÅÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 bool proc_protocol_frame_instantaneous_current(uint8_t* buff, int count)
 {
-    if (protocolCmdSymbol == PTL_BAFANG_CMD_SYMBOL_CURRENT)//À≤ ±µÁ¡˜
+    if (protocolCmdSymbol == PTL_BAFANG_CMD_SYMBOL_CURRENT) // À≤ ±ÔøΩÔøΩÔøΩÔøΩ
     {
         if (count == 2)
         {
@@ -699,7 +738,7 @@ bool proc_protocol_frame_instantaneous_current(uint8_t* buff, int count)
                 lt_carinfo_battery.current = current_val * 5;
 
                 lt_carinfo_battery.power = lt_carinfo_battery.voltage * lt_carinfo_battery.current / 100;
-								send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);	
+                send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
             }
             return true;
         }
@@ -707,10 +746,10 @@ bool proc_protocol_frame_instantaneous_current(uint8_t* buff, int count)
     return false;
 }
 
-//µÁ≥ÿ–≈œ¢–≠“È÷°¥¶¿Ì
+//ÁîµÊ±†‰ø°ÊÅØÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 bool proc_protocol_frame_battery_info(uint8_t* buff, int count)
 {
-    if (protocolCmdSymbol == PTL_BAFANG_CMD_SYMBOL_BATTERY)//∂¡»°µÁ≥ÿ–≈œ¢
+    if (protocolCmdSymbol == PTL_BAFANG_CMD_SYMBOL_BATTERY) // ÔøΩÔøΩ»°ÔøΩÔøΩÔøΩÔøΩÔøΩœ¢
     {
         if (count == 27)
         {
@@ -722,49 +761,48 @@ bool proc_protocol_frame_battery_info(uint8_t* buff, int count)
 
             if (checkSum == buff[26])
             {
-                ///uint16_t temp = MK_WORD(buff[1], buff[0]);
-                ///uint16_t maxTemp = MK_WORD(buff[3], buff[2]);
-                ///uint16_t minTempt = MK_WORD(buff[5], buff[4]);
+                /// uint16_t temp = MK_WORD(buff[1], buff[0]);
+                /// uint16_t maxTemp = MK_WORD(buff[3], buff[2]);
+                /// uint16_t minTempt = MK_WORD(buff[5], buff[4]);
 
                 uint16_t volt = MK_WORD(buff[7], buff[6]);
 
                 uint16_t cur = MK_WORD(buff[9], buff[8]);
-                ///uint16_t avgCur = MK_WORD(buff[11], buff[10]);
+                /// uint16_t avgCur = MK_WORD(buff[11], buff[10]);
 
-                ///uint16_t resCap = MK_WORD(buff[13], buff[12]);
-                ///uint16_t fulCap = MK_WORD(buff[15], buff[14]);
+                /// uint16_t resCap = MK_WORD(buff[13], buff[12]);
+                /// uint16_t fulCap = MK_WORD(buff[15], buff[14]);
 
                 uint8_t relateChargeState = buff[16];
                 uint8_t absoluteChargeState = buff[17];
 
-                ///uint16_t cycle = MK_WORD(buff[19], buff[18]);
+                /// uint16_t cycle = MK_WORD(buff[19], buff[18]);
 
-                ///uint16_t maxUnchargeHour = MK_WORD(buff[21], buff[20]);
-                ///uint8_t maxUnchargeMintues = buff[22];
-                ///uint16_t lastUnchargeHour = MK_WORD(buff[24], buff[23]);
-                ///uint8_t lastUnchargeMintues = buff[25];
+                /// uint16_t maxUnchargeHour = MK_WORD(buff[21], buff[20]);
+                /// uint8_t maxUnchargeMintues = buff[22];
+                /// uint16_t lastUnchargeHour = MK_WORD(buff[24], buff[23]);
+                /// uint8_t lastUnchargeMintues = buff[25];
 
-                ///lt_carinfo_battery.temp = MK_SIG_WORD(temp);
-                ///lt_carinfo_battery.max_temp = MK_SIG_WORD(maxTemp);
-                ///lt_carinfo_battery.min_temp = MK_SIG_WORD(minTempt);
-
+                /// lt_carinfo_battery.temp = MK_SIG_WORD(temp);
+                /// lt_carinfo_battery.max_temp = MK_SIG_WORD(maxTemp);
+                /// lt_carinfo_battery.min_temp = MK_SIG_WORD(minTempt);
 
                 lt_carinfo_battery.voltage = volt * 25 / 10;
 
                 lt_carinfo_battery.current = MK_SIG_WORD(cur) * 2;
-                ///lt_carinfo_battery.avg_current = MK_SIG_WORD(avgCur) * 2;
+                /// lt_carinfo_battery.avg_current = MK_SIG_WORD(avgCur) * 2;
 
-                ///lt_carinfo_battery.res_cap = resCap * 2;
-                ///lt_carinfo_battery.full_cap = fulCap * 2;
+                /// lt_carinfo_battery.res_cap = resCap * 2;
+                /// lt_carinfo_battery.full_cap = fulCap * 2;
 
                 lt_carinfo_battery.rel_charge_state = relateChargeState;
                 lt_carinfo_battery.abs_charge_state = absoluteChargeState;
 
-                ///lt_carinfo_battery.cycle_times = cycle;
+                /// lt_carinfo_battery.cycle_times = cycle;
 
-                ///lt_carinfo_battery.max_uncharge_time = (int32_t)maxUnchargeHour * 60 + (int32_t)maxUnchargeMintues;
-                ///lt_carinfo_battery.last_uncharge_time = (int32_t)lastUnchargeHour * 60 + (int32_t)lastUnchargeMintues;
-								send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);	
+                /// lt_carinfo_battery.max_uncharge_time = (int32_t)maxUnchargeHour * 60 + (int32_t)maxUnchargeMintues;
+                /// lt_carinfo_battery.last_uncharge_time = (int32_t)lastUnchargeHour * 60 + (int32_t)lastUnchargeMintues;
+                send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
             }
             return true;
         }
@@ -772,10 +810,10 @@ bool proc_protocol_frame_battery_info(uint8_t* buff, int count)
     return false;
 }
 
-//µÁ–æ–≈œ¢–≠“È÷°¥¶¿Ì
+//ÁîµËäØ‰ø°ÊÅØÂçèËÆÆÂ∏ßÂ§ÑÁêÜ
 bool proc_protocol_frame_cell_info(uint8_t* buff, int count)
 {
-    if (protocolCmdSymbol == PTL_BAFANG_CMD_SYMBOL_CELL)//∂¡»°µÁ–æ–≈œ¢
+    if (protocolCmdSymbol == PTL_BAFANG_CMD_SYMBOL_CELL) // ÔøΩÔøΩ»°ÔøΩÔøΩ–æÔøΩÔøΩœ¢
     {
         uint8_t cellNo = 0;
         uint8_t frameLen = 0xFF;
@@ -792,12 +830,12 @@ bool proc_protocol_frame_cell_info(uint8_t* buff, int count)
                 checkSum += buff[i];
             }
 
-            ///lt_carinfo_battery.total_cell = buff[0];
+            /// lt_carinfo_battery.total_cell = buff[0];
             for (int i = 0; i < cellNo; i++)
             {
-                ///lt_carinfo_battery.cell_voltage[i] = MK_WORD(buff[i * 2 + 2], buff[i * 2 + 1]);
+                /// lt_carinfo_battery.cell_voltage[i] = MK_WORD(buff[i * 2 + 2], buff[i * 2 + 1]);
             }
-						send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
+            send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
             return true;
         }
     }
@@ -806,83 +844,102 @@ bool proc_protocol_frame_cell_info(uint8_t* buff, int count)
 
 uint16_t get_wheel_radius_mm(void)
 {
-	  lt_carinfo_meter.wheel_diameter = SETTING_WHEEL_27_Inch;
+    lt_carinfo_meter.wheel_diameter = SETTING_WHEEL_27_Inch;
     switch (lt_carinfo_meter.wheel_diameter)
     {
-    case SETTING_WHEEL_16_Inch:     return 203;
-    case SETTING_WHEEL_18_Inch:     return 229;
-    case SETTING_WHEEL_20_Inch:     return 254;
-    case SETTING_WHEEL_22_Inch:     return 279;
-    case SETTING_WHEEL_24_Inch:     return 305;
-    case SETTING_WHEEL_26_Inch:     return 330;
-    case SETTING_WHEEL_27_Inch:     return 343;
-    case SETTING_WHEEL_27_5_Inch:   return 349;
-    case SETTING_WHEEL_28_Inch:     return 356;
-    case SETTING_WHEEL_29_Inch:     return 368;
+    case SETTING_WHEEL_16_Inch:
+        return 203;
+    case SETTING_WHEEL_18_Inch:
+        return 229;
+    case SETTING_WHEEL_20_Inch:
+        return 254;
+    case SETTING_WHEEL_22_Inch:
+        return 279;
+    case SETTING_WHEEL_24_Inch:
+        return 305;
+    case SETTING_WHEEL_26_Inch:
+        return 330;
+    case SETTING_WHEEL_27_Inch:
+        return 343;
+    case SETTING_WHEEL_27_5_Inch:
+        return 349;
+    case SETTING_WHEEL_28_Inch:
+        return 356;
+    case SETTING_WHEEL_29_Inch:
+        return 368;
     }
     return 330;
 }
 
 uint16_t get_wheel_radius_inch(void)
 {
-	  lt_carinfo_meter.wheel_diameter = SETTING_WHEEL_27_Inch;
+    lt_carinfo_meter.wheel_diameter = SETTING_WHEEL_27_Inch;
     switch (lt_carinfo_meter.wheel_diameter)
     {
-    case SETTING_WHEEL_16_Inch:     return 160;
-    case SETTING_WHEEL_18_Inch:     return 180;
-    case SETTING_WHEEL_20_Inch:     return 200;
-    case SETTING_WHEEL_22_Inch:     return 220;
-    case SETTING_WHEEL_24_Inch:     return 240;
-    case SETTING_WHEEL_26_Inch:     return 260;
-    case SETTING_WHEEL_27_Inch:     return 270;
-    case SETTING_WHEEL_27_5_Inch:   return 275;
-    case SETTING_WHEEL_28_Inch:     return 280;
-    case SETTING_WHEEL_29_Inch:     return 290;
+    case SETTING_WHEEL_16_Inch:
+        return 160;
+    case SETTING_WHEEL_18_Inch:
+        return 180;
+    case SETTING_WHEEL_20_Inch:
+        return 200;
+    case SETTING_WHEEL_22_Inch:
+        return 220;
+    case SETTING_WHEEL_24_Inch:
+        return 240;
+    case SETTING_WHEEL_26_Inch:
+        return 260;
+    case SETTING_WHEEL_27_Inch:
+        return 270;
+    case SETTING_WHEEL_27_5_Inch:
+        return 275;
+    case SETTING_WHEEL_28_Inch:
+        return 280;
+    case SETTING_WHEEL_29_Inch:
+        return 290;
     }
     return 260;
 }
 ///////////////////////////////////////////////////////////////////////////////////
 void bafang_lamp_on_off(bool on_off)
 {
-	if(on_off)
-	{
-		  lt_carinfo_indicator.highBeam = 1;
-			hal_com_uart_send_buffer_2(protocol_cmd_lamp_on,sizeof(protocol_cmd_lamp_on));
-	}
-	else
-	{
-		  lt_carinfo_indicator.highBeam = 0;
-			hal_com_uart_send_buffer_2(protocol_cmd_lamp_off,sizeof(protocol_cmd_lamp_off));
-	}
+    if (on_off)
+    {
+        lt_carinfo_indicator.highBeam = 1;
+        hal_com_uart_send_buffer_2(protocol_cmd_lamp_on, sizeof(protocol_cmd_lamp_on));
+    }
+    else
+    {
+        lt_carinfo_indicator.highBeam = 0;
+        hal_com_uart_send_buffer_2(protocol_cmd_lamp_off, sizeof(protocol_cmd_lamp_off));
+    }
 }
 
 void bafang_set_gear(uint8_t level)
 {
-	  lt_carinfo_meter.gear= level;
-	  if (lt_carinfo_indicator.walk_assist)
+    lt_carinfo_meter.gear = level;
+    if (lt_carinfo_indicator.walk_assist)
     {
-			 LOG_LEVEL("lt_indicator.walk_assist=%d\r\n",lt_carinfo_indicator.walk_assist);
-       hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_06, 4);
+        LOG_LEVEL("lt_indicator.walk_assist=%d\r\n", lt_carinfo_indicator.walk_assist);
+        hal_com_uart_send_buffer_2(protocol_cmd_pas_gear_06, 4);
     }
     else if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_3_LEVEL)
     {
-			 LOG_LEVEL("SETTING_MAX_PAS_3_LEVEL:%d\r\n",lt_carinfo_meter.gear);
-       Bike_pas_level_send_depend_max_3_level();
+        LOG_LEVEL("SETTING_MAX_PAS_3_LEVEL:%d\r\n", lt_carinfo_meter.gear);
+        Bike_pas_level_send_depend_max_3_level();
     }
     else if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_5_LEVEL)
     {
-			 LOG_LEVEL("SETTING_MAX_PAS_5_LEVEL:%d\r\n",lt_carinfo_meter.gear);
-       Bike_pas_level_send_depend_max_5_level();
+        LOG_LEVEL("SETTING_MAX_PAS_5_LEVEL:%d\r\n", lt_carinfo_meter.gear);
+        Bike_pas_level_send_depend_max_5_level();
     }
     else if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_9_LEVEL)
     {
-			 LOG_LEVEL("SETTING_MAX_PAS_9_LEVEL:%d\r\n",lt_carinfo_meter.gear);
-       Bike_pas_level_send_depend_max_9_level();
+        LOG_LEVEL("SETTING_MAX_PAS_9_LEVEL:%d\r\n", lt_carinfo_meter.gear);
+        Bike_pas_level_send_depend_max_9_level();
     }
-		else
-		{
-			 LOG_LEVEL("SETTING_MAX_PAS_5_LEVEL:%d\r\n",lt_carinfo_meter.gear);
-			 Bike_pas_level_send_depend_max_5_level();
-		}
+    else
+    {
+        LOG_LEVEL("SETTING_MAX_PAS_5_LEVEL:%d\r\n", lt_carinfo_meter.gear);
+        Bike_pas_level_send_depend_max_5_level();
+    }
 }
-

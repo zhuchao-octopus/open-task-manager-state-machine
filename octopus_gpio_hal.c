@@ -16,31 +16,31 @@
 
 bool hal_gpio_read(GPIO_GROUP *gpiox, uint16_t pin)
 {
-	// Macros for writing to and reading from GPIO pins
-	#ifdef PLATFORM_STM32_RTOS	
-		return (GPIO_ReadInputDataBit(GPIOx,pin)) // Read the state of the specified GPIO pin
-	#elif defined(PLATFORM_CST_OSAL_RTOS)
-	 return HalGpioGet((GpioPin_t)pin);
-	#elif defined(PLATFORM_ITE_OPEN_RTOS)	
-	 return 0;
-	#else
-	 return 0;
-#endif	
+// Macros for writing to and reading from GPIO pins
+#ifdef PLATFORM_STM32_RTOS
+    return (GPIO_ReadInputDataBit(gpiox, pin)); // Read the state of the specified GPIO pin
+#elif defined(PLATFORM_CST_OSAL_RTOS)
+    return HalGpioGet((GpioPin_t)pin);
+#elif defined(PLATFORM_ITE_OPEN_RTOS)
+    return 0;
+#else
+    return 0;
+#endif
 }
 
-bool hal_gpio_write(GPIO_GROUP *gpiox, uint16_t pin,uint8 value)
+bool hal_gpio_write(GPIO_GROUP *gpiox, uint16_t pin, uint8_t value)
 {
-	// Macros for writing to and reading from GPIO pins
-	#ifdef PLATFORM_STM32_RTOS	
-		GPIO_WriteBit(GPIOx,pin,value); // Write to the specified GPIO pin
-	#elif defined(PLATFORM_CST_OSAL_RTOS)
-		HalGpioSet((GpioPin_t)pin, (bit_action_e)value);
-	#elif defined(PLATFORM_ITE_OPEN_RTOS)	
-	
-	#else
-	
-	#endif	
-	 return value;
+// Macros for writing to and reading from GPIO pins
+#ifdef PLATFORM_STM32_RTOS
+    GPIO_WriteBit(gpiox, pin, (BitAction)value); // Write to the specified GPIO pin
+#elif defined(PLATFORM_CST_OSAL_RTOS)
+    HalGpioSet((GpioPin_t)pin, (bit_action_e)value);
+#elif defined(PLATFORM_ITE_OPEN_RTOS)
+
+#else
+
+#endif
+    return value;
 }
 
 #ifdef PLATFORM_CST_OSAL_RTOS
@@ -96,8 +96,6 @@ void hal_gpio_init(uint8_t task_id)
 
     HalGpioPinInit(GPIO_KEY_PIN, GPIO_INPUT);      // Set KEY pin (P14) as input
     HalGpioPupdConfig(GPIO_KEY_PIN, GPIO_PULL_UP); // Enable pull-up for KEY pin (P14)
-
-    LOG_LEVEL("hal gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
 }
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
@@ -126,4 +124,3 @@ void hal_gpio_init(uint8_t task_id)
 }
 
 #endif
-

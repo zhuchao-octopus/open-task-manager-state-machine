@@ -468,7 +468,7 @@ void dbg_log_printf_level(const char *function_name, const char *format, ...)
     {
         return;
     }
-    
+
     va_list args;
     va_start(args, format);
 // Print formatted log message

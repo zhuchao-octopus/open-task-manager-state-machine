@@ -30,8 +30,8 @@
 #include "octopus_update_mcu.h"
 #include "octopus_ipc.h"
 #include "octopus_bafang.h"
-#include "octopus_uart_ptl_1.h"    // Include UART protocol header
-#include "octopus_uart_ptl_2.h"    // Include UART protocol header
+#include "octopus_uart_ptl_1.h" // Include UART protocol header
+#include "octopus_uart_ptl_2.h" // Include UART protocol header
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
@@ -50,7 +50,7 @@
 
 /** Static configuration for all tasks in the OTMS. */
 const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
-#if 1
+
     [TASK_ID_PTL_1] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
@@ -62,8 +62,8 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
             [OTMS_S_STOP] = ptl_stop_running,
         },
     },
-		
-	#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
+
+#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
     [TASK_ID_PTL_2] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
@@ -75,8 +75,8 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
             [OTMS_S_STOP] = ptl_2_stop_running,
         },
     },
-	#endif
-		
+#endif
+
     [TASK_ID_SYSTEM] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
@@ -88,7 +88,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
             [OTMS_S_STOP] = app_system_stop_running,
         },
     },
-   #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     [TASK_ID_GPIO] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
@@ -100,7 +100,8 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
             [OTMS_S_STOP] = app_gpio_stop_running,
         },
     },
-    #endif
+#endif
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR		
     [TASK_ID_CAR_INFOR] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
@@ -112,6 +113,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
             [OTMS_S_STOP] = app_carinfo_stop_running,
         },
     },
+
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_BLE
@@ -171,21 +173,21 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
- [TASK_ID_CAN] = {
-            .state_limit = OTMS_S_INVALID,
-            .func = {
-                [OTMS_S_INIT] = app_can_init_running,
-                [OTMS_S_START] = app_can_start_running,
-                [OTMS_S_ASSERT_RUN] = app_can_assert_running,
-                [OTMS_S_RUNNING] = app_can_running,
-                [OTMS_S_POST_RUN] = app_can_post_running,
-                [OTMS_S_STOP] = app_can_stop_running,
-            },
+    [TASK_ID_CAN] = {
+        .state_limit = OTMS_S_INVALID,
+        .func = {
+            [OTMS_S_INIT] = app_can_init_running,
+            [OTMS_S_START] = app_can_start_running,
+            [OTMS_S_ASSERT_RUN] = app_can_assert_running,
+            [OTMS_S_RUNNING] = app_can_running,
+            [OTMS_S_POST_RUN] = app_can_post_running,
+            [OTMS_S_STOP] = app_can_stop_running,
         },
+    },
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
- [TASK_ID_PTL_BAFANG] = {
+    [TASK_ID_PTL_BAFANG] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = app_bafang_ptl_init_running,

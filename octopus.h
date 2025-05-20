@@ -68,19 +68,22 @@ extern "C"
     // Retrieves the main user task ID.
     uint8_t GetTaskManagerStateMachineId(void);
 
-    // Initializes the task manager's main task.
-    void TaskManagerStateMachineInit(void);
+
 
 // The main event loop for the task manager.
 #ifdef PLATFORM_CST_OSAL_RTOS
- uint16_t TaskManagerStateEventLoop(uint8_t task_id, uint16_t events);
+    // Initializes the task manager's main task.
+void TaskManagerStateMachineInit(uint8 task_id);
+uint16_t TaskManagerStateEventLoop(uint8_t task_id, uint16_t events);
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
-
+ void TaskManagerStateMachineInit(void);
+ void TaskManagerStateEventLoop(void *arg);
 void *TaskManagerStateEventLoop(void *arg);
 
 #elif defined(PLATFORM_LINUX_RISC)
-
+ void TaskManagerStateMachineInit(void);
+ void TaskManagerStateEventLoop(void *arg);
 void TaskManagerStateStopRunning();
 
 #else

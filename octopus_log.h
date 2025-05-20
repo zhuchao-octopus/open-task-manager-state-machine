@@ -26,10 +26,9 @@
  * INCLUDES
  */
 
-//#include "octopus_platform.h"
-#include <stdint.h>  // Standard integer type definitions
-#include <stdarg.h>  // Variable argument list handling
-
+// #include "octopus_platform.h"
+#include <stdint.h> // Standard integer type definitions
+#include <stdarg.h> // Variable argument list handling
 
 #ifdef __cplusplus
 extern "C"
@@ -110,7 +109,7 @@ extern "C"
  */
 
 /** Macro to retrieve the current function name. */
-#define F_NAME __FUNCTION__
+//#define F_NAME __FUNCTION__
 
 /** Macro for formatted string processing. */
 #ifdef PLATFORM_CST_OSAL_RTOS

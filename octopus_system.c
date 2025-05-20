@@ -17,7 +17,7 @@
  ******************************************************************************/
 
 /* Includes ------------------------------------------------------------------*/
-#include "octopus_platform.h"     // Include platform-specific header for hardware platform details
+#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_gpio.h"
 #include "octopus_system.h"
 #include "octopus_flash_hal.h"
@@ -124,20 +124,20 @@ void app_system_running(void)
     StartTickCounter(&l_t_msg_wait_10_timer);
 
     Msg_t *msg = get_message(TASK_ID_SYSTEM);
-    if (msg->id == NO_MSG)
+    if (msg->msg_id == NO_MSG)
         return;
 
-    switch (msg->id)
+    switch (msg->msg_id)
     {
-    case MSG_DEVICE_NORMAL_EVENT:
+    case MSG_OTSM_DEVICE_NORMAL_EVENT:
         break;
 
-    case MSG_DEVICE_ACC_EVENT:
+    case MSG_OTSM_DEVICE_ACC_EVENT:
         LOG_LEVEL("Event: MSG_DEVICE_ACC_EVENT\r\n");
         system_power_on_off(msg->param2);
         break;
 
-    case MSG_DEVICE_POWER_EVENT:
+    case MSG_OTSM_DEVICE_POWER_EVENT:
         LOG_LEVEL("Got Event MSG_DEVICE_POWER_EVENT\r\n");
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
         if (msg->param1 == CMD_MODSYSTEM_POWER_ON)
@@ -145,7 +145,7 @@ void app_system_running(void)
         else if (msg->param1 == CMD_MODSYSTEM_POWER_OFF)
             system_power_on_off(SYSTEM_POWER_OFF_VALUE);
 #else
-        send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_SYSTEM, msg->param1, msg->param1);
+        send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_SYSTEM, msg->param1, msg->param2);
 #endif
         break;
     }
@@ -198,7 +198,13 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_ACC_STATE, tmp, 1, buff);
             return true;
 
-        case CMD_MODSYSTEM_POWER_OFF:
+        case CMD_MODSYSTEM_POWER_ON:
+            // Acknowledgement, no additional action needed
+            tmp[0] = 0;
+            tmp[1] = 0;
+            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_POWER_ON, tmp, 2, buff);
+            return true;
+				case CMD_MODSYSTEM_POWER_OFF:
             // Acknowledgement, no additional action needed
             tmp[0] = 0;
             tmp[1] = 0;
@@ -250,18 +256,6 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             break;
         }
     }
-    // Handle commands for MCU_TO_SOC_MOD_SETUP frame type
-    else if (MCU_TO_SOC_MOD_SETUP == frame_type)
-    {
-        switch (param1)
-        {
-        case CMD_MODSETUP_SET_TIME:
-            return false; // No action required for this command
-
-        default:
-            break;
-        }
-    }
     return false; // Command not processed
 }
 
@@ -305,8 +299,13 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_APP_STATE, &tmp, 1, ackbuff);
             return true;
 
-        case CMD_MODSYSTEM_POWER_OFF:
-            system_power_on_off(true);
+        case CMD_MODSYSTEM_POWER_ON:
+					  LOG_LEVEL("CMD_MODSYSTEM_POWER_ON\r\n");
+            //send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_SYSTEM,payload->cmd, 0);
+            return false; // Acknowledgment, no action required
+				case CMD_MODSYSTEM_POWER_OFF:
+					  LOG_LEVEL("CMD_MODSYSTEM_POWER_OFF\r\n");
+            //send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_SYSTEM, payload->cmd, 0);
             return false; // Acknowledgment, no action required
         case CMD_MODSETUP_UPDATE_TIME:
             tmp = 0x01;

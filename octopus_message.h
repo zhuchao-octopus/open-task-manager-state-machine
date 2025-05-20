@@ -1,20 +1,20 @@
-//"" 
+//""
 /***************************************************************************************
  * @file        octopus_message_id.h
  * @brief       Message Group and Command ID Definitions for IPC Socket Communication
- * 
- * @details     This header file defines message groups and their corresponding 
- *              command IDs for inter-process communication (IPC) over socket 
- *              connections in the Octopus system. It also includes utility macros 
+ *
+ * @details     This header file defines message groups and their corresponding
+ *              command IDs for inter-process communication (IPC) over socket
+ *              connections in the Octopus system. It also includes utility macros
  *              for byte manipulation.
- * 
+ *
  * @author      [ak47]
  * @version     1.0
  * @date        2025-05-03
- * 
+ *
  * @note        This file is part of the Octopus communication protocol stack.
  *              Modifications should be documented, and the version number updated.
- * 
+ *
  ****************************************************************************************/
 
 #ifndef ___OCTOPUS_MESSAGE_ID_H___
@@ -31,22 +31,22 @@
  */
 enum MessageGroup
 {
-    MSG_GROUP_0 = 0,    /**< General Help Information */
-    MSG_GROUP_1,        /**< Configuration and Settings */
-    MSG_GROUP_2,        /**< Reserved for future use */
-    MSG_GROUP_3,        /**< Reserved for future use */
-    MSG_GROUP_4,        /**< Reserved for future use */
-    MSG_GROUP_5,        /**< Reserved for future use */
-    MSG_GROUP_6,        /**< Reserved for future use */
-    MSG_GROUP_7,        /**< Reserved for future use */
-    MSG_GROUP_8,        /**< Reserved for future use */
-    MSG_GROUP_9,        /**< Reserved for future use */
-    MSG_GROUP_10,       /**< Reserved for future use */
-    MSG_GROUP_11,       /**< Car Information Commands */
-    MSG_GROUP_12,       /**< Reserved for future use */
-    MSG_GROUP_13,       /**< Reserved for future use */
-    MSG_GROUP_14,       /**< Reserved for future use */
-    MSG_GROUP_15        /**< Reserved for future use */
+    MSG_GROUP_0 = 0, /**< General Help Information */
+    MSG_GROUP_1,     /**< Configuration and Settings */
+    MSG_GROUP_2,     /**< Reserved for future use */
+    MSG_GROUP_3,     /**< Reserved for future use */
+    MSG_GROUP_4,     /**< Reserved for future use */
+    MSG_GROUP_5,     /**< Reserved for future use */
+    MSG_GROUP_6,     /**< Reserved for future use */
+    MSG_GROUP_7,     /**< Reserved for future use */
+    MSG_GROUP_8,     /**< Reserved for future use */
+    MSG_GROUP_9,     /**< Reserved for future use */
+    MSG_GROUP_10,    /**< Reserved for future use */
+    MSG_GROUP_11,    /**< Car Information Commands */
+    MSG_GROUP_12,    /**< Reserved for future use */
+    MSG_GROUP_13,    /**< Reserved for future use */
+    MSG_GROUP_14,    /**< Reserved for future use */
+    MSG_GROUP_15     /**< Reserved for future use */
 };
 
 /****************************************************************************************
@@ -59,7 +59,7 @@ enum MessageGroup
  */
 enum Message_Group_0_Cmd_Id
 {
-    MSG_IPC_SOCKET_HELP_INFO = 0, /**< Display Help Information */
+    MSG_CMD_IPC_SOCKET_HELP_INFO = 0, /**< Display Help Information */
 };
 
 /**
@@ -68,9 +68,9 @@ enum Message_Group_0_Cmd_Id
  */
 enum Message_Group_1_Cmd_Id
 {
-    MSG_IPC_SOCKET_CONFIG_FLAG = 50,    /**< Configure Socket Flags */
-    MSG_IPC_SOCKET_CONFIG_PUSH_DELAY,   /**< Configure Socket Push Delay */
-    MSG_IPC_SOCKET_CONFIG_IP            /**< Configure Socket IP Address */
+    MSG_CMD_IPC_SOCKET_CONFIG_FLAG = 50,  /**< Configure Socket Flags */
+    MSG_CMD_IPC_SOCKET_CONFIG_PUSH_DELAY, /**< Configure Socket Push Delay */
+    MSG_CMD_IPC_SOCKET_CONFIG_IP          /**< Configure Socket IP Address */
 };
 
 /**
@@ -80,41 +80,58 @@ enum Message_Group_1_Cmd_Id
  */
 typedef enum
 {
-    MSG_CAR_GET_INDICATOR_INFO = 100,    /**< Request Indicator (lights, signals) Status */
-    MSG_CAR_GET_METER_INFO,              /**< Request Meter Readings (odometer, speed, voltage) */
-    MSG_CAR_GET_BATTERY_INFO,
-    MSG_CAR_GET_ERROR_INFO,
-    MSG_CAR_GET_DRIVINFO_INFO,           /**< Request Driving Information (gear, SOC, etc.) */
+    MSG_CMD_CAR_GET_INDICATOR_INFO = 256, /**< Request Indicator (lights, signals) Status */
+    MSG_CMD_CAR_GET_METER_INFO,           /**< Request Meter Readings (odometer, speed, voltage) */
+    MSG_CMD_CAR_GET_BATTERY_INFO,
+    MSG_CMD_CAR_GET_ERROR_INFO,
+    MSG_CMD_CAR_GET_DRIVINFO_INFO, /**< Request Driving Information (gear, SOC, etc.) */
 
-    MSG_CAR_METER_ODO_CLEAR,             /**< Clear Total Odometer (reset total distance) */
-    MSG_CAR_METER_TIME_CLEAR,            /**< Clear Accumulated Ride Time */
-    MSG_CAR_METER_TRIP_DISTANCE_CLEAR,   /**< Clear Trip Distance Counter (trip meter) */
+    MSG_CMD_CAR_METER_ODO_CLEAR,           /**< Clear Total Odometer (reset total distance) */
+    MSG_CMD_CAR_METER_TIME_CLEAR,          /**< Clear Accumulated Ride Time */
+    MSG_CMD_CAR_METER_TRIP_DISTANCE_CLEAR, /**< Clear Trip Distance Counter (trip meter) */
 
-    MSG_CAR_SET_GEAR_LEVEL,              /**< Set Car Gear */
-    MSG_CAR_SET_LIGHT,                   /**< Control Headlights (turn ON/OFF) */
-    MSG_CAR_SET_LOW_BEAM,                /**< Control Low Beam Headlights (turn ON/OFF) */
-    MSG_CAR_SET_HIGH_BEAM,               /**< Control High Beam Headlights (turn ON/OFF) */
-    MSG_CAR_SETTING_SAVE                 /**< Save Car Settings */
+    MSG_CMD_CAR_SET_GEAR_LEVEL, /**< Set Car Gear */
+    MSG_CMD_CAR_SET_LIGHT,      /**< Control Headlights (turn ON/OFF) */
+    MSG_CMD_CAR_SET_LOW_BEAM,   /**< Control Low Beam Headlights (turn ON/OFF) */
+    MSG_CMD_CAR_SET_HIGH_BEAM,  /**< Control High Beam Headlights (turn ON/OFF) */
+    MSG_CMD_CAR_SETTING_SAVE    /**< Save Car Settings */
 } Message_Group_11_Cmd_Id;
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// EXTEND OTSM MSG ID
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 /*******************************************************************************
  * MODULE IDs (Message Types)
  * These are the message IDs associated with different events or types of messages.
+ * extend ptl_frame_type_t id
+ * for send_message(TaskModule_t task_module, uint16_t msg_id, uint16_t param1, uint16_t param2).
  */
 typedef enum
 {
-	MSG_DEVICE_NORMAL_EVENT = 0xA0, // Normal device event message 160
-	MSG_DEVICE_ACC_EVENT = 0xA1,
-	MSG_DEVICE_KEY_DOWN_EVENT = 0xA2, // Key event message
-	MSG_DEVICE_KEY_UP_EVENT = 0xA3,   // Key event message
-	MSG_DEVICE_KEY_EVENT = 0xA4,      // Key event message
-	MSG_DEVICE_GPIO_EVENT = 0xA5,     // GPIO event message
-	MSG_DEVICE_POWER_EVENT = 0xA6,    //
-	MSG_DEVICE_HANDSHAKE_EVENT = 0xA7,
-	MSG_DEVICE_BLE_EVENT = 0xA8,
-	MSG_DEVICE_CAN_EVENT = 0xA9,
-	MSG_DEVICE_CAR_INFOR_EVENT = 0xAA,
-} MsgId_t;
+    MSG_OTSM_DEVICE_NORMAL_EVENT = 256, // Normal device event message 160 after frame type
+    MSG_OTSM_DEVICE_ACC_EVENT,
+    MSG_OTSM_DEVICE_KEY_DOWN_EVENT, // Key event message
+    MSG_OTSM_DEVICE_KEY_UP_EVENT,   // Key event message
+    MSG_OTSM_DEVICE_KEY_EVENT,      // Key event message
+    MSG_OTSM_DEVICE_GPIO_EVENT,     // GPIO event message
+    MSG_OTSM_DEVICE_POWER_EVENT,    
+    MSG_OTSM_DEVICE_HANDSHAKE_EVENT,
+    MSG_OTSM_DEVICE_BLE_EVENT,
+    MSG_OTSM_DEVICE_CAN_EVENT,
+    MSG_OTSM_DEVICE_CAR_INFOR_EVENT,
+} otsm_msg_t; //for sendmessage function
+
+typedef enum
+{
+	MSG_OTSM_CMD_CAR_SET_LIGHT = 256, ///< set car light
+	MSG_OTSM_CMD_CAR_SET_GEAR,
+	MSG_OTSM_CMD_BLE_PAIRING,
+	MSG_OTSM_CMD_BLE_PAIR_ON,
+	MSG_OTSM_CMD_BLE_PAIR_OFF,
+	MSG_OTSM_CMD_BLE_BONDED,
+	MSG_OTSM_CMD_BLE_CONNECTED,
+	MSG_OTSM_CMD_BLE_DISCONNECTED,
+} otsm_msg_cmd_t;
 /****************************************************************************************
  *                                  UTILITY MACROS
  ****************************************************************************************/
@@ -140,11 +157,11 @@ typedef enum
 /****************************************************************************************
  *                               MESSAGE GROUP SHORTCUTS
  ****************************************************************************************/
-#define MSG_GROUP_HELP        MSG_GROUP_0    /**< Alias for Help Information Group */
-#define MSG_GROUP_SET         MSG_GROUP_1    /**< Alias for Configuration Group */
-#define MSG_GROUP_SETTING     MSG_GROUP_1    /**< Alias for Settings Group */
-#define MSG_GROUP_IPC_CONFIG  MSG_GROUP_1    /**< Alias for IPC Configuration Group */
-#define MSG_GROUP_CAR         MSG_GROUP_11   /**< Alias for Car Information Group */
+#define MSG_GROUP_HELP MSG_GROUP_0       /**< Alias for Help Information Group */
+#define MSG_GROUP_SET MSG_GROUP_1        /**< Alias for Configuration Group */
+#define MSG_GROUP_SETTING MSG_GROUP_1    /**< Alias for Settings Group */
+#define MSG_GROUP_IPC_CONFIG MSG_GROUP_1 /**< Alias for IPC Configuration Group */
+#define MSG_GROUP_CAR MSG_GROUP_11       /**< Alias for Car Information Group */
 
 /****************************************************************************************
  *                                       ENDIF

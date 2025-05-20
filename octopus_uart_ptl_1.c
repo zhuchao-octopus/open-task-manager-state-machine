@@ -20,9 +20,9 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"     // Include platform-specific header for hardware platform details
-#include "octopus_uart_ptl_1.h"  // Include UART protocol header
-#include "octopus_uart_hal.h"    // Include UART hardware abstraction layer header
+#include "octopus_platform.h"   // Include platform-specific header for hardware platform details
+#include "octopus_uart_ptl_1.h" // Include UART protocol header
+#include "octopus_uart_hal.h"   // Include UART hardware abstraction layer header
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
@@ -106,18 +106,19 @@ static uint8_t l_u8_next_empty_module = 0;                    // Index for the n
  */
 void ptl_help(void)
 {
-    /// uint8_t tmp[2] = {0};
-    /// LOG_LEVEL("app ptl help guide\r\n");
+		/// uint8_t tmp[2] = {0};
+		/// LOG_LEVEL("app ptl help guide\r\n");
 
-    /// tmp[0] = 0x00;
-    /// ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
-    /// LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
-    ///  tmp[0] = 0x01;
-    ///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
-    ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
-    ///  tmp[0] = 0x02;
-    ///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
-    ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+		/// tmp[0] = 0x00;
+		/// ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+		/// LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+		///  tmp[0] = 0x01;
+		///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+		///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+		///  tmp[0] = 0x02;
+		///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+		///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+		print_all_registered_module();
 }
 
 void ptl_init(void)
@@ -242,7 +243,7 @@ void ptl_register_module(ptl_frame_type_t frame_type, module_send_handler_t send
         l_t_module_info[l_u8_next_empty_module].send_handler = send_handler;
         l_t_module_info[l_u8_next_empty_module].receive_handler = receive_handler;
         l_u8_next_empty_module++;
-        LOG_LEVEL("frame_type=%d ptl module count=%d\r\n", l_t_module_info[l_u8_next_empty_module - 1].frame_type, l_u8_next_empty_module);
+        //LOG_LEVEL("frame_type=%d ptl module count=%d\r\n", l_t_module_info[l_u8_next_empty_module - 1].frame_type, l_u8_next_empty_module);
     }
     else
     {
@@ -269,6 +270,17 @@ module_info_t *ptl_get_module(ptl_frame_type_t frame_type)
     return module_info;
 }
 
+void print_all_registered_module(void)
+{
+	//module_info_t *module_info = NULL;
+  for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
+    {
+       LOG_LEVEL("registered l_t_module_info[%d]=%02x ptl module count=%d\r\n", i,l_t_module_info[i].frame_type);
+    }	
+}
+
+//[ Header ][ Frame Type ][ Command ][ Data Length ][ Header Checksum ][ Data... ][ Data Checksum ]
+//|   0    |       1     |     2    |       3      |         4        |     n    |       n+1      |
 // Build a communication frame with the given data and command
 void ptl_build_frame(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint8_t *data, uint8_t datelen, ptl_proc_buff_t *framebuff)
 {
@@ -390,9 +402,9 @@ void ptl_1_tx_event_handler(void)
 
     // Retrieve the message from the UART task message queue
     Msg_t *msg = get_message(TASK_ID_PTL_1);
-    if (msg->id != NO_MSG)
+    if (msg->msg_id != NO_MSG)
     {
-        ptl_frame_type_t frame_type = (ptl_frame_type_t)msg->id;
+        ptl_frame_type_t frame_type = (ptl_frame_type_t)msg->msg_id;
         uint16_t param1 = msg->param1;
         uint16_t param2 = msg->param2;
 

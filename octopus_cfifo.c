@@ -9,8 +9,8 @@
  * for initialization, data pushing, and data popping, with support for detecting
  * buffer full and empty states.
  *
- * @author  
- * @date    
+ * @author
+ * @date
  ******************************************************************************/
 
 /*******************************************************************************
@@ -33,7 +33,7 @@
  * @param _idx The current index.
  * @return The next index in the circular buffer.
  */
-#define cFifo_Inc(_capacity, _idx)    ((_idx + 1) % _capacity)
+#define cFifo_Inc(_capacity, _idx) ((_idx + 1) % _capacity)
 
 /*******************************************************************************
  * TYPEDEFS
@@ -77,7 +77,7 @@
  */
 void cFifo_Init(cFifo_t **ptFifo, uint8_t *pucMem, uint32_t uiMemSize)
 {
-    *ptFifo = (cFifo_t *)pucMem; // Use the provided memory for FIFO structure
+    *ptFifo = (cFifo_t *)pucMem;                       // Use the provided memory for FIFO structure
     (*ptFifo)->capacity = uiMemSize - sizeof(cFifo_t); // Adjust capacity excluding metadata
 }
 
@@ -91,8 +91,9 @@ bool cFifo_Push(cFifo_t *a_ptFifo, uint8_t a_u8Data)
 {
     bool bRet = false;
 
-    if (!cFifo_isFull(a_ptFifo)) { // Check if FIFO is not full
-        a_ptFifo->aucArr[a_ptFifo->tail] = a_u8Data; // Add data to the tail
+    if (!cFifo_isFull(a_ptFifo))
+    {                                                                   // Check if FIFO is not full
+        a_ptFifo->aucArr[a_ptFifo->tail] = a_u8Data;                    // Add data to the tail
         a_ptFifo->tail = cFifo_Inc(a_ptFifo->capacity, a_ptFifo->tail); // Update tail position
         bRet = true;
     }
@@ -110,12 +111,12 @@ bool cFifo_Pop(cFifo_t *a_ptFifo, uint8_t *a_pu8Data)
 {
     bool bRet = false;
 
-    if (!cFifo_isEmpty(a_ptFifo)) { // Check if FIFO is not empty
-        *a_pu8Data = a_ptFifo->aucArr[a_ptFifo->head]; // Retrieve data from the head
+    if (!cFifo_isEmpty(a_ptFifo))
+    {                                                                   // Check if FIFO is not empty
+        *a_pu8Data = a_ptFifo->aucArr[a_ptFifo->head];                  // Retrieve data from the head
         a_ptFifo->head = cFifo_Inc(a_ptFifo->capacity, a_ptFifo->head); // Update head position
         bRet = true;
     }
 
     return bRet;
 }
-
