@@ -47,7 +47,7 @@ static MsgQueue_t g_msgQueue[TASK_ID_MAX_NUM]; // Declare an array of message qu
  * @param param1   The first parameter for the message.
  * @param param2   The second parameter for the message.
  */
-void send_message(TaskModule_t task_module, msgid_t id, uint16_t param1, uint16_t param2)
+void send_message(TaskModule_t task_module, uint16_t msg_id, uint16_t param1, uint16_t param2)
 {
     Msg_t msg;
     uint8_t enque; // Index of where to enqueue the new message
@@ -55,7 +55,7 @@ void send_message(TaskModule_t task_module, msgid_t id, uint16_t param1, uint16_
     bool full;     // Flag to check if the queue is full
 
     // Prepare the message to be sent
-    msg.id = id;
+    msg.msg_id = msg_id;
     msg.param1 = param1;
     msg.param2 = param2;
 
@@ -110,7 +110,7 @@ Msg_t *get_message(TaskModule_t task_module)
     uint8_t deque;      // Current dequeue index
     bool empty;         // Flag to check if the queue is empty
 
-    s_msg.id = NO_MSG; // Default to no message if the queue is empty
+    s_msg.msg_id = NO_MSG; // Default to no message if the queue is empty
 
     // Get the current enqueue and dequeue positions, and check if the queue is empty
     enque = g_msgQueue[task_module].nEnque & 0x7f; // Mask the 7 least significant bits for the enqueue index
@@ -148,9 +148,9 @@ Msg_t *get_message(TaskModule_t task_module)
     return &s_msg; // Return a pointer to the retrieved message
 }
 
-void send_message_adapter(uint16_t task_module, uint16_t id, uint16_t param1, uint16_t param2)
+void send_message_adapter(uint16_t task_module, uint16_t msg_id, uint16_t param1, uint16_t param2)
 {
-    send_message((TaskModule_t)task_module, (msgid_t)id, param1, param2);
+    send_message((TaskModule_t)task_module, msg_id, param1, param2);
 }
 /**
  * @brief Clear the message queue for the specified task module.

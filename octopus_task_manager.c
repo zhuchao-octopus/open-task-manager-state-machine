@@ -50,7 +50,7 @@
 
 /** Static configuration for all tasks in the OTMS. */
 const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
-#if 1
+
     [TASK_ID_PTL_1] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
@@ -101,6 +101,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
         },
     },
 #endif
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR		
     [TASK_ID_CAR_INFOR] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
@@ -112,6 +113,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
             [OTMS_S_STOP] = app_carinfo_stop_running,
         },
     },
+
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_BLE

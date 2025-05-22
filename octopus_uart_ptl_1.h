@@ -83,7 +83,7 @@ extern "C"
         MCU_TO_SOC_MOD_KEY = 0x05,      ///< KEY
         MCU_TO_SOC_MOD_CAN = 0x06,      ///< CAN
         MCU_TO_SOC_MOD_IPC = 0x07,      ///< IPC socket
-
+						
         /* SOC -> MCU module IDs */
         SOC_TO_MCU_MOD_SYSTEM = 0x80,   ///< System initialization
         SOC_TO_MCU_MOD_UPDATE = 0x81,   ///< System update
@@ -144,9 +144,9 @@ extern "C"
         CMD_MODSETUP_SET_TIME = 0x1B,    ///< Set time
         CMD_MODSETUP_KEY = 0x1C,         ///< Key input
 
-        CMD_MODCAR_SET_LIGHT = 0x1D, ///< set car light
-        CMD_MODCAR_SET_GEAR = 0x1E,
-
+        CMD_MOD_CAR_SET_LIGHT = 0x1d,
+		CMD_MOD_CAR_SET_GEAR_LEVEL = 0x1e,
+        CMD_MOD_CARINFOR_MAX = 0x64
     } ptl_frame_cmd_t;
 
     /**
@@ -164,7 +164,7 @@ extern "C"
     typedef struct
     {
         ptl_frame_type_t frame_type; ///< Frame type
-        ptl_frame_cmd_t cmd;         ///< Command
+        uint8_t 		 frame_cmd;  ///< Command
         uint8_t data_len;            ///< Length of the data
         uint8_t *data;               ///< Pointer to the data
     } ptl_frame_payload_t;
@@ -215,14 +215,14 @@ extern "C"
      * @param source The source requesting to start the protocol.
      * @return True if the request is successful, false otherwise.
      */
-    bool ptl_reqest_running(uint8_t source);
+    bool ptl_reqest_running(ptl_frame_type_t frame_type);
 
     /**
      * Releases the protocol from running by a specific source.
      * @param source The source releasing the protocol.
      * @return True if the release is successful, false otherwise.
      */
-    bool ptl_release_running(uint8_t source);
+    bool ptl_release_running(ptl_frame_type_t frame_type);
 
     /**
      * Sets the opposite running state of the protocol.
@@ -284,7 +284,7 @@ extern "C"
     uint8_t ptl_get_checksum(uint8_t *data, uint8_t length);
 
     void ptl_help(void);
-
+    void print_all_registered_module(void);
 #ifdef __cplusplus
 }
 #endif

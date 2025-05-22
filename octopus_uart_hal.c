@@ -178,23 +178,8 @@ uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events)
     if (events & UART_RECEIVE_DATA_EVENT)
     {
 #ifdef TEST_LOG_DEBUG_UART_RX_DATA
-        LOG_("Hal receive data:\r\n");
+        LOG_LEVEL("Hal receive data:\r\n");
 #endif
-#if 0
-        // Process received data from UART buffer.
-        while (com_uart_data_buff.rd != com_uart_data_buff.wr) {
-#ifdef TEST_LOG_DEBUG_UART_RX_DATA
-            LOG_("%02x ", com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
-#endif
-            ///ptl_com_uart_receive_handler(com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
-            cFifo_Push(ptl_1_usart_rx_fifo,         com_uart_data_buff.data[com_uart_data_buff.rd & (UART_BUFF_MAX_SIZE - 1)]);
-            com_uart_data_buff.rd++;
-        }
-#endif
-#ifdef TEST_LOG_DEBUG_UART_RX_DATA
-        LOG_("\r\n");
-#endif
-
         return (events ^ UART_RECEIVE_DATA_EVENT);
     }
 
@@ -334,7 +319,9 @@ void hal_uart_init(uint8_t task_id)
 {
     LOG_LEVEL("hal init for protocol\r\n");
     cFifo_Init(&ptl_1_usart_rx_fifo, ptl_1_usart_rx_fifo_buff, sizeof(ptl_1_usart_rx_fifo_buff));
+	#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
     cFifo_Init(&ptl_2_usart_rx_fifo, ptl_2_usart_rx_fifo_buff, sizeof(ptl_2_usart_rx_fifo_buff));
+	#endif
 }
 
 void hal_com_uart_receive_callback_ptl_1(const uint8_t *buffer, uint16_t length)
@@ -350,7 +337,7 @@ void hal_com_uart_receive_callback_ptl_1(const uint8_t *buffer, uint16_t length)
         cFifo_Push(ptl_1_usart_rx_fifo, buffer[i]);
     }
 }
-
+#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
 void hal_com_uart_receive_callback_ptl_2(const uint8_t *buffer, uint16_t length)
 {
     uint16_t i;
@@ -363,7 +350,7 @@ void hal_com_uart_receive_callback_ptl_2(const uint8_t *buffer, uint16_t length)
         cFifo_Push(ptl_2_usart_rx_fifo, buffer[i]);
     }
 }
-
+#endif
 void *hal_com_uart_event_handler(void *arg)
 {
     return NULL;
@@ -516,6 +503,7 @@ uint8_t hal_com_uart_send_buffer_1(const uint8_t *buffer, uint16_t length)
 #endif
     return ret_code;
 }
+
 #ifdef TASK_MANAGER_STATE_MACHINE_PTL2
 uint8_t hal_com_uart_send_buffer_2(const uint8_t *buffer, uint16_t length)
 {
@@ -539,5 +527,12 @@ uint8_t hal_com_uart_send_buffer_2(const uint8_t *buffer, uint16_t length)
     PTL_2_UART_Send_Buffer(buffer, length);
 #endif
     return ret_code;
+}
+
+uint8_t hal_com_uart_send_buffer_3(const uint8_t *buffer, uint16_t length)
+{
+	 LOG_BUFF_LEVEL(buffer, length);
+ 	 UART2_Send_Buffer(buffer, length);	
+	 return 0;
 }
 #endif
