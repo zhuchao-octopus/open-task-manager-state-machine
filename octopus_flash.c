@@ -41,7 +41,7 @@ void flash_load_user_data_infor(void)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef USE_EEROM_FOR_DATA_SAVING
 	E2ROMReadToBuff(EEROM_APP_MATA_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
-  LOG_LEVEL("   bootloader address: 0x%08X,0x%08X\n", BOOTLOADER_START_ADDR, BOOTLOADER_END_ADDR);
+	LOG_LEVEL("   bootloader address: 0x%08X,0x%08X\n", BOOTLOADER_START_ADDR, BOOTLOADER_END_ADDR);
 	LOG_LEVEL("     user app address: 0x%08X,0x%08X\n", MAIN_APP_START_ADDR, MAIN_APP_END_ADDR);
 	LOG_LEVEL("user apppp valid flag: 0x%08X\n", app_meta_data.user_app_flag);
 	LOG_LEVEL("  user apppp code crc: 0x%08X\n", app_meta_data.user_app_crc_a);
@@ -55,11 +55,11 @@ void flash_load_user_data_infor(void)
  *******************************************************************************/
 void JumpToMainApplication(void)
 {
-	// Deinitialize hardware if needed
-	// Disable interrupts
-	#ifdef TASK_MANAGER_STATE_MACHINE_BOOTLOADER
+// Deinitialize hardware if needed
+// Disable interrupts
+#ifdef TASK_MANAGER_STATE_MACHINE_BOOTLOADER
 	__disable_irq();
-    
+
 	// Get the main stack pointer (MSP) value from the application vector table
 	uint32_t mainStackPointer = *(volatile uint32_t *)(MAIN_APP_START_ADDR);
 
@@ -74,7 +74,7 @@ void JumpToMainApplication(void)
 
 	// Jump to the application
 	appEntry();
-	#endif
+#endif
 }
 /*******************************************************************************
  * CRC Calculation
@@ -166,11 +166,11 @@ void PrintfBuffHex(const char *fun, int line, char *str, uint8_t *dat, int len)
 uint32_t FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_FLASH
-	#ifdef PLATFORM_CST_OSAL_RTOS 
-	  return 0;
-	#else
-		return hal_flash_write_(addr, buf, length);
-	#endif
+#ifdef PLATFORM_CST_OSAL_RTOS
+	return 0;
+#else
+	return hal_flash_write_(addr, buf, length);
+#endif
 #else
 	return 0;
 #endif

@@ -43,7 +43,7 @@ void PollingGPIOStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_STATUS *gpio_status
 void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_status);
 void ProcessKeyDispatchedEvent(GPIO_KEY_STATUS *key_status);
 
-//static uint32_t l_t_msg_gpio_wait_timer;
+// static uint32_t l_t_msg_gpio_wait_timer;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -79,26 +79,26 @@ void app_gpio_start_running(void)
 
 void app_gpio_assert_running(void)
 {
-    //StartTickCounter(&l_t_msg_gpio_wait_timer);
+    // StartTickCounter(&l_t_msg_gpio_wait_timer);
     OTMS(TASK_ID_GPIO, OTMS_S_RUNNING);
 }
 
 void app_gpio_running(void)
 {
 
-		// PollingGPIOStatus(GPIO_ACC_PIN,&acc_status);
-		// PollingGPIOStatus(GPIO_DDD_PIN,&ddd_status);
-		// PollingGPIOStatus(GPIO_ZZD_PIN,&zzd_status);
-		// PollingGPIOStatus(GPIO_YZD_PIN,&yzd_status);
-		// PollingGPIOStatus(GPIO_SKD_PIN,&skd_status);
-	  if(!is_gpio_high(GPIO_POWER_KEY_GROUP,GPIO_POWER_KEY_PIN)) 
-			hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET);//prepare to power
-		PollingGPIOKeyStatus(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, &key_status_power);
-		ProcessKeyDispatchedEvent(&key_status_power);
-		//////////////////////////////////////////////////////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////////////////////////////////////////////
-		#if 0
+    // PollingGPIOStatus(GPIO_ACC_PIN,&acc_status);
+    // PollingGPIOStatus(GPIO_DDD_PIN,&ddd_status);
+    // PollingGPIOStatus(GPIO_ZZD_PIN,&zzd_status);
+    // PollingGPIOStatus(GPIO_YZD_PIN,&yzd_status);
+    // PollingGPIOStatus(GPIO_SKD_PIN,&skd_status);
+    if (!is_gpio_high(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN))
+        hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
+    PollingGPIOKeyStatus(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, &key_status_power);
+    ProcessKeyDispatchedEvent(&key_status_power);
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+#if 0
 		if(acc_status.changed)
 		{
 		LOG_LEVEL("get acc status=%d\r\n",acc_status.offon);
@@ -138,7 +138,7 @@ void app_gpio_running(void)
 		send_message(TASK_ID_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_SKD_PIN, skd_status.offon);
 		skd_status.changed=false;
 		}
-		#endif
+#endif
 }
 
 void app_gpio_post_running(void)
@@ -243,19 +243,19 @@ void PollingGPIOStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_STATUS *gpio_status
  */
 void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_status)
 {
-	  static uint32_t g_start_gpio_tickcounter = 0;
+    static uint32_t g_start_gpio_tickcounter = 0;
     // Read the current status of the GPIO pin (1 for high, 0 for low)
     bool g_status = hal_gpio_read(gpiox, pin);
     // If the key is pressed (GPIO pin is low, assuming active-low logic)
     if (!g_status)
     {
         // Increment the press counter with redundancy protection
-			  if(!IsTickCounterStart(&g_start_gpio_tickcounter))
-				{
-					StartTickCounter(&g_start_gpio_tickcounter);
-				}
-				
-				key_status->press_duration = GetTickCounter(&g_start_gpio_tickcounter);     
+        if (!IsTickCounterStart(&g_start_gpio_tickcounter))
+        {
+            StartTickCounter(&g_start_gpio_tickcounter);
+        }
+
+        key_status->press_duration = GetTickCounter(&g_start_gpio_tickcounter);
         // If the press duration exceeds the defined short-press period
         if (key_status->press_duration > GPIO_KEY_STATUS_PRESS_PERIOD && !key_status->pressed)
         {
@@ -283,8 +283,8 @@ void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_
             key_status->dispatched = false;
             key_status->state = KEY_STATE_LONG_LONG_PRESSED;
         }
-				
-				if (key_status->press_duration > GPIO_KEY_STATUS_LONG_LONG_LONG_PRESS_PERIOD && key_status->pressed)
+
+        if (key_status->press_duration > GPIO_KEY_STATUS_LONG_LONG_LONG_PRESS_PERIOD && key_status->pressed)
         {
             key_status->pressed = true;
             key_status->release = false;
@@ -299,7 +299,7 @@ void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_
         {
             key_status->release = true;
             key_status->dispatched = false;
-					  key_status->state = KEY_STATE_RELEASED;
+            key_status->state = KEY_STATE_RELEASED;
         }
 
         // Reset the pressed status and the counter
@@ -393,12 +393,12 @@ void power_on_off(bool onoff)
 {
     if (onoff)
     {
-			  hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET);
-        hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);  
+        hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET);
+        hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
     }
     else
     {
-			  hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_RESET);
+        hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_RESET);
         hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_RESET);
     }
 }

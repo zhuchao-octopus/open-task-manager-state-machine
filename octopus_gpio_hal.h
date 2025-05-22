@@ -38,8 +38,8 @@ extern "C"
     } Bit_Action_T;
 
 #ifdef PLATFORM_CST_OSAL_RTOS
-		
-typedef uint8_t GPIO_GROUP;
+
+    typedef uint8_t GPIO_GROUP;
 
 #define GPIO_POWER_KEY_GROUP GPIOA
 #define GPIO_POWER_KEY_PIN GPIO_Pin_12

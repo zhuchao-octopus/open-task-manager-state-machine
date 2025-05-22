@@ -67,23 +67,23 @@ extern "C"
 // Key codes
 #define KEY_CODE_IDLE (0x00)  /**< No key action detected */
 #define KEY_CODE_MENU (0x01)  /**< Menu button pressed */
-#define KEY_CODE_UP 	(0x02)    /**< Up button pressed */
+#define KEY_CODE_UP (0x02)    /**< Up button pressed */
 #define KEY_CODE_DOWN (0x03)  /**< Down button pressed */
-#define KEY_CODE_OK 	(0x04)    /**< OK button pressed */
+#define KEY_CODE_OK (0x04)    /**< OK button pressed */
 #define KEY_CODE_LEFT (0x05)  /**< Left button pressed */
 #define KEY_CODE_RIGHT (0x06) /**< Right button pressed */
-#define KEY_CODE_BACK  (0x07)  /**< Back button pressed */
-#define KEY_CODE_INFO  (0x08)  /**< Info button pressed */
-#define KEY_CODE_ILL   (0x09)   /**< Invalid key action */
+#define KEY_CODE_BACK (0x07)  /**< Back button pressed */
+#define KEY_CODE_INFO (0x08)  /**< Info button pressed */
+#define KEY_CODE_ILL (0x09)   /**< Invalid key action */
 #define KEY_CODE_POWER (0x0A) /**< Power button pressed */
 
 // Key states
-#define KEY_STATE_NONE (0x00)              /**< Key is released */
-#define KEY_STATE_PRESSED (0x01)           /**< Key is pressed */
-#define KEY_STATE_LONG_PRESSED (0x02)      /**< Key is long pressed */
-#define KEY_STATE_LONG_LONG_PRESSED (0x03) /**< Key is double pressed */
+#define KEY_STATE_NONE (0x00)                   /**< Key is released */
+#define KEY_STATE_PRESSED (0x01)                /**< Key is pressed */
+#define KEY_STATE_LONG_PRESSED (0x02)           /**< Key is long pressed */
+#define KEY_STATE_LONG_LONG_PRESSED (0x03)      /**< Key is double pressed */
 #define KEY_STATE_LONG_LONG_LONG_PRESSED (0x04) /**< Key is double pressed */
-#define KEY_STATE_RELEASED (0xFF)          /**< Key is released */
+#define KEY_STATE_RELEASED (0xFF)               /**< Key is released */
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */

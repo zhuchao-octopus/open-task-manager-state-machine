@@ -490,12 +490,12 @@ void app_carinfo_add_error_code(ERROR_CODE error_code)
 
 void carinfor_save_to_flash(void)
 {
-	#ifdef USE_EEROM_FOR_DATA_SAVING
+#ifdef USE_EEROM_FOR_DATA_SAVING
     LOG_BUFF_LEVEL((uint8_t *)app_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-	  app_meta_data.user_meter_data_flag=EEROM_DATAS_VALID_FLAG;
+    app_meta_data.user_meter_data_flag = EEROM_DATAS_VALID_FLAG;
     E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
     E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
-	#endif
+#endif
 }
 
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF

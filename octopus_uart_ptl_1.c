@@ -106,19 +106,19 @@ static uint8_t l_u8_next_empty_module = 0;                    // Index for the n
  */
 void ptl_help(void)
 {
-		/// uint8_t tmp[2] = {0};
-		/// LOG_LEVEL("app ptl help guide\r\n");
+    /// uint8_t tmp[2] = {0};
+    /// LOG_LEVEL("app ptl help guide\r\n");
 
-		/// tmp[0] = 0x00;
-		/// ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
-		/// LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
-		///  tmp[0] = 0x01;
-		///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
-		///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
-		///  tmp[0] = 0x02;
-		///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
-		///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
-		print_all_registered_module();
+    /// tmp[0] = 0x00;
+    /// ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    /// LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+    ///  tmp[0] = 0x01;
+    ///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+    ///  tmp[0] = 0x02;
+    ///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+    print_all_registered_module();
 }
 
 void ptl_init(void)
@@ -195,9 +195,9 @@ bool ptl_reqest_running(ptl_frame_type_t frame_type)
 {
     if (frame_type >= 32)
     {
-        //return false;
-			 l_t_ptl_running_req_mask |= (1 << (frame_type & 0x7f));
-       return true;
+        // return false;
+        l_t_ptl_running_req_mask |= (1 << (frame_type & 0x7f));
+        return true;
     }
     else
     {
@@ -245,7 +245,7 @@ void ptl_register_module(ptl_frame_type_t frame_type, module_send_handler_t send
         l_t_module_info[l_u8_next_empty_module].send_handler = send_handler;
         l_t_module_info[l_u8_next_empty_module].receive_handler = receive_handler;
         l_u8_next_empty_module++;
-        //LOG_LEVEL("frame_type=%d ptl module count=%d\r\n", l_t_module_info[l_u8_next_empty_module - 1].frame_type, l_u8_next_empty_module);
+        // LOG_LEVEL("frame_type=%d ptl module count=%d\r\n", l_t_module_info[l_u8_next_empty_module - 1].frame_type, l_u8_next_empty_module);
     }
     else
     {
@@ -274,11 +274,11 @@ module_info_t *ptl_get_module(ptl_frame_type_t frame_type)
 
 void print_all_registered_module(void)
 {
-	//module_info_t *module_info = NULL;
-  for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
+    // module_info_t *module_info = NULL;
+    for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
     {
-       LOG_LEVEL("registered l_t_module_info[%d]=%02x \r\n", i,l_t_module_info[i].frame_type);
-    }	
+        LOG_LEVEL("registered l_t_module_info[%d]=%02x \r\n", i, l_t_module_info[i].frame_type);
+    }
 }
 
 //[ Header ][ Frame Type ][ Command ][ Data Length ][ Header Checksum ][ Data... ][ Data Checksum ]

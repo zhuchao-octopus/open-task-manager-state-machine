@@ -19,21 +19,21 @@ extern "C"
 {
 #endif
 
-/******************************************************************************/
-/**
- * @brief    GPIO status redundancy macros.
- * @details  These macros define redundancy levels for GPIO status and key status.
- */
-//#define GPIO_POLLING_PERIOD_MS 10
+    /******************************************************************************/
+    /**
+     * @brief    GPIO status redundancy macros.
+     * @details  These macros define redundancy levels for GPIO status and key status.
+     */
+    // #define GPIO_POLLING_PERIOD_MS 10
 
 #define GPIO_STATUS_REDUNDANCY 16 ///< Redundancy level for GPIO status.
 
-#define GPIO_KEY_STATUS_PRESS_PERIOD 									(50)  // 40 ms
-#define GPIO_KEY_STATUS_LONG_PRESS_PERIOD 						(1000) // 1 s
-#define GPIO_KEY_STATUS_LONG_LONG_PRESS_PERIOD 				(2000) // 2 s
-#define GPIO_KEY_STATUS_LONG_LONG_LONG_PRESS_PERIOD 	(3000) // 3 s
+#define GPIO_KEY_STATUS_PRESS_PERIOD (50)                  // 40 ms
+#define GPIO_KEY_STATUS_LONG_PRESS_PERIOD (1000)           // 1 s
+#define GPIO_KEY_STATUS_LONG_LONG_PRESS_PERIOD (2000)      // 2 s
+#define GPIO_KEY_STATUS_LONG_LONG_LONG_PRESS_PERIOD (3000) // 3 s
 
-#define GPIO_KEY_STATUS_MAX_REDUNDANCY (1000*60) ///< Maximum redundancy level for key status.
+#define GPIO_KEY_STATUS_MAX_REDUNDANCY (1000 * 60) ///< Maximum redundancy level for key status.
     ////////////////////////////////////////////////////////////////////////////////
 
     /*******************************************************************************
@@ -50,7 +50,7 @@ extern "C"
         bool ignore;     /// ignore the key until press again
         uint8_t state;
         uint32_t press_duration; ///< Duration for long-press detection.
-        //uint16_t press_count;         ///< Counter for tracking press actions.
+        // uint16_t press_count;         ///< Counter for tracking press actions.
     } GPIO_KEY_STATUS;
 
     /*******************************************************************************

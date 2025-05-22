@@ -319,9 +319,9 @@ void hal_uart_init(uint8_t task_id)
 {
     LOG_LEVEL("hal init for protocol\r\n");
     cFifo_Init(&ptl_1_usart_rx_fifo, ptl_1_usart_rx_fifo_buff, sizeof(ptl_1_usart_rx_fifo_buff));
-	#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
+#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
     cFifo_Init(&ptl_2_usart_rx_fifo, ptl_2_usart_rx_fifo_buff, sizeof(ptl_2_usart_rx_fifo_buff));
-	#endif
+#endif
 }
 
 void hal_com_uart_receive_callback_ptl_1(const uint8_t *buffer, uint16_t length)
@@ -531,8 +531,8 @@ uint8_t hal_com_uart_send_buffer_2(const uint8_t *buffer, uint16_t length)
 
 uint8_t hal_com_uart_send_buffer_3(const uint8_t *buffer, uint16_t length)
 {
-	 LOG_BUFF_LEVEL(buffer, length);
- 	 UART2_Send_Buffer(buffer, length);	
-	 return 0;
+    LOG_BUFF_LEVEL(buffer, length);
+    UART2_Send_Buffer(buffer, length);
+    return 0;
 }
 #endif

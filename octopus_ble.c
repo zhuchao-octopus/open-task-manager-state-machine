@@ -113,12 +113,12 @@ void app_ble_running(void)
 					ble_status.mode = hal_set_pairing_mode_onoff(false, ble_status.mode);
 				break;
 
-	        case MSG_OTSM_CMD_BLE_CONNECTED:
-		    	break;
+			case MSG_OTSM_CMD_BLE_CONNECTED:
+				break;
 			case MSG_OTSM_CMD_BLE_PAIRING:
 			case MSG_OTSM_CMD_BLE_BONDED:
 				update_bonded_mac();
-	
+
 			case MSG_OTSM_CMD_BLE_DISCONNECTED:
 				CheckBLeConnectionStatus(ble_status.mac, msg->param1);
 				break;

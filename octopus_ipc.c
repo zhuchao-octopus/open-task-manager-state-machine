@@ -17,7 +17,7 @@
  ******************************************************************************/
 
 /* Includes ------------------------------------------------------------------*/
-#include "octopus_platform.h"     // Include platform-specific header for hardware platform details
+#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_gpio.h"
 #include "octopus_system.h"
 #include "octopus_ipc.h"
@@ -74,10 +74,10 @@ void app_ipc_socket_init_running(void)
 {
     LOG_LEVEL("app_ipc_socket_init_running\r\n");
     OTMS(TASK_ID_IPC_SOCKET, OTMS_S_INVALID);
-	
+
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_register_module(MCU_TO_SOC_MOD_IPC, ipc_socket_send_handler, ipc_socket_receive_handler);
-#elif defined(TASK_MANAGER_STATE_MACHINE_SOC)	
+#elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
     ptl_register_module(SOC_TO_MCU_MOD_IPC, ipc_socket_send_handler, ipc_socket_receive_handler);
 #endif
 }
@@ -171,7 +171,6 @@ void app_ipc_socket_running(void)
 
 void app_ipc_socket_post_running(void)
 {
-
 }
 
 void app_ipc_socket_stop_running(void)
@@ -210,7 +209,7 @@ void update_push_interval_ms(uint16_t delay_ms)
  ******************************************************************************/
 bool ipc_socket_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
 {
-    //assert(buff);         // Ensure the buffer is valid
+    // assert(buff);         // Ensure the buffer is valid
     uint8_t tmp[2] = {0}; // Temporary buffer for command parameters
 
     // Handle commands for SOC_TO_MCU_MOD_SYSTEM frame type
@@ -264,37 +263,37 @@ bool ipc_socket_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint1
  * RETURNS:
  * - true if the command was processed successfully, false otherwise.
  ******************************************************************************/
-//´óµÆÖ¸Ê¾µÆ
-//static const uint8_t protocol_cmd_lamp_on[3] = { 0x16, 0x1A, 0xF1 };   //¿ªµÆ
-//static const uint8_t protocol_cmd_lamp_off[3] = { 0x16, 0x1A, 0xF0 };  //¹ØµÆ
+// Â´Ã³ÂµÃ†Ã–Â¸ÃŠÂ¾ÂµÃ†
+// static const uint8_t protocol_cmd_lamp_on[3] = { 0x16, 0x1A, 0xF1 };   //Â¿ÂªÂµÃ†
+// static const uint8_t protocol_cmd_lamp_off[3] = { 0x16, 0x1A, 0xF0 };  //Â¹Ã˜ÂµÃ†
 extern void bafang_lamp_on_off(bool on_off);
 extern void bafang_set_gear(uint8_t level);
 bool ipc_socket_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer)
 {
-    //assert(payload); 		// Ensure payload is valid
-    //assert(ackbuffer); 	// Ensure acknowledgment buffer is valid
-    //uint8_t tmp[1];     // Temporary variable for holding command data
-	  LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d\r\n",payload->frame_type,payload->frame_cmd,payload->data_len);
+    // assert(payload); 		// Ensure payload is valid
+    // assert(ackbuffer); 	// Ensure acknowledgment buffer is valid
+    // uint8_t tmp[1];     // Temporary variable for holding command data
+    LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d\r\n", payload->frame_type, payload->frame_cmd, payload->data_len);
     if (SOC_TO_MCU_MOD_IPC == payload->frame_type)
     {
         switch (payload->frame_cmd)
         {
         case CMD_MODSYSTEM_SAVE_DATA:
-					  lt_carinfo_meter.unit_type = payload->data[0];
-				    #ifdef USE_EEROM_FOR_DATA_SAVING
-					  carinfor_save_to_flash();
-				    #endif
-						return true;
-        case CMD_MOD_CAR_SET_LIGHT:
-				    if(payload->data[0] ==1)
-							bafang_lamp_on_off(true);
-						else
-							bafang_lamp_on_off(false);
-				  
+            lt_carinfo_meter.unit_type = payload->data[0];
+#ifdef USE_EEROM_FOR_DATA_SAVING
+            carinfor_save_to_flash();
+#endif
             return true;
-				case CMD_MOD_CAR_SET_GEAR_LEVEL:				
-            bafang_set_gear(payload->data[0]);	
-				    return true;
+        case CMD_MOD_CAR_SET_LIGHT:
+            if (payload->data[0] == 1)
+                bafang_lamp_on_off(true);
+            else
+                bafang_lamp_on_off(false);
+
+            return true;
+        case CMD_MOD_CAR_SET_GEAR_LEVEL:
+            bafang_set_gear(payload->data[0]);
+            return true;
         default:
             break;
         }
@@ -309,5 +308,3 @@ void otsm_do_ipc_Command(uint8_t *data, uint8_t length)
     LOG_LEVEL("ipc_doCommand called with length: %d\n", length);
     LOG_BUFF_LEVEL(data, length);
 }
-
-
