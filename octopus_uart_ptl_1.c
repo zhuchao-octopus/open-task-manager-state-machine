@@ -118,6 +118,7 @@ void ptl_help(void)
     ///  tmp[0] = 0x02;
     ///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
     ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+    print_all_registered_module();
 }
 
 void ptl_init(void)
@@ -190,29 +191,31 @@ void ptl_stop_running(void)
 }
 
 // Request the UART task to start running (source indicates who requested)
-bool ptl_reqest_running(uint8_t source)
+bool ptl_reqest_running(ptl_frame_type_t frame_type)
 {
-    if (source >= 32)
+    if (frame_type >= 32)
     {
-        return false;
+        // return false;
+        l_t_ptl_running_req_mask |= (1 << (frame_type & 0x7f));
+        return true;
     }
     else
     {
-        l_t_ptl_running_req_mask |= (1 << source);
+        l_t_ptl_running_req_mask |= (1 << frame_type);
         return true;
     }
 }
 
 // Release the UART task from running (source indicates who is releasing)
-bool ptl_release_running(uint8_t source)
+bool ptl_release_running(ptl_frame_type_t frame_type)
 {
-    if (source >= 32)
+    if (frame_type >= 32)
     {
         return false;
     }
     else
     {
-        l_t_ptl_running_req_mask &= ~(1 << source);
+        l_t_ptl_running_req_mask &= ~(1 << frame_type);
         return true;
     }
 }
@@ -242,7 +245,7 @@ void ptl_register_module(ptl_frame_type_t frame_type, module_send_handler_t send
         l_t_module_info[l_u8_next_empty_module].send_handler = send_handler;
         l_t_module_info[l_u8_next_empty_module].receive_handler = receive_handler;
         l_u8_next_empty_module++;
-        LOG_LEVEL("frame_type=%d ptl module count=%d\r\n", l_t_module_info[l_u8_next_empty_module - 1].frame_type, l_u8_next_empty_module);
+        // LOG_LEVEL("frame_type=%d ptl module count=%d\r\n", l_t_module_info[l_u8_next_empty_module - 1].frame_type, l_u8_next_empty_module);
     }
     else
     {
@@ -269,6 +272,17 @@ module_info_t *ptl_get_module(ptl_frame_type_t frame_type)
     return module_info;
 }
 
+void print_all_registered_module(void)
+{
+    // module_info_t *module_info = NULL;
+    for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
+    {
+        LOG_LEVEL("registered l_t_module_info[%d]=%02x \r\n", i, l_t_module_info[i].frame_type);
+    }
+}
+
+//[ Header ][ Frame Type ][ Command ][ Data Length ][ Header Checksum ][ Data... ][ Data Checksum ]
+//|   0    |       1     |     2    |       3      |         4        |     n    |       n+1      |
 // Build a communication frame with the given data and command
 void ptl_build_frame(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint8_t *data, uint8_t datelen, ptl_proc_buff_t *framebuff)
 {
@@ -390,9 +404,9 @@ void ptl_1_tx_event_handler(void)
 
     // Retrieve the message from the UART task message queue
     Msg_t *msg = get_message(TASK_ID_PTL_1);
-    if (msg->id != NO_MSG)
+    if (msg->msg_id != NO_MSG)
     {
-        ptl_frame_type_t frame_type = (ptl_frame_type_t)msg->id;
+        ptl_frame_type_t frame_type = (ptl_frame_type_t)msg->msg_id;
         uint16_t param1 = msg->param1;
         uint16_t param2 = msg->param2;
 
@@ -621,7 +635,7 @@ void ptl_proc_valid_frame(uint8_t *buffer, uint16_t length)
 
     // Set up the frame payload from the received data
     payload.frame_type = (ptl_frame_type_t)buffer[1];
-    payload.cmd = (ptl_frame_cmd_t)buffer[2];
+    payload.frame_cmd = (ptl_frame_cmd_t)buffer[2];
     payload.data_len = buffer[3];
     payload.data = &buffer[PTL_FRAME_DATA_START];
 
@@ -629,7 +643,7 @@ void ptl_proc_valid_frame(uint8_t *buffer, uint16_t length)
     module_ = ptl_get_module(payload.frame_type);
 
 #ifdef TEST_LOG_DEBUG_PTL_RX_FRAME
-    LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d data[]=", payload.frame_type, payload.cmd, payload.data_len);
+    LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d data[]=", payload.frame_type, payload.frame_cmd, payload.data_len);
     LOG_BUFF(buffer, length);
 #endif
 
@@ -638,7 +652,7 @@ void ptl_proc_valid_frame(uint8_t *buffer, uint16_t length)
     {
         if (NULL == module_->receive_handler)
         {
-            LOG_LEVEL("module is not mached payload.frame_type=%d payload.cmd=%d payload.data_len=%d.\r\n", payload.frame_type, payload.cmd, payload.data_len);
+            LOG_LEVEL("module is not mached payload.frame_type=%d payload.frame_cmd=%d payload.data_len=%d.\r\n", payload.frame_type, payload.frame_cmd, payload.data_len);
             return;
         }
         bool res = module_->receive_handler(&payload, tx_frame);

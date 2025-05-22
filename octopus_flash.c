@@ -41,10 +41,10 @@ void flash_load_user_data_infor(void)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef USE_EEROM_FOR_DATA_SAVING
 	E2ROMReadToBuff(EEROM_APP_MATA_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
-  LOG_LEVEL("   bootloader address: 0x%08X,0x%08X\n", BOOTLOADER_START_ADDR, BOOTLOADER_END_ADDR);
+	LOG_LEVEL("   bootloader address: 0x%08X,0x%08X\n", BOOTLOADER_START_ADDR, BOOTLOADER_END_ADDR);
 	LOG_LEVEL("     user app address: 0x%08X,0x%08X\n", MAIN_APP_START_ADDR, MAIN_APP_END_ADDR);
 	LOG_LEVEL("user apppp valid flag: 0x%08X\n", app_meta_data.user_app_flag);
-	LOG_LEVEL("  user apppp code crc: 0x%08X\n", app_meta_data.user_app_crc);
+	LOG_LEVEL("  user apppp code crc: 0x%08X\n", app_meta_data.user_app_crc_a);
 	LOG_LEVEL("user datas valid flag: 0x%08X\n", app_meta_data.user_meter_data_flag);
 	LOG_LEVEL(" user other data flag: 0x%08X\n", app_meta_data.user_other_data_flag);
 	LOG_LEVEL("   user data  address: 0x%08X\n", EEROM_DATAS_ADDRESS);
@@ -55,11 +55,11 @@ void flash_load_user_data_infor(void)
  *******************************************************************************/
 void JumpToMainApplication(void)
 {
-	// Deinitialize hardware if needed
-	// Disable interrupts
-	#ifdef TASK_MANAGER_STATE_MACHINE_BOOTLOADER
+// Deinitialize hardware if needed
+// Disable interrupts
+#ifdef TASK_MANAGER_STATE_MACHINE_BOOTLOADER
 	__disable_irq();
-    
+
 	// Get the main stack pointer (MSP) value from the application vector table
 	uint32_t mainStackPointer = *(volatile uint32_t *)(MAIN_APP_START_ADDR);
 
@@ -74,7 +74,7 @@ void JumpToMainApplication(void)
 
 	// Jump to the application
 	appEntry();
-	#endif
+#endif
 }
 /*******************************************************************************
  * CRC Calculation
@@ -117,10 +117,10 @@ bool VerifyMainAppIntegrity(uint32_t expected_crc)
 void BootloaderMainLoopEvent(void)
 {
 	// uint32_t expected_crc = 0xDEADBEEF; // This should be replaced with real CRC
-	if (app_meta_data.user_app_crc == 0)
+	if (app_meta_data.user_app_crc_a == 0)
 		E2ROMReadToBuff(EEROM_START_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
 
-	if (VerifyMainAppIntegrity(app_meta_data.user_app_crc))
+	if (VerifyMainAppIntegrity(app_meta_data.user_app_crc_a))
 	{
 		// If application is valid, jump to it
 		LOG_LEVEL("verify user applicaton success jump to %08x ...\r\n", MAIN_APP_START_ADDR);
@@ -136,7 +136,7 @@ void BootloaderMainLoopEvent(void)
 uint32_t Flash_erase_user_app_arear(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_FLASH
-	return hal_flash_erase_page(MAIN_APP_START_ADDR, MAIN_APP_BLOCK_COUNT);
+	return hal_flash_erase_page_(MAIN_APP_START_ADDR, MAIN_APP_BLOCK_COUNT);
 #else
 	return 0;
 #endif
@@ -166,7 +166,11 @@ void PrintfBuffHex(const char *fun, int line, char *str, uint8_t *dat, int len)
 uint32_t FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_FLASH
-	return hal_flash_write(addr, buf, length);
+#ifdef PLATFORM_CST_OSAL_RTOS
+	return 0;
+#else
+	return hal_flash_write_(addr, buf, length);
+#endif
 #else
 	return 0;
 #endif
@@ -174,16 +178,16 @@ uint32_t FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 void FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_FLASH
-	hal_flash_read(addr, buf, length);
+	hal_flash_read_(addr, buf, length);
 #endif
 }
 
 void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length)
 {
-	hal_eeprom_read(addr, buf, length);
+	hal_eeprom_read_(addr, buf, length);
 }
 
 void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 {
-	hal_eeprom_write(addr, buf, length);
+	hal_eeprom_write_(addr, buf, length);
 }

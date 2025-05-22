@@ -109,7 +109,7 @@ extern "C"
  */
 
 /** Macro to retrieve the current function name. */
-#define F_NAME __FUNCTION__
+//#define F_NAME __FUNCTION__
 
 /** Macro for formatted string processing. */
 #ifdef PLATFORM_CST_OSAL_RTOS

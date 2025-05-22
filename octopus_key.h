@@ -78,12 +78,12 @@ extern "C"
 #define KEY_CODE_POWER (0x0A) /**< Power button pressed */
 
 // Key states
-#define KEY_STATE_NONE (0x00)              /**< Key is released */
-#define KEY_STATE_RELEASED (0x01)          /**< Key is released */
-#define KEY_STATE_PRESSED (0x02)           /**< Key is pressed */
-#define KEY_STATE_LONG_PRESSED (0x03)      /**< Key is long pressed */
-#define KEY_STATE_LONG_LONG_PRESSED (0x04) /**< Key is double pressed */
-
+#define KEY_STATE_NONE (0x00)                   /**< Key is released */
+#define KEY_STATE_PRESSED (0x01)                /**< Key is pressed */
+#define KEY_STATE_LONG_PRESSED (0x02)           /**< Key is long pressed */
+#define KEY_STATE_LONG_LONG_PRESSED (0x03)      /**< Key is double pressed */
+#define KEY_STATE_LONG_LONG_LONG_PRESSED (0x04) /**< Key is double pressed */
+#define KEY_STATE_RELEASED (0xFF)               /**< Key is released */
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */

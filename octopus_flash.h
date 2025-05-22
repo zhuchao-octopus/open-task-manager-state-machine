@@ -21,12 +21,12 @@
 /***************************************************************************************
  * User Data EEPROM Struct Definition
  ***************************************************************************************/
-#define USE_EEROM_FOR_DATA_SAVING
-#define EEPROM_APP_META_SIZE (128) //128byte app meta struct total 2kb
 
-#define EEROM_START_ADDRESS  (0x00000000)
-#define EEROM_APP_MATA_ADDRESS  (EEROM_START_ADDRESS)
-#define EEROM_DATAS_ADDRESS  (EEROM_APP_MATA_ADDRESS + EEPROM_APP_META_SIZE)  //user data area from app meta struct
+#define EEPROM_APP_META_SIZE (128) // 128byte app meta struct total 2kb
+
+#define EEROM_START_ADDRESS (0x00000000)
+#define EEROM_APP_MATA_ADDRESS (EEROM_START_ADDRESS)
+#define EEROM_DATAS_ADDRESS (EEROM_APP_MATA_ADDRESS + EEPROM_APP_META_SIZE) // user data area from app meta struct
 
 #define EEROM_CARINFOR_METER_ADDRESS (EEROM_DATAS_ADDRESS + 0)
 
@@ -36,9 +36,14 @@
 typedef struct
 {
     uint32_t user_app_flag;
-	  uint32_t user_app_crc; // CRC32 value for data integrity
+    uint32_t user_app_crc_a; // CRC32 value for data integrity for Slot A
+    uint32_t user_app_crc_b; // CRC32 value for data integrity for Slot B
     uint32_t user_meter_data_flag;
     uint32_t user_other_data_flag; // Status flag for application state
+
+    uint8_t active_slot;     // Active slot (0 for A, 1 for B)
+    uint8_t boot_successful; // Last boot status (0 for fail, 1 for success)
+    uint8_t reserved[2];     // Padding
 } app_meta_data_t;
 
 extern app_meta_data_t app_meta_data;

@@ -43,6 +43,8 @@
 #ifndef ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 #define ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 /*******************************************************************************
  * PROJECT SWITCH MACROS
  * Define which platform and RTOS to use by enabling the corresponding macro.
@@ -53,6 +55,8 @@
 // #define PLATFORM_STM32_RTOS
 #define PLATFORM_LINUX_RISC // X86 ARM linux
 
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 /********************************************************************************
  * @brief Task Manager state machine modes.
  */
@@ -150,6 +154,9 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "../HAL/octopus_serialport_c.h"
+
+#elif defined(PLATFORM_STM32_RTOS)
+#include "../src/native_devices.h"
 
 #else
 
@@ -264,4 +271,3 @@ extern volatile uint32_t system_timer_tick_50us;
 #endif
 
 #endif // ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
-

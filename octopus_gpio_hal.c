@@ -96,8 +96,6 @@ void hal_gpio_init(uint8_t task_id)
 
     HalGpioPinInit(GPIO_KEY_PIN, GPIO_INPUT);      // Set KEY pin (P14) as input
     HalGpioPupdConfig(GPIO_KEY_PIN, GPIO_PULL_UP); // Enable pull-up for KEY pin (P14)
-
-    LOG_LEVEL("hal gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
 }
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)

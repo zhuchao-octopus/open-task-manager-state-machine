@@ -43,14 +43,6 @@
 /*******************************************************************************
  * MACROS
  */
-#define CELL_VOL_20 (1058) // Voltage corresponding to 20% battery charge
-#define CELL_VOL_30 (1076) // Voltage corresponding to 30% battery charge
-#define CELL_VOL_40 (1100) // Voltage corresponding to 40% battery charge
-#define CELL_VOL_50 (1120) // Voltage corresponding to 50% battery charge
-#define CELL_VOL_60 (1142) // Voltage corresponding to 60% battery charge
-#define CELL_VOL_70 (1164) // Voltage corresponding to 70% battery charge
-#define CELL_VOL_80 (1184) // Voltage corresponding to 80% battery charge
-#define CELL_VOL_90 (1206) // Voltage corresponding to 90% battery charge
 
 /*******************************************************************************
  * TYPEDEFS
@@ -59,7 +51,7 @@
 /*******************************************************************************
  * CONSTANTS
  */
-
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLARATION
  */
@@ -181,19 +173,8 @@ void app_carinfo_stop_running(void)
 {
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_INVALID);
 }
-
-void app_carinfo_on_enter_run(void)
-{
-    /// if (KCS(AppSetting) > OTMS_S_POST_RUN)
-    ///{
-    ///     OTMS(CAR_INFOR_ID, OTMS_S_START);
-    /// }
-}
-void app_carinfo_on_exit_post_run(void)
-{
-    OTMS(TASK_ID_CAR_INFOR, OTMS_S_STOP);
-}
-
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 uint16_t app_carinfo_getSpeed(void)
 {
     return lt_carinfo_meter.speed_actual;
@@ -265,13 +246,13 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
     // LOG_LEVEL("payload->frame_type=%d payload->data_len=%d\r\n",payload->frame_type, payload->data_len);
     if (MCU_TO_SOC_MOD_CARINFOR == payload->frame_type)
     {
-        switch (payload->cmd)
+        switch (payload->frame_cmd)
         {
         case CMD_MOD_CARINFOR_INDICATOR:
             if (payload->data_len == sizeof(carinfo_indicator_t))
             {
                 memcpy(&lt_carinfo_indicator, payload->data, payload->data_len);
-                send_message(TASK_ID_IPC_SOCKET, MSG_DEVICE_CAR_INFOR_EVENT, MSG_CAR_GET_INDICATOR_INFO, 0);
+                send_message(TASK_ID_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_IPC_CMD_CAR_GET_INDICATOR_INFO, 0);
             }
             else
             {
@@ -283,7 +264,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_meter_t))
             {
                 memcpy(&lt_carinfo_meter, payload->data, payload->data_len);
-                send_message(TASK_ID_IPC_SOCKET, MSG_DEVICE_CAR_INFOR_EVENT, MSG_CAR_GET_METER_INFO, 0);
+                send_message(TASK_ID_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_IPC_CMD_CAR_GET_METER_INFO, 0);
             }
             else
             {
@@ -295,7 +276,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_battery_t))
             {
                 memcpy(&lt_carinfo_battery, payload->data, payload->data_len);
-                send_message(TASK_ID_IPC_SOCKET, MSG_DEVICE_CAR_INFOR_EVENT, MSG_CAR_GET_BATTERY_INFO, 0);
+                send_message(TASK_ID_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_IPC_CMD_CAR_GET_BATTERY_INFO, 0);
             }
             else
             {
@@ -306,7 +287,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_error_t))
             {
                 memcpy(&lt_carinfo_error, payload->data, payload->data_len);
-                send_message(TASK_ID_IPC_SOCKET, MSG_DEVICE_CAR_INFOR_EVENT, MSG_CAR_GET_ERROR_INFO, 0);
+                send_message(TASK_ID_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_IPC_CMD_CAR_GET_ERROR_INFO, 0);
             }
             else
             {
@@ -348,7 +329,7 @@ void app_car_controller_msg_handler(void)
     uint32_t trip_timer = 0;
     uint32_t trip_distances = 0;
     Msg_t *msg = get_message(TASK_ID_CAR_INFOR);
-    if (msg->id == NO_MSG)
+    if (msg->msg_id == NO_MSG)
     {
         trip_timer = GetTickCounter(&l_t_msg_car_trip_timer);
         if (trip_timer > 2000)
@@ -363,7 +344,7 @@ void app_car_controller_msg_handler(void)
         }
         return;
     }
-    if (MCU_TO_SOC_MOD_CARINFOR == msg->id)
+    if (MCU_TO_SOC_MOD_CARINFOR == msg->msg_id)
     {
         switch (msg->param1)
         {
@@ -392,7 +373,7 @@ void app_car_controller_msg_handler(void)
         }
     }
 
-    else if (MSG_DEVICE_CAR_INFOR_EVENT == msg->id)
+    else if (MSG_OTSM_DEVICE_CAR_INFOR_EVENT == msg->msg_id)
     {
         switch (msg->param1)
         {
@@ -509,12 +490,12 @@ void app_carinfo_add_error_code(ERROR_CODE error_code)
 
 void carinfor_save_to_flash(void)
 {
-	#ifdef USE_EEROM_FOR_DATA_SAVING
+#ifdef USE_EEROM_FOR_DATA_SAVING
     LOG_BUFF_LEVEL((uint8_t *)app_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-	  app_meta_data.user_meter_data_flag=EEROM_DATAS_VALID_FLAG;
+    app_meta_data.user_meter_data_flag = EEROM_DATAS_VALID_FLAG;
     E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
     E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
-	#endif
+#endif
 }
 
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
@@ -600,4 +581,5 @@ void log_sif_data(uint8_t *data, uint8_t maxlen)
     }
     LOG_("\r\n");
 }
+#endif
 #endif
