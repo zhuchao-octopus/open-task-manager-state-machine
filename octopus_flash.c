@@ -15,7 +15,8 @@
 
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_flash.h"
-
+#include "octopus_carinfor.h"
+/////////////////////////////////////////////////////////////////////////////////////
 typedef void (*AppEntryPoint)(void);  // Function pointer type for application entry
 #define SCB_VTOR_ADDRESS (0xE000ED08) // SCB Vector Table Offset Register (VTOR)
 #define SCB_VTOR (*(volatile uint32_t *)SCB_VTOR_ADDRESS)
@@ -48,6 +49,29 @@ void flash_load_user_data_infor(void)
 	LOG_LEVEL("user datas valid flag: 0x%08X\n", app_meta_data.user_meter_data_flag);
 	LOG_LEVEL(" user other data flag: 0x%08X\n", app_meta_data.user_other_data_flag);
 	LOG_LEVEL("   user data  address: 0x%08X\n", EEROM_DATAS_ADDRESS);
+#endif
+#ifdef USE_EEROM_FOR_DATA_SAVING
+	if (app_meta_data.user_meter_data_flag == EEROM_DATAS_VALID_FLAG)
+	{
+			LOG_LEVEL("load meter data[%02d] ", sizeof(carinfo_meter_t));
+			E2ROMReadToBuff(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+			LOG_BUFF((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+	}
+#endif
+}
+
+void flash_save_carinfor_meter(void)
+{
+#ifdef USE_EEROM_FOR_DATA_SAVING
+    LOG_BUFF_LEVEL((uint8_t *)app_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
+	  if(lt_carinfo_meter.odo == 0)
+		{
+			return;
+		}
+		LOG_LEVEL("lt_carinfo_meter.odo:%d\r\n",lt_carinfo_meter.odo);
+    app_meta_data.user_meter_data_flag = EEROM_DATAS_VALID_FLAG;
+    E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
+    E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
 #endif
 }
 /*******************************************************************************

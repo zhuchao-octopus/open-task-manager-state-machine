@@ -102,6 +102,7 @@ extern "C"
     extern void BootloaderMainLoopEvent(void);
 
     void flash_load_user_data_infor(void);
+		void flash_save_carinfor_meter(void);
     void flash_init(void);
     uint32_t Flash_erase_user_app_arear(void);
 #ifdef __cplusplus
