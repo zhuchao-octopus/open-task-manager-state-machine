@@ -270,8 +270,8 @@ extern void bafang_lamp_on_off(bool on_off);
 extern void bafang_set_gear(uint8_t level);
 bool ipc_socket_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer)
 {
-    // assert(payload); 		// Ensure payload is valid
-    // assert(ackbuffer); 	// Ensure acknowledgment buffer is valid
+    // assert(payload);    // Ensure payload is valid
+    // assert(ackbuffer);  // Ensure acknowledgment buffer is valid
     // uint8_t tmp[1];     // Temporary variable for holding command data
     LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d\r\n", payload->frame_type, payload->frame_cmd, payload->data_len);
     if (SOC_TO_MCU_MOD_IPC == payload->frame_type)
@@ -280,9 +280,7 @@ bool ipc_socket_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
         {
         case CMD_MODSYSTEM_SAVE_DATA:
             lt_carinfo_meter.unit_type = payload->data[0];
-#ifdef USE_EEROM_FOR_DATA_SAVING
-            carinfor_save_to_flash();
-#endif
+            flash_save_carinfor_meter();
             return true;
         case CMD_MOD_CAR_SET_LIGHT:
             if (payload->data[0] == 1)
@@ -302,9 +300,3 @@ bool ipc_socket_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
     return false; // Command not processed
 }
 
-//__attribute__((visibility("default")))
-void otsm_do_ipc_Command(uint8_t *data, uint8_t length)
-{
-    LOG_LEVEL("ipc_doCommand called with length: %d\n", length);
-    LOG_BUFF_LEVEL(data, length);
-}

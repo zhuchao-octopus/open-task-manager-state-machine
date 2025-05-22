@@ -32,7 +32,6 @@
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_carinfor.h"
 #include "octopus_sif.h"
-#include "octopus_flash.h"
 #include "octopus_ipc.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
@@ -116,14 +115,6 @@ void app_carinfo_init_running(void)
 
     // srand(1234); // Seed the random number generator
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_INVALID);
-#ifdef USE_EEROM_FOR_DATA_SAVING
-    if (app_meta_data.user_meter_data_flag == EEROM_DATAS_VALID_FLAG)
-    {
-        LOG_LEVEL("load meter data[%02d] ", sizeof(carinfo_meter_t));
-        E2ROMReadToBuff(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
-        LOG_BUFF((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
-    }
-#endif
 }
 
 void app_carinfo_start_running(void)
@@ -376,12 +367,6 @@ void app_car_controller_msg_handler(void)
 
     else if (MSG_OTSM_DEVICE_CAR_INFOR_EVENT == msg->msg_id)
     {
-        switch (msg->param1)
-        {
-        case CMD_MODSYSTEM_SAVE_DATA:
-            carinfor_save_to_flash();
-            break;
-        }
     }
 }
 // ERROR_CODE_IDLE = 0X00,                                      // 无动作
@@ -487,16 +472,6 @@ void app_carinfo_add_error_code(ERROR_CODE error_code)
     default:
         break;
     }
-}
-
-void carinfor_save_to_flash(void)
-{
-#ifdef USE_EEROM_FOR_DATA_SAVING
-    LOG_BUFF_LEVEL((uint8_t *)app_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-    app_meta_data.user_meter_data_flag = EEROM_DATAS_VALID_FLAG;
-    E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
-    E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
-#endif
 }
 
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF

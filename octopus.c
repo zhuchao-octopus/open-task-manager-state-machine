@@ -116,8 +116,12 @@ void TaskManagerStateMachineInit(void)
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize hardware abstraction layers (HAL)
+    #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     gpio_init(); // Initialize GPIO
+    #endif
+    #ifdef TASK_MANAGER_STATE_MACHINE_FLASH
     flash_init();
+    #endif
     uart_init(); // Initialize UART communication protocol
 
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
