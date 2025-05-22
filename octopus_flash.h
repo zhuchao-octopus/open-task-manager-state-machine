@@ -21,7 +21,7 @@
 /***************************************************************************************
  * User Data EEPROM Struct Definition
  ***************************************************************************************/
-//#define USE_EEROM_FOR_DATA_SAVING
+
 #define EEPROM_APP_META_SIZE (128) //128byte app meta struct total 2kb
 
 #define EEROM_START_ADDRESS  (0x00000000)

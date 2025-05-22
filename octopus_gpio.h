@@ -24,11 +24,11 @@ extern "C"
  * @brief    GPIO status redundancy macros.
  * @details  These macros define redundancy levels for GPIO status and key status.
  */
-#define GPIO_POLLING_PERIOD_MS 20
+#define GPIO_POLLING_PERIOD_MS 10
 
-#define GPIO_STATUS_REDUNDANCY 8 ///< Redundancy level for GPIO status.
+#define GPIO_STATUS_REDUNDANCY 16 ///< Redundancy level for GPIO status.
 
-#define GPIO_KEY_STATUS_REDUNDANCY 3       ///< Redundancy level for key status.
+#define GPIO_KEY_STATUS_REDUNDANCY 4       ///< Redundancy level for key status.
 #define GPIO_KEY_STATUS_MAX_REDUNDANCY 255 ///< Maximum redundancy level for key status.
 
 #define GPIO_KEY_STATUS_PRESS_PERIOD (GPIO_KEY_STATUS_REDUNDANCY * 1)            // 100 ms
@@ -72,8 +72,8 @@ extern "C"
      * @details  These functions are used to initialize, start, and manage GPIO-related
      *           tasks during runtime.
      */
-		void gpio_init(void);
-		
+    void gpio_init(void);
+
     void app_gpio_init_running(void);   ///< Initializes GPIO tasks at runtime.
     void app_gpio_start_running(void);  ///< Starts GPIO tasks.
     void app_gpio_assert_running(void); ///< Asserts GPIO tasks are running.
@@ -86,7 +86,6 @@ extern "C"
     void power_on_off(bool onoff);
     bool is_power_on(void);
     bool is_gpio_high(GPIO_GROUP *gpiox, uint16_t pin);
-   
 
 #ifdef __cplusplus
 }

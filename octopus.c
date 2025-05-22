@@ -33,6 +33,7 @@
  * LOCAL FUNCTIONS DECLARE
  */
 void TaskManagerStateGoRunning(void);
+void TaskManagerStateStopRunning(void);
 /* Local functions are declared here, but no specific ones are listed */
 
 /*******************************************************************************
@@ -54,7 +55,7 @@ static pthread_attr_t thread_attr; // Thread attributes (for setting stack size,
 bool stop_thread = false;
 #endif
 
-uint8_t TaskManagerStateMachine_Id_; // Task manager state machine identifier
+uint8_t TaskManagerStateMachine_Id_=0; // Task manager state machine identifier
 
 /*******************************************************************************
  * STATIC VARIABLES
@@ -79,7 +80,13 @@ uint8_t GetTaskManagerStateMachineId(void)
  * @param task_id The task ID to initialize.
  * @return 0 on success, non-zero on failure.
  */
-void TaskManagerStateMachineInit(uint8 task_id)
+#if defined(PLATFORM_LINUX_RISC)
+__attribute__((constructor)) void TaskManagerStateMachineInit(void)
+#elif defined(PLATFORM_CST_OSAL_RTOS)
+void TaskManagerStateMachineInit(uint8_t task_id)
+#else
+void TaskManagerStateMachineInit(void)
+#endif
 {
     LOG_NONE("---------------------------------------------------------------------------\r\n");
     LOG_NONE("               _____                                 \r\n");
@@ -94,10 +101,13 @@ void TaskManagerStateMachineInit(uint8 task_id)
     LOG_NONE(" Compiled  : %s %s\r\n", __DATE__, __TIME__);
     LOG_NONE(" Author    : Octopus Dev Team\r\n");
     LOG_NONE("---------------------------------------------------------------------------\r\n");
+	
+#ifdef PLATFORM_CST_OSAL_RTOS
     TaskManagerStateMachine_Id_ = task_id; // Store the task ID in the global variable
+#endif
     /// LOG_NONE("\r\n\r\n");//[1B blob data]
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
-    //LOG_NONE("\r\n######################################BOOT  START######################################\r\n");
+    // LOG_NONE("\r\n######################################BOOT  START######################################\r\n");
     TaskManagerStateStopRunning();
 #endif
     LOG_LEVEL("OTMS task_id :%02x initializing...\r\n", TaskManagerStateMachine_Id_);
@@ -107,9 +117,9 @@ void TaskManagerStateMachineInit(uint8 task_id)
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize hardware abstraction layers (HAL)
     gpio_init(); // Initialize GPIO
-	flash_init();
+    flash_init();
     uart_init(); // Initialize UART communication protocol
-		
+
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     hal_timer_init(5); // Initialize timer with interval of 5 (could be milliseconds)
     sif_init();
@@ -126,15 +136,15 @@ void TaskManagerStateMachineInit(uint8 task_id)
     task_manager_start(); // Start the task manager
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    //Nofify Initialize complete
+    // Nofify Initialize complete
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    //system_handshake_with_app();
+    system_handshake_with_app();
 #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     system_handshake_with_mcu();
 #endif
     ptl_help();
-		
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Enable task manager state matching main loop
 #ifdef PLATFORM_CST_OSAL_RTOS
@@ -145,18 +155,18 @@ void TaskManagerStateMachineInit(uint8 task_id)
     TaskManagerStateGoRunning();
 #endif
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    //LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
-	 LOG_NONE("----------------------------------------------------------------------------------\r\n");
-	 flash_load_user_data_infor();
+    // LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
+    LOG_NONE("----------------------------------------------------------------------------------\r\n");
+    flash_load_user_data_infor();
 }
 
-void exit_cleanup()
+#if defined(PLATFORM_ITE_OPEN_RTOS) || defined(PLATFORM_LINUX_RISC)
+__attribute__((destructor)) void exit_cleanup()
 {
     LOG_LEVEL("OTSM so unloaded!\n");
-#if defined(PLATFORM_ITE_OPEN_RTOS) || defined(PLATFORM_LINUX_RISC)
     TaskManagerStateStopRunning();
-#endif
 }
+#endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -167,7 +177,7 @@ void exit_cleanup()
  * @param events The event mask that defines which events are active.
  * @return The events that were handled (removed from the active event mask).
  */
-uint16 TaskManagerStateEventLoop(uint8 task_id, uint16 events)
+uint16_t TaskManagerStateEventLoop(uint8 task_id, uint16 events)
 {
     if (events & DEVICE_TIMER_EVENT) // If the timer event is triggered
     {
@@ -179,25 +189,25 @@ uint16 TaskManagerStateEventLoop(uint8 task_id, uint16 events)
     {
         LOG_LEVEL("task_id=%d events=%d ble pair\r\n", task_id, events);
         send_message(TASK_ID_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_PAIRING, events); // Send BLE pair event to BLE task
-        return (events ^ DEVICE_BLE_PAIR);                               // Remove the BLE pair event from the active events
+        return (events ^ DEVICE_BLE_PAIR);                                                      // Remove the BLE pair event from the active events
     }
     else if (events & DEVICE_BLE_BONDED) // If BLE bonded event is triggered
     {
         LOG_LEVEL("task_id=%d events=%d ble bonded\r\n", task_id, events);
         send_message(TASK_ID_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_BONDED, events); // Send BLE bonded event to BLE task
-        return (events ^ DEVICE_BLE_BONDED);                             // Remove the BLE bonded event from the active events
+        return (events ^ DEVICE_BLE_BONDED);                                                   // Remove the BLE bonded event from the active events
     }
     else if (events & DEVICE_BLE_CONNECTED) // If BLE connected event is triggered
     {
         LOG_LEVEL("task_id=%d events=%d ble connected\r\n", task_id, events);
         send_message(TASK_ID_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, events); // Send BLE connected event to BLE task
-        return (events ^ DEVICE_BLE_CONNECTED);                          // Remove the BLE connected event from the active events
+        return (events ^ DEVICE_BLE_CONNECTED);                                                   // Remove the BLE connected event from the active events
     }
     else if (events & DEVICE_BLE_DISCONNECTED) // If BLE disconnected event is triggered
     {
         LOG_LEVEL("task_id=%d events=%d ble disconnected\r\n", task_id, events);
         send_message(TASK_ID_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, events); // Send BLE disconnected event to BLE task
-        return (events ^ DEVICE_BLE_DISCONNECTED);                       // Remove the BLE disconnected event from the active events
+        return (events ^ DEVICE_BLE_DISCONNECTED);                                                   // Remove the BLE disconnected event from the active events
     }
     else
     {
@@ -207,6 +217,9 @@ uint16 TaskManagerStateEventLoop(uint8 task_id, uint16 events)
     return 0; // Return 0 if no events were handled
 }
 void TaskManagerStateGoRunning(void)
+{
+}
+void TaskManagerStateStopRunning(void)
 {
 }
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
@@ -272,7 +285,7 @@ void TaskManagerStateGoRunning(void)
     }
 }
 
-void TaskManagerStateStopRunning()
+void TaskManagerStateStopRunning(void)
 {
     stop_thread = true; // 设置标志位为 true，通知线程停止
     LOG_LEVEL("task manager state machine thread stopped!\n");
@@ -281,13 +294,11 @@ void TaskManagerStateStopRunning()
 
 void TaskManagerStateEventLoop(void *arg)
 {
-  task_manager_run();      
+    task_manager_run();
 }
 
 void TaskManagerStateGoRunning(void)
 {
-	
 }
 
 #endif
-

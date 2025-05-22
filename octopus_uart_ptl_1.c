@@ -191,29 +191,31 @@ void ptl_stop_running(void)
 }
 
 // Request the UART task to start running (source indicates who requested)
-bool ptl_reqest_running(uint8_t source)
+bool ptl_reqest_running(ptl_frame_type_t frame_type)
 {
-    if (source >= 32)
+    if (frame_type >= 32)
     {
-        return false;
+        //return false;
+			 l_t_ptl_running_req_mask |= (1 << (frame_type & 0x7f));
+       return true;
     }
     else
     {
-        l_t_ptl_running_req_mask |= (1 << source);
+        l_t_ptl_running_req_mask |= (1 << frame_type);
         return true;
     }
 }
 
 // Release the UART task from running (source indicates who is releasing)
-bool ptl_release_running(uint8_t source)
+bool ptl_release_running(ptl_frame_type_t frame_type)
 {
-    if (source >= 32)
+    if (frame_type >= 32)
     {
         return false;
     }
     else
     {
-        l_t_ptl_running_req_mask &= ~(1 << source);
+        l_t_ptl_running_req_mask &= ~(1 << frame_type);
         return true;
     }
 }
@@ -275,7 +277,7 @@ void print_all_registered_module(void)
 	//module_info_t *module_info = NULL;
   for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
     {
-       LOG_LEVEL("registered l_t_module_info[%d]=%02x ptl module count=%d\r\n", i,l_t_module_info[i].frame_type);
+       LOG_LEVEL("registered l_t_module_info[%d]=%02x \r\n", i,l_t_module_info[i].frame_type);
     }	
 }
 
@@ -633,7 +635,7 @@ void ptl_proc_valid_frame(uint8_t *buffer, uint16_t length)
 
     // Set up the frame payload from the received data
     payload.frame_type = (ptl_frame_type_t)buffer[1];
-    payload.cmd = (ptl_frame_cmd_t)buffer[2];
+    payload.frame_cmd = (ptl_frame_cmd_t)buffer[2];
     payload.data_len = buffer[3];
     payload.data = &buffer[PTL_FRAME_DATA_START];
 
@@ -641,7 +643,7 @@ void ptl_proc_valid_frame(uint8_t *buffer, uint16_t length)
     module_ = ptl_get_module(payload.frame_type);
 
 #ifdef TEST_LOG_DEBUG_PTL_RX_FRAME
-    LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d data[]=", payload.frame_type, payload.cmd, payload.data_len);
+    LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d data[]=", payload.frame_type, payload.frame_cmd, payload.data_len);
     LOG_BUFF(buffer, length);
 #endif
 
@@ -650,7 +652,7 @@ void ptl_proc_valid_frame(uint8_t *buffer, uint16_t length)
     {
         if (NULL == module_->receive_handler)
         {
-            LOG_LEVEL("module is not mached payload.frame_type=%d payload.cmd=%d payload.data_len=%d.\r\n", payload.frame_type, payload.cmd, payload.data_len);
+            LOG_LEVEL("module is not mached payload.frame_type=%d payload.frame_cmd=%d payload.data_len=%d.\r\n", payload.frame_type, payload.frame_cmd, payload.data_len);
             return;
         }
         bool res = module_->receive_handler(&payload, tx_frame);

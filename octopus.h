@@ -23,17 +23,16 @@
  * INCLUDE FILES
  * Include standard libraries and platform-specific headers.
  */
- #include "octopus_platform.h"       // Platform-specific configurations and settings
- #include "octopus_timer_hal.h"      // Hardware Abstraction Layer (HAL) for timers
- #include "octopus_uart_hal.h" // HAL for UART communication
- #include "octopus_gpio_hal.h"       // HAL for GPIO (General-Purpose Input/Output)
- #include "octopus_flash_hal.h" // HAL for flash memory management
- #include "octopus_ble_hal.h"        // HAL for Bluetooth Low Energy (BLE)
- #include "octopus_carinfor.h"       // Car information management structures and functions
- #include "octopus_sif.h"            // SIF (Serial Interface Framework) protocol interface
- #include "octopus_key.h"            // Key input handling and processing
- #include "octopus_bms.h"
-
+#include "octopus_platform.h"  // Platform-specific configurations and settings
+#include "octopus_timer_hal.h" // Hardware Abstraction Layer (HAL) for timers
+#include "octopus_uart_hal.h"  // HAL for UART communication
+#include "octopus_gpio_hal.h"  // HAL for GPIO (General-Purpose Input/Output)
+#include "octopus_flash_hal.h" // HAL for flash memory management
+#include "octopus_ble_hal.h"   // HAL for Bluetooth Low Energy (BLE)
+#include "octopus_carinfor.h"  // Car information management structures and functions
+#include "octopus_sif.h"       // SIF (Serial Interface Framework) protocol interface
+#include "octopus_key.h"       // Key input handling and processing
+#include "octopus_bms.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -68,27 +67,24 @@ extern "C"
     // Retrieves the main user task ID.
     uint8_t GetTaskManagerStateMachineId(void);
 
-
-
 // The main event loop for the task manager.
 #ifdef PLATFORM_CST_OSAL_RTOS
     // Initializes the task manager's main task.
-void TaskManagerStateMachineInit(uint8 task_id);
-uint16_t TaskManagerStateEventLoop(uint8_t task_id, uint16_t events);
+    void TaskManagerStateMachineInit(uint8_t task_id);
+    uint16_t TaskManagerStateEventLoop(uint8_t task_id, uint16_t events);
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
- void TaskManagerStateMachineInit(void);
- void TaskManagerStateEventLoop(void *arg);
-void *TaskManagerStateEventLoop(void *arg);
+    void TaskManagerStateMachineInit(void);
+    void TaskManagerStateEventLoop(void *arg);
+    void *TaskManagerStateEventLoop(void *arg);
 
 #elif defined(PLATFORM_LINUX_RISC)
- void TaskManagerStateMachineInit(void);
- void TaskManagerStateEventLoop(void *arg);
-void TaskManagerStateStopRunning();
-
+    void TaskManagerStateMachineInit(void);
+    void TaskManagerStateStopRunning(void);
+    void *TaskManagerStateEventLoop(void *arg);
 #else
- void TaskManagerStateMachineInit(void);
- void TaskManagerStateEventLoop(void *arg);
+    void TaskManagerStateMachineInit(void);
+    void TaskManagerStateEventLoop(void *arg);
 #endif
 
 #ifdef __cplusplus
@@ -96,4 +92,3 @@ void TaskManagerStateStopRunning();
 #endif
 
 #endif // ___OCTOPUS_TASK_MANAGER_H___
-

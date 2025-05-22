@@ -23,9 +23,11 @@ uint8_t get_dummy_key(uint8_t key);
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-uint8_t bt_mac[8];
+uint8_t power_key_password[]={OCTOPUS_KEY_POWER,OCTOPUS_KEY_POWER,OCTOPUS_KEY_POWER};
+uint8_t power_key_password_index=0;
 
 static uint32_t l_t_msg_wait_timer;
+static uint32_t l_t_msg_key_timer;
 static uint32_t l_t_msg_boot_wait_timer;
 
 static bool key_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
@@ -34,7 +36,7 @@ static bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
 static void app_do_key_action_hanlder(void);
 
 void KeySendKeyCodeEvent(uint8_t key_code, uint8_t key_state);
-void polling_power_onoff_soc(void);
+
 void app_goto_bootloader(void);
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
@@ -79,51 +81,55 @@ void app_key_stop_running(void)
 
 static void app_do_key_action_hanlder(void)
 {
-    if (GetTickCounter(&l_t_msg_wait_timer) < 20)
+    if (GetTickCounter(&l_t_msg_wait_timer) < 10)
         return;
     StartTickCounter(&l_t_msg_wait_timer);
+		
+    if ((IsTickCounterStart(&l_t_msg_key_timer)) && GetTickCounter(&l_t_msg_key_timer) >= 3000)
+			{
+				power_key_password_index=0;
+				StopTickCounter(&l_t_msg_key_timer);
+			}
 
-    uint16_t param = 0;
     Msg_t *msg = get_message(TASK_ID_KEY);
 
-    if (msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_KEY_DOWN_EVENT)
+    if (msg->msg_id != NO_MSG && msg->msg_id == MSG_OTSM_DEVICE_KEY_DOWN_EVENT)
     {
         uint8_t key = msg->param1; // get_dummy_key(msg->param1);
         GPIO_KEY_STATUS *key_status = get_key_status_by_key(key);
-
-        // LOG_LEVEL("key pressed key=%d key_status=%d\r\n",key,msg->param2);
+			  StartTickCounter(&l_t_msg_key_timer);
+				
+        //LOG_LEVEL("key pressed key=%d key_status=%d\r\n",key,msg->param2);
         switch (key)
         {
-        case OCTOPUS_KEY_0:
-        case OCTOPUS_KEY_1:
-        case OCTOPUS_KEY_14:
-            if (key_status->long_press_duration <= GPIO_KEY_STATUS_PRESS_PERIOD)
-            {
-                param = MK_WORD(KEY_CODE_MENU, KEY_STATE_PRESSED);
-                send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_KEY, CMD_MODSETUP_KEY, param);
-            }
-            else if (key_status->long_press_duration >= GPIO_KEY_STATUS_LONG_LONG_PRESS_PERIOD)
-            {
-                if (GetTickCounter(&l_t_msg_boot_wait_timer) <= 2000)
-                    app_goto_bootloader();
-            }
-            break;
-
         case OCTOPUS_KEY_POWER:
+					
+            LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d key_status=%d\r\n",key,msg->param2);
+						power_key_password_index++;
+						if(power_key_password_index == sizeof(power_key_password))
+						{
+							 send_message(TASK_ID_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_PAIR_ON, 0);
+							 power_key_password_index=0;
+		           StopTickCounter(&l_t_msg_key_timer);
+						}
+						
             if (key_status->long_press_duration >= GPIO_KEY_STATUS_LONG_PRESS_PERIOD)
             {
                 if (!key_status->ignore)
                 {
-                    LOG_LEVEL("OCTOPUS_KEY_POWER long pressed key=%d key_status=%d\r\n", key, msg->param2);
-                    polling_power_onoff_soc();
+                    LOG_LEVEL("OCTOPUS_KEY_POWER long pressed key=%d key_status=%d\r\n",  msg->param1, msg->param2);
+                     send_message(TASK_ID_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT,  0,  0);
                     key_status->ignore = true;
                 }
+								power_key_password_index=0;
             }
+
             break;
+				default:power_key_password_index=0;
         }
     }
 
-    else if (msg->id != NO_MSG && (MsgId_t)msg->id == MSG_DEVICE_KEY_UP_EVENT)
+    else if (msg->msg_id != NO_MSG && msg->msg_id == MSG_OTSM_DEVICE_KEY_UP_EVENT)
     {
         uint8_t key = msg->param1; // get_dummy_key(msg->param1);
         GPIO_KEY_STATUS *key_status = get_key_status_by_key(key);
@@ -131,16 +137,8 @@ static void app_do_key_action_hanlder(void)
         switch (key)
         {
         case OCTOPUS_KEY_0:
-            break;
         case OCTOPUS_KEY_1:
-            break;
         case OCTOPUS_KEY_14:
-
-            if (key_status->long_press_duration >= GPIO_KEY_STATUS_LONG_PRESS_PERIOD)
-            {
-                param = MK_WORD(KEY_CODE_MENU, KEY_STATE_LONG_PRESSED);
-                send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_KEY, CMD_MODSETUP_KEY, param);
-            }
             break;
         }
     }
@@ -160,25 +158,6 @@ void app_goto_bootloader(void)
 
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
-void polling_power_onoff_soc(void)
-{
-    if (is_power_on())
-    {
-        LOG_LEVEL("power down f133 soc\r\n");
-#ifdef USE_EEROM_FOR_DATA_SAVING
-        send_message(TASK_ID_CAR_INFOR, MSG_DEVICE_CAR_INFOR_EVENT, CMD_MODSYSTEM_SAVE_DATA, CMD_MODSYSTEM_SAVE_DATA);
-#endif
-        send_message(TASK_ID_SYSTEM, MSG_DEVICE_POWER_EVENT, CMD_MODSYSTEM_POWER_OFF, 0);
-        power_on_off(false);
-        if (!is_power_on())
-            LOG_LEVEL("power down f133 soc succesfuly\r\n");
-    }
-    else
-    {
-        LOG_LEVEL("power on f133 soc\r\n");
-        power_on_off(true);
-    }
-}
 
 uint8_t get_dummy_key(uint8_t key)
 {
@@ -230,7 +209,7 @@ bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
 
     if (MCU_TO_SOC_MOD_KEY == payload->frame_type)
     {
-        switch (payload->cmd)
+        switch (payload->frame_cmd)
         {
         case CMD_MODSETUP_UPDATE_TIME:
             tmp = 0x01;

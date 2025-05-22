@@ -59,7 +59,7 @@ enum MessageGroup
  */
 enum Message_Group_0_Cmd_Id
 {
-    MSG_CMD_IPC_SOCKET_HELP_INFO = 0, /**< Display Help Information */
+    MSG_IPC_CMD_HELP_INFO = 0, /**< Display Help Information */
 };
 
 /**
@@ -68,9 +68,9 @@ enum Message_Group_0_Cmd_Id
  */
 enum Message_Group_1_Cmd_Id
 {
-    MSG_CMD_IPC_SOCKET_CONFIG_FLAG = 50,  /**< Configure Socket Flags */
-    MSG_CMD_IPC_SOCKET_CONFIG_PUSH_DELAY, /**< Configure Socket Push Delay */
-    MSG_CMD_IPC_SOCKET_CONFIG_IP          /**< Configure Socket IP Address */
+    MSG_IPC_CMD_CONFIG_FLAG = 0,   /**< Configure Socket Flags */
+    MSG_IPC_CMD_CONFIG_PUSH_DELAY, /**< Configure Socket Push Delay */
+    MSG_IPC_CMD_CONFIG_IP          /**< Configure Socket IP Address */
 };
 
 /**
@@ -80,21 +80,21 @@ enum Message_Group_1_Cmd_Id
  */
 typedef enum
 {
-    MSG_CMD_CAR_GET_INDICATOR_INFO = 256, /**< Request Indicator (lights, signals) Status */
-    MSG_CMD_CAR_GET_METER_INFO,           /**< Request Meter Readings (odometer, speed, voltage) */
-    MSG_CMD_CAR_GET_BATTERY_INFO,
-    MSG_CMD_CAR_GET_ERROR_INFO,
-    MSG_CMD_CAR_GET_DRIVINFO_INFO, /**< Request Driving Information (gear, SOC, etc.) */
+    MSG_IPC_CMD_CAR_GET_INDICATOR_INFO = 0, /**< Request Indicator (lights, signals) Status */
+    MSG_IPC_CMD_CAR_GET_METER_INFO,         /**< Request Meter Readings (odometer, speed, voltage) */
+    MSG_IPC_CMD_CAR_GET_BATTERY_INFO,
+    MSG_IPC_CMD_CAR_GET_ERROR_INFO,
+    MSG_IPC_CMD_CAR_GET_DRIVINFO_INFO, /**< Request Driving Information (gear, SOC, etc.) */
 
-    MSG_CMD_CAR_METER_ODO_CLEAR,           /**< Clear Total Odometer (reset total distance) */
-    MSG_CMD_CAR_METER_TIME_CLEAR,          /**< Clear Accumulated Ride Time */
-    MSG_CMD_CAR_METER_TRIP_DISTANCE_CLEAR, /**< Clear Trip Distance Counter (trip meter) */
+    MSG_IPC_CMD_CAR_METER_ODO_CLEAR,           /**< Clear Total Odometer (reset total distance) */
+    MSG_IPC_CMD_CAR_METER_TIME_CLEAR,          /**< Clear Accumulated Ride Time */
+    MSG_IPC_CMD_CAR_METER_TRIP_DISTANCE_CLEAR, /**< Clear Trip Distance Counter (trip meter) */
 
-    MSG_CMD_CAR_SET_GEAR_LEVEL, /**< Set Car Gear */
-    MSG_CMD_CAR_SET_LIGHT,      /**< Control Headlights (turn ON/OFF) */
-    MSG_CMD_CAR_SET_LOW_BEAM,   /**< Control Low Beam Headlights (turn ON/OFF) */
-    MSG_CMD_CAR_SET_HIGH_BEAM,  /**< Control High Beam Headlights (turn ON/OFF) */
-    MSG_CMD_CAR_SETTING_SAVE    /**< Save Car Settings */
+    MSG_IPC_CMD_CAR_SET_GEAR_LEVEL, /**< Set Car Gear */
+    MSG_IPC_CMD_CAR_SET_LIGHT,      /**< Control Headlights (turn ON/OFF) */
+    MSG_IPC_CMD_CAR_SET_LOW_BEAM,   /**< Control Low Beam Headlights (turn ON/OFF) */
+    MSG_IPC_CMD_CAR_SET_HIGH_BEAM,  /**< Control High Beam Headlights (turn ON/OFF) */
+    MSG_IPC_CMD_CAR_SETTING_SAVE    /**< Save Car Settings */
 } Message_Group_11_Cmd_Id;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -108,34 +108,34 @@ typedef enum
  */
 typedef enum
 {
-    MSG_OTSM_DEVICE_NORMAL_EVENT = 256, // Normal device event message 160 after frame type
+    MSG_OTSM_DEVICE_NORMAL_EVENT = 0x64, // 100 Normal device event message after ptl_frame_type_t
     MSG_OTSM_DEVICE_ACC_EVENT,
     MSG_OTSM_DEVICE_KEY_DOWN_EVENT, // Key event message
     MSG_OTSM_DEVICE_KEY_UP_EVENT,   // Key event message
     MSG_OTSM_DEVICE_KEY_EVENT,      // Key event message
     MSG_OTSM_DEVICE_GPIO_EVENT,     // GPIO event message
-    MSG_OTSM_DEVICE_POWER_EVENT,    
+    MSG_OTSM_DEVICE_POWER_EVENT,
     MSG_OTSM_DEVICE_HANDSHAKE_EVENT,
     MSG_OTSM_DEVICE_BLE_EVENT,
     MSG_OTSM_DEVICE_CAN_EVENT,
     MSG_OTSM_DEVICE_CAR_INFOR_EVENT,
-} otsm_msg_t; //for sendmessage function
+} otsm_msg_t; // for sendmessage function
 
 typedef enum
 {
-	MSG_OTSM_CMD_CAR_SET_LIGHT = 256, ///< set car light
-	MSG_OTSM_CMD_CAR_SET_GEAR,
-	MSG_OTSM_CMD_BLE_PAIRING,
-	MSG_OTSM_CMD_BLE_PAIR_ON,
-	MSG_OTSM_CMD_BLE_PAIR_OFF,
-	MSG_OTSM_CMD_BLE_BONDED,
-	MSG_OTSM_CMD_BLE_CONNECTED,
-	MSG_OTSM_CMD_BLE_DISCONNECTED,
+    MSG_OTSM_CMD_CAR_SET_LIGHT = 0x64, // after CMD_MOD_CARINFOR_MAX = 0x64 //100
+    MSG_OTSM_CMD_CAR_SET_GEAR,
+    MSG_OTSM_CMD_BLE_PAIRING,
+    MSG_OTSM_CMD_BLE_PAIR_ON,
+    MSG_OTSM_CMD_BLE_PAIR_OFF,
+    MSG_OTSM_CMD_BLE_BONDED,
+    MSG_OTSM_CMD_BLE_CONNECTED,
+    MSG_OTSM_CMD_BLE_DISCONNECTED,
 } otsm_msg_cmd_t;
+
 /****************************************************************************************
  *                                  UTILITY MACROS
  ****************************************************************************************/
-
 /**
  * @brief   Merge two bytes into a single unsigned integer.
  * @param   byte1 The high byte.

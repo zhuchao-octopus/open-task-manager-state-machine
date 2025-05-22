@@ -201,7 +201,7 @@ bool update_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t
 	if (SOC_TO_MCU_MOD_UPDATE == payload->frame_type)
 	{
 
-		switch (payload->cmd)
+		switch (payload->frame_cmd)
 		{
 		case CMD_MODUPDATE_CHECK_FW_STATE:
 		case CMD_MODUPDATE_UPDATE_FW_STATE: // second

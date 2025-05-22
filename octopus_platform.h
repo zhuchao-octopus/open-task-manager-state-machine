@@ -43,6 +43,8 @@
 #ifndef ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 #define ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 /*******************************************************************************
  * PROJECT SWITCH MACROS
  * Define which platform and RTOS to use by enabling the corresponding macro.
@@ -54,15 +56,19 @@
 // #define PLATFORM_LINUX_RISC         // X86 ARM linux
 
 
-
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 /********************************************************************************
  * @brief Task Manager state machine modes.
  */
-#define TASK_MANAGER_STATE_MACHINE_MCU 1 /**< Main control mode. */
-//#define TASK_MANAGER_STATE_MACHINE_SOC 1 /**< (Reserved) SOC mode. */
+//#define TASK_MANAGER_STATE_MACHINE_MCU 1 /**< Main control mode. */
+#define TASK_MANAGER_STATE_MACHINE_SOC 1 /**< (Reserved) SOC mode. */
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
+ /* @brief Task Manager state machine modules.
+ */
+ 
 #define TASK_MANAGER_STATE_MACHINE_FLASH 1 
 //#define TASK_MANAGER_STATE_MACHINE_KEY 1 
 //#define TASK_MANAGER_STATE_MACHINE_GPIO 1 
@@ -79,6 +85,8 @@
 //#define TASK_MANAGER_STATE_MACHINE_IPC_SOCKET 1 
 
 ///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+//#define USE_EEROM_FOR_DATA_SAVING
 /***********************************************************************************
  * BASE INCLUDE FILES
  * Include necessary standard libraries and platform-specific headers.
@@ -99,7 +107,6 @@
  ****************************************************************************************/
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_log.h"          // Include logging functions for debugging
-#include "octopus_tickcounter.h"  // Include tick counter for timing operations
 #include "octopus_uart_ptl_1.h"   // Include UART protocol header
 #include "octopus_tickcounter.h"  // Include tick counter for timing operations
 #include "octopus_msgqueue.h"     // Include message queue header for task communication
@@ -153,8 +160,11 @@
 #include <unistd.h>
 #include "../HAL/octopus_serialport_c.h"
 
+#elif defined(PLATFORM_STM32_RTOS)
+#include "../src/native_devices.h"
+
 #else 
-//#include "../src/native_devices.h"
+
 #endif
 
 #ifdef __cplusplus
@@ -250,8 +260,16 @@ extern volatile uint32_t system_timer_tick_50us;
 * Declare any external functions used in this file.
 ******************************************************************************/
 
-#define MY_ASSERT(expr) do { if (!(expr)) { LOG_LEVEL("ASSERT FAILED: %s, FILE: %s, LINE: %d\n", #expr, __FILE__, __LINE__); while (1); } } while (0)
-
+#define MY_ASSERT(expr)                                                                      \
+    do                                                                                       \
+    {                                                                                        \
+        if (!(expr))                                                                         \
+        {                                                                                    \
+            LOG_LEVEL("ASSERT FAILED: %s, FILE: %s, LINE: %d\n", #expr, __FILE__, __LINE__); \
+            while (1)                                                                        \
+                ;                                                                            \
+        }                                                                                    \
+    } while (0)
 
 #ifdef __cplusplus
 }

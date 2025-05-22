@@ -43,7 +43,7 @@ void PollingGPIOStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_STATUS *gpio_status
 void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_status);
 void ProcessKeyDispatchedEvent(GPIO_KEY_STATUS *key_status);
 
-static uint32_t l_t_msg_wait_50_timer;
+static uint32_t l_t_msg_gpio_wait_timer;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -80,14 +80,14 @@ void app_gpio_start_running(void)
 void app_gpio_assert_running(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    StartTickCounter(&l_t_msg_wait_50_timer);
+    StartTickCounter(&l_t_msg_gpio_wait_timer);
     OTMS(TASK_ID_GPIO, OTMS_S_RUNNING);
 #endif
 }
 
 void app_gpio_running(void)
 {
-    if (GetTickCounter(&l_t_msg_wait_50_timer) >= GPIO_POLLING_PERIOD_MS)
+    if (GetTickCounter(&l_t_msg_gpio_wait_timer) >= GPIO_POLLING_PERIOD_MS)
     {
         // PollingGPIOStatus(GPIO_ACC_PIN,&acc_status);
         // PollingGPIOStatus(GPIO_DDD_PIN,&ddd_status);
@@ -141,7 +141,7 @@ void app_gpio_running(void)
 			}
 #endif
 
-        StartTickCounter(&l_t_msg_wait_50_timer);
+        StartTickCounter(&l_t_msg_gpio_wait_timer);
     }
 }
 
@@ -166,8 +166,8 @@ void app_gpio_stop_running(void)
 void gpio_init(void)
 {
     // TODO: Implement GPIO initialization here
-	  LOG_LEVEL("gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
-		hal_gpio_init(0);
+    LOG_LEVEL("gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
+    hal_gpio_init(0);
 }
 
 /**
@@ -328,7 +328,7 @@ void ProcessKeyDispatchedEvent(GPIO_KEY_STATUS *key_status)
              * KEY_STATE_PRESSED      - The current state of the key.
              */
 
-            send_message(TASK_ID_KEY, MSG_DEVICE_KEY_DOWN_EVENT, key_status->key, KEY_STATE_PRESSED);
+            send_message(TASK_ID_KEY, MSG_OTSM_DEVICE_KEY_DOWN_EVENT, key_status->key, KEY_STATE_PRESSED);
 
             // Mark the event as dispatched to prevent duplicate messages
             key_status->dispatched = true;
@@ -342,7 +342,7 @@ void ProcessKeyDispatchedEvent(GPIO_KEY_STATUS *key_status)
              * key_status->key        - The key identifier.
              * KEY_STATE_RELEASED     - The current state of the key.
              */
-            send_message(TASK_ID_KEY, MSG_DEVICE_KEY_UP_EVENT, key_status->key, KEY_STATE_RELEASED);
+            send_message(TASK_ID_KEY, MSG_OTSM_DEVICE_KEY_UP_EVENT, key_status->key, KEY_STATE_RELEASED);
 
             // Mark the event as dispatched to prevent duplicate messages
             key_status->dispatched = true;
@@ -387,15 +387,15 @@ bool is_power_on(void)
 void power_on_off(bool onoff)
 {
     if (onoff)
-		{
+    {
         hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
-		hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET);
-		}
+        hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET);
+    }
     else
-		{
+    {
         hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_RESET);
-		hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_RESET);
-		}
+        hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_RESET);
+    }
 }
 
 bool is_gpio_high(GPIO_GROUP *gpiox, uint16_t pin)

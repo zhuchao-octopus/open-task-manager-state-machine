@@ -41,25 +41,29 @@
  ******************************************************************************/
 static bool ipc_socket_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool ipc_socket_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer);
-
+static void ipc_notify_message_to_client(uint8_t msg_id, uint8_t cmd_parameter);
 /*******************************************************************************
  * Global Variables
  * Define variables accessible across multiple files if needed.
  ******************************************************************************/
+static CarInforCallback_t CarInforCallback = NULL;
 
 /*******************************************************************************
  * Local Variables
  * Define static variables used only within this file.
  ******************************************************************************/
 
-//static uint8_t l_u8_idle_swich = 0;
+static uint8_t l_u8_idle_swich = 0;
 static uint32_t l_t_msg_wait_10_timer; // Timer for 10 ms message waiting period
 static uint32_t l_t_msg_wait_500_timer;
-//static uint16_t l_t_callback_delay = 0;//1000;
+static uint16_t l_t_callback_delay = 0; // 1000;
 /*******************************************************************************
  * Global Function Implementations
  ******************************************************************************/
-
+void register_car_infor_callback(CarInforCallback_t callback)
+{
+    CarInforCallback = callback;
+}
 /**
  * @brief Initializes the system for running.
  *
@@ -70,7 +74,12 @@ void app_ipc_socket_init_running(void)
 {
     LOG_LEVEL("app_ipc_socket_init_running\r\n");
     OTMS(TASK_ID_IPC_SOCKET, OTMS_S_INVALID);
+	
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_register_module(MCU_TO_SOC_MOD_IPC, ipc_socket_send_handler, ipc_socket_receive_handler);
+#elif defined(TASK_MANAGER_STATE_MACHINE_SOC)	
+    ptl_register_module(SOC_TO_MCU_MOD_IPC, ipc_socket_send_handler, ipc_socket_receive_handler);
+#endif
 }
 
 /**
@@ -95,11 +104,11 @@ void app_ipc_socket_assert_running(void)
     StartTickCounter(&l_t_msg_wait_10_timer);
     StartTickCounter(&l_t_msg_wait_500_timer);
 
-    #ifdef TASK_MANAGER_STATE_MACHINE_MCU
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_reqest_running(MCU_TO_SOC_MOD_IPC);
-    #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
+#elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
     ptl_reqest_running(SOC_TO_MCU_MOD_IPC);
-    #endif
+#endif
     OTMS(TASK_ID_IPC_SOCKET, OTMS_S_RUNNING);
 }
 
@@ -115,28 +124,54 @@ void app_ipc_socket_running(void)
     StartTickCounter(&l_t_msg_wait_10_timer);
 
     Msg_t *msg = get_message(TASK_ID_IPC_SOCKET);
-   
-    if (msg->id == NO_MSG)
+
+    if (msg->msg_id == NO_MSG)
     {
+        if ((GetTickCounter(&l_t_msg_wait_500_timer) >= l_t_callback_delay) && (l_t_callback_delay > 0))
+        {
+            if (l_u8_idle_swich > 0)
+            {
+                ipc_notify_message_to_client(0, CMD_MOD_CARINFOR_INDICATOR);
+                l_u8_idle_swich = 0;
+            }
+            else
+            {
+                ipc_notify_message_to_client(0, CMD_MOD_CARINFOR_METER);
+                l_u8_idle_swich = 1;
+            }
+
+            StartTickCounter(&l_t_msg_wait_500_timer);
+        }
         return;
     }
-   
-    switch (msg->id)
+
+    switch (msg->msg_id)
     {
-        case MSG_DEVICE_CAR_INFOR_EVENT:
-        case MSG_DEVICE_CAN_EVENT:
-            break;
-        case MSG_CAR_SETTING_SAVE:
-        case MSG_CAR_SET_LIGHT:
-            break;
-				case MSG_CAR_SET_GEAR_LEVEL:
-            break;
+    case MSG_OTSM_DEVICE_CAR_INFOR_EVENT:
+    case MSG_OTSM_DEVICE_CAN_EVENT:
+        // LOG_LEVEL("msg->id=%d param1=%d,param2=%d\r\n", msg->id, msg->param1,msg->param2);
+        ipc_notify_message_to_client(msg->msg_id, msg->param1);
+        break;
+    case MSG_IPC_CMD_CAR_SETTING_SAVE:
+        LOG_LEVEL("MSG_IPC_CMD_CAR_SETTING_SAVE param1=%d,param2=%d \r\n", msg->param1, msg->param2);
+        send_message(TASK_ID_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MODSYSTEM_SAVE_DATA, msg->param1);
+        break;
+    case MSG_IPC_CMD_CAR_SET_LIGHT:
+        LOG_LEVEL("MSG_IPC_CMD_CAR_SET_LIGHT param1=%d,param2=%d \r\n", msg->param1, msg->param2);
+        send_message(TASK_ID_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_LIGHT, msg->param1);
+        break;
+    case MSG_IPC_CMD_CAR_SET_GEAR_LEVEL:
+        LOG_LEVEL("MSG_IPC_CMD_CAR_SET_GEAR_LEVEL param1=%d,param2=%d \r\n", msg->param1, msg->param2);
+        send_message(TASK_ID_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_GEAR_LEVEL, msg->param1);
+        break;
     }
+
     StartTickCounter(&l_t_msg_wait_500_timer);
 }
 
 void app_ipc_socket_post_running(void)
 {
+
 }
 
 void app_ipc_socket_stop_running(void)
@@ -144,9 +179,18 @@ void app_ipc_socket_stop_running(void)
     OTMS(TASK_ID_IPC_SOCKET, OTMS_S_INVALID);
 }
 
+void ipc_notify_message_to_client(uint8_t msg_id, uint8_t cmd_parameter)
+{
+    if (CarInforCallback)
+    {
+        LOG_LEVEL("msg_id=%d,cmd_parameter=%d \r\n", msg_id, cmd_parameter);
+        CarInforCallback(cmd_parameter);
+    }
+}
+
 void update_push_interval_ms(uint16_t delay_ms)
 {
-    //l_t_callback_delay = delay_ms;
+    l_t_callback_delay = delay_ms;
 }
 /*******************************************************************************
  * FUNCTION: ipc_socket_send_handler
@@ -167,16 +211,30 @@ void update_push_interval_ms(uint16_t delay_ms)
 bool ipc_socket_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
 {
     //assert(buff);         // Ensure the buffer is valid
-    //uint8_t tmp[2] = {0};   // Temporary buffer for command parameters
+    uint8_t tmp[2] = {0}; // Temporary buffer for command parameters
 
     // Handle commands for SOC_TO_MCU_MOD_SYSTEM frame type
-    LOG_LEVEL("frame_type= %d param1=%d,param2=%d\r\n",frame_type,param1,param2);
+    // LOG_LEVEL("frame_type= %d param1=%d,param2=%d\r\n",frame_type,param1,param2);
     if (SOC_TO_MCU_MOD_IPC == frame_type)
     {
         switch (param1)
         {
         case CMD_MODSYSTEM_SAVE_DATA:
-        case CMD_MODCAR_SET_LIGHT:
+            tmp[0] = param2;
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, CMD_MODSYSTEM_SAVE_DATA, tmp, 2, buff);
+            LOG_BUFF_LEVEL(buff->buff, buff->size);
+            return true;
+        case CMD_MOD_CAR_SET_LIGHT:
+            tmp[0] = param2;
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_LIGHT, tmp, 2, buff);
+            LOG_BUFF_LEVEL(buff->buff, buff->size);
+            return true;
+
+        case CMD_MOD_CAR_SET_GEAR_LEVEL:
+            tmp[0] = param2;
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_GEAR_LEVEL, tmp, 2, buff);
+            LOG_BUFF_LEVEL(buff->buff, buff->size);
+            return true;
         default:
             break;
         }
@@ -216,10 +274,10 @@ bool ipc_socket_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
     //assert(payload); 		// Ensure payload is valid
     //assert(ackbuffer); 	// Ensure acknowledgment buffer is valid
     //uint8_t tmp[1];     // Temporary variable for holding command data
-	  LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d\r\n",payload->frame_type,payload->cmd,payload->data_len);
+	  LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d\r\n",payload->frame_type,payload->frame_cmd,payload->data_len);
     if (SOC_TO_MCU_MOD_IPC == payload->frame_type)
     {
-        switch (payload->cmd)
+        switch (payload->frame_cmd)
         {
         case CMD_MODSYSTEM_SAVE_DATA:
 					  lt_carinfo_meter.unit_type = payload->data[0];
@@ -227,14 +285,14 @@ bool ipc_socket_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
 					  carinfor_save_to_flash();
 				    #endif
 						return true;
-        case CMD_MODCAR_SET_LIGHT:
+        case CMD_MOD_CAR_SET_LIGHT:
 				    if(payload->data[0] ==1)
 							bafang_lamp_on_off(true);
 						else
 							bafang_lamp_on_off(false);
 				  
             return true;
-				case CMD_MODCAR_SET_GEAR:				
+				case CMD_MOD_CAR_SET_GEAR_LEVEL:				
             bafang_set_gear(payload->data[0]);	
 				    return true;
         default:
@@ -249,7 +307,7 @@ bool ipc_socket_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
 void otsm_do_ipc_Command(uint8_t *data, uint8_t length)
 {
     LOG_LEVEL("ipc_doCommand called with length: %d\n", length);
-    LOG_BUFF_LEVEL(data,length);
+    LOG_BUFF_LEVEL(data, length);
 }
 
 

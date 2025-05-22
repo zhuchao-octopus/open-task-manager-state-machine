@@ -43,14 +43,6 @@
 /*******************************************************************************
  * MACROS
  */
-#define CELL_VOL_20 (1058) // Voltage corresponding to 20% battery charge
-#define CELL_VOL_30 (1076) // Voltage corresponding to 30% battery charge
-#define CELL_VOL_40 (1100) // Voltage corresponding to 40% battery charge
-#define CELL_VOL_50 (1120) // Voltage corresponding to 50% battery charge
-#define CELL_VOL_60 (1142) // Voltage corresponding to 60% battery charge
-#define CELL_VOL_70 (1164) // Voltage corresponding to 70% battery charge
-#define CELL_VOL_80 (1184) // Voltage corresponding to 80% battery charge
-#define CELL_VOL_90 (1206) // Voltage corresponding to 90% battery charge
 
 /*******************************************************************************
  * TYPEDEFS
@@ -59,7 +51,7 @@
 /*******************************************************************************
  * CONSTANTS
  */
-
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLARATION
  */
@@ -265,13 +257,13 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
     // LOG_LEVEL("payload->frame_type=%d payload->data_len=%d\r\n",payload->frame_type, payload->data_len);
     if (MCU_TO_SOC_MOD_CARINFOR == payload->frame_type)
     {
-        switch (payload->cmd)
+        switch (payload->frame_cmd)
         {
         case CMD_MOD_CARINFOR_INDICATOR:
             if (payload->data_len == sizeof(carinfo_indicator_t))
             {
                 memcpy(&lt_carinfo_indicator, payload->data, payload->data_len);
-                send_message(TASK_ID_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_CMD_CAR_GET_INDICATOR_INFO, 0);
+                send_message(TASK_ID_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_IPC_CMD_CAR_GET_INDICATOR_INFO, 0);
             }
             else
             {
@@ -283,7 +275,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_meter_t))
             {
                 memcpy(&lt_carinfo_meter, payload->data, payload->data_len);
-                send_message(TASK_ID_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_CMD_CAR_GET_METER_INFO, 0);
+                send_message(TASK_ID_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_IPC_CMD_CAR_GET_METER_INFO, 0);
             }
             else
             {
@@ -295,7 +287,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_battery_t))
             {
                 memcpy(&lt_carinfo_battery, payload->data, payload->data_len);
-                send_message(TASK_ID_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_CMD_CAR_GET_BATTERY_INFO, 0);
+                send_message(TASK_ID_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_IPC_CMD_CAR_GET_BATTERY_INFO, 0);
             }
             else
             {
@@ -306,7 +298,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_error_t))
             {
                 memcpy(&lt_carinfo_error, payload->data, payload->data_len);
-                send_message(TASK_ID_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_CMD_CAR_GET_ERROR_INFO, 0);
+                send_message(TASK_ID_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_IPC_CMD_CAR_GET_ERROR_INFO, 0);
             }
             else
             {
@@ -600,4 +592,5 @@ void log_sif_data(uint8_t *data, uint8_t maxlen)
     }
     LOG_("\r\n");
 }
+#endif
 #endif
