@@ -352,9 +352,10 @@ void app_car_controller_msg_handler(void)
             send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, 0);
             break;
         case CMD_MOD_CARINFOR_METER:
-            if ((lt_carinfo_meter.speed_actual > 0) && !IsTickCounterStart(&l_t_msg_car_trip_timer))
+            if ((lt_carinfo_meter.speed_actual > 0))
             {
-                StartTickCounter(&l_t_msg_car_trip_timer);
+							 if(!IsTickCounterStart(&l_t_msg_car_trip_timer))
+                  StartTickCounter(&l_t_msg_car_trip_timer);
             }
             else
             {
