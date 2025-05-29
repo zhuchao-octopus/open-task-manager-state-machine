@@ -32,28 +32,28 @@ static uint32_t l_t_msg_boot_wait_timer;
 static bool key_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
-static void app_do_key_action_hanlder(void);
+static void task_key_action_hanlder(void);
 
 void KeySendKeyCodeEvent(uint8_t key_code, uint8_t key_state);
-void app_goto_bootloader(void);
-void app_power_key_event_process(GPIO_KEY_STATUS *key_status);
+void task_key_goto_bootloader(void);
+void task_key_power_event_process(GPIO_KEY_STATUS *key_status);
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
-void app_key_init_running(void)
+void task_key_init_running(void)
 {
-    LOG_LEVEL("app_key_init_running\r\n");
+    LOG_LEVEL("task_key_init_running\r\n");
     ptl_register_module(MCU_TO_SOC_MOD_KEY, key_send_handler, key_receive_handler);
     OTMS(TASK_ID_KEY, OTMS_S_INVALID);
 }
 
-void app_key_start_running(void)
+void task_key_start_running(void)
 {
-    LOG_LEVEL("app_key_start_running\r\n");
+    LOG_LEVEL("task_key_start_running\r\n");
     OTMS(TASK_ID_KEY, OTMS_S_ASSERT_RUN);
 }
 
-void app_key_assert_running(void)
+void task_key_assert_running(void)
 {
     ptl_reqest_running(MCU_TO_SOC_MOD_KEY);
 
@@ -64,21 +64,21 @@ void app_key_assert_running(void)
 #endif
 }
 
-void app_key_running(void)
+void task_key_running(void)
 {
-    app_do_key_action_hanlder();
+    task_key_action_hanlder();
 }
 
-void app_key_post_running(void)
+void task_key_post_running(void)
 {
 }
 
-void app_key_stop_running(void)
+void task_key_stop_running(void)
 {
     OTMS(TASK_ID_KEY, OTMS_S_INVALID);
 }
 
-static void app_do_key_action_hanlder(void)
+static void task_key_action_hanlder(void)
 {
     if (GetTickCounter(&l_t_msg_wait_timer) < 10)
         return;
@@ -95,7 +95,7 @@ static void app_do_key_action_hanlder(void)
         switch (key)
         {
         case OCTOPUS_KEY_POWER:
-            app_power_key_event_process(key_status);
+            task_key_power_event_process(key_status);
             break;
         default:
             break;
@@ -110,7 +110,7 @@ static void app_do_key_action_hanlder(void)
         switch (key)
         {
         case OCTOPUS_KEY_POWER:
-            app_power_key_event_process(key_status);
+            task_key_power_event_process(key_status);
             break;
         default:
             break;
@@ -118,10 +118,9 @@ static void app_do_key_action_hanlder(void)
     }
 }
 
-void app_goto_bootloader(void)
+void task_key_goto_bootloader(void)
 {
-
-    LOG_LEVEL("reboot to dul ota to upgrade mcu ble sw.\r\n");
+  LOG_LEVEL("reboot to dul ota to upgrade mcu ble sw.\r\n");
 #if 0
 	write_reg(ADDR_OTA_FLAG,0x55AAAA55);
 	GAPRole_TerminateConnection();
@@ -130,7 +129,7 @@ void app_goto_bootloader(void)
 #endif
 }
 
-void app_power_key_event_process(GPIO_KEY_STATUS *key_status)
+void task_key_power_event_process(GPIO_KEY_STATUS *key_status)
 {
     static uint32_t power_key_wait_timer;
     if (key_status->key != OCTOPUS_KEY_POWER)
@@ -164,7 +163,7 @@ void app_power_key_event_process(GPIO_KEY_STATUS *key_status)
     case KEY_STATE_LONG_PRESSED:
         if (!key_status->ignore)
         {
-            LOG_LEVEL("OCTOPUS_KEY_POWER long pressed key=%d duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
+            LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d long duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
             // if(is_power_on())
             //	hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
             send_message(TASK_ID_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, 0, 0);

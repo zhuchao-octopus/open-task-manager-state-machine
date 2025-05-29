@@ -99,7 +99,7 @@ extern "C"
      *
      * This function sets up the necessary configurations and peripherals to start handling key events.
      */
-    void app_key_init_running(void);
+    void task_key_init_running(void);
 
     /**
      * @brief Starts the key input handling process.
@@ -107,35 +107,35 @@ extern "C"
      * This function begins the process of detecting and processing key events, allowing the system
      * to react to key presses.
      */
-    void app_key_start_running(void);
+    void task_key_start_running(void);
 
     /**
      * @brief Asserts that the key input system is running.
      *
      * This function ensures that the key input system is properly initialized and running.
      */
-    void app_key_assert_running(void);
+    void task_key_assert_running(void);
 
     /**
      * @brief Handles key input events in the running state.
      *
      * This function processes the key events in real-time, updating the system based on key actions.
      */
-    void app_key_running(void);
+    void task_key_running(void);
 
     /**
      * @brief Posts key input events for further processing.
      *
      * This function queues key input events for future processing or handling by other tasks.
      */
-    void app_key_post_running(void);
+    void task_key_post_running(void);
 
     /**
      * @brief Stops the key input handling process.
      *
      * This function stops the key input event detection, effectively disabling the key input system.
      */
-    void app_key_stop_running(void);
+    void task_key_stop_running(void);
 
 #ifdef __cplusplus
 }

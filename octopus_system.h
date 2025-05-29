@@ -84,17 +84,17 @@ extern "C"
     /**
      * @brief Mainboard (MB) state enumeration.
      */
-    typedef enum MB_STATE
+    typedef enum MB_POWER_STATE
     {
-        MB_ST_INIT = 0, /**< Initialization state. */
-        MB_ST_LOWPOWER, /**< Low-power state. */
-        MB_ST_BOOTING,  /**< Booting state. */
-        MB_ST_STANDBY,  /**< Standby state. */
-        MB_ST_ON,       /**< Fully operational state. */
-        MB_ST_PARTIAL,  /**< Partial operation state. */
-        MB_ST_SHUTDOWN, /**< Shutdown process. */
-        MB_ST_OFF,      /**< Power-off state. */
-        MB_ST_STOP,
+        MB_POWER_ST_INIT = 0, /**< Initialization state. */
+        MB_POWER_ST_LOWPOWER, /**< Low-power state. */
+        MB_POWER_ST_STANDBY,  /**< Standby state. */
+			  MB_POWER_ST_BOOTING,  /**< Booting state. */
+        MB_POWER_ST_ON,       /**< Fully operational state. */
+        MB_POWER_ST_PARTIAL,  /**< Partial operation state. */
+        MB_POWER_ST_SHUTDOWN, /**< Shutdown process. */
+        MB_POWER_ST_OFF,      /**< Power-off state. */
+        MB_POWER_ST_STOP,
     } mb_state_t;
 
     /*******************************************************************************
@@ -104,32 +104,32 @@ extern "C"
     /**
      * @brief Initialize the application system.
      */
-    void app_system_init_running(void);
+    void task_system_init_running(void);
 
     /**
      * @brief Start running the application system.
      */
-    void app_system_start_running(void);
+    void task_system_start_running(void);
 
     /**
      * @brief Assert and maintain the running state of the application system.
      */
-    void app_system_assert_running(void);
+    void task_system_assert_running(void);
 
     /**
      * @brief Execute the main running logic of the application system.
      */
-    void app_system_running(void);
+    void task_system_running(void);
 
     /**
      * @brief Post-run procedures for the application system.
      */
-    void app_system_post_running(void);
+    void task_system_post_running(void);
 
     /**
      * @brief Stop the application system.
      */
-    void app_system_stop_running(void);
+    void task_system_stop_running(void);
 
     /**
      * @brief Set the current MPU (Microprocessor Unit) status.
@@ -165,6 +165,7 @@ extern "C"
      */
     mb_state_t system_get_mb_state(void);
 
+    void system_set_mb_state(mb_state_t status);
     void system_power_on_off(bool onoff);
 #ifdef __cplusplus
 }

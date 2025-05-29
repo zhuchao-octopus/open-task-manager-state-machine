@@ -34,9 +34,9 @@ static bool can_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
  * This function registers the system module with the communication layer
  * and transitions the system task to an invalid state.
  */
-void app_can_init_running(void)
+void task_can_init_running(void)
 {
-   LOG_LEVEL("app_can_init_running\r\n");
+   LOG_LEVEL("task_can_init_running\r\n");
    OTMS(TASK_ID_CAN, OTMS_S_INVALID);
    ptl_register_module(MCU_TO_SOC_MOD_CAN, can_send_handler, can_receive_handler);
 	
@@ -46,30 +46,30 @@ void app_can_init_running(void)
 	 can_message_case_init();
 }
 
-void app_can_start_running(void)
+void task_can_start_running(void)
 {
-	  LOG_LEVEL("app_can_start_running\r\n");
+	  LOG_LEVEL("task_can_start_running\r\n");
     OTMS(TASK_ID_CAN, OTMS_S_ASSERT_RUN);
 }
 
-void app_can_assert_running(void)
+void task_can_assert_running(void)
 {
 	  ptl_reqest_running(MCU_TO_SOC_MOD_CAN);
     OTMS(TASK_ID_CAN, OTMS_S_RUNNING);
 }
 
-void app_can_running(void)
+void task_can_running(void)
 {
 		can_function_loop_rt();
 		//can_ptl_loop_10ms();
 }
 
-void app_can_post_running(void)
+void task_can_post_running(void)
 {
 	
 }
 
-void app_can_stop_running(void)
+void task_can_stop_running(void)
 {
     OTMS(TASK_ID_CAN, OTMS_S_INVALID);
 }

@@ -343,7 +343,6 @@ void hal_com_uart_receive_callback_ptl_2(const uint8_t *buffer, uint16_t length)
     uint16_t i;
 #ifdef TEST_LOG_DEBUG_UART_RX_DATA
     LOG_BUFF_LEVEL(buffer, length);
-    /// LOG_NONE("\r\n");
 #endif
     for (i = 0; i < length; i++)
     {
