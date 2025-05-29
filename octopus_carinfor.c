@@ -63,9 +63,9 @@ static bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_
 // static bool drivinfo_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 // static bool drivinfo_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
-static void app_car_controller_msg_handler(void); // Process messages related to car controller
+static void task_car_controller_msg_handler(void); // Process messages related to car controller
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
-static void app_car_controller_sif_updating(void); // Update the SIF (System Information Frame)
+static void task_car_controller_sif_updating(void); // Update the SIF (System Information Frame)
 #endif
 
 #ifdef TEST_LOG_DEBUG_SIF
@@ -106,9 +106,9 @@ static uint32_t l_t_soc_timer; // Timer for state of charge monitoring
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
-void app_carinfo_init_running(void)
+void task_carinfo_init_running(void)
 {
-    LOG_LEVEL("app_carinfo_init_running\r\n");
+    LOG_LEVEL("task_carinfo_init_running\r\n");
     ptl_register_module(MCU_TO_SOC_MOD_CARINFOR, meter_module_send_handler, meter_module_receive_handler);
     // ptl_register_module(MCU_TO_SOC_MOD_INDICATOR, indicator_module_send_handler, indicator_module_receive_handler);
     // ptl_register_module(MCU_TO_SOC_MOD_DRIV_INFO, drivinfo_module_send_handler, drivinfo_module_receive_handler);
@@ -117,9 +117,9 @@ void app_carinfo_init_running(void)
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_INVALID);
 }
 
-void app_carinfo_start_running(void)
+void task_carinfo_start_running(void)
 {
-    LOG_LEVEL("app_carinfo_start_running\r\n");
+    LOG_LEVEL("task_carinfo_start_running\r\n");
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_ASSERT_RUN);
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     lt_carinfo_indicator.ready = 1; // ready flag
@@ -128,7 +128,7 @@ void app_carinfo_start_running(void)
 #endif
 }
 
-void app_carinfo_assert_running(void)
+void task_carinfo_assert_running(void)
 {
     ptl_reqest_running(MCU_TO_SOC_MOD_CARINFOR);
     // ptl_reqest_running(MCU_TO_SOC_MOD_INDICATOR);
@@ -139,57 +139,57 @@ void app_carinfo_assert_running(void)
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_RUNNING);
 }
 
-void app_carinfo_running(void)
+void task_carinfo_running(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
-    app_car_controller_sif_updating();
+    task_car_controller_sif_updating();
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     if (GetTickCounter(&l_t_msg_wait_50_timer) < 10)
         return;
     StartTickCounter(&l_t_msg_wait_50_timer);
-    app_car_controller_msg_handler();
+    task_car_controller_msg_handler();
 #endif
 }
 
-void app_carinfo_post_running(void)
+void task_carinfo_post_running(void)
 {
     ptl_release_running(MCU_TO_SOC_MOD_CARINFOR);
     // ptl_release_running(MCU_TO_SOC_MOD_INDICATOR);
     // ptl_release_running(MCU_TO_SOC_MOD_DRIV_INFO);
 }
 
-void app_carinfo_stop_running(void)
+void task_carinfo_stop_running(void)
 {
     OTMS(TASK_ID_CAR_INFOR, OTMS_S_INVALID);
 }
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-uint16_t app_carinfo_getSpeed(void)
+uint16_t task_carinfo_getSpeed(void)
 {
     return lt_carinfo_meter.speed_actual;
 }
 
-carinfo_indicator_t *app_carinfo_get_indicator_info(void)
+carinfo_indicator_t *task_carinfo_get_indicator_info(void)
 {
     return &lt_carinfo_indicator;
 }
 
-carinfo_meter_t *app_carinfo_get_meter_info(void)
+carinfo_meter_t *task_carinfo_get_meter_info(void)
 {
     return &lt_carinfo_meter;
 }
-carinfo_battery_t *app_carinfo_get_battery_info(void)
+carinfo_battery_t *task_carinfo_get_battery_info(void)
 {
     return &lt_carinfo_battery;
 }
-carinfo_error_t *app_carinfo_get_error_info(void)
+carinfo_error_t *task_carinfo_get_error_info(void)
 {
     return &lt_carinfo_error;
 }
 
-carinfo_drivinfo_t *app_carinfo_get_drivinfo_info(void)
+carinfo_drivinfo_t *task_carinfo_get_drivinfo_info(void)
 {
     return NULL; //&lt_drivinfo;
 }
@@ -315,7 +315,7 @@ uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec)
     return distance_m;
 }
 
-void app_car_controller_msg_handler(void)
+void task_car_controller_msg_handler(void)
 {
     uint32_t trip_timer = 0;
     uint32_t trip_distances = 0;
@@ -391,7 +391,7 @@ void app_car_controller_msg_handler(void)
 // ERROR_CODE_LAMP_SENSOR_ABNORMALITY = 0X24,                   // 大灯传感器故障
 // ERROR_CODE_COMMUNICATION_ABNORMALITY = 0X30,                 // 通讯故障
 //  添加错误代码
-void app_carinfo_add_error_code(ERROR_CODE error_code)
+void task_carinfo_add_error_code(ERROR_CODE error_code)
 {
     if (error_code != lt_carinfo_error.error[0])
     {
@@ -475,7 +475,7 @@ void app_carinfo_add_error_code(ERROR_CODE error_code)
 }
 
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
-void app_car_controller_sif_updating(void)
+void task_car_controller_sif_updating(void)
 {
     uint8_t res = SIF_ReadData(sif_buff, sizeof(sif_buff));
     // uint8_t lt_meter_current_gear = 0;

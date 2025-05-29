@@ -80,24 +80,24 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
     [TASK_ID_SYSTEM] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
-            [OTMS_S_INIT] = app_system_init_running,
-            [OTMS_S_START] = app_system_start_running,
-            [OTMS_S_ASSERT_RUN] = app_system_assert_running,
-            [OTMS_S_RUNNING] = app_system_running,
-            [OTMS_S_POST_RUN] = app_system_post_running,
-            [OTMS_S_STOP] = app_system_stop_running,
+            [OTMS_S_INIT] = task_system_init_running,
+            [OTMS_S_START] = task_system_start_running,
+            [OTMS_S_ASSERT_RUN] = task_system_assert_running,
+            [OTMS_S_RUNNING] = task_system_running,
+            [OTMS_S_POST_RUN] = task_system_post_running,
+            [OTMS_S_STOP] = task_system_stop_running,
         },
     },
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     [TASK_ID_GPIO] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
-            [OTMS_S_INIT] = app_gpio_init_running,
-            [OTMS_S_START] = app_gpio_start_running,
-            [OTMS_S_ASSERT_RUN] = app_gpio_assert_running,
-            [OTMS_S_RUNNING] = app_gpio_running,
-            [OTMS_S_POST_RUN] = app_gpio_post_running,
-            [OTMS_S_STOP] = app_gpio_stop_running,
+            [OTMS_S_INIT] = task_gpio_init_running,
+            [OTMS_S_START] = task_gpio_start_running,
+            [OTMS_S_ASSERT_RUN] = task_gpio_assert_running,
+            [OTMS_S_RUNNING] = task_gpio_running,
+            [OTMS_S_POST_RUN] = task_gpio_post_running,
+            [OTMS_S_STOP] = task_gpio_stop_running,
         },
     },
 #endif
@@ -105,12 +105,12 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
     [TASK_ID_CAR_INFOR] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
-            [OTMS_S_INIT] = app_carinfo_init_running,
-            [OTMS_S_START] = app_carinfo_start_running,
-            [OTMS_S_ASSERT_RUN] = app_carinfo_assert_running,
-            [OTMS_S_RUNNING] = app_carinfo_running,
-            [OTMS_S_POST_RUN] = app_carinfo_post_running,
-            [OTMS_S_STOP] = app_carinfo_stop_running,
+            [OTMS_S_INIT] = task_carinfo_init_running,
+            [OTMS_S_START] = task_carinfo_start_running,
+            [OTMS_S_ASSERT_RUN] = task_carinfo_assert_running,
+            [OTMS_S_RUNNING] = task_carinfo_running,
+            [OTMS_S_POST_RUN] = task_carinfo_post_running,
+            [OTMS_S_STOP] = task_carinfo_stop_running,
         },
     },
 
@@ -120,12 +120,12 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
     [TASK_ID_BLE] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
-            [OTMS_S_INIT] = app_ble_init_running,
-            [OTMS_S_START] = app_ble_start_running,
-            [OTMS_S_ASSERT_RUN] = app_ble_assert_running,
-            [OTMS_S_RUNNING] = app_ble_running,
-            [OTMS_S_POST_RUN] = app_ble_post_running,
-            [OTMS_S_STOP] = app_ble_stop_running,
+            [OTMS_S_INIT] = task_ble_init_running,
+            [OTMS_S_START] = task_ble_start_running,
+            [OTMS_S_ASSERT_RUN] = task_ble_assert_running,
+            [OTMS_S_RUNNING] = task_ble_running,
+            [OTMS_S_POST_RUN] = task_ble_post_running,
+            [OTMS_S_STOP] = task_ble_stop_running,
         },
     },
 #endif
@@ -134,12 +134,12 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
     [TASK_ID_KEY] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
-            [OTMS_S_INIT] = app_key_init_running,
-            [OTMS_S_START] = app_key_start_running,
-            [OTMS_S_ASSERT_RUN] = app_key_assert_running,
-            [OTMS_S_RUNNING] = app_key_running,
-            [OTMS_S_POST_RUN] = app_key_post_running,
-            [OTMS_S_STOP] = app_key_stop_running,
+            [OTMS_S_INIT] = task_key_init_running,
+            [OTMS_S_START] = task_key_start_running,
+            [OTMS_S_ASSERT_RUN] = task_key_assert_running,
+            [OTMS_S_RUNNING] = task_key_running,
+            [OTMS_S_POST_RUN] = task_key_post_running,
+            [OTMS_S_STOP] = task_key_stop_running,
         },
     },
 #endif
@@ -149,24 +149,24 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
     [TASK_ID_UPDATE_MCU] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
-            [OTMS_S_INIT] = app_update_mcu_init_running,
-            [OTMS_S_START] = app_update_mcu_start_running,
-            [OTMS_S_ASSERT_RUN] = app_update_mcu_assert_running,
-            [OTMS_S_RUNNING] = app_update_mcu_running,
-            [OTMS_S_POST_RUN] = app_update_mcu_post_running,
-            [OTMS_S_STOP] = app_update_mcu_stop_running,
+            [OTMS_S_INIT] = task_update_mcu_init_running,
+            [OTMS_S_START] = task_update_mcu_start_running,
+            [OTMS_S_ASSERT_RUN] = task_update_mcu_assert_running,
+            [OTMS_S_RUNNING] = task_update_mcu_running,
+            [OTMS_S_POST_RUN] = task_update_mcu_post_running,
+            [OTMS_S_STOP] = task_update_mcu_stop_running,
         },
     },
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
     [TASK_ID_UPDATE_SOC] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
-            [OTMS_S_INIT] = app_update_soc_init_running,
-            [OTMS_S_START] = app_update_soc_start_running,
-            [OTMS_S_ASSERT_RUN] = app_update_soc_assert_running,
-            [OTMS_S_RUNNING] = app_update_soc_running,
-            [OTMS_S_POST_RUN] = app_update_soc_post_running,
-            [OTMS_S_STOP] = app_update_soc_stop_running,
+            [OTMS_S_INIT] = task_update_soc_init_running,
+            [OTMS_S_START] = task_update_soc_start_running,
+            [OTMS_S_ASSERT_RUN] = task_update_soc_assert_running,
+            [OTMS_S_RUNNING] = task_update_soc_running,
+            [OTMS_S_POST_RUN] = task_update_soc_post_running,
+            [OTMS_S_STOP] = task_update_soc_stop_running,
         },
     },
 #endif
@@ -176,12 +176,12 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
     [TASK_ID_CAN] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
-            [OTMS_S_INIT] = app_can_init_running,
-            [OTMS_S_START] = app_can_start_running,
-            [OTMS_S_ASSERT_RUN] = app_can_assert_running,
-            [OTMS_S_RUNNING] = app_can_running,
-            [OTMS_S_POST_RUN] = app_can_post_running,
-            [OTMS_S_STOP] = app_can_stop_running,
+            [OTMS_S_INIT] = task_can_init_running,
+            [OTMS_S_START] = task_can_start_running,
+            [OTMS_S_ASSERT_RUN] = task_can_assert_running,
+            [OTMS_S_RUNNING] = task_can_running,
+            [OTMS_S_POST_RUN] = task_can_post_running,
+            [OTMS_S_STOP] = task_can_stop_running,
         },
     },
 #endif
@@ -190,12 +190,12 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
     [TASK_ID_PTL_BAFANG] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
-            [OTMS_S_INIT] = app_bafang_ptl_init_running,
-            [OTMS_S_START] = app_bafang_ptl_start_running,
-            [OTMS_S_ASSERT_RUN] = app_bafang_ptl_assert_running,
-            [OTMS_S_RUNNING] = app_bafang_ptl_running,
-            [OTMS_S_POST_RUN] = app_bafang_ptl_post_running,
-            [OTMS_S_STOP] = app_bafang_ptl_stop_running,
+            [OTMS_S_INIT] = task_bfang_ptl_init_running,
+            [OTMS_S_START] = task_bfang_ptl_start_running,
+            [OTMS_S_ASSERT_RUN] = task_bfang_ptl_assert_running,
+            [OTMS_S_RUNNING] = task_bfang_ptl_running,
+            [OTMS_S_POST_RUN] = task_bfang_ptl_post_running,
+            [OTMS_S_STOP] = task_bfang_ptl_stop_running,
         },
     },
 #endif
@@ -204,12 +204,12 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
     [TASK_ID_IPC_SOCKET] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
-            [OTMS_S_INIT] = app_ipc_socket_init_running,
-            [OTMS_S_START] = app_ipc_socket_start_running,
-            [OTMS_S_ASSERT_RUN] = app_ipc_socket_assert_running,
-            [OTMS_S_RUNNING] = app_ipc_socket_running,
-            [OTMS_S_POST_RUN] = app_ipc_socket_post_running,
-            [OTMS_S_STOP] = app_ipc_socket_stop_running,
+            [OTMS_S_INIT] = task_ipc_init_running,
+            [OTMS_S_START] = task_ipc_start_running,
+            [OTMS_S_ASSERT_RUN] = task_ipc_assert_running,
+            [OTMS_S_RUNNING] = task_ipc_running,
+            [OTMS_S_POST_RUN] = task_ipc_post_running,
+            [OTMS_S_STOP] = task_ipc_stop_running,
         },
     },
 #endif

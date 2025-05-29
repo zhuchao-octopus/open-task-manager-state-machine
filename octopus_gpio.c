@@ -28,6 +28,7 @@
 #include "octopus_gpio.h"     // Include GPIO control and configuration
 #include "octopus_flash.h"    // Include flash memory access functions
 #include "octopus_key.h"      // Include key status and event handling
+#include "octopus_system.h" 
 
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
 /*******************************************************************************
@@ -40,8 +41,8 @@
 
 void GPIOInit(void);
 void PollingGPIOStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_STATUS *gpio_status);
-void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_status);
-void ProcessKeyDispatchedEvent(GPIO_KEY_STATUS *key_status);
+void PollingGPIOKeyEventStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_status);
+void PollingGPIOKeyEventDispatcher(GPIO_KEY_STATUS *key_status);
 
 // static uint32_t l_t_msg_gpio_wait_timer;
 
@@ -53,64 +54,61 @@ void ProcessKeyDispatchedEvent(GPIO_KEY_STATUS *key_status);
 // GPIO_STATUS ddd_status = {false, true, 0, 0};
 // GPIO_STATUS zzd_status = {false, true, 0, 0};
 // GPIO_STATUS yzd_status = {false, true, 0, 0};
-// GPIO_STATUS skd_status = {false, true, 0, 0};
+
+GPIO_STATUS power_pin_status = {false, true, 0, 0};
 
 GPIO_KEY_STATUS key_status_power = {OCTOPUS_KEY_POWER, 0};
-
 GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_power};
+
 // static bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff);
 // static bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
-void app_gpio_init_running(void)
+void task_gpio_init_running(void)
 {
-    LOG_LEVEL("app_gpio_init_running\r\n");
+    LOG_LEVEL("task_gpio_init_running\r\n");
     // com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
     OTMS(TASK_ID_GPIO, OTMS_S_INVALID);
 }
 
-void app_gpio_start_running(void)
+void task_gpio_start_running(void)
 {
-    LOG_LEVEL("app_gpio_start_running\r\n");
+    LOG_LEVEL("task_gpio_start_running\r\n");
     OTMS(TASK_ID_GPIO, OTMS_S_ASSERT_RUN);
 }
 
-void app_gpio_assert_running(void)
+void task_gpio_assert_running(void)
 {
     // StartTickCounter(&l_t_msg_gpio_wait_timer);
     OTMS(TASK_ID_GPIO, OTMS_S_RUNNING);
 }
 
-void app_gpio_running(void)
+void task_gpio_running(void)
 {
-
     // PollingGPIOStatus(GPIO_ACC_PIN,&acc_status);
     // PollingGPIOStatus(GPIO_DDD_PIN,&ddd_status);
     // PollingGPIOStatus(GPIO_ZZD_PIN,&zzd_status);
     // PollingGPIOStatus(GPIO_YZD_PIN,&yzd_status);
-    // PollingGPIOStatus(GPIO_SKD_PIN,&skd_status);
-    if (!is_gpio_high(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN))
-        hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
-    PollingGPIOKeyStatus(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, &key_status_power);
-    ProcessKeyDispatchedEvent(&key_status_power);
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-#if 0
-		if(acc_status.changed)
-		{
-		LOG_LEVEL("get acc status=%d\r\n",acc_status.offon);
-		send_message(TASK_ID_BLE, MSG_DEVICE_ACC_EVENT, GPIO_ACC_PIN, acc_status.offon);
-		if(acc_status.offon)
-		send_message(TASK_ID_SYSTEM, MSG_DEVICE_POWER_EVENT, CMD_MODSYSTEM_POWER_ON, acc_status.offon);
-		else
-		send_message(TASK_ID_SYSTEM, MSG_DEVICE_POWER_EVENT, CMD_MODSYSTEM_POWER_OFF, acc_status.offon);
+	  if(system_get_mb_state() != MB_POWER_ST_ON) return;
+	
+    PollingGPIOStatus(GPIO_POWER_KEY_GROUP,GPIO_POWER_KEY_PIN,&power_pin_status);		
+	
+		//////////////////////////////////////////////////////////////////////////////////////////////////////
+	  PollingGPIOKeyEventStatus(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, &key_status_power);
+		//////////////////////////////////////////////////////////////////////////////////////////////////////
+	  PollingGPIOKeyEventDispatcher(&key_status_power);
+		//////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		acc_status.changed=false;
+		if(power_pin_status.changed)
+		{		
+			LOG_LEVEL("power_pin_status=%d\r\n",power_pin_status.offon);	
+			send_message(TASK_ID_KEY, MSG_OTSM_DEVICE_GPIO_EVENT, GPIO_POWER_KEY_PIN, power_pin_status.offon);
+			power_pin_status.changed=false;
 		}	
-
+		
+#if 0
 		if(ddd_status.changed)
 		{
 		LOG_LEVEL("get ddd status=%d\r\n",ddd_status.offon);
@@ -141,11 +139,11 @@ void app_gpio_running(void)
 #endif
 }
 
-void app_gpio_post_running(void)
+void task_gpio_post_running(void)
 {
 }
 
-void app_gpio_stop_running(void)
+void task_gpio_stop_running(void)
 {
     OTMS(TASK_ID_GPIO, OTMS_S_INVALID);
 }
@@ -241,7 +239,7 @@ void PollingGPIOStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_STATUS *gpio_status
  * @param pin The specific GPIO pin number to be polled.
  * @param key_status Pointer to the `GPIO_KEY_STATUS` structure to be updated with the current status.
  */
-void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_status)
+void PollingGPIOKeyEventStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_status)
 {
     static uint32_t g_start_gpio_tickcounter = 0;
     // Read the current status of the GPIO pin (1 for high, 0 for low)
@@ -318,7 +316,7 @@ void PollingGPIOKeyStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_
  *
  * @param key_status Pointer to the `GPIO_KEY_STATUS` structure representing the key's status.
  */
-void ProcessKeyDispatchedEvent(GPIO_KEY_STATUS *key_status)
+void PollingGPIOKeyEventDispatcher(GPIO_KEY_STATUS *key_status)
 {
     // Check if the event has not been dispatched already or is ignored by user
     if (!key_status->dispatched && !key_status->ignore)
@@ -407,6 +405,7 @@ bool is_gpio_high(GPIO_GROUP *gpiox, uint16_t pin)
 {
     return hal_gpio_read(gpiox, pin);
 }
+
 /*
 bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff)
 {

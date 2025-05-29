@@ -88,7 +88,7 @@ void TaskManagerStateMachineInit(uint8_t task_id)
 void TaskManagerStateMachineInit(void)
 #endif
 {
-    LOG_NONE("---------------------------------------------------------------------------\r\n");
+    LOG_NONE("-----------------------------------------------------------------------------\r\n");
     LOG_NONE("               _____                                 \r\n");
     LOG_NONE(" ______ _________  /_______ ________ ____  __________\r\n");
     LOG_NONE(" _  __ \\_  ___/_  __/_  __ \\___  __ \\_  / / /__  ___/\r\n");
@@ -100,7 +100,7 @@ void TaskManagerStateMachineInit(void)
     LOG_NONE(" Firmware  : v1.0.0\r\n");
     LOG_NONE(" Compiled  : %s %s\r\n", __DATE__, __TIME__);
     LOG_NONE(" Author    : Octopus Dev Team\r\n");
-    LOG_NONE("---------------------------------------------------------------------------\r\n");
+    LOG_NONE("-----------------------------------------------------------------------------\r\n");
 	
 #ifdef PLATFORM_CST_OSAL_RTOS
     TaskManagerStateMachine_Id_ = task_id; // Store the task ID in the global variable
@@ -160,8 +160,9 @@ void TaskManagerStateMachineInit(void)
 #endif
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
-    LOG_NONE("----------------------------------------------------------------------------------\r\n");
+    LOG_NONE("-----------------------------------------------------------------------------\r\n");
     flash_load_user_data_infor();
+	system_set_mb_state(MB_POWER_ST_ON);
 }
 
 #if defined(PLATFORM_ITE_OPEN_RTOS) || defined(PLATFORM_LINUX_RISC)

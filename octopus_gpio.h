@@ -50,7 +50,7 @@ extern "C"
         bool ignore;     /// ignore the key until press again
         uint8_t state;
         uint32_t press_duration; ///< Duration for long-press detection.
-        // uint16_t press_count;         ///< Counter for tracking press actions.
+        // uint16_t press_count; ///< Counter for tracking press actions.
     } GPIO_KEY_STATUS;
 
     /*******************************************************************************
@@ -73,12 +73,12 @@ extern "C"
      */
     void gpio_init(void);
 
-    void app_gpio_init_running(void);   ///< Initializes GPIO tasks at runtime.
-    void app_gpio_start_running(void);  ///< Starts GPIO tasks.
-    void app_gpio_assert_running(void); ///< Asserts GPIO tasks are running.
-    void app_gpio_running(void);        ///< Manages GPIO tasks during runtime.
-    void app_gpio_post_running(void);   ///< Handles post-processing of GPIO tasks.
-    void app_gpio_stop_running(void);   ///< Stops GPIO tasks during runtime.
+    void task_gpio_init_running(void);   ///< Initializes GPIO tasks at runtime.
+    void task_gpio_start_running(void);  ///< Starts GPIO tasks.
+    void task_gpio_assert_running(void); ///< Asserts GPIO tasks are running.
+    void task_gpio_running(void);        ///< Manages GPIO tasks during runtime.
+    void task_gpio_post_running(void);   ///< Handles post-processing of GPIO tasks.
+    void task_gpio_stop_running(void);   ///< Stops GPIO tasks during runtime.
 
     GPIO_KEY_STATUS *get_key_status_by_key(uint8_t key);
 

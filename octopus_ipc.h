@@ -1,5 +1,5 @@
 /*******************************************************************************
- * @file     octopus_ipc_socket.h
+ * @file     octopus_ipc.h
  * @brief    Provides system management functions for task manager, including
  *           version information, state machine management, and MCU update states.
  *
@@ -51,35 +51,33 @@ extern "C"
     /**
      * @brief Initialize the application system.
      */
-    void app_ipc_socket_init_running(void);
+    void task_ipc_init_running(void);
 
     /**
      * @brief Start running the application system.
      */
-    void app_ipc_socket_start_running(void);
+    void task_ipc_start_running(void);
 
     /**
      * @brief Assert and maintain the running state of the application system.
      */
-    void app_ipc_socket_assert_running(void);
+    void task_ipc_assert_running(void);
 
     /**
      * @brief Execute the main running logic of the application system.
      */
-    void app_ipc_socket_running(void);
+    void task_ipc_running(void);
 
     /**
      * @brief Post-run procedures for the application system.
      */
-    void app_ipc_socket_post_running(void);
+    void task_ipc_post_running(void);
 
-    void app_ipc_socket_stop_running(void);
+    void task_ipc_stop_running(void);
 
     void register_car_infor_callback(CarInforCallback_t callback);
 
     void update_push_interval_ms(uint16_t delay_ms);
-
-    void otsm_do_ipc_Command(uint8_t *data, uint8_t length);
 
 #ifdef __cplusplus
 }

@@ -101,7 +101,6 @@
  ****************************************************************************************/
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_log.h"          // Include logging functions for debugging
-#include "octopus_tickcounter.h"  // Include tick counter for timing operations
 #include "octopus_uart_ptl_1.h"   // Include UART protocol header
 #include "octopus_tickcounter.h"  // Include tick counter for timing operations
 #include "octopus_msgqueue.h"     // Include message queue header for task communication
@@ -158,7 +157,7 @@
 #elif defined(PLATFORM_STM32_RTOS)
 #include "../src/native_devices.h"
 
-#else
+#else 
 
 #endif
 
@@ -250,24 +249,22 @@ extern volatile uint32_t system_timer_tick_50us;
  ******************************************************************************/
 #define PI_FLOAT (3.14159f) // Value of �� as a floating-point constant
 
-    /*******************************************************************************
-     * FUNCTION DECLARATIONS
-     * Declare any external functions used in this file.
-     ******************************************************************************/
-
-#define MY_ASSERT(expr)                                                                      \
-    do                                                                                       \
-    {                                                                                        \
-        if (!(expr))                                                                         \
-        {                                                                                    \
-            LOG_LEVEL("ASSERT FAILED: %s, FILE: %s, LINE: %d\n", #expr, __FILE__, __LINE__); \
-            while (1)                                                                        \
-                ;                                                                            \
-        }                                                                                    \
+/*******************************************************************************
+* FUNCTION DECLARATIONS
+* Declare any external functions used in this file.
+******************************************************************************/
+#define MY_ASSERT(expr)                                                                 \
+    do {                                                                                 \
+        if (!(expr)) {                                                                   \
+            LOG_LEVEL("ASSERT WARNING: %s, FILE: %s, LINE: %d\n",                        \
+                      #expr, __FILE__, __LINE__);                                        \
+        }                                                                                \
     } while (0)
+
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif // ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
+

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * @file     octopus_ipc_socket.c
+ * @file     octopus_ipc.c
  * @brief    Implements the system control logic for managing states,
  *           message handling, and UART communication in an embedded application.
  *
@@ -39,8 +39,8 @@
  * Local Function Declarations
  * Declare static functions used only within this file.
  ******************************************************************************/
-static bool ipc_socket_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
-static bool ipc_socket_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer);
+static bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
+static bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer);
 static void ipc_notify_message_to_client(uint8_t msg_id, uint8_t cmd_parameter);
 /*******************************************************************************
  * Global Variables
@@ -70,15 +70,15 @@ void register_car_infor_callback(CarInforCallback_t callback)
  * This function registers the system module with the communication layer
  * and transitions the system task to an invalid state.
  */
-void app_ipc_socket_init_running(void)
+void task_ipc_init_running(void)
 {
-    LOG_LEVEL("app_ipc_socket_init_running\r\n");
+    LOG_LEVEL("task_ipc_init_running\r\n");
     OTMS(TASK_ID_IPC_SOCKET, OTMS_S_INVALID);
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    ptl_register_module(MCU_TO_SOC_MOD_IPC, ipc_socket_send_handler, ipc_socket_receive_handler);
+    ptl_register_module(MCU_TO_SOC_MOD_IPC, ipc_send_handler, ipc_receive_handler);
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
-    ptl_register_module(SOC_TO_MCU_MOD_IPC, ipc_socket_send_handler, ipc_socket_receive_handler);
+    ptl_register_module(SOC_TO_MCU_MOD_IPC, ipc_send_handler, ipc_receive_handler);
 #endif
 }
 
@@ -87,9 +87,9 @@ void app_ipc_socket_init_running(void)
  *
  * This function transitions the system task to the "assert run" state.
  */
-void app_ipc_socket_start_running(void)
+void task_ipc_start_running(void)
 {
-    LOG_LEVEL("app_ipc_socket_start_running\r\n");
+    LOG_LEVEL("task_ipc_start_running\r\n");
     OTMS(TASK_ID_IPC_SOCKET, OTMS_S_ASSERT_RUN);
 }
 
@@ -99,7 +99,7 @@ void app_ipc_socket_start_running(void)
  * This function starts timers, requests the system to start running,
  * and transitions the system task to the running state.
  */
-void app_ipc_socket_assert_running(void)
+void task_ipc_assert_running(void)
 {
     StartTickCounter(&l_t_msg_wait_10_timer);
     StartTickCounter(&l_t_msg_wait_500_timer);
@@ -117,7 +117,7 @@ void app_ipc_socket_assert_running(void)
  *
  * Processes system messages and handles events like power on/off and device events.
  */
-void app_ipc_socket_running(void)
+void task_ipc_running(void)
 {
     if (GetTickCounter(&l_t_msg_wait_10_timer) < 10)
         return;
@@ -169,11 +169,11 @@ void app_ipc_socket_running(void)
     StartTickCounter(&l_t_msg_wait_500_timer);
 }
 
-void app_ipc_socket_post_running(void)
+void task_ipc_post_running(void)
 {
 }
 
-void app_ipc_socket_stop_running(void)
+void task_ipc_stop_running(void)
 {
     OTMS(TASK_ID_IPC_SOCKET, OTMS_S_INVALID);
 }
@@ -192,7 +192,7 @@ void update_push_interval_ms(uint16_t delay_ms)
     l_t_callback_delay = delay_ms;
 }
 /*******************************************************************************
- * FUNCTION: ipc_socket_send_handler
+ * FUNCTION: ipc_send_handler
  *
  * DESCRIPTION:
  * Handles the sending of system-related commands based on the frame type and parameters.
@@ -207,7 +207,7 @@ void update_push_interval_ms(uint16_t delay_ms)
  * RETURNS:
  * - true if the command was processed successfully, false otherwise.
  ******************************************************************************/
-bool ipc_socket_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
+bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
 {
     // assert(buff);         // Ensure the buffer is valid
     uint8_t tmp[2] = {0}; // Temporary buffer for command parameters
@@ -251,7 +251,7 @@ bool ipc_socket_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint1
 }
 
 /*******************************************************************************
- * FUNCTION: ipc_socket_receive_handler
+ * FUNCTION: ipc_receive_handler
  *
  * DESCRIPTION:
  * Handles the reception of system-related commands based on the payload and sends appropriate responses.
@@ -268,7 +268,7 @@ bool ipc_socket_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint1
 // static const uint8_t protocol_cmd_lamp_off[3] = { 0x16, 0x1A, 0xF0 };  //¹ØµÆ
 extern void bafang_lamp_on_off(bool on_off);
 extern void bafang_set_gear(uint8_t level);
-bool ipc_socket_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer)
+bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer)
 {
     // assert(payload);    // Ensure payload is valid
     // assert(ackbuffer);  // Ensure acknowledgment buffer is valid

@@ -66,24 +66,24 @@ static uint32_t l_t_msg_ble_lock_wait_timer = 0;
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
-void app_ble_init_running(void)
+void task_ble_init_running(void)
 {
 	OTMS(TASK_ID_BLE, OTMS_S_INVALID);
 #ifdef TASK_MANAGER_STATE_MACHINE_BLE
-	LOG_LEVEL("app_ble_init_running\r\n");
+	LOG_LEVEL("task_ble_init_running\r\n");
 	// com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
 	hal_disable_bLe_pair_mode();
 	update_bonded_mac();
 #endif
 }
 
-void app_ble_start_running(void)
+void task_ble_start_running(void)
 {
-	LOG_LEVEL("app_ble_start_running\r\n");
+	LOG_LEVEL("task_ble_start_running\r\n");
 	OTMS(TASK_ID_BLE, OTMS_S_ASSERT_RUN);
 }
 
-void app_ble_assert_running(void)
+void task_ble_assert_running(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_BLE
 	StartTickCounter(&l_t_msg_wait_10_timer);
@@ -92,7 +92,7 @@ void app_ble_assert_running(void)
 #endif
 }
 
-void app_ble_running(void)
+void task_ble_running(void)
 {
 	if (GetTickCounter(&l_t_msg_wait_10_timer) < 10)
 		return;
@@ -142,11 +142,11 @@ void app_ble_running(void)
 	}
 }
 
-void app_ble_post_running(void)
+void task_ble_post_running(void)
 {
 }
 
-void app_ble_stop_running(void)
+void task_ble_stop_running(void)
 {
 	OTMS(TASK_ID_BLE, OTMS_S_INVALID);
 }
@@ -243,7 +243,7 @@ void StartToUnlock(void)
 
 void BLE_connecttion_polling(void)
 {
-	// uint32_t speed = app_carinfo_getSpeed();
+	// uint32_t speed = task_carinfo_getSpeed();
 	// PRINT("OnDelaySleepSystem %d\r\n", speed);
 	if (ble_status.to_lock && GetTickCounter(&l_t_msg_ble_lock_wait_timer) > 10000)
 	{

@@ -201,16 +201,15 @@ static const UartSendPtlBafangCmdCtrl_t protocolProcessCmdTable[] =
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
-void app_bafang_ptl_init_running(void)
+void task_bfang_ptl_init_running(void)
 {
     OTMS(TASK_ID_PTL_BAFANG, OTMS_S_INVALID);
-    LOG_LEVEL("app_bafang_ptl_init_running\r\n");
+    LOG_LEVEL("task_bafang_ptl_init_running\r\n");
 }
 
-void app_bafang_ptl_start_running(void)
+void task_bfang_ptl_start_running(void)
 {
-    LOG_LEVEL("app_bafang_ptl_start_running\r\n");
-    // ֻ���ǰ˷�Э�������²����и�״̬��
+    LOG_LEVEL("task_bafang_ptl_start_running\r\n");
     // if (SETTING_PTL_BAFANG == theEnvInfo.ptl)
     {
         /// ptl_register_module(SETTING_PTL_BAFANG, bafang_send_handler,bafang_receive_handler);
@@ -219,13 +218,13 @@ void app_bafang_ptl_start_running(void)
     }
 }
 
-void app_bafang_ptl_assert_running(void)
+void task_bfang_ptl_assert_running(void)
 {
     StartTickCounter(&lt_timer);
     OTMS(TASK_ID_PTL_BAFANG, OTMS_S_RUNNING);
 }
 
-void app_bafang_ptl_running(void)
+void task_bfang_ptl_running(void)
 {
     if (GetTickCounter(&lt_timer) < 10)
     {
@@ -242,7 +241,7 @@ void app_bafang_ptl_running(void)
     com_uart_ptl_bafang_tx_process();
 }
 
-void app_bafang_ptl_post_running(void)
+void task_bfang_ptl_post_running(void)
 {
     // printf("%s\n", __FUNCTION__);
     // if(true != system_get_power_off_req())
@@ -251,9 +250,8 @@ void app_bafang_ptl_post_running(void)
     }
 }
 
-void app_bafang_ptl_stop_running(void)
+void task_bfang_ptl_stop_running(void)
 {
-    printf("%s\n", __FUNCTION__);
     OTMS(TASK_ID_PTL_BAFANG, OTMS_S_INVALID);
 }
 
@@ -363,36 +361,43 @@ static bool bafang_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff)
     if (res == false)
     {
         //系统状态协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_system_state\r\n");
         res = proc_protocol_frame_system_state(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
         //工作状态协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_working_state\r\n");
         res = proc_protocol_frame_working_state(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
         //电池电量协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_soc\r\n");
         res = proc_protocol_frame_soc(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
         //速度协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_speed\r\n");
         res = proc_protocol_frame_speed(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
         //瞬时电流协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_instantaneous_current\r\n");
         res = proc_protocol_frame_instantaneous_current(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
         //电池信息协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_battery_info\r\n");
         res = proc_protocol_frame_battery_info(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
         //电芯信息协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_cell_info\r\n");
         res = proc_protocol_frame_cell_info(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
 
@@ -646,7 +651,7 @@ bool proc_protocol_frame_system_state(uint8_t* buff, int count)
             else
             {
                 send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR); // CMD_MOD_CARINFOR_INDICATOR
-                app_carinfo_add_error_code(code);
+                task_carinfo_add_error_code(code);
             }
 
             return true;
