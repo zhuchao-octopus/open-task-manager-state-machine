@@ -35,7 +35,7 @@
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLARATION
  */
-static MsgQueue_t g_msgQueue[TASK_ID_MAX_NUM]; // Declare an array of message queues, one for each task module
+static MsgQueue_t g_msgQueue[TASK_MODULE_MAX_NUM]; // Declare an array of message queues, one for each task module
 
 //***********************************************************************************************************//
 
@@ -170,7 +170,7 @@ void clear_message(TaskModule_t task_module)
 void message_queue_init(void)
 {
     uint8_t i;
-    for (i = 0; i < TASK_ID_MAX_NUM; i++) // Iterate through all task modules
+    for (i = 0; i < TASK_MODULE_MAX_NUM; i++) // Iterate through all task modules
     {
         clear_message((TaskModule_t)i); // Clear the message queue for each module
     }

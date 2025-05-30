@@ -107,20 +107,20 @@ ptl_2_module_info_t *ptl_2_get_module(ptl_2_module_t module)
 void ptl_2_init_running(void)
 {
     LOG_LEVEL("ptl_init_running\r\n");
-    OTMS(TASK_ID_PTL_2, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_PTL_2, OTMS_S_INVALID);
 }
 
 // Start the UART communication for the task
 void ptl_2_start_running(void)
 {
     LOG_LEVEL("ptl_start_running\r\n");
-    OTMS(TASK_ID_PTL_2, OTMS_S_ASSERT_RUN);
+    OTMS(TASK_MODULE_PTL_2, OTMS_S_ASSERT_RUN);
 }
 
 // Assert that UART communication is running
 void ptl_2_assert_running(void)
 {
-    OTMS(TASK_ID_PTL_2, OTMS_S_RUNNING);
+    OTMS(TASK_MODULE_PTL_2, OTMS_S_RUNNING);
     StartTickCounter(&l_t_ptl_rx_main_timer);
     StartTickCounter(&l_t_ptl_tx_main_timer);
     StartTickCounter(&l_t_ptl_error_detect_timer);
@@ -132,7 +132,7 @@ void ptl_2_running(void)
 {
     if (true == ptl_2_is_sleep_enable())
     {
-        OTMS(TASK_ID_PTL_2, OTMS_S_POST_RUN);
+        OTMS(TASK_MODULE_PTL_2, OTMS_S_POST_RUN);
     }
     else
     {
@@ -153,14 +153,14 @@ void ptl_2_post_running(void)
     }
     else
     {
-        OTMS(TASK_ID_PTL_2, OTMS_S_RUNNING);
+        OTMS(TASK_MODULE_PTL_2, OTMS_S_RUNNING);
     }
 }
 
 // Stop the UART communication task
 void ptl_2_stop_running(void)
 {
-    OTMS(TASK_ID_PTL_2, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_PTL_2, OTMS_S_INVALID);
 }
 
 // Check if there is a communication error

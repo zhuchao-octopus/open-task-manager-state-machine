@@ -37,7 +37,7 @@ static bool can_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
 void task_can_init_running(void)
 {
    LOG_LEVEL("task_can_init_running\r\n");
-   OTMS(TASK_ID_CAN, OTMS_S_INVALID);
+   OTMS(TASK_MODULE_CAN, OTMS_S_INVALID);
    ptl_register_module(MCU_TO_SOC_MOD_CAN, can_send_handler, can_receive_handler);
 	
 	 Can_Queue_Init(&CAN_rx_msg_queue);
@@ -49,13 +49,13 @@ void task_can_init_running(void)
 void task_can_start_running(void)
 {
 	  LOG_LEVEL("task_can_start_running\r\n");
-    OTMS(TASK_ID_CAN, OTMS_S_ASSERT_RUN);
+    OTMS(TASK_MODULE_CAN, OTMS_S_ASSERT_RUN);
 }
 
 void task_can_assert_running(void)
 {
 	  ptl_reqest_running(MCU_TO_SOC_MOD_CAN);
-    OTMS(TASK_ID_CAN, OTMS_S_RUNNING);
+    OTMS(TASK_MODULE_CAN, OTMS_S_RUNNING);
 }
 
 void task_can_running(void)
@@ -71,7 +71,7 @@ void task_can_post_running(void)
 
 void task_can_stop_running(void)
 {
-    OTMS(TASK_ID_CAN, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_CAN, OTMS_S_INVALID);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

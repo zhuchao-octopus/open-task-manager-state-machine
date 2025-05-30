@@ -130,14 +130,14 @@ void ptl_init_running(void)
 {
     LOG_LEVEL("ptl_init_running\r\n");
     ptl_init();
-    OTMS(TASK_ID_PTL_1, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_PTL_1, OTMS_S_INVALID);
 }
 
 // Start the UART communication for the task
 void ptl_start_running(void)
 {
     LOG_LEVEL("ptl_start_running\r\n");
-    OTMS(TASK_ID_PTL_1, OTMS_S_ASSERT_RUN);
+    OTMS(TASK_MODULE_PTL_1, OTMS_S_ASSERT_RUN);
 }
 
 // Assert that UART communication is running
@@ -145,7 +145,7 @@ void ptl_assert_running(void)
 {
     if (PTL_RUNNING_NONE != l_t_ptl_running_req_mask)
     {
-        OTMS(TASK_ID_PTL_1, OTMS_S_RUNNING);
+        OTMS(TASK_MODULE_PTL_1, OTMS_S_RUNNING);
         StartTickCounter(&l_t_ptl_rx_main_timer);
         StartTickCounter(&l_t_ptl_tx_main_timer);
         StartTickCounter(&l_t_ptl_error_detect_timer);
@@ -159,7 +159,7 @@ void ptl_running(void)
 {
     if (true == ptl_is_sleep_enable())
     {
-        OTMS(TASK_ID_PTL_1, OTMS_S_POST_RUN);
+        OTMS(TASK_MODULE_PTL_1, OTMS_S_POST_RUN);
     }
     else
     {
@@ -180,14 +180,14 @@ void ptl_post_running(void)
     }
     else
     {
-        OTMS(TASK_ID_PTL_1, OTMS_S_RUNNING);
+        OTMS(TASK_MODULE_PTL_1, OTMS_S_RUNNING);
     }
 }
 
 // Stop the UART communication task
 void ptl_stop_running(void)
 {
-    OTMS(TASK_ID_PTL_1, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_PTL_1, OTMS_S_INVALID);
 }
 
 // Request the UART task to start running (source indicates who requested)
@@ -403,7 +403,7 @@ void ptl_1_tx_event_handler(void)
     StartTickCounter(&l_t_ptl_tx_main_timer);
 
     // Retrieve the message from the UART task message queue
-    Msg_t *msg = get_message(TASK_ID_PTL_1);
+    Msg_t *msg = get_message(TASK_MODULE_PTL_1);
     if (msg->msg_id != NO_MSG)
     {
         ptl_frame_type_t frame_type = (ptl_frame_type_t)msg->msg_id;

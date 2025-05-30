@@ -28,7 +28,7 @@
 #include "octopus_gpio.h"     // Include GPIO control and configuration
 #include "octopus_flash.h"    // Include flash memory access functions
 #include "octopus_key.h"      // Include key status and event handling
-#include "octopus_system.h" 
+#include "octopus_system.h"
 
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
 /*******************************************************************************
@@ -70,19 +70,19 @@ void task_gpio_init_running(void)
 {
     LOG_LEVEL("task_gpio_init_running\r\n");
     // com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
-    OTMS(TASK_ID_GPIO, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_GPIO, OTMS_S_INVALID);
 }
 
 void task_gpio_start_running(void)
 {
     LOG_LEVEL("task_gpio_start_running\r\n");
-    OTMS(TASK_ID_GPIO, OTMS_S_ASSERT_RUN);
+    OTMS(TASK_MODULE_GPIO, OTMS_S_ASSERT_RUN);
 }
 
 void task_gpio_assert_running(void)
 {
     // StartTickCounter(&l_t_msg_gpio_wait_timer);
-    OTMS(TASK_ID_GPIO, OTMS_S_RUNNING);
+    OTMS(TASK_MODULE_GPIO, OTMS_S_RUNNING);
 }
 
 void task_gpio_running(void)
@@ -91,49 +91,50 @@ void task_gpio_running(void)
     // PollingGPIOStatus(GPIO_DDD_PIN,&ddd_status);
     // PollingGPIOStatus(GPIO_ZZD_PIN,&zzd_status);
     // PollingGPIOStatus(GPIO_YZD_PIN,&yzd_status);
-	  if(system_get_mb_state() != MB_POWER_ST_ON) return;
-	
-    PollingGPIOStatus(GPIO_POWER_KEY_GROUP,GPIO_POWER_KEY_PIN,&power_pin_status);		
-	
-		//////////////////////////////////////////////////////////////////////////////////////////////////////
-	  PollingGPIOKeyEventStatus(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, &key_status_power);
-		//////////////////////////////////////////////////////////////////////////////////////////////////////
-	  PollingGPIOKeyEventDispatcher(&key_status_power);
-		//////////////////////////////////////////////////////////////////////////////////////////////////////
+    if (system_get_mb_state() != MB_POWER_ST_ON)
+        return;
 
-		if(power_pin_status.changed)
-		{		
-			LOG_LEVEL("power_pin_status=%d\r\n",power_pin_status.offon);	
-			send_message(TASK_ID_KEY, MSG_OTSM_DEVICE_GPIO_EVENT, GPIO_POWER_KEY_PIN, power_pin_status.offon);
-			power_pin_status.changed=false;
-		}	
-		
+    PollingGPIOStatus(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, &power_pin_status);
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    PollingGPIOKeyEventStatus(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, &key_status_power);
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    PollingGPIOKeyEventDispatcher(&key_status_power);
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    if (power_pin_status.changed)
+    {
+        LOG_LEVEL("power_pin_status=%d\r\n", power_pin_status.offon);
+        send_message(TASK_MODULE_KEY, MSG_OTSM_DEVICE_GPIO_EVENT, GPIO_POWER_KEY_PIN, power_pin_status.offon);
+        power_pin_status.changed = false;
+    }
+
 #if 0
 		if(ddd_status.changed)
 		{
 		LOG_LEVEL("get ddd status=%d\r\n",ddd_status.offon);
-		send_message(TASK_ID_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_DDD_PIN, ddd_status.offon);
+		send_message(TASK_MODULE_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_DDD_PIN, ddd_status.offon);
 		ddd_status.changed=false;
 		}	
 
 		if(zzd_status.changed)
 		{
 		LOG_LEVEL("get zzd status=%d\r\n",zzd_status.offon);
-		send_message(TASK_ID_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_ZZD_PIN, zzd_status.offon);
+		send_message(TASK_MODULE_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_ZZD_PIN, zzd_status.offon);
 		zzd_status.changed=false;
 		}	
 
 		if(yzd_status.changed)
 		{
 		LOG_LEVEL("get yzd status=%d\r\n",yzd_status.offon);
-		send_message(TASK_ID_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_YZD_PIN, yzd_status.offon);
+		send_message(TASK_MODULE_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_YZD_PIN, yzd_status.offon);
 		yzd_status.changed=false;
 		}	
 
 		if(skd_status.changed)
 		{
 		LOG_LEVEL("get skd status=%d\r\n",skd_status.offon);
-		send_message(TASK_ID_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_SKD_PIN, skd_status.offon);
+		send_message(TASK_MODULE_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_SKD_PIN, skd_status.offon);
 		skd_status.changed=false;
 		}
 #endif
@@ -145,7 +146,7 @@ void task_gpio_post_running(void)
 
 void task_gpio_stop_running(void)
 {
-    OTMS(TASK_ID_GPIO, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_GPIO, OTMS_S_INVALID);
 }
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -325,13 +326,13 @@ void PollingGPIOKeyEventDispatcher(GPIO_KEY_STATUS *key_status)
         if (key_status->pressed)
         {
             /**
-             * TASK_ID_KEY            - Identifier for the task handling key events.
+             * TASK_MODULE_KEY            - Identifier for the task handling key events.
              * MSG_DEVICE_KEY_DOWN_EVENT - Message type indicating a key press.
              * key_status->key        - The key identifier.
              * KEY_STATE_PRESSED      - The current state of the key.
              */
 
-            send_message(TASK_ID_KEY, MSG_OTSM_DEVICE_KEY_DOWN_EVENT, key_status->key, KEY_STATE_PRESSED);
+            send_message(TASK_MODULE_KEY, MSG_OTSM_DEVICE_KEY_DOWN_EVENT, key_status->key, KEY_STATE_PRESSED);
 
             // Mark the event as dispatched to prevent duplicate messages
             key_status->dispatched = true;
@@ -340,12 +341,12 @@ void PollingGPIOKeyEventDispatcher(GPIO_KEY_STATUS *key_status)
         else if (key_status->release)
         {
             /**
-             * TASK_ID_KEY            - Identifier for the task handling key events.
+             * TASK_MODULE_KEY            - Identifier for the task handling key events.
              * MSG_DEVICE_KEY_UP_EVENT - Message type indicating a key release.
              * key_status->key        - The key identifier.
              * KEY_STATE_RELEASED     - The current state of the key.
              */
-            send_message(TASK_ID_KEY, MSG_OTSM_DEVICE_KEY_UP_EVENT, key_status->key, KEY_STATE_RELEASED);
+            send_message(TASK_MODULE_KEY, MSG_OTSM_DEVICE_KEY_UP_EVENT, key_status->key, KEY_STATE_RELEASED);
 
             // Mark the event as dispatched to prevent duplicate messages
             key_status->dispatched = true;

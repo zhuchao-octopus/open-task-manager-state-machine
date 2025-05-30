@@ -44,13 +44,13 @@ void task_key_init_running(void)
 {
     LOG_LEVEL("task_key_init_running\r\n");
     ptl_register_module(MCU_TO_SOC_MOD_KEY, key_send_handler, key_receive_handler);
-    OTMS(TASK_ID_KEY, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_KEY, OTMS_S_INVALID);
 }
 
 void task_key_start_running(void)
 {
     LOG_LEVEL("task_key_start_running\r\n");
-    OTMS(TASK_ID_KEY, OTMS_S_ASSERT_RUN);
+    OTMS(TASK_MODULE_KEY, OTMS_S_ASSERT_RUN);
 }
 
 void task_key_assert_running(void)
@@ -60,7 +60,7 @@ void task_key_assert_running(void)
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     StartTickCounter(&l_t_msg_wait_timer);
     StartTickCounter(&l_t_msg_boot_wait_timer);
-    OTMS(TASK_ID_KEY, OTMS_S_RUNNING);
+    OTMS(TASK_MODULE_KEY, OTMS_S_RUNNING);
 #endif
 }
 
@@ -75,7 +75,7 @@ void task_key_post_running(void)
 
 void task_key_stop_running(void)
 {
-    OTMS(TASK_ID_KEY, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_KEY, OTMS_S_INVALID);
 }
 
 static void task_key_action_hanlder(void)
@@ -84,7 +84,7 @@ static void task_key_action_hanlder(void)
         return;
     StartTickCounter(&l_t_msg_wait_timer);
 
-    Msg_t *msg = get_message(TASK_ID_KEY);
+    Msg_t *msg = get_message(TASK_MODULE_KEY);
 
     if (msg->msg_id != NO_MSG && msg->msg_id == MSG_OTSM_DEVICE_KEY_DOWN_EVENT)
     {
@@ -139,23 +139,22 @@ void task_key_power_event_process(GPIO_KEY_STATUS *key_status)
     {
     case KEY_STATE_RELEASED:
         LOG_LEVEL("OCTOPUS_KEY_POWER release key=%d key_status=%02x\r\n", key_status->key, key_status->state);
-        // power_key_password_index=0;
-        StopTickCounter(&power_key_wait_timer);
+		    StartTickCounter(&power_key_wait_timer);
         break;
 
     case KEY_STATE_PRESSED:
         LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d key_status=%02x\r\n", key_status->key, key_status->state);
-        if ((IsTickCounterStart(&power_key_wait_timer)) && GetTickCounter(&power_key_wait_timer) >= 1000)
+		   
+        if (GetTickCounter(&power_key_wait_timer) >= 300)
         {
             power_key_password_index = 0;
         }
-
-        RestartTickCounter(&power_key_wait_timer);
+      
         power_key_password_index++;
         hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
         if (power_key_password_index == sizeof(power_key_password))
         {
-            send_message(TASK_ID_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_PAIR_ON, 0);
+            send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_PAIR_ON, 0);
             power_key_password_index = 0;
             StopTickCounter(&power_key_wait_timer);
         }
@@ -166,7 +165,7 @@ void task_key_power_event_process(GPIO_KEY_STATUS *key_status)
             LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d long duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
             // if(is_power_on())
             //	hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
-            send_message(TASK_ID_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, 0, 0);
+            send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, 0, 0);
             key_status->ignore = true;
         }
         break;

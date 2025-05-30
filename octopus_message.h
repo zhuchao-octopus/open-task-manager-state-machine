@@ -109,16 +109,20 @@ typedef enum
 typedef enum
 {
     MSG_OTSM_DEVICE_NORMAL_EVENT = 0x64, // 100 Normal device event message after ptl_frame_type_t
+    MSG_OTSM_DEVICE_HANDSHAKE_EVENT,
+
+    MSG_OTSM_DEVICE_POWER_EVENT,
     MSG_OTSM_DEVICE_ACC_EVENT,
+
+    MSG_OTSM_DEVICE_KEY_EVENT,      // Key event message
     MSG_OTSM_DEVICE_KEY_DOWN_EVENT, // Key event message
     MSG_OTSM_DEVICE_KEY_UP_EVENT,   // Key event message
-    MSG_OTSM_DEVICE_KEY_EVENT,      // Key event message
-    MSG_OTSM_DEVICE_GPIO_EVENT,     // GPIO event message
-    MSG_OTSM_DEVICE_POWER_EVENT,
-    MSG_OTSM_DEVICE_HANDSHAKE_EVENT,
+
+    MSG_OTSM_DEVICE_GPIO_EVENT, // GPIO event message
     MSG_OTSM_DEVICE_BLE_EVENT,
     MSG_OTSM_DEVICE_CAN_EVENT,
     MSG_OTSM_DEVICE_CAR_INFOR_EVENT,
+
 } otsm_msg_t; // for sendmessage function
 
 typedef enum
