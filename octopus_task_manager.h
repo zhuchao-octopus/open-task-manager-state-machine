@@ -40,10 +40,10 @@
 #define OTMS_S_COUNT (6U) /**< Total number of defined states. */
 
 /** Macro to set a task's state. */
-#define OTMS(task_id, state) otms_set_state(task_id, state)
+#define OTMS(TASK_MODULE, state) otms_set_state(TASK_MODULE, state)
 
 /** Macro to get a task's current state. */
-#define GET_OTMS_STATE(task_id) otms_get_state(task_id)
+#define GET_OTMS_STATE(TASK_MODULE) otms_get_state(TASK_MODULE)
 
 /*******************************************************************************
  * TYPEDEFS
@@ -73,20 +73,20 @@ typedef struct
  */
 typedef enum
 {
-  TASK_ID_PTL_1 = 0,  /**< Protocol handling task. */
-  TASK_ID_PTL_2,      /**< Protocol handling task. */
-  TASK_ID_SYSTEM,     /**< System task. */
-  TASK_ID_GPIO,       /**< GPIO task. */
-  TASK_ID_CAR_INFOR,  /**< Car information. */
-  TASK_ID_BLE,        /**< BLE communication. */
-  TASK_ID_KEY,        /**< Key input. */
-  TASK_ID_UPDATE_MCU, /**< MCU firmware update. */
-  TASK_ID_UPDATE_SOC, /**< SOC firmware update. */
-  TASK_ID_CAN,
-  TASK_ID_PTL_BAFANG,
-  TASK_ID_IPC_SOCKET, /**< IPC socket service. */
+  TASK_MODULE_PTL_1 = 0,  /**< Protocol handling task. */
+  TASK_MODULE_PTL_2,      /**< Protocol handling task. */
+  TASK_MODULE_SYSTEM,     /**< System task. */
+  TASK_MODULE_GPIO,       /**< GPIO task. */
+  TASK_MODULE_CAR_INFOR,  /**< Car information. */
+  TASK_MODULE_BLE,        /**< BLE communication. */
+  TASK_MODULE_KEY,        /**< Key input. */
+  TASK_MODULE_UPDATE_MCU, /**< MCU firmware update. */
+  TASK_MODULE_UPDATE_SOC, /**< SOC firmware update. */
+  TASK_MODULE_CAN,
+  TASK_MODULE_PTL_BAFANG,
+  TASK_MODULE_IPC_SOCKET, /**< IPC socket service. */
 
-  TASK_ID_MAX_NUM /**< Total number of tasks. */
+  TASK_MODULE_MAX_NUM /**< Total number of tasks. */
 } TaskModule_t;
 
 #ifdef __cplusplus
@@ -130,17 +130,17 @@ extern "C"
 
   /**
    * @brief Set the current state for a specific task.
-   * @param task_id Task ID to modify.
+   * @param TASK_MODULE Task ID to modify.
    * @param state   New state to apply.
    */
-  void otms_set_state(otms_id_t task_id, otms_state_t state);
+  void otms_set_state(otms_id_t TASK_MODULE, otms_state_t state);
 
   /**
    * @brief Get the current state of a specific task.
-   * @param task_id Task ID to query.
+   * @param TASK_MODULE Task ID to query.
    * @return Current state.
    */
-  otms_state_t otms_get_state(otms_id_t task_id);
+  otms_state_t otms_get_state(otms_id_t TASK_MODULE);
 
   /**
    * @brief Get the global task state configuration table.

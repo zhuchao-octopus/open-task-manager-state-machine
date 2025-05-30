@@ -26,21 +26,21 @@ void hal_flash_init(uint8_t task_id)
 
 uint32_t hal_flash_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {
-	HalFlashRead(startaddr,buffer,length);
-	return 0;
+    HalFlashRead(startaddr, buffer, length);
+    return 0;
 }
 uint32_t hal_flash_erase_page_(uint32_t startaddr, uint8_t page_count)
 {
-	return 0;
+    return 0;
 }
 uint32_t hal_flash_erase_area_(uint32_t startaddr, uint32_t endaddr)
 {
-	return 0;
+    return 0;
 }
 
 uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
 {
-	return 0;
+    return 0;
 }
 
 #else
@@ -148,7 +148,7 @@ uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
     /* Write the data word by word */
     for (uint32_t i = 0; i < length / 4; i++)
     {
-        if(FLASH_ProgramWord(Address, data[i]) == FLASH_COMPLETE)
+        if (FLASH_ProgramWord(Address, data[i]) == FLASH_COMPLETE)
         {
             Address += 4;
             written_bytes += 4;
@@ -165,7 +165,7 @@ uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
     return written_bytes; // Return the number of bytes written
 }
 #endif
-#endif//TASK_MANAGER_STATE_MACHINE_FLASH
+#endif // TASK_MANAGER_STATE_MACHINE_FLASH
 
 void hal_eeprom_write_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {

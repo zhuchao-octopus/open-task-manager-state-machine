@@ -106,19 +106,19 @@ static uint8_t l_u8_next_empty_module = 0;                    // Index for the n
  */
 void ptl_help(void)
 {
-		/// uint8_t tmp[2] = {0};
-		/// LOG_LEVEL("app ptl help guide\r\n");
+    /// uint8_t tmp[2] = {0};
+    /// LOG_LEVEL("app ptl help guide\r\n");
 
-		/// tmp[0] = 0x00;
-		/// ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
-		/// LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
-		///  tmp[0] = 0x01;
-		///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
-		///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
-		///  tmp[0] = 0x02;
-		///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
-		///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
-		print_all_registered_module();
+    /// tmp[0] = 0x00;
+    /// ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    /// LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+    ///  tmp[0] = 0x01;
+    ///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+    ///  tmp[0] = 0x02;
+    ///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+    print_all_registered_module();
 }
 
 void ptl_init(void)
@@ -130,14 +130,14 @@ void ptl_init_running(void)
 {
     LOG_LEVEL("ptl_init_running\r\n");
     ptl_init();
-    OTMS(TASK_ID_PTL_1, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_PTL_1, OTMS_S_INVALID);
 }
 
 // Start the UART communication for the task
 void ptl_start_running(void)
 {
     LOG_LEVEL("ptl_start_running\r\n");
-    OTMS(TASK_ID_PTL_1, OTMS_S_ASSERT_RUN);
+    OTMS(TASK_MODULE_PTL_1, OTMS_S_ASSERT_RUN);
 }
 
 // Assert that UART communication is running
@@ -145,7 +145,7 @@ void ptl_assert_running(void)
 {
     if (PTL_RUNNING_NONE != l_t_ptl_running_req_mask)
     {
-        OTMS(TASK_ID_PTL_1, OTMS_S_RUNNING);
+        OTMS(TASK_MODULE_PTL_1, OTMS_S_RUNNING);
         StartTickCounter(&l_t_ptl_rx_main_timer);
         StartTickCounter(&l_t_ptl_tx_main_timer);
         StartTickCounter(&l_t_ptl_error_detect_timer);
@@ -159,7 +159,7 @@ void ptl_running(void)
 {
     if (true == ptl_is_sleep_enable())
     {
-        OTMS(TASK_ID_PTL_1, OTMS_S_POST_RUN);
+        OTMS(TASK_MODULE_PTL_1, OTMS_S_POST_RUN);
     }
     else
     {
@@ -180,14 +180,14 @@ void ptl_post_running(void)
     }
     else
     {
-        OTMS(TASK_ID_PTL_1, OTMS_S_RUNNING);
+        OTMS(TASK_MODULE_PTL_1, OTMS_S_RUNNING);
     }
 }
 
 // Stop the UART communication task
 void ptl_stop_running(void)
 {
-    OTMS(TASK_ID_PTL_1, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_PTL_1, OTMS_S_INVALID);
 }
 
 // Request the UART task to start running (source indicates who requested)
@@ -195,9 +195,9 @@ bool ptl_reqest_running(ptl_frame_type_t frame_type)
 {
     if (frame_type >= 32)
     {
-        //return false;
-			 l_t_ptl_running_req_mask |= (1 << (frame_type & 0x7f));
-       return true;
+        // return false;
+        l_t_ptl_running_req_mask |= (1 << (frame_type & 0x7f));
+        return true;
     }
     else
     {
@@ -245,7 +245,7 @@ void ptl_register_module(ptl_frame_type_t frame_type, module_send_handler_t send
         l_t_module_info[l_u8_next_empty_module].send_handler = send_handler;
         l_t_module_info[l_u8_next_empty_module].receive_handler = receive_handler;
         l_u8_next_empty_module++;
-        //LOG_LEVEL("frame_type=%d ptl module count=%d\r\n", l_t_module_info[l_u8_next_empty_module - 1].frame_type, l_u8_next_empty_module);
+        // LOG_LEVEL("frame_type=%d ptl module count=%d\r\n", l_t_module_info[l_u8_next_empty_module - 1].frame_type, l_u8_next_empty_module);
     }
     else
     {
@@ -274,11 +274,11 @@ module_info_t *ptl_get_module(ptl_frame_type_t frame_type)
 
 void print_all_registered_module(void)
 {
-	//module_info_t *module_info = NULL;
-  for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
+    // module_info_t *module_info = NULL;
+    for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
     {
-       LOG_LEVEL("registered l_t_module_info[%d]=%02x \r\n", i,l_t_module_info[i].frame_type);
-    }	
+        LOG_LEVEL("registered l_t_module_info[%d]=%02x \r\n", i, l_t_module_info[i].frame_type);
+    }
 }
 
 //[ Header ][ Frame Type ][ Command ][ Data Length ][ Header Checksum ][ Data... ][ Data Checksum ]
@@ -403,7 +403,7 @@ void ptl_1_tx_event_handler(void)
     StartTickCounter(&l_t_ptl_tx_main_timer);
 
     // Retrieve the message from the UART task message queue
-    Msg_t *msg = get_message(TASK_ID_PTL_1);
+    Msg_t *msg = get_message(TASK_MODULE_PTL_1);
     if (msg->msg_id != NO_MSG)
     {
         ptl_frame_type_t frame_type = (ptl_frame_type_t)msg->msg_id;

@@ -80,6 +80,7 @@ void ptl_2_register_module(ptl_2_module_t module, ptl_2_module_receive_handler_t
 {
     if (l_u8_next_empty_module < PTL_MODULE_SUPPORT_CNT)
     {
+		 LOG_LEVEL("ptl_2_register_module %d\r\n",module);
         l_t_module_info[l_u8_next_empty_module].module = module;
         l_t_module_info[l_u8_next_empty_module].receive_handler = receive_handler;
         l_u8_next_empty_module++;
@@ -106,20 +107,20 @@ ptl_2_module_info_t *ptl_2_get_module(ptl_2_module_t module)
 void ptl_2_init_running(void)
 {
     LOG_LEVEL("ptl_init_running\r\n");
-    OTMS(TASK_ID_PTL_2, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_PTL_2, OTMS_S_INVALID);
 }
 
 // Start the UART communication for the task
 void ptl_2_start_running(void)
 {
     LOG_LEVEL("ptl_start_running\r\n");
-    OTMS(TASK_ID_PTL_2, OTMS_S_ASSERT_RUN);
+    OTMS(TASK_MODULE_PTL_2, OTMS_S_ASSERT_RUN);
 }
 
 // Assert that UART communication is running
 void ptl_2_assert_running(void)
 {
-    OTMS(TASK_ID_PTL_2, OTMS_S_RUNNING);
+    OTMS(TASK_MODULE_PTL_2, OTMS_S_RUNNING);
     StartTickCounter(&l_t_ptl_rx_main_timer);
     StartTickCounter(&l_t_ptl_tx_main_timer);
     StartTickCounter(&l_t_ptl_error_detect_timer);
@@ -131,7 +132,7 @@ void ptl_2_running(void)
 {
     if (true == ptl_2_is_sleep_enable())
     {
-        OTMS(TASK_ID_PTL_2, OTMS_S_POST_RUN);
+        OTMS(TASK_MODULE_PTL_2, OTMS_S_POST_RUN);
     }
     else
     {
@@ -152,14 +153,14 @@ void ptl_2_post_running(void)
     }
     else
     {
-        OTMS(TASK_ID_PTL_2, OTMS_S_RUNNING);
+        OTMS(TASK_MODULE_PTL_2, OTMS_S_RUNNING);
     }
 }
 
 // Stop the UART communication task
 void ptl_2_stop_running(void)
 {
-    OTMS(TASK_ID_PTL_2, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_PTL_2, OTMS_S_INVALID);
 }
 
 // Check if there is a communication error
@@ -394,9 +395,15 @@ void ptl_2_proc_valid_frame(ptl_2_proc_buff_t *ptl_2_proc_buff, uint16_t length)
         LOG_BUFF(ptl_2_proc_buff->buffer, length);
     }
 #endif
-
+   
     for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
     {
+			  if(!l_t_module_info[i].receive_handler)
+				{
+					LOG_LEVEL("l_t_module_info[i].receive_handler is null.");
+					continue;
+				}
+			
         bool res = l_t_module_info[i].receive_handler(ptl_2_proc_buff);
 
         if (res)
@@ -406,7 +413,9 @@ void ptl_2_proc_valid_frame(ptl_2_proc_buff_t *ptl_2_proc_buff, uint16_t length)
             return;
         }
     }
-    // ptl_2_clear_revice_buff();
+		
+	if( ptl_2_proc_buff->size > 10)
+    ptl_2_clear_revice_buff();
 }
 void ptl_2_clear_revice_buff(void)
 {

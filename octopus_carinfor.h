@@ -305,36 +305,36 @@ extern "C"
      * GLOBAL FUNCTIONS DECLEAR
      */
 
-    void app_carinfo_init_running(void);
-    void app_carinfo_start_running(void);
-    void app_carinfo_assert_running(void);
-    void app_carinfo_running(void);
-    void app_carinfo_post_running(void);
-    void app_carinfo_stop_running(void);
+    void task_carinfo_init_running(void);
+    void task_carinfo_start_running(void);
+    void task_carinfo_assert_running(void);
+    void task_carinfo_running(void);
+    void task_carinfo_post_running(void);
+    void task_carinfo_stop_running(void);
 
     /**
      * @brief Retrieve current vehicle speed (0.1 km/h).
      * @return uint16_t Speed in 0.1 km/h.
      */
-    uint16_t app_carinfo_getSpeed(void);
+    uint16_t task_carinfo_getSpeed(void);
 
     /**
      * @brief Retrieve indicator status structure.
      * @return Pointer to current carinfo_indicator_t.
      */
-    carinfo_indicator_t *app_carinfo_get_indicator_info(void);
+    carinfo_indicator_t *task_carinfo_get_indicator_info(void);
     /**
      * @brief Retrieve meter information pointer.
      * @return Pointer to current carinfo_meter_t.
      */
-    carinfo_meter_t *app_carinfo_get_meter_info(void);
-    carinfo_battery_t *app_carinfo_get_battery_info(void);
-    carinfo_error_t *app_carinfo_get_error_info(void);
+    carinfo_meter_t *task_carinfo_get_meter_info(void);
+    carinfo_battery_t *task_carinfo_get_battery_info(void);
+    carinfo_error_t *task_carinfo_get_error_info(void);
     /**
      * @brief Retrieve drive information.
      * @return Pointer to current carinfo_drivinfo_t.
      */
-    carinfo_drivinfo_t *app_carinfo_get_drivinfo_info(void);
+    carinfo_drivinfo_t *task_carinfo_get_drivinfo_info(void);
 
     /**
      * @brief Initializes the car indicator module.
@@ -428,8 +428,7 @@ extern "C"
 
     // void car_indicator_proc_turn_signal(void);
     // void car_meter_proc_speed_rpm(void);
-    void app_carinfo_add_error_code(ERROR_CODE error_code);
-    void carinfor_save_to_flash(void);
+    void task_carinfo_add_error_code(ERROR_CODE error_code);
 
     extern carinfo_meter_t lt_carinfo_meter;         // Local meter data structure
     extern carinfo_indicator_t lt_carinfo_indicator; // Local indicator data structure

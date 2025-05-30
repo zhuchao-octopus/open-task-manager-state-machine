@@ -201,31 +201,30 @@ static const UartSendPtlBafangCmdCtrl_t protocolProcessCmdTable[] =
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
-void app_bafang_ptl_init_running(void)
+void task_bfang_ptl_init_running(void)
 {
-    OTMS(TASK_ID_PTL_BAFANG, OTMS_S_INVALID);
-    LOG_LEVEL("app_bafang_ptl_init_running\r\n");
+    OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_INVALID);
+    LOG_LEVEL("task_bafang_ptl_init_running\r\n");
 }
 
-void app_bafang_ptl_start_running(void)
+void task_bfang_ptl_start_running(void)
 {
-    LOG_LEVEL("app_bafang_ptl_start_running\r\n");
-    // ֻ���ǰ˷�Э�������²����и�״̬��
+    LOG_LEVEL("task_bafang_ptl_start_running\r\n");
     // if (SETTING_PTL_BAFANG == theEnvInfo.ptl)
     {
         /// ptl_register_module(SETTING_PTL_BAFANG, bafang_send_handler,bafang_receive_handler);
         ptl_2_register_module(SETTING_PTL_BAFANG, bafang_receive_handler);
-        OTMS(TASK_ID_PTL_BAFANG, OTMS_S_ASSERT_RUN);
+        OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_ASSERT_RUN);
     }
 }
 
-void app_bafang_ptl_assert_running(void)
+void task_bfang_ptl_assert_running(void)
 {
     StartTickCounter(&lt_timer);
-    OTMS(TASK_ID_PTL_BAFANG, OTMS_S_RUNNING);
+    OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_RUNNING);
 }
 
-void app_bafang_ptl_running(void)
+void task_bfang_ptl_running(void)
 {
     if (GetTickCounter(&lt_timer) < 10)
     {
@@ -235,26 +234,25 @@ void app_bafang_ptl_running(void)
 
     // if(true == system_get_power_off_req())
     {
-        OTMS(TASK_ID_PTL_BAFANG, OTMS_S_POST_RUN);
+        OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_POST_RUN);
     }
 
     // lt_indicator.walk_assist = theMeterInfo.walk_assist;
     com_uart_ptl_bafang_tx_process();
 }
 
-void app_bafang_ptl_post_running(void)
+void task_bfang_ptl_post_running(void)
 {
     // printf("%s\n", __FUNCTION__);
     // if(true != system_get_power_off_req())
     {
-        OTMS(TASK_ID_PTL_BAFANG, OTMS_S_ASSERT_RUN);
+        OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_ASSERT_RUN);
     }
 }
 
-void app_bafang_ptl_stop_running(void)
+void task_bfang_ptl_stop_running(void)
 {
-    printf("%s\n", __FUNCTION__);
-    OTMS(TASK_ID_PTL_BAFANG, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_INVALID);
 }
 
 /*******************************************************************************
@@ -363,36 +361,43 @@ static bool bafang_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff)
     if (res == false)
     {
         //系统状态协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_system_state\r\n");
         res = proc_protocol_frame_system_state(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
         //工作状态协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_working_state\r\n");
         res = proc_protocol_frame_working_state(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
         //电池电量协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_soc\r\n");
         res = proc_protocol_frame_soc(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
         //速度协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_speed\r\n");
         res = proc_protocol_frame_speed(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
         //瞬时电流协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_instantaneous_current\r\n");
         res = proc_protocol_frame_instantaneous_current(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
         //电池信息协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_battery_info\r\n");
         res = proc_protocol_frame_battery_info(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
     if (res == false)
     {
         //电芯信息协议帧处理
+			  //LOG_LEVEL("proc_protocol_frame_cell_info\r\n");
         res = proc_protocol_frame_cell_info(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
     }
 
@@ -641,12 +646,12 @@ bool proc_protocol_frame_system_state(uint8_t* buff, int count)
             if (code == ERROR_CODE_BRAKE)
             {
                 lt_carinfo_indicator.brake = true;
-                send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR); // CMD_MOD_CARINFOR_INDICATOR
+                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR); // CMD_MOD_CARINFOR_INDICATOR
             }
             else
             {
-                send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR); // CMD_MOD_CARINFOR_INDICATOR
-                app_carinfo_add_error_code(code);
+                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR); // CMD_MOD_CARINFOR_INDICATOR
+                task_carinfo_add_error_code(code);
             }
 
             return true;
@@ -695,7 +700,7 @@ bool proc_protocol_frame_speed(uint8_t* buff, int count)
 							lt_carinfo_meter.speed_actual = (uint16_t)kph;
 							lt_carinfo_meter.speed = (uint16_t)kph; 
 							//LOG_LEVEL("lt_meter.speed=%d\r\n",lt_meter.speed);
-							send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_METER, 0);	 
+							send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_METER, 0);	 
             }
             return true;
         }
@@ -716,7 +721,7 @@ bool proc_protocol_frame_soc(uint8_t* buff, int count)
 
                 lt_carinfo_battery.soc = soc;
                 lt_carinfo_battery.range = (lt_carinfo_battery.max_range * soc) / 100;
-                send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
+                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
             }
             return true;
         }
@@ -738,7 +743,7 @@ bool proc_protocol_frame_instantaneous_current(uint8_t* buff, int count)
                 lt_carinfo_battery.current = current_val * 5;
 
                 lt_carinfo_battery.power = lt_carinfo_battery.voltage * lt_carinfo_battery.current / 100;
-                send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
+                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
             }
             return true;
         }
@@ -802,7 +807,7 @@ bool proc_protocol_frame_battery_info(uint8_t* buff, int count)
 
                 /// lt_carinfo_battery.max_uncharge_time = (int32_t)maxUnchargeHour * 60 + (int32_t)maxUnchargeMintues;
                 /// lt_carinfo_battery.last_uncharge_time = (int32_t)lastUnchargeHour * 60 + (int32_t)lastUnchargeMintues;
-                send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
+                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
             }
             return true;
         }
@@ -835,7 +840,7 @@ bool proc_protocol_frame_cell_info(uint8_t* buff, int count)
             {
                 /// lt_carinfo_battery.cell_voltage[i] = MK_WORD(buff[i * 2 + 2], buff[i * 2 + 1]);
             }
-            send_message(TASK_ID_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
+            send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
             return true;
         }
     }

@@ -20,7 +20,7 @@
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_gpio.h"
 #include "octopus_system.h"
-#include "octopus_flash_hal.h"
+#include "octopus_flash.h"
 #include "octopus_uart_hal.h"
 /*******************************************************************************
  * Debug Switch Macros
@@ -51,11 +51,12 @@ void system_power_onoff_auto(void);
  * Local Variables
  * Define static variables used only within this file.
  ******************************************************************************/
-static mb_state_t lt_mb_state;         // Current state of the message buffer
+static mb_state_t lt_mb_state;         // Current state of the system
 static uint8_t l_u8_mpu_status = 0;    // Tracks the status of the MPU
 static uint8_t l_u8_power_off_req = 0; // Tracks if a power-off request is pending
 static uint32_t l_t_msg_wait_10_timer; // Timer for 10 ms message waiting period
-
+//static uint32_t l_t_msg_lowpower_wait_timer; 
+//static uint32_t l_t_msg_booting_wait_timer; 
 /*******************************************************************************
  * Global Function Implementations
  ******************************************************************************/
@@ -66,10 +67,10 @@ static uint32_t l_t_msg_wait_10_timer; // Timer for 10 ms message waiting period
  * This function registers the system module with the communication layer
  * and transitions the system task to an invalid state.
  */
-void app_system_init_running(void)
+void task_system_init_running(void)
 {
-    LOG_LEVEL("app_system_init_running\r\n");
-    OTMS(TASK_ID_SYSTEM, OTMS_S_INVALID);
+    LOG_LEVEL("task_system_init_running\r\n");
+    OTMS(TASK_MODULE_SYSTEM, OTMS_S_INVALID);
 
     // ptl_register_module(P2M_MOD_DEBUG, debug_send_handler, debug_receive_handler);
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
@@ -86,10 +87,10 @@ void app_system_init_running(void)
  *
  * This function transitions the system task to the "assert run" state.
  */
-void app_system_start_running(void)
+void task_system_start_running(void)
 {
-    LOG_LEVEL("app_system_start_running\r\n");
-    OTMS(TASK_ID_SYSTEM, OTMS_S_ASSERT_RUN);
+    LOG_LEVEL("task_system_start_running\r\n");
+    OTMS(TASK_MODULE_SYSTEM, OTMS_S_ASSERT_RUN);
 }
 
 /**
@@ -98,7 +99,7 @@ void app_system_start_running(void)
  * This function starts timers, requests the system to start running,
  * and transitions the system task to the running state.
  */
-void app_system_assert_running(void)
+void task_system_assert_running(void)
 {
     StartTickCounter(&l_t_msg_wait_10_timer);
 
@@ -108,7 +109,7 @@ void app_system_assert_running(void)
     ptl_reqest_running(SOC_TO_MCU_MOD_SYSTEM);
 #endif
 
-    OTMS(TASK_ID_SYSTEM, OTMS_S_RUNNING);
+    OTMS(TASK_MODULE_SYSTEM, OTMS_S_RUNNING);
 }
 
 /**
@@ -116,13 +117,15 @@ void app_system_assert_running(void)
  *
  * Processes system messages and handles events like power on/off and device events.
  */
-void app_system_running(void)
+void task_system_running(void)
 {
-    if (GetTickCounter(&l_t_msg_wait_10_timer) < 10)
+    if (GetTickCounter(&l_t_msg_wait_10_timer) < 5)
         return;
     StartTickCounter(&l_t_msg_wait_10_timer);
 
-    Msg_t *msg = get_message(TASK_ID_SYSTEM);
+
+
+    Msg_t *msg = get_message(TASK_MODULE_SYSTEM);
     if (msg->msg_id == NO_MSG)
         return;
 
@@ -136,36 +139,35 @@ void app_system_running(void)
 
     case MSG_OTSM_DEVICE_POWER_EVENT:
         LOG_LEVEL("Got Event MSG_DEVICE_POWER_EVENT\r\n");
-		    if(msg->param1 == CMD_MODSYSTEM_POWER_ON)
-					system_gpio_power_onoff(true);
-				else if(msg->param1 == CMD_MODSYSTEM_POWER_OFF)
-					system_gpio_power_onoff(false);	
-				else
-					system_power_onoff_auto();
-		    break;
-				
-    case MSG_OTSM_DEVICE_BLE_EVENT:  
-        if(msg->param1 == MSG_OTSM_CMD_BLE_PAIR_ON)
-				{
-				 LOG_LEVEL("MSG_OTSM_DEVICE_BLE_EVENT notify ble to enable pair mode\r\n");
-         send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_SYSTEM, msg->param1, msg->param2);
-				}
-				else 
-				{
-				  send_message(TASK_ID_PTL_1, SOC_TO_MCU_MOD_SYSTEM, msg->param1, msg->param2);
-				}
+        if (msg->param1 == CMD_MODSYSTEM_POWER_ON)
+            system_gpio_power_onoff(true);
+        else if (msg->param1 == CMD_MODSYSTEM_POWER_OFF)
+            system_gpio_power_onoff(false);
+        else
+            system_power_onoff_auto();
         break;
 
+    case MSG_OTSM_DEVICE_BLE_EVENT:
+        if (msg->param1 == MSG_OTSM_CMD_BLE_PAIR_ON)
+        {
+            LOG_LEVEL("MSG_OTSM_DEVICE_BLE_EVENT notify ble to enable pair mode\r\n");
+            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, msg->param1, msg->param2);
+        }
+		else 
+		{
+		    send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, msg->param1, msg->param2);
+		}
+        break;
     }
 }
 
-void app_system_post_running(void)
+void task_system_post_running(void)
 {
 }
 
-void app_system_stop_running(void)
+void task_system_stop_running(void)
 {
-    OTMS(TASK_ID_SYSTEM, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_SYSTEM, OTMS_S_INVALID);
 }
 
 /*******************************************************************************
@@ -212,7 +214,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             tmp[1] = 0;
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_POWER_ON, tmp, 2, buff);
             return true;
-				case CMD_MODSYSTEM_POWER_OFF:
+        case CMD_MODSYSTEM_POWER_OFF:
             // Acknowledgement, no additional action needed
             tmp[0] = 0;
             tmp[1] = 0;
@@ -229,14 +231,6 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             tmp[5] = 0;  // second
             ptl_build_frame(MCU_TO_SOC_MOD_SETUP, CMD_MODSETUP_UPDATE_TIME, tmp, 6, buff);
             return true;
-
-        case MSG_OTSM_CMD_BLE_PAIR_ON:
-            tmp[0] = 0; 
-            tmp[1] = 0; 
-            LOG_LEVEL("MSG_OTSM_CMD_BLE_PAIR_ON \r\n");
-            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, (ptl_frame_cmd_t)MSG_OTSM_CMD_BLE_PAIR_ON, tmp, 2, buff);
-				    hal_com_uart_send_buffer_3(buff->buff,buff->size);
-            return false;
 
         default:
             break;
@@ -259,14 +253,12 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             tmp[1] = 0x01;            // Additional status byte
             ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, CMD_MODSYSTEM_APP_STATE, tmp, 2, buff);
             return true;
-				case MSG_OTSM_CMD_BLE_CONNECTED:
-				case MSG_OTSM_CMD_BLE_DISCONNECTED:
-					  tmp[0] = param1; // Send MPU status
-            tmp[1] = param2;            // Additional status byte
+        case MSG_OTSM_CMD_BLE_CONNECTED:
+        case MSG_OTSM_CMD_BLE_DISCONNECTED:
+            tmp[0] = param1; // Send MPU status
+            tmp[1] = param2; // Additional status byte
             ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, (ptl_frame_cmd_t)param1, tmp, 2, buff);
             return true;
-			  case CMD_MODSYSTEM_POWER_ON:
-				case CMD_MODSYSTEM_POWER_OFF:
         default:
             break;
         }
@@ -299,7 +291,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         switch (payload->frame_cmd)
         {
         case CMD_MODSYSTEM_HANDSHAKE:
-            LOG_LEVEL("system got handshake from mcu payload->frame_type=%02x\r\n", payload->frame_type);
+            LOG_LEVEL("system handshake from mcu payload->frame_type=%02x\r\n", payload->frame_type);
             // ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
             return false;
 
@@ -315,13 +307,13 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             return true;
 
         case CMD_MODSYSTEM_POWER_ON:
-					  LOG_LEVEL("got CMD_MODSYSTEM_POWER_ON from mcu\r\n");
+            LOG_LEVEL("got CMD_MODSYSTEM_POWER_ON from mcu\r\n");
             system_power_on_off(true);
-            return false; 
-				case CMD_MODSYSTEM_POWER_OFF:
-					  LOG_LEVEL("got CMD_MODSYSTEM_POWER_OFF from mcu\r\n");
-				    system_power_on_off(false);
-            return false; 
+            return false;
+        case CMD_MODSYSTEM_POWER_OFF:
+            LOG_LEVEL("got CMD_MODSYSTEM_POWER_OFF from mcu\r\n");
+            system_power_on_off(false);
+            return false;
         case CMD_MODSETUP_UPDATE_TIME:
             tmp = 0x01;
             ptl_build_frame(SOC_TO_MCU_MOD_SETUP, CMD_MODSETUP_UPDATE_TIME, &tmp, 1, ackbuff);
@@ -337,9 +329,9 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             ptl_build_frame(SOC_TO_MCU_MOD_SETUP, CMD_MODSETUP_KEY, &tmp, 1, ackbuff);
             return false;
         case MSG_OTSM_CMD_BLE_PAIR_ON:
-				case MSG_OTSM_CMD_BLE_PAIR_OFF:	
-					   send_message(TASK_ID_BLE, MSG_OTSM_DEVICE_BLE_EVENT,MSG_OTSM_CMD_BLE_PAIR_ON, 0);
-				    return false;
+        case MSG_OTSM_CMD_BLE_PAIR_OFF:
+            send_message(TASK_MODULE_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_PAIR_ON, 0);
+            return false;
         default:
             break;
         }
@@ -350,25 +342,39 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         switch (payload->frame_cmd)
         {
         case CMD_MODSYSTEM_HANDSHAKE:
-					
-            LOG_LEVEL("system got handshake from soc payload->frame_type=%02x\r\n", payload->frame_type);
+
+            LOG_LEVEL("system handshake from soc payload->frame_type=%02x\r\n", payload->frame_type);
             // ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, (uint8_t *)VER_STR, sizeof(VER_STR), ackbuff);
-            send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, 0); // after got handshake then send indicate respond
-				
+            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, 0); // after got handshake then send indicate respond
+
             return false;
-				case MSG_OTSM_CMD_BLE_CONNECTED:
-					
-					  LOG_LEVEL("system got MSG_OTSM_CMD_BLE_CONNECTED prameter=%02x\r\n", payload->data[0]);
-						system_gpio_power_onoff(true);
-            
-				    break;
-				case MSG_OTSM_CMD_BLE_DISCONNECTED:
-					
-					   LOG_LEVEL("system got MSG_OTSM_CMD_BLE_DISCONNECTED prameter=%02x\r\n", payload->data[1]);
-				     if(payload->data[1] == CMD_MODSYSTEM_POWER_OFF)
-						 system_gpio_power_onoff(false);
-             
-					  break;
+        case MSG_OTSM_CMD_BLE_CONNECTED:
+            ///if (!is_power_on())
+            ///{
+            ///    LOG_LEVEL("system got MSG_OTSM_CMD_BLE_CONNECTED prameter=%02x\r\n", payload->data[0]);
+            ///    system_gpio_power_onoff(true);
+            ///}
+            /// if (is_power_on())
+            ///{
+            ///     //tmp = 0x01;
+            ///     //ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_POWER_ON, &tmp, 1, ackbuff);
+            ///     //return true;
+            /// }
+            break;
+        case MSG_OTSM_CMD_BLE_DISCONNECTED:
+
+            LOG_LEVEL("system got MSG_OTSM_CMD_BLE_DISCONNECTED prameter=%02x\r\n", payload->data[1]);
+            if (payload->data[1] == CMD_MODSYSTEM_POWER_OFF)
+            {
+                system_gpio_power_onoff(false);
+            }
+            /// if (!is_power_on())
+            ///{
+            ///     //tmp = 0x01;
+            ///     //ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_POWER_OFF, &tmp, 1, ackbuff);
+            ///     //return true;
+            /// }
+            break;
         default:
             break;
         }
@@ -386,7 +392,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 void system_handshake_with_mcu(void)
 {
     LOG_LEVEL("system send handshake data to xxx\r\n");
-    send_message(TASK_ID_PTL_1, SOC_TO_MCU_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, 0);
+    send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, 0);
 }
 
 /*******************************************************************************
@@ -398,7 +404,7 @@ void system_handshake_with_mcu(void)
 void system_handshake_with_app(void)
 {
     LOG_LEVEL("system send handshake data to xxx\r\n");
-    send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, 0);
+    send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, CMD_MODSYSTEM_HANDSHAKE, 0);
 }
 
 /*******************************************************************************
@@ -414,7 +420,7 @@ void system_set_mpu_status(uint8_t status)
 {
     LOG_LEVEL("system set mpu status=%d \r\n", status);
     l_u8_mpu_status = status;
-    send_message(TASK_ID_SYSTEM, CMD_MODSYSTEM_APP_STATE, l_u8_mpu_status, l_u8_mpu_status);
+    send_message(TASK_MODULE_SYSTEM, CMD_MODSYSTEM_APP_STATE, l_u8_mpu_status, l_u8_mpu_status);
 }
 
 /*******************************************************************************
@@ -457,6 +463,11 @@ bool system_get_power_off_req(void)
 mb_state_t system_get_mb_state(void)
 {
     return lt_mb_state;
+}
+
+void system_set_mb_state(mb_state_t status)
+{
+    lt_mb_state = status;
 }
 
 void system_reboot_system(void)

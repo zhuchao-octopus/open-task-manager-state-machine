@@ -44,12 +44,12 @@ extern "C"
      * GLOBAL FUNCTIONS DECLEAR
      */
 
-    void app_bafang_ptl_init_running(void);
-    void app_bafang_ptl_start_running(void);
-    void app_bafang_ptl_assert_running(void);
-    void app_bafang_ptl_running(void);
-    void app_bafang_ptl_post_running(void);
-    void app_bafang_ptl_stop_running(void);
+    void task_bfang_ptl_init_running(void);
+    void task_bfang_ptl_start_running(void);
+    void task_bfang_ptl_assert_running(void);
+    void task_bfang_ptl_running(void);
+    void task_bfang_ptl_post_running(void);
+    void task_bfang_ptl_stop_running(void);
 
     uint16_t get_top_error_code(void);
     uint16_t get_wheel_radius_mm(void);

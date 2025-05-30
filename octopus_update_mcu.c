@@ -84,8 +84,8 @@ static program_buf_t lt_mcu_program_buf;
  * LOCAL FUNCTIONS DECLEAR
  */
 // Function declarations
-static bool update_module_send_handler(ptl_frame_type_t module, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff); // Handle outgoing messages
-static bool update_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);						  // Handle incoming messages
+static bool update_send_handler(ptl_frame_type_t module, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff); // Handle outgoing messages
+static bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);						  // Handle incoming messages
 static void mcu_update_state_proc(void);
 
 /*******************************************************************************
@@ -95,36 +95,36 @@ static void mcu_update_state_proc(void);
 /**
  * @brief Initialize the MCU update module and register communication handlers.
  */
-void app_update_mcu_init_running(void)
+void task_update_mcu_init_running(void)
 {
-	ptl_register_module(MCU_TO_SOC_MOD_UPDATE, update_module_send_handler, update_module_receive_handler); // Register handlers for module communication
-	OTMS(TASK_ID_UPDATE_MCU, OTMS_S_INVALID);															   // Set the task state to invalid (not running)
-	LOG_LEVEL("OTMS app_update_mcu_init_running\r\n");
+	ptl_register_module(MCU_TO_SOC_MOD_UPDATE, update_send_handler, update_receive_handler); // Register handlers for module communication
+	OTMS(TASK_MODULE_UPDATE_MCU, OTMS_S_INVALID);											 // Set the task state to invalid (not running)
+	LOG_LEVEL("OTMS task_update_mcu_init_running\r\n");
 }
 
 /**
  * @brief Start the MCU update task by setting it to the assert run state.
  */
-void app_update_mcu_start_running(void)
+void task_update_mcu_start_running(void)
 {
-	OTMS(TASK_ID_UPDATE_MCU, OTMS_S_ASSERT_RUN); // Assert task state to running
-	LOG_LEVEL("OTMS app_update_mcu_start_running\r\n");
+	OTMS(TASK_MODULE_UPDATE_MCU, OTMS_S_ASSERT_RUN); // Assert task state to running
+	LOG_LEVEL("OTMS task_update_mcu_start_running\r\n");
 	lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
 }
 
 /**
  * @brief Assert the MCU update task to a running state, ensuring it is active.
  */
-void app_update_mcu_assert_running(void)
+void task_update_mcu_assert_running(void)
 {
 	ptl_reqest_running(MCU_TO_SOC_MOD_UPDATE); // Request module to be active
-	OTMS(TASK_ID_UPDATE_MCU, OTMS_S_RUNNING);  // Set task state to running
+	OTMS(TASK_MODULE_UPDATE_MCU, OTMS_S_RUNNING);  // Set task state to running
 }
 
 /**
  * @brief Main task function for managing the MCU update process.
  */
-void app_update_mcu_running(void)
+void task_update_mcu_running(void)
 {
 	mcu_update_state_proc(); // Call the reboot state machine processing function
 }
@@ -132,25 +132,25 @@ void app_update_mcu_running(void)
 /**
  * @brief Post-task actions after the MCU update task completes.
  */
-void app_update_mcu_post_running(void)
+void task_update_mcu_post_running(void)
 {
 	ptl_release_running(MCU_TO_SOC_MOD_UPDATE);	 // Release the active module
-	OTMS(TASK_ID_UPDATE_MCU, OTMS_S_ASSERT_RUN); // Reset task state to assert run
+	OTMS(TASK_MODULE_UPDATE_MCU, OTMS_S_ASSERT_RUN); // Reset task state to assert run
 }
 
 /**
  * @brief Stop the MCU update task by invalidating its state.
  */
-void app_update_mcu_stop_running(void)
+void task_update_mcu_stop_running(void)
 {
-	OTMS(TASK_ID_UPDATE_MCU, OTMS_S_INVALID); // Set the task state to invalid
+	OTMS(TASK_MODULE_UPDATE_MCU, OTMS_S_INVALID); // Set the task state to invalid
 }
 
 /*******************************************************************************
  * LOCAL FUNCTIONS IMPLEMENTATION
  */
 // Function to handle sending update module requests based on the module type and parameters
-bool update_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
+bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
 {
 	MY_ASSERT(buff);
 	uint8_t tmp[2] = {0};
@@ -161,7 +161,7 @@ bool update_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, ui
 		{
 		case CMD_MODUPDATE_UPDATE_FW_STATE:
 		{
-			tmp[0] = param1;
+			tmp[0] = lt_mcu_program_buf.state;
 			tmp[1] = lt_mcu_program_buf.state; // ack success
 			ptl_build_frame(MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_UPDATE_FW_STATE, tmp, 2, buff);
 			return true;
@@ -169,11 +169,12 @@ bool update_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, ui
 		case CMD_MODUPDATE_SEND_FW_DATA:
 		{
 			// bootloader_iap_mode = 1;
-			tmp[0] = param1; // ack success
-			tmp[1] = param2; // ack success
+			tmp[0] = lt_mcu_program_buf.state; // ack success
+			tmp[1] = lt_mcu_program_buf.state; // ack success
 			ptl_build_frame(MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, tmp, 2, buff);
 			return true;
 		}
+
 		default:
 			break;
 		}
@@ -193,7 +194,7 @@ void MCU_Print_Receive_Data(uint32_t address, uint8_t *buff, uint8_t length)
 	LOG_BUFF(buff, length);
 }
 // Function to handle receiving update module requests, process the payload, and send acknowledgment.
-bool update_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
+bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
 {
 	MY_ASSERT(payload);
 	MY_ASSERT(ackbuff);
@@ -215,9 +216,13 @@ bool update_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t
 		case CMD_MODUPDATE_ENTER_FW_UPDATE: // first
 		{
 			LOG_LEVEL("BootLoaer CMD_MODUPDATE_ENTER_FW_UPDATE \n");
-			lt_mcu_program_buf.state = MCU_UPDATE_STATE_INIT;
-			// tmp = lt_mcu_program_buf.state;
-			// ptl_build_frame(MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_ENTER_FW_UPDATE, &tmp, 1, ackbuff);
+			if(lt_mcu_program_buf.state < MCU_UPDATE_STATE_INIT)
+			   lt_mcu_program_buf.state = MCU_UPDATE_STATE_INIT;
+			else if(lt_mcu_program_buf.state == MCU_UPDATE_STATE_RECEIVING)
+			   send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, lt_mcu_program_buf.state);
+		  //tmp[0] = lt_mcu_program_buf.state;
+			//tmp[1] = lt_mcu_program_buf.state;
+		  //ptl_build_frame(MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_ENTER_FW_UPDATE, tmp, 2, ackbuff);
 			return false;
 		}
 		case CMD_MODUPDATE_EXIT_FW_UPDATE:
@@ -240,11 +245,11 @@ bool update_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t
 			}
 
 			MCU_Print_Receive_Data(lt_mcu_program_buf.addr, lt_mcu_program_buf.buff, lt_mcu_program_buf.length);
-
-			if (lt_mcu_program_buf.state == MCU_UPDATE_STATE_RECEIVING)
-				lt_mcu_program_buf.state = MCU_UPDATE_STATE_UPDATING;
-			else
-				lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;
+           send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, lt_mcu_program_buf.state);
+			///if (lt_mcu_program_buf.state == MCU_UPDATE_STATE_RECEIVING)
+			///	lt_mcu_program_buf.state = MCU_UPDATE_STATE_UPDATING;
+			///else
+			//	lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;
 			return false;
 		}
 		case CMD_MODUPDATE_REBOOT:
@@ -271,24 +276,26 @@ static void mcu_update_state_proc(void)
 	case MCU_UPDATE_STATE_INIT:
 	{
 		LOG_LEVEL("MCU_UPDATE_STATE_INIT \n");
-		// send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_UPDATE_FW_STATE, 0x01);
+		// send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_UPDATE_FW_STATE, 0x01);
 		lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERASE;
 		break;
 	}
 	case MCU_UPDATE_STATE_ERASE:
-	{
-		send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_UPDATE_FW_STATE, 0x02);
+	{	
 		uint32_t erase_count = Flash_erase_user_app_arear();
-
+    LOG_LEVEL("MCU_UPDATE_STATE_ERASE... %08x/%08x\n",erase_count,MAIN_APP_BLOCK_COUNT);
 		if (erase_count == MAIN_APP_BLOCK_COUNT)
+		{
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_RECEIVING;
+			send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, lt_mcu_program_buf.state);
+		}
 		else
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;
-
+    
 		break;
 	}
 	case MCU_UPDATE_STATE_RECEIVING:
-
+   
 		break;
 	case MCU_UPDATE_STATE_UPDATING:
 	{
@@ -305,8 +312,8 @@ static void mcu_update_state_proc(void)
 
 		if (writed_count == lt_mcu_program_buf.length)
 		{
-			lt_mcu_program_buf.state = MCU_UPDATE_STATE_RECEIVING;
-			send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, lt_mcu_program_buf.state);
+			lt_mcu_program_buf.state = MCU_UPDATE_STATE_RECEIVING;//continue receive data
+			send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, lt_mcu_program_buf.state);
 			break;
 		}
 
@@ -330,7 +337,7 @@ static void mcu_update_state_proc(void)
 	case MCU_UPDATE_STATE_ERROR:
 	{
 		LOG_LEVEL("MCU_UPDATE_ST_FAILED \n");
-		// send_message(TASK_ID_PTL_1, MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, 0);
+		// send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, 0);
 		break;
 	}
 	}

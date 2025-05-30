@@ -69,68 +69,68 @@ extern "C"
     /**
      * @brief Initialize the update process.
      */
-    void app_update_soc_init_running(void);
+    void task_update_soc_init_running(void);
 
     /**
      * @brief Start the update process.
      */
-    void app_update_soc_start_running(void);
+    void task_update_soc_start_running(void);
 
     /**
      * @brief Assert and verify the update process is running.
      */
-    void app_update_soc_assert_running(void);
+    void task_update_soc_assert_running(void);
 
     /**
      * @brief Handle the main logic for the update process.
      */
-    void app_update_soc_running(void);
+    void task_update_soc_running(void);
 
     /**
      * @brief Perform post-update operations.
      */
-    void app_update_soc_post_running(void);
+    void task_update_soc_post_running(void);
 
     /**
      * @brief Stop the update process.
      */
-    void app_update_soc_stop_running(void);
+    void task_update_soc_stop_running(void);
 
     /**
      * @brief Confirm the update process.
      */
-    void app_update_confirm(void);
+    void task_update_confirm(void);
 
     /**
      * @brief Get the time of the last confirmation.
      * @return The timestamp of the last confirmation.
      */
-    uint32_t app_update_get_confirm_time(void);
+    uint32_t task_update_get_confirm_time(void);
 
     /**
      * @brief Get the total number of firmware lines.
      * @return The total number of lines in the firmware.
      */
-    uint32_t app_update_get_fw_total_line(void);
+    uint32_t task_update_get_fw_total_line(void);
 
     /**
      * @brief Get the current firmware line being processed.
      * @return The current line number.
      */
-    uint32_t app_update_get_fw_curr_line(void);
+    uint32_t task_update_get_fw_curr_line(void);
 
 /**
  * @brief Get the error code from the update process.
  * @return The error code indicating the reason for failure.
  */
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
-    uint32_t app_update_get_error_code(void);
+    uint32_t task_update_get_error_code(void);
 #endif
     /**
      * @brief Get the current status of the update process.
      * @return The current state of the MCU update.
      */
-    mcu_update_state_t app_update_get_status(void);
+    mcu_update_state_t task_update_get_status(void);
 
     /**
      * @}

@@ -48,12 +48,12 @@ extern "C"
      */
     typedef struct
     {
-			  signed char rssi;
+		signed char rssi;
         uint8_t mode;   /**< Current mode of the BLE module. */
         //bool locked;    /**< Indicates if the BLE module is locked. */
         bool to_lock;   /**< Indicates if the BLE module should be locked. */
         bool connected;
-			  bool rssi_unlock;
+		bool rssi_unlock;
         uint8_t mac[6]; /**< MAC address associated with the BLE module. */
     } BLE_STATUS;
 
@@ -65,32 +65,32 @@ extern "C"
     /**
      * @brief Initialize BLE functionality.
      */
-    void app_ble_init_running(void);
+    void task_ble_init_running(void);
 
     /**
      * @brief Start BLE operations.
      */
-    void app_ble_start_running(void);
+    void task_ble_start_running(void);
 
     /**
      * @brief Assert and verify the BLE module is running correctly.
      */
-    void app_ble_assert_running(void);
+    void task_ble_assert_running(void);
 
     /**
      * @brief Handle the main logic for BLE operations.
      */
-    void app_ble_running(void);
+    void task_ble_running(void);
 
     /**
      * @brief Perform post-processing for BLE operations.
      */
-    void app_ble_post_running(void);
+    void task_ble_post_running(void);
 
     /**
      * @brief Stop BLE operations.
      */
-    void app_ble_stop_running(void);
+    void task_ble_stop_running(void);
 
 #ifdef __cplusplus
 }
