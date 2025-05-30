@@ -28,6 +28,9 @@
 #define BLE_BONDED_MAC_ADDRESS_1 (0x1107c0c4)
 #define BLE_BONDED_MAC_ADDRESS_2 (0x1107c0d0)
 #define BLE_BONDED_MAC_ADDRESS_3 (0x1107c0dc)
+
+#define BLE_RSSI_UNLOCK_MAX_DB_VALUE 55
+#define BLE_RSSI_LOCK_MAX_DB_VALUE 70
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -39,12 +42,16 @@ void CheckBLeConnectionStatus(uint8_t *connected_mac, uint16_t c_type);
 
 void StartToLock(void);
 void StartToUnlock(void);
-void BLE_connecttion_polling(void);
+
+void StartToLockRssi(void);
+void StartToUnlockRssi(void);
+
+void ble_connecttion_polling(void);
 void update_bonded_mac(void);
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-BLE_STATUS ble_status = {false, false, false, {0}};
+BLE_STATUS ble_status = {0};
 
 uint8_t ble_bonded_mac[6][6] = {
 	{0x01, 0x01, 0x01, 0x01, 0x01, 0x01},
@@ -56,8 +63,11 @@ uint8_t ble_bonded_mac[6][6] = {
 	{0xae, 0xd8, 0xb4, 0xf6, 0x40, 0xc4},
 };
 
-static uint32_t l_t_msg_ble_wait_timer = 0;
 static uint32_t l_t_msg_wait_10_timer = 0;
+
+static uint32_t l_t_msg_ble_polling_timer_1s = 0;
+static uint32_t l_t_msg_ble_pair_wait_timer = 0;
+
 static uint32_t l_t_msg_ble_lock_wait_timer = 0;
 
 // static bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff);
@@ -68,11 +78,12 @@ static uint32_t l_t_msg_ble_lock_wait_timer = 0;
  */
 void task_ble_init_running(void)
 {
-	OTMS(TASK_ID_BLE, OTMS_S_INVALID);
+	OTMS(TASK_MODULE_BLE, OTMS_S_INVALID);
 #ifdef TASK_MANAGER_STATE_MACHINE_BLE
 	LOG_LEVEL("task_ble_init_running\r\n");
 	// com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
-	hal_disable_bLe_pair_mode();
+	//hal_disable_bLe_pair_mode();
+  ble_status.mode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
 	update_bonded_mac();
 #endif
 }
@@ -80,15 +91,15 @@ void task_ble_init_running(void)
 void task_ble_start_running(void)
 {
 	LOG_LEVEL("task_ble_start_running\r\n");
-	OTMS(TASK_ID_BLE, OTMS_S_ASSERT_RUN);
+	OTMS(TASK_MODULE_BLE, OTMS_S_ASSERT_RUN);
 }
 
 void task_ble_assert_running(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_BLE
 	StartTickCounter(&l_t_msg_wait_10_timer);
-
-	OTMS(TASK_ID_BLE, OTMS_S_RUNNING);
+  StartTickCounter(&l_t_msg_ble_polling_timer_1s);
+	OTMS(TASK_MODULE_BLE, OTMS_S_RUNNING);
 #endif
 }
 
@@ -98,7 +109,7 @@ void task_ble_running(void)
 		return;
 	StartTickCounter(&l_t_msg_wait_10_timer);
 
-	Msg_t *msg = get_message(TASK_ID_BLE);
+	Msg_t *msg = get_message(TASK_MODULE_BLE);
 	if (msg->msg_id != NO_MSG)
 	{
 		if (msg->msg_id == MSG_OTSM_DEVICE_BLE_EVENT)
@@ -113,33 +124,49 @@ void task_ble_running(void)
 					ble_status.mode = hal_set_pairing_mode_onoff(false, ble_status.mode);
 				break;
 
-			case MSG_OTSM_CMD_BLE_CONNECTED:
-				break;
+	    case MSG_OTSM_CMD_BLE_CONNECTED:
+		    	break;
+			
 			case MSG_OTSM_CMD_BLE_PAIRING:
 			case MSG_OTSM_CMD_BLE_BONDED:
-				update_bonded_mac();
-
+				ble_status.connected = true;
+			  ble_status.rssi_unlock = true;
+				update_bonded_mac();			
+			 break;
+			
 			case MSG_OTSM_CMD_BLE_DISCONNECTED:
+				ble_status.connected = false;
 				CheckBLeConnectionStatus(ble_status.mac, msg->param1);
+			
 				break;
+			
 			default:
 				break;
 			}
 		}
 	}
-
-	BLE_connecttion_polling();
+	
 	if (GAPBOND_PAIRING_MODE_WAIT_FOR_REQ == ble_status.mode)
 	{
-		if (!IsTickCounterStart(&l_t_msg_ble_wait_timer))
-			StartTickCounter(&l_t_msg_ble_wait_timer);
-		if (GetTickCounter(&l_t_msg_ble_wait_timer) >= 1000 * 60)
-			ble_status.mode = hal_set_pairing_mode_onoff(false, ble_status.mode);
+		if (!IsTickCounterStart(&l_t_msg_ble_pair_wait_timer))
+			StartTickCounter(&l_t_msg_ble_pair_wait_timer);
+		if (GetTickCounter(&l_t_msg_ble_pair_wait_timer) >= 1000 * 60)
+			ble_status.mode = hal_set_pairing_mode_onoff(false, ble_status.mode);		
 	}
 	else
 	{
-		StopTickCounter(&l_t_msg_ble_wait_timer);
+		StopTickCounter(&l_t_msg_ble_pair_wait_timer);
 	}
+	
+  if (GetTickCounter(&l_t_msg_ble_polling_timer_1s) >= 1000)
+	{
+		//LOG_LEVEL("ble_status.rssi:%d\r\n",ble_status.rssi);
+		StartToLockRssi();
+		StartToUnlockRssi();
+		StartTickCounter(&l_t_msg_ble_polling_timer_1s);
+	}
+	
+	ble_connecttion_polling();
 }
 
 void task_ble_post_running(void)
@@ -148,7 +175,7 @@ void task_ble_post_running(void)
 
 void task_ble_stop_running(void)
 {
-	OTMS(TASK_ID_BLE, OTMS_S_INVALID);
+	OTMS(TASK_MODULE_BLE, OTMS_S_INVALID);
 }
 
 bool is_exists_bonded_mac(uint8_t *connected_mac)
@@ -181,6 +208,7 @@ void update_bonded_mac(void)
 	FlashReadToBuff(BLE_BONDED_MAC_ADDRESS_3, ble_bonded_mac[3], 6);
 	LOG_LEVEL("ble bonded mac:");
 	LOG_BUFF(ble_bonded_mac[3], 6);
+	LOG_LEVEL("ble_status.connected:%d,ble_status.rssi:%d\r\n",ble_status.connected,ble_status.rssi);
 }
 
 void CheckBLeConnectionStatus(uint8_t *connected_mac, uint16_t c_type)
@@ -207,22 +235,51 @@ void CheckBLeConnectionStatus(uint8_t *connected_mac, uint16_t c_type)
 	{
 	case MSG_OTSM_CMD_BLE_PAIRING:
 	case MSG_OTSM_CMD_BLE_BONDED:
-		StartToUnlock();
 		break;
 	case MSG_OTSM_CMD_BLE_DISCONNECTED:
-		send_message(TASK_ID_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, MSG_OTSM_CMD_BLE_DISCONNECTED);
+		send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, MSG_OTSM_CMD_BLE_DISCONNECTED);
 		StartToLock();
+	 
 		break;
 	default:
 		break;
 	}
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void StartToLockRssi(void)
+{
+	if (ble_status.rssi > BLE_RSSI_LOCK_MAX_DB_VALUE && ble_status.connected)
+	{
+		if (!IsTickCounterStart(&l_t_msg_ble_lock_wait_timer) )
+		{
+			ble_status.to_lock = true;
+			StartTickCounter(&l_t_msg_ble_lock_wait_timer);
+			LOG_LEVEL("Start to lock system rssi=%d ...\r\n",ble_status.rssi);
+		}
+	}
+}
+
+void StartToUnlockRssi(void)
+{
+	if (ble_status.rssi > BLE_RSSI_UNLOCK_MAX_DB_VALUE || ble_status.rssi == 0) return;
+	if (!ble_status.connected) return ;
+	if (!ble_status.rssi_unlock) return;
+	if (IsTickCounterStart(&l_t_msg_ble_lock_wait_timer))
+		StopTickCounter(&l_t_msg_ble_lock_wait_timer);
+
+	ble_status.to_lock = false;
+	//ble_status.locked = false;
+  ble_status.rssi_unlock = false;
+	LOG_LEVEL("Start to unlock system rssi=%d ...\r\n",ble_status.rssi);
+	send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, CMD_MODSYSTEM_POWER_ON);	
+}
+
 void StartToLock(void)
 {
-	if (!IsTickCounterStart(&l_t_msg_ble_lock_wait_timer))
+	if (!IsTickCounterStart(&l_t_msg_ble_lock_wait_timer) )
 	{
-		ble_status.to_lock = true;
 		ble_status.to_lock = true;
 		StartTickCounter(&l_t_msg_ble_lock_wait_timer);
 		LOG_LEVEL("Start to lock system...\r\n");
@@ -231,27 +288,28 @@ void StartToLock(void)
 
 void StartToUnlock(void)
 {
+	if (!ble_status.connected) return ;
 	if (IsTickCounterStart(&l_t_msg_ble_lock_wait_timer))
-	{
-		ble_status.to_lock = false;
-		ble_status.locked = false;
 		StopTickCounter(&l_t_msg_ble_lock_wait_timer);
-	}
+	
+	ble_status.to_lock = false;
+	//ble_status.locked = false;
 	LOG_LEVEL("Start to unlock system...\r\n");
-	send_message(TASK_ID_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, CMD_MODSYSTEM_POWER_ON);
+	send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, CMD_MODSYSTEM_POWER_ON);
 }
 
-void BLE_connecttion_polling(void)
+void ble_connecttion_polling(void)
 {
-	// uint32_t speed = task_carinfo_getSpeed();
-	// PRINT("OnDelaySleepSystem %d\r\n", speed);
-	if (ble_status.to_lock && GetTickCounter(&l_t_msg_ble_lock_wait_timer) > 10000)
+  ble_status.rssi = hal_get_ble_rssi(0);
+	
+	if (ble_status.to_lock && GetTickCounter(&l_t_msg_ble_lock_wait_timer) > 8000)
 	{
 		StopTickCounter(&l_t_msg_ble_lock_wait_timer);
-		ble_status.locked = true;
+		//ble_status.locked = true;
 		ble_status.to_lock = false;
+		
 		LOG_LEVEL("Start to power off system...\r\n");
-		send_message(TASK_ID_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, CMD_MODSYSTEM_POWER_OFF);
+		send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, CMD_MODSYSTEM_POWER_OFF);
 	}
 }
 #endif

@@ -89,7 +89,7 @@ extern "C"
         MB_POWER_ST_INIT = 0, /**< Initialization state. */
         MB_POWER_ST_LOWPOWER, /**< Low-power state. */
         MB_POWER_ST_STANDBY,  /**< Standby state. */
-			  MB_POWER_ST_BOOTING,  /**< Booting state. */
+        MB_POWER_ST_BOOTING,  /**< Booting state. */
         MB_POWER_ST_ON,       /**< Fully operational state. */
         MB_POWER_ST_PARTIAL,  /**< Partial operation state. */
         MB_POWER_ST_SHUTDOWN, /**< Shutdown process. */

@@ -122,7 +122,7 @@ void task_update_soc_init_running(void)
 {
     LOG_LEVEL("task_update_soc_init_running\r\n");                                                                // Log the initialization of the update process
     ptl_register_module(SOC_TO_MCU_MOD_UPDATE, task_update_send_handler, task_update_receive_handler); // Register the send and receive handlers for the update module
-    OTMS(TASK_ID_UPDATE_SOC, OTMS_S_INVALID);                                                        // Set the update task status to invalid
+    OTMS(TASK_MODULE_UPDATE_SOC, OTMS_S_INVALID);                                                      // Set the update task status to invalid
 }
 
 /**
@@ -130,7 +130,7 @@ void task_update_soc_init_running(void)
  */
 void task_update_soc_start_running(void)
 {
-    OTMS(TASK_ID_UPDATE_SOC, OTMS_S_ASSERT_RUN); // Set the update task status to assert run (start the update process)
+    OTMS(TASK_MODULE_UPDATE_SOC, OTMS_S_ASSERT_RUN); // Set the update task status to assert run (start the update process)
 }
 
 /**
@@ -141,7 +141,7 @@ void task_update_soc_assert_running(void)
     if (MB_ST_ON <= system_get_mb_state()) // Check if the memory board state is ON
     {
         ptl_reqest_running(SOC_TO_MCU_MOD_UPDATE); // Request the update module to start running
-        OTMS(TASK_ID_UPDATE_SOC, OTMS_S_RUNNING);  // Set the update task status to running
+        OTMS(TASK_MODULE_UPDATE_SOC, OTMS_S_RUNNING);  // Set the update task status to running
     }
 }
 
@@ -161,7 +161,7 @@ void task_update_soc_post_running(void)
     ptl_release_running(SOC_TO_MCU_MOD_UPDATE); // Release the update module from running state
     if (MB_ST_STOP != system_get_mb_state())    // Check if the memory board state is not stopped
     {
-        OTMS(TASK_ID_UPDATE_SOC, OTMS_S_ASSERT_RUN); // Assert the update task status to running
+        OTMS(TASK_MODULE_UPDATE_SOC, OTMS_S_ASSERT_RUN); // Assert the update task status to running
     }
 }
 
@@ -171,7 +171,7 @@ void task_update_soc_post_running(void)
 void task_update_soc_stop_running(void)
 {
     LOG_LEVEL("task_update_stop_running\r\n"); // Log the stopping of the update process
-    OTMS(TASK_ID_UPDATE_SOC, OTMS_S_INVALID); // Set the update task status to invalid (stop the update process)
+    OTMS(TASK_MODULE_UPDATE_SOC, OTMS_S_INVALID); // Set the update task status to invalid (stop the update process)
 }
 
 /**
@@ -367,7 +367,7 @@ static void task_read_hex_file_callback(uint32_t addr, uint8_t *binbuff, uint8_t
         }
 
         l_b_flag_transfer_next = false;                                                  // Reset the flag indicating to transfer the next frame
-        send_message(TASK_ID_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, 0); // Send a message to request the next firmware data transfer
+        send_message(TASK_MODULE_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, 0); // Send a message to request the next firmware data transfer
 
         while (!l_b_flag_transfer_next && !l_b_flag_transfer_retry) // Wait until either transfer next or retry flag is set
         {
@@ -377,7 +377,7 @@ static void task_read_hex_file_callback(uint32_t addr, uint8_t *binbuff, uint8_t
     else if (l_b_flag_transfer_retry)
     {                                                                                    // If retry is needed
         l_b_flag_transfer_retry = false;                                                 // Reset the retry flag
-        send_message(TASK_ID_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, 0); // Send a message to retry the firmware data transfer
+        send_message(TASK_MODULE_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_SEND_FW_DATA, 0); // Send a message to retry the firmware data transfer
 
         while (!l_b_flag_transfer_next && !l_b_flag_transfer_retry) // Wait until either transfer next or retry flag is set
         {
@@ -452,7 +452,7 @@ static void task_update_state_handler(void)
         if (GetTickCounter(&l_tmr_check_fw_state) >= MCU_UPDATE_CHECK_FW_STATE_TIME) // Timer to check firmware state
         {
             StartTickCounter(&l_tmr_check_fw_state);                                           // Restart the timer
-            send_message(TASK_ID_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_CHECK_FW_STATE, 0); // Send check firmware state command
+            send_message(TASK_MODULE_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_CHECK_FW_STATE, 0); // Send check firmware state command
         }
 
         if ((GetTickCounter(&l_tmr_confirm) >= MCU_UPDATE_CONFIRM_TIME) || l_b_flag_enter_fw_update) // Check if confirmation timeout or flag set
@@ -477,7 +477,7 @@ static void task_update_state_handler(void)
 
     case MCU_UPDATE_ST_START: // Start the firmware update process
         LOG_LEVEL("MCU_UPDATE_ST_START \r\n");
-        send_message(TASK_ID_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_ENTER_FW_UPDATE, 0); // Send command to enter firmware update mode
+        send_message(TASK_MODULE_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_ENTER_FW_UPDATE, 0); // Send command to enter firmware update mode
 
         l_b_flag_transfer_next = true;   // Set flag to transfer the next chunk
         l_b_flag_transfer_retry = false; // Reset retry flag
@@ -490,7 +490,7 @@ static void task_update_state_handler(void)
         if (GetTickCounter(&l_tmr_check_fw_state) >= MCU_UPDATE_CHECK_FW_STATE_TIME) // Timer to check firmware state
         {
             StartTickCounter(&l_tmr_check_fw_state);                                           // Restart the timer
-            send_message(TASK_ID_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_CHECK_FW_STATE, 0); // Send check firmware state command
+            send_message(TASK_MODULE_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_CHECK_FW_STATE, 0); // Send check firmware state command
         }
 
         if (mcu_fw_state == MCU_FW_STATE_WAIT_TRANSFER) // Check if MCU is ready to receive firmware transfer
@@ -518,7 +518,7 @@ static void task_update_state_handler(void)
             l_b_flag_transfer_complete = false; // Reset transfer complete flag
             if (l_i_mcu_file_res > 0)           // If the file was successfully read
             {
-                send_message(TASK_ID_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_EXIT_FW_UPDATE, 0); // Send command to exit firmware update mode
+                send_message(TASK_MODULE_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_EXIT_FW_UPDATE, 0); // Send command to exit firmware update mode
             }
             else
             {
@@ -545,7 +545,7 @@ static void task_update_state_handler(void)
             if (l_b_flag_update_reboot_req) // If reboot is requested
             {
                 l_b_flag_update_reboot_req = false;                                           // Reset reboot request flag
-                send_message(TASK_ID_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_REBOOT, 0x01); // Send reboot command
+                send_message(TASK_MODULE_PTL, SOC_TO_MCU_MOD_UPDATE, CMD_MODUPDATE_REBOOT, 0x01); // Send reboot command
             }
         }
         break;

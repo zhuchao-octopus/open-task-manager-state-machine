@@ -73,7 +73,7 @@ void register_car_infor_callback(CarInforCallback_t callback)
 void task_ipc_init_running(void)
 {
     LOG_LEVEL("task_ipc_init_running\r\n");
-    OTMS(TASK_ID_IPC_SOCKET, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_INVALID);
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_register_module(MCU_TO_SOC_MOD_IPC, ipc_send_handler, ipc_receive_handler);
@@ -90,7 +90,7 @@ void task_ipc_init_running(void)
 void task_ipc_start_running(void)
 {
     LOG_LEVEL("task_ipc_start_running\r\n");
-    OTMS(TASK_ID_IPC_SOCKET, OTMS_S_ASSERT_RUN);
+    OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_ASSERT_RUN);
 }
 
 /**
@@ -109,7 +109,7 @@ void task_ipc_assert_running(void)
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
     ptl_reqest_running(SOC_TO_MCU_MOD_IPC);
 #endif
-    OTMS(TASK_ID_IPC_SOCKET, OTMS_S_RUNNING);
+    OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_RUNNING);
 }
 
 /**
@@ -123,7 +123,7 @@ void task_ipc_running(void)
         return;
     StartTickCounter(&l_t_msg_wait_10_timer);
 
-    Msg_t *msg = get_message(TASK_ID_IPC_SOCKET);
+    Msg_t *msg = get_message(TASK_MODULE_IPC_SOCKET);
 
     if (msg->msg_id == NO_MSG)
     {
@@ -154,15 +154,15 @@ void task_ipc_running(void)
         break;
     case MSG_IPC_CMD_CAR_SETTING_SAVE:
         LOG_LEVEL("MSG_IPC_CMD_CAR_SETTING_SAVE param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-        send_message(TASK_ID_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MODSYSTEM_SAVE_DATA, msg->param1);
+        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MODSYSTEM_SAVE_DATA, msg->param1);
         break;
     case MSG_IPC_CMD_CAR_SET_LIGHT:
         LOG_LEVEL("MSG_IPC_CMD_CAR_SET_LIGHT param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-        send_message(TASK_ID_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_LIGHT, msg->param1);
+        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_LIGHT, msg->param1);
         break;
     case MSG_IPC_CMD_CAR_SET_GEAR_LEVEL:
         LOG_LEVEL("MSG_IPC_CMD_CAR_SET_GEAR_LEVEL param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-        send_message(TASK_ID_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_GEAR_LEVEL, msg->param1);
+        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_GEAR_LEVEL, msg->param1);
         break;
     }
 
@@ -175,7 +175,7 @@ void task_ipc_post_running(void)
 
 void task_ipc_stop_running(void)
 {
-    OTMS(TASK_ID_IPC_SOCKET, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_INVALID);
 }
 
 void ipc_notify_message_to_client(uint8_t msg_id, uint8_t cmd_parameter)

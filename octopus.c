@@ -193,25 +193,25 @@ uint16_t TaskManagerStateEventLoop(uint8 task_id, uint16 events)
     else if (events & DEVICE_BLE_PAIR) // If BLE pairing event is triggered
     {
         LOG_LEVEL("task_id=%d events=%d ble pair\r\n", task_id, events);
-        send_message(TASK_ID_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_PAIRING, events); // Send BLE pair event to BLE task
+        send_message(TASK_MODULE_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_PAIRING, events); // Send BLE pair event to BLE task
         return (events ^ DEVICE_BLE_PAIR);                                                      // Remove the BLE pair event from the active events
     }
     else if (events & DEVICE_BLE_BONDED) // If BLE bonded event is triggered
     {
         LOG_LEVEL("task_id=%d events=%d ble bonded\r\n", task_id, events);
-        send_message(TASK_ID_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_BONDED, events); // Send BLE bonded event to BLE task
+        send_message(TASK_MODULE_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_BONDED, events); // Send BLE bonded event to BLE task
         return (events ^ DEVICE_BLE_BONDED);                                                   // Remove the BLE bonded event from the active events
     }
     else if (events & DEVICE_BLE_CONNECTED) // If BLE connected event is triggered
     {
         LOG_LEVEL("task_id=%d events=%d ble connected\r\n", task_id, events);
-        send_message(TASK_ID_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, events); // Send BLE connected event to BLE task
+        send_message(TASK_MODULE_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, events); // Send BLE connected event to BLE task
         return (events ^ DEVICE_BLE_CONNECTED);                                                   // Remove the BLE connected event from the active events
     }
     else if (events & DEVICE_BLE_DISCONNECTED) // If BLE disconnected event is triggered
     {
         LOG_LEVEL("task_id=%d events=%d ble disconnected\r\n", task_id, events);
-        send_message(TASK_ID_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, events); // Send BLE disconnected event to BLE task
+        send_message(TASK_MODULE_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, events); // Send BLE disconnected event to BLE task
         return (events ^ DEVICE_BLE_DISCONNECTED);                                                   // Remove the BLE disconnected event from the active events
     }
     else

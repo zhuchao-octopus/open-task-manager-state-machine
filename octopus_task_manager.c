@@ -12,7 +12,7 @@
  * @date     2024-12-09
  * @author   Octopus Team
  *
- * @note        This module assumes a fixed number of tasks (`TASK_ID_MAX_NUM`)
+ * @note        This module assumes a fixed number of tasks (`TASK_MODULE_MAX_NUM`)
  *              and relies on a configuration (`otms_t`) for task-specific
  *              state handling.
  ******************************************************************************/
@@ -49,9 +49,9 @@
  ******************************************************************************/
 
 /** Static configuration for all tasks in the OTMS. */
-const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
+const static otms_t lat_otms_config[TASK_MODULE_MAX_NUM] = {
 
-    [TASK_ID_PTL_1] = {
+    [TASK_MODULE_PTL_1] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = ptl_init_running,
@@ -64,7 +64,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
     },
 
 #ifdef TASK_MANAGER_STATE_MACHINE_PTL2
-    [TASK_ID_PTL_2] = {
+    [TASK_MODULE_PTL_2] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = ptl_2_init_running,
@@ -77,7 +77,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
     },
 #endif
 
-    [TASK_ID_SYSTEM] = {
+    [TASK_MODULE_SYSTEM] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_system_init_running,
@@ -89,7 +89,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
         },
     },
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
-    [TASK_ID_GPIO] = {
+    [TASK_MODULE_GPIO] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_gpio_init_running,
@@ -102,7 +102,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
     },
 #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR		
-    [TASK_ID_CAR_INFOR] = {
+    [TASK_MODULE_CAR_INFOR] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_carinfo_init_running,
@@ -117,7 +117,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_BLE
-    [TASK_ID_BLE] = {
+    [TASK_MODULE_BLE] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_ble_init_running,
@@ -131,7 +131,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_KEY
-    [TASK_ID_KEY] = {
+    [TASK_MODULE_KEY] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_key_init_running,
@@ -146,7 +146,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
 
 #ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    [TASK_ID_UPDATE_MCU] = {
+    [TASK_MODULE_UPDATE_MCU] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_update_mcu_init_running,
@@ -158,7 +158,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
         },
     },
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
-    [TASK_ID_UPDATE_SOC] = {
+    [TASK_MODULE_UPDATE_SOC] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_update_soc_init_running,
@@ -173,7 +173,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
-    [TASK_ID_CAN] = {
+    [TASK_MODULE_CAN] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_can_init_running,
@@ -187,7 +187,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
-    [TASK_ID_PTL_BAFANG] = {
+    [TASK_MODULE_PTL_BAFANG] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_bfang_ptl_init_running,
@@ -201,7 +201,7 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_IPC_SOCKET
-    [TASK_ID_IPC_SOCKET] = {
+    [TASK_MODULE_IPC_SOCKET] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_ipc_init_running,
@@ -223,10 +223,10 @@ const static otms_t lat_otms_config[TASK_ID_MAX_NUM] = {
 /**
  * @brief Executes the state-specific function for a given task.
  *
- * @param task_id ID of the task to execute.
+ * @param TASK_MODULE ID of the task to execute.
  * @param state   State to execute for the task.
  */
-inline static void otms_exec_state(otms_id_t task_id, otms_state_t state);
+inline static void otms_exec_state(otms_id_t TASK_MODULE, otms_state_t state);
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -241,7 +241,7 @@ inline static void otms_exec_state(otms_id_t task_id, otms_state_t state);
 /**
  * @brief Array to store the current state of each task.
  */
-static otms_state_t otms_task_state[TASK_ID_MAX_NUM];
+static otms_state_t otms_task_state[TASK_MODULE_MAX_NUM];
 
 /*******************************************************************************
  * EXTERNAL VARIABLES
@@ -269,7 +269,7 @@ const otms_t *otms_get_config(void)
 void task_manager_init(void)
 {
     otms_id_t i;
-    for (i = 0; i < TASK_ID_MAX_NUM; i++)
+    for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
     {
         otms_exec_state(i, OTMS_S_INIT); // Set each task to the INIT state.
     }
@@ -281,7 +281,7 @@ void task_manager_init(void)
 void task_manager_start(void)
 {
     otms_id_t i;
-    for (i = 0; i < TASK_ID_MAX_NUM; i++)
+    for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
     {
         otms_exec_state(i, OTMS_S_START); // Set each task to the START state.
     }
@@ -294,7 +294,7 @@ void task_manager_stop(void)
 {
     otms_id_t i;
 
-    for (i = 0; i < TASK_ID_MAX_NUM; i++)
+    for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
     {
         otms_exec_state(i, OTMS_S_STOP); // Set each task to the STOP state.
     }
@@ -307,7 +307,7 @@ void task_manager_run(void)
 {
     otms_id_t i;
 
-    for (i = 0; i < TASK_ID_MAX_NUM; i++)
+    for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
     {
         otms_exec_state(i, otms_task_state[i]); // Execute the current state for each task.
     }
@@ -316,14 +316,14 @@ void task_manager_run(void)
 /**
  * @brief Sets the state of a specific task.
  *
- * @param task_id ID of the task.
+ * @param TASK_MODULE ID of the task.
  * @param state   New state to set for the task.
  */
-void otms_set_state(otms_id_t task_id, otms_state_t state)
+void otms_set_state(otms_id_t TASK_MODULE, otms_state_t state)
 {
-    if (task_id < TASK_ID_MAX_NUM)
+    if (TASK_MODULE < TASK_MODULE_MAX_NUM)
     {
-        otms_task_state[task_id] = state; // Update the task state.
+        otms_task_state[TASK_MODULE] = state; // Update the task state.
     }
     else
     {
@@ -334,16 +334,16 @@ void otms_set_state(otms_id_t task_id, otms_state_t state)
 /**
  * @brief Gets the current state of a specific task.
  *
- * @param task_id ID of the task.
+ * @param TASK_MODULE ID of the task.
  * @return Current state of the task.
  */
-otms_state_t otms_get_state(otms_id_t task_id)
+otms_state_t otms_get_state(otms_id_t TASK_MODULE)
 {
     otms_state_t state;
 
-    if (task_id < TASK_ID_MAX_NUM)
+    if (TASK_MODULE < TASK_MODULE_MAX_NUM)
     {
-        state = otms_task_state[task_id];
+        state = otms_task_state[TASK_MODULE];
     }
     else
     {
@@ -360,7 +360,7 @@ void otms_on_enter_run(void)
 {
     otms_id_t i = 0;
 
-    for (i = 0; i < TASK_ID_MAX_NUM; i++)
+    for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
     {
         if (otms_get_state(i) > OTMS_S_POST_RUN)
         {
@@ -376,7 +376,7 @@ void otms_on_exit_post_run(void)
 {
     otms_id_t i = 0;
 
-    for (i = 0; i < TASK_ID_MAX_NUM; i++)
+    for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
     {
         otms_set_state(i, OTMS_S_STOP); // Transition tasks to the STOP state.
     }
@@ -385,18 +385,18 @@ void otms_on_exit_post_run(void)
 /**
  * @brief Executes the state-specific function for a given task.
  *
- * @param task_id ID of the task to execute.
+ * @param TASK_MODULE ID of the task to execute.
  * @param state   State to execute for the task.
  */
-static void otms_exec_state(otms_id_t task_id, otms_state_t state)
+static void otms_exec_state(otms_id_t TASK_MODULE, otms_state_t state)
 {
     const otms_t *cfg = otms_get_config();
 
-    if ((task_id < TASK_ID_MAX_NUM) && (NULL != cfg) && (cfg[task_id].state_limit > state))
+    if ((TASK_MODULE < TASK_MODULE_MAX_NUM) && (NULL != cfg) && (cfg[TASK_MODULE].state_limit > state))
     {
-        if (NULL != cfg[task_id].func[state])
+        if (NULL != cfg[TASK_MODULE].func[state])
         {
-            cfg[task_id].func[state](); // Call the state-specific function.
+            cfg[TASK_MODULE].func[state](); // Call the state-specific function.
         }
     }
 }
