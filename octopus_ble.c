@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- * @file octopus_task_manager.c
+ * @file octopus_ble.c
  * @brief C file for the Octopus Task Manager module.
  *
  * This file defines the macros, includes required libraries, and declares
@@ -308,7 +308,7 @@ void ble_connecttion_polling(void)
 		//ble_status.locked = true;
 		ble_status.to_lock = false;
 		
-		LOG_LEVEL("Start to power off system...\r\n");
+		LOG_LEVEL("Start to power off system ...\r\n");
 		send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, CMD_MODSYSTEM_POWER_OFF);
 	}
 }

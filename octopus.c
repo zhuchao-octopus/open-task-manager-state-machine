@@ -97,7 +97,7 @@ void TaskManagerStateMachineInit(void)
     LOG_NONE("                            /_/                       \r\n");
     LOG_NONE(" Embedded Real-Time Task Scheduler + FSM Engine\r\n");
 
-    LOG_NONE(" Firmware  : v1.0.0\r\n");
+    LOG_NONE(" Firmware  : v%s\r\n",OTMS_VERSION_NAME);
     LOG_NONE(" Compiled  : %s %s\r\n", __DATE__, __TIME__);
     LOG_NONE(" Author    : Octopus Dev Team\r\n");
     LOG_NONE("-----------------------------------------------------------------------------\r\n");
@@ -110,9 +110,10 @@ void TaskManagerStateMachineInit(void)
     // LOG_NONE("\r\n######################################BOOT  START######################################\r\n");
     TaskManagerStateStopRunning();
 #endif
+    char version_str[32];
+    decode_version_string(version_str, sizeof(version_str));
     LOG_LEVEL("OTMS task_id :%02x initializing...\r\n", TaskManagerStateMachine_Id_);
-    LOG_LEVEL("OTMS datetime:%s\r\n", OTMS_RELEASE_DATA_TIME);
-    LOG_LEVEL("OTMS version :%s app version:%s\r\n", OTMS_VERSION, APP_VER_STR);
+    LOG_LEVEL("OTMS version :%s \r\n", version_str);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize hardware abstraction layers (HAL)
@@ -161,8 +162,7 @@ void TaskManagerStateMachineInit(void)
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
     LOG_NONE("-----------------------------------------------------------------------------\r\n");
-    flash_load_user_data_infor();
-	system_set_mb_state(MB_POWER_ST_ON);
+		system_set_mb_state(MB_POWER_ST_ON);
 }
 
 #if defined(PLATFORM_ITE_OPEN_RTOS) || defined(PLATFORM_LINUX_RISC)

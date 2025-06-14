@@ -145,31 +145,17 @@ const static otms_t lat_otms_config[TASK_MODULE_MAX_NUM] = {
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
     [TASK_MODULE_UPDATE_MCU] = {
         .state_limit = OTMS_S_INVALID,
         .func = {
-            [OTMS_S_INIT] = task_update_mcu_init_running,
-            [OTMS_S_START] = task_update_mcu_start_running,
-            [OTMS_S_ASSERT_RUN] = task_update_mcu_assert_running,
-            [OTMS_S_RUNNING] = task_update_mcu_running,
-            [OTMS_S_POST_RUN] = task_update_mcu_post_running,
-            [OTMS_S_STOP] = task_update_mcu_stop_running,
+            [OTMS_S_INIT] = task_update_init_running,
+            [OTMS_S_START] = task_update_start_running,
+            [OTMS_S_ASSERT_RUN] = task_update_assert_running,
+            [OTMS_S_RUNNING] = task_update_running,
+            [OTMS_S_POST_RUN] = task_update_post_running,
+            [OTMS_S_STOP] = task_update_stop_running,
         },
     },
-#elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
-    [TASK_MODULE_UPDATE_SOC] = {
-        .state_limit = OTMS_S_INVALID,
-        .func = {
-            [OTMS_S_INIT] = task_update_soc_init_running,
-            [OTMS_S_START] = task_update_soc_start_running,
-            [OTMS_S_ASSERT_RUN] = task_update_soc_assert_running,
-            [OTMS_S_RUNNING] = task_update_soc_running,
-            [OTMS_S_POST_RUN] = task_update_soc_post_running,
-            [OTMS_S_STOP] = task_update_soc_stop_running,
-        },
-    },
-#endif
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
@@ -300,6 +286,17 @@ void task_manager_stop(void)
     }
 }
 
+void task_manager_stop_except(TaskModule_t TaskModule)
+{
+    otms_id_t i;
+
+    for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
+    {
+	   if(i != TaskModule && i != TASK_MODULE_PTL_1)
+          otms_exec_state(i, OTMS_S_STOP); // Set each task to the STOP state.
+    }
+}
+
 /**
  * @brief Runs the current state-specific function for all tasks.
  */
@@ -316,14 +313,14 @@ void task_manager_run(void)
 /**
  * @brief Sets the state of a specific task.
  *
- * @param TASK_MODULE ID of the task.
+ * @param task_module ID of the task.
  * @param state   New state to set for the task.
  */
-void otms_set_state(otms_id_t TASK_MODULE, otms_state_t state)
+void otms_set_state(otms_id_t task_module, otms_state_t state)
 {
-    if (TASK_MODULE < TASK_MODULE_MAX_NUM)
+    if (task_module < TASK_MODULE_MAX_NUM)
     {
-        otms_task_state[TASK_MODULE] = state; // Update the task state.
+        otms_task_state[task_module] = state; // Update the task state.
     }
     else
     {
@@ -334,16 +331,16 @@ void otms_set_state(otms_id_t TASK_MODULE, otms_state_t state)
 /**
  * @brief Gets the current state of a specific task.
  *
- * @param TASK_MODULE ID of the task.
+ * @param task_module ID of the task.
  * @return Current state of the task.
  */
-otms_state_t otms_get_state(otms_id_t TASK_MODULE)
+otms_state_t otms_get_state(otms_id_t task_module)
 {
     otms_state_t state;
 
-    if (TASK_MODULE < TASK_MODULE_MAX_NUM)
+    if (task_module < TASK_MODULE_MAX_NUM)
     {
-        state = otms_task_state[TASK_MODULE];
+        state = otms_task_state[task_module];
     }
     else
     {
@@ -385,18 +382,19 @@ void otms_on_exit_post_run(void)
 /**
  * @brief Executes the state-specific function for a given task.
  *
- * @param TASK_MODULE ID of the task to execute.
+ * @param task_module ID of the task to execute.
  * @param state   State to execute for the task.
  */
-static void otms_exec_state(otms_id_t TASK_MODULE, otms_state_t state)
+static void otms_exec_state(otms_id_t task_module, otms_state_t state)
 {
     const otms_t *cfg = otms_get_config();
 
-    if ((TASK_MODULE < TASK_MODULE_MAX_NUM) && (NULL != cfg) && (cfg[TASK_MODULE].state_limit > state))
+    if ((task_module < TASK_MODULE_MAX_NUM) && (NULL != cfg) && (cfg[task_module].state_limit > state))
     {
-        if (NULL != cfg[TASK_MODULE].func[state])
+        if (NULL != cfg[task_module].func[state])
         {
-            cfg[TASK_MODULE].func[state](); // Call the state-specific function.
+            cfg[task_module].func[state](); // Call the state-specific function.
         }
     }
 }
+

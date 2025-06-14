@@ -161,7 +161,7 @@ void task_gpio_stop_running(void)
 void gpio_init(void)
 {
     // TODO: Implement GPIO initialization here
-    LOG_LEVEL("gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
+    //LOG_LEVEL("gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
     hal_gpio_init(0);
 }
 

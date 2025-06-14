@@ -44,6 +44,8 @@
 #define ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 
 ///////////////////////////////////////////////////////////////////////////////////
+#define OTMS_VERSION_CODE     100
+#define OTMS_VERSION_NAME     "1.0.0"
 ///////////////////////////////////////////////////////////////////////////////////
 /*******************************************************************************
  * PROJECT SWITCH MACROS
@@ -75,7 +77,7 @@
 //#define TASK_MANAGER_STATE_MACHINE_SIF 1 /**< Secondary interface mode. */
 //#define TASK_MANAGER_STATE_MACHINE_BLE 1 
 //#define TASK_MANAGER_STATE_MACHINE_BMS 1 
-//#define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
+#define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
 
 #define TASK_MANAGER_STATE_MACHINE_CARINFOR 1
 
@@ -87,6 +89,8 @@
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 #define USE_EEROM_FOR_DATA_SAVING
+#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A
+#define MAPPING_VECT_TABle_TO_SRAM
 
 /***********************************************************************************
  * BASE INCLUDE FILES
@@ -209,7 +213,7 @@ extern "C"
 }) // Return zero for unsupported platforms
 
 #else
-extern uint32_t system_tick_ms;
+extern volatile uint32_t system_tick_ms;
 extern volatile uint32_t system_timer_tick_50us;
 #define GET_SYSTEM_TICK_COUNT system_tick_ms // Return zero for unsupported platforms
 #endif
@@ -250,22 +254,35 @@ extern volatile uint32_t system_timer_tick_50us;
 #define MK_DWORD(MSB, LSB) (uint32_t)(((uint32_t)MSB << 16) + LSB) // Combine two 16-bit values (MSB and LSB) into a 32-bit double word
 #define MK_SIG_WORD(a) (*(int16_t *)(&a))                          // Interpret a word as a signed 16-bit value
 
+#define BYTES_TO_UINT32_LE(p)  \
+    ( ((uint32_t)(p)[0])       | \
+      ((uint32_t)(p)[1] << 8)  | \
+      ((uint32_t)(p)[2] << 16) | \
+      ((uint32_t)(p)[3] << 24) )
+			
+#define BYTES_TO_UINT32_BE(p)  \
+    ( ((uint32_t)(p)[0] << 24) | \
+      ((uint32_t)(p)[1] << 16) | \
+      ((uint32_t)(p)[2] << 8)  | \
+      ((uint32_t)(p)[3]) )			
 /*******************************************************************************
  * CONSTANTS
  * Define mathematical constants and other useful values.
  ******************************************************************************/
 #define PI_FLOAT (3.14159f) // Value of �� as a floating-point constant
 
+#define DISABLE_IRQ (__disable_irq())
+#define ENABLE_IRQ  (__enable_irq())
 /*******************************************************************************
 * FUNCTION DECLARATIONS
 * Declare any external functions used in this file.
 ******************************************************************************/
 #define MY_ASSERT(expr)                                                                 \
-    do {                                                                                 \
-        if (!(expr)) {                                                                   \
-            LOG_LEVEL("ASSERT WARNING: %s, FILE: %s, LINE: %d\n",                        \
-                      #expr, __FILE__, __LINE__);                                        \
-        }                                                                                \
+    do {                                                                                \
+        if (!(expr)) {                                                                  \
+            LOG_LEVEL("ASSERT WARNING: %s, FILE: %s, LINE: %d\n",                       \
+                      #expr, __FILE__, __LINE__);                                       \
+        }                                                                               \
     } while (0)
 
 

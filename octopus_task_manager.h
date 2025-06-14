@@ -113,6 +113,7 @@ extern "C"
    */
   void task_manager_stop(void);
 
+  void task_manager_stop_except(TaskModule_t TaskModule);
   /**
    * @brief Execute the current state handler for all registered tasks.
    */
@@ -130,17 +131,17 @@ extern "C"
 
   /**
    * @brief Set the current state for a specific task.
-   * @param TASK_MODULE Task ID to modify.
+   * @param task_module Task ID to modify.
    * @param state   New state to apply.
    */
-  void otms_set_state(otms_id_t TASK_MODULE, otms_state_t state);
+  void otms_set_state(otms_id_t task_module, otms_state_t state);
 
   /**
    * @brief Get the current state of a specific task.
-   * @param TASK_MODULE Task ID to query.
+   * @param task_module Task ID to query.
    * @return Current state.
    */
-  otms_state_t otms_get_state(otms_id_t TASK_MODULE);
+  otms_state_t otms_get_state(otms_id_t task_module);
 
   /**
    * @brief Get the global task state configuration table.

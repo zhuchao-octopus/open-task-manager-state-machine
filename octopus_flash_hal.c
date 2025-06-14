@@ -144,7 +144,8 @@ uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
 
     /* Unlock the Flash for write access */
     FLASH_Unlock();
-
+    /* Clear pending flags (if any) */
+    FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPERR | FLASH_FLAG_SIZE_ERR);
     /* Write the data word by word */
     for (uint32_t i = 0; i < length / 4; i++)
     {
@@ -171,7 +172,8 @@ void hal_eeprom_write_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {
 #ifdef USE_EEROM_FOR_DATA_SAVING
     uint8_t ret = I2C_EepromBufferWrite(startaddr, buffer, length);
-    LOG_LEVEL("save data to eeprom status=%d\r\n", ret);
+	  if(ret == ERROR)
+      LOG_LEVEL("save data to eeprom status=%d\r\n", ret);
 #endif
 }
 

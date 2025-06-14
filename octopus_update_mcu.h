@@ -48,7 +48,11 @@ extern "C"
      * Define data types specific to the MCU update task manager. These can include
      * enumerations, structures, or aliases for existing types.
      */
-
+		typedef struct
+		{
+			 uint16_t length;	
+			 uint32_t max_length;	
+		} mcu_update_pragress_t;
     /*******************************************************************************
      * CONSTANTS
      *
@@ -62,7 +66,7 @@ extern "C"
      * Declare any global variables that are required for the MCU update
      * task manager. These variables will be defined in the implementation file.
      */
-
+     extern mcu_update_pragress_t mcu_pragress_status;
     /*******************************************************************************
      * GLOBAL FUNCTIONS DECLARATION
      *
@@ -75,7 +79,7 @@ extern "C"
      * This function is called during system initialization to prepare
      * the MCU update task for execution.
      */
-    void task_update_mcu_init_running(void);
+    void task_update_init_running(void);
 
     /**
      * @brief Start the MCU update task.
@@ -83,7 +87,7 @@ extern "C"
      * This function transitions the MCU update task to the start state and
      * performs any necessary initialization or resource allocation.
      */
-    void task_update_mcu_start_running(void);
+    void task_update_start_running(void);
 
     /**
      * @brief Assert the running state of the MCU update task.
@@ -91,7 +95,7 @@ extern "C"
      * This function checks the conditions for the MCU update task to run and
      * ensures that all prerequisites are met.
      */
-    void task_update_mcu_assert_running(void);
+    void task_update_assert_running(void);
 
     /**
      * @brief Execute the running state of the MCU update task.
@@ -99,7 +103,7 @@ extern "C"
      * This function performs the main operations of the MCU update task
      * while it is in the running state.
      */
-    void task_update_mcu_running(void);
+    void task_update_running(void);
 
     /**
      * @brief Perform post-run operations for the MCU update task.
@@ -107,7 +111,7 @@ extern "C"
      * This function handles any required cleanup or preparations for
      * transitioning out of the running state.
      */
-    void task_update_mcu_post_running(void);
+    void task_update_post_running(void);
 
     /**
      * @brief Stop the MCU update task.
@@ -115,7 +119,7 @@ extern "C"
      * This function transitions the MCU update task to the stopped state
      * and releases any allocated resources.
      */
-    void task_update_mcu_stop_running(void);
+    void task_update_stop_running(void);
 
     /** @} end of group APP_SETTING */
 

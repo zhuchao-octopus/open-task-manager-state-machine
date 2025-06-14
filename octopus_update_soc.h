@@ -126,16 +126,7 @@ extern "C"
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     uint32_t task_update_get_error_code(void);
 #endif
-    /**
-     * @brief Get the current status of the update process.
-     * @return The current state of the MCU update.
-     */
-    mcu_update_state_t task_update_get_status(void);
 
-    /**
-     * @}
-     * End of group APP_SETTING
-     */
 
 #ifdef __cplusplus
 }

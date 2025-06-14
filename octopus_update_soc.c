@@ -138,7 +138,7 @@ void task_update_soc_start_running(void)
  */
 void task_update_soc_assert_running(void)
 {
-    if (MB_ST_ON <= system_get_mb_state()) // Check if the memory board state is ON
+    //if (MB_ST_ON <= system_get_mb_state()) // Check if the memory board state is ON
     {
         ptl_reqest_running(SOC_TO_MCU_MOD_UPDATE); // Request the update module to start running
         OTMS(TASK_MODULE_UPDATE_SOC, OTMS_S_RUNNING);  // Set the update task status to running
@@ -159,7 +159,7 @@ void task_update_soc_running(void)
 void task_update_soc_post_running(void)
 {
     ptl_release_running(SOC_TO_MCU_MOD_UPDATE); // Release the update module from running state
-    if (MB_ST_STOP != system_get_mb_state())    // Check if the memory board state is not stopped
+    //if (MB_ST_STOP != system_get_mb_state())    // Check if the memory board state is not stopped
     {
         OTMS(TASK_MODULE_UPDATE_SOC, OTMS_S_ASSERT_RUN); // Assert the update task status to running
     }

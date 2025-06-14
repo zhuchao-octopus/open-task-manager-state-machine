@@ -10,6 +10,7 @@
 
 #include "octopus_tickcounter.h" // Includes the header file that defines tick counter functions
 
+#if 1 //def TASK_MANAGER_STATE_MACHINE_PTL1
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -43,7 +44,7 @@
 /*******************************************************************************
  * STATIC VARIABLES
  */
-static uint32_t OsTickCounter = 0; // Stores the current tick value
+//static uint32_t OsTickCounter = 0; // Stores the current tick value
 
 /*******************************************************************************
  * EXTERNAL VARIABLES
@@ -58,16 +59,16 @@ void StartTickCounter(uint32_t *timer)
 {
     MY_ASSERT(timer != NULL); // Ensures the pointer is not NULL
 
-    OsTickCounter = GetSystemTickClock(); // Get the current system tick value
+    uint32_t system_tick_count = GetSystemTickClock(); // Get the current system tick value
 
     // If the tick counter is 0, initialize the timer with 1
-    if (OsTickCounter == 0U)
+    if (system_tick_count == 0U)
     {
         *timer = 1;
     }
     else
     {
-        *timer = OsTickCounter; // Set the timer to the current tick value
+        *timer = system_tick_count; // Set the timer to the current tick value
     }
 }
 
@@ -90,7 +91,7 @@ uint32_t GetTickCounter(const uint32_t *timer) // Returns time difference in mil
     uint32_t diff;
     MY_ASSERT(timer != NULL); // Ensures the pointer is not NULL
 
-    OsTickCounter = GetSystemTickClock(); // Get the current system tick value
+    uint32_t system_tick_count = GetSystemTickClock(); // Get the current system tick value
 
     if (0 == *timer)
     {
@@ -99,14 +100,14 @@ uint32_t GetTickCounter(const uint32_t *timer) // Returns time difference in mil
     else
     {
         // If the current tick is greater than or equal to the timer, simply subtract
-        if (OsTickCounter >= *timer)
+        if (system_tick_count >= *timer)
         {
-            diff = OsTickCounter - *timer;
+            diff = system_tick_count - *timer;
         }
         else
         {
             // Handle counter overflow (wraparound)
-            diff = (TICK_COUNTER_MAX - *timer) + OsTickCounter;
+            diff = (TICK_COUNTER_MAX - *timer) + system_tick_count;
         }
     }
     return diff; // Return the time difference in ticks
@@ -177,4 +178,5 @@ void Date2tm(struct tm *pTM, const char *pData)
 
     *pTM = timeInfo; // Store the parsed time in the provided struct tm pointer
 }
+#endif
 #endif
