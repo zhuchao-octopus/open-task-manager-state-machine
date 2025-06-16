@@ -122,7 +122,12 @@ bool IsTickCounterStart(const uint32_t *timer)
 // Get the current system tick (in milliseconds)
 uint32_t GetSystemTickClock(void)
 {
-    return GET_SYSTEM_TICK_COUNT; // Calls a macro or function to get the system tick count
+	//return GET_SYSTEM_TICK_COUNT; // Calls a macro or function to get the system tick count
+	
+	//DISABLE_IRQ;	
+	uint32_t system_tick = GET_SYSTEM_TICK_COUNT;
+	//ENABLE_IRQ;
+	return system_tick;
 }
 
 // Function to convert date string into tm structure (parsed from string)

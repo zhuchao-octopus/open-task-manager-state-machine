@@ -582,97 +582,8 @@ void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 	hal_eeprom_write_(addr, buf, length);
 #endif
 }
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-// Convert month string to numeric index (1-12)
-uint8_t get_month_index(const char* month_str) {
-    static const char* months[] = {
-        "Jan","Feb","Mar","Apr","May","Jun",
-        "Jul","Aug","Sep","Oct","Nov","Dec"
-    };
-    for (uint8_t i = 0; i < 12; i++) {
-        if (month_str[0] == months[i][0] &&
-            month_str[1] == months[i][1] &&
-            month_str[2] == months[i][2]) {
-            return i + 1;
-        }
-    }
-    return 0; // Invalid month
-}
 
-// Parse build date (__DATE__) and time (__TIME__)
-void parse_build_date_time(uint16_t* year, uint8_t* month, uint8_t* day,
-                           uint8_t* hour, uint8_t* minute) {
-    char month_str[4];
-    int y, d, h, m, s;
-
-    sscanf(__DATE__, "%3s %d %d", month_str, &d, &y);
-    *year  = (uint16_t)y;
-    *month = get_month_index(month_str);
-    *day   = (uint8_t)d;
-
-    sscanf(__TIME__, "%d:%d:%d", &h, &m, &s);
-    *hour   = (uint8_t)h;
-    *minute = (uint8_t)m;
-}
-
-// Encode version info into 32-bit value
-// Encode version info into a 32-bit value
-uint32_t encode_datetime_version(uint16_t year, uint8_t month, uint8_t day,
-                                 uint8_t hour, uint8_t minute,
-                                 uint8_t version_code) {
-    // Ensure the year is within the valid range (2000-2063)
-    if (year < 2000) year = 2000;
-    if (year > 2063) year = 2063; // 6 bits: stores 0-63 (2000-2063)
-
-    // Ensure month, day, hour, minute, and version_code are within valid ranges
-    month = (month > 12) ? 12 : month; // 1-12 months
-    day = (day > 31) ? 31 : day;       // 1-31 days
-    hour = (hour > 23) ? 23 : hour;    // 0-23 hours
-    minute = (minute > 59) ? 59 : minute; // 0-59 minutes
-    version_code = (version_code > 127) ? 127 : version_code; // 1-127 version codes
-
-    uint32_t val = 0;
-    val |= ((year - 2000) & 0x3F) << 26;  // 6 bits for year (2000-2063)
-    val |= (month & 0x0F) << 22;          // 4 bits for month (1-12)
-    val |= (day & 0x1F) << 17;            // 5 bits for day (1-31)
-    val |= (hour & 0x1F) << 12;           // 5 bits for hour (0-23)
-    val |= (minute & 0x1F) << 7;          // 5 bits for minute (0-59)
-    val |= (version_code & 0x7F);         // 7 bits for version code (1-127)
-
-    return val;
-}
-
-// Decode 32-bit value back to version info
-void decode_datetime_version(uint32_t encoded,
-                             uint16_t* year, uint8_t* month, uint8_t* day,
-                             uint8_t* hour, uint8_t* minute,
-                             uint8_t* version_code) {
-    *year         = 2000 + ((encoded >> 26) & 0x3F);
-    *month        = (encoded >> 22) & 0x0F;
-    *day          = (encoded >> 17) & 0x1F;
-    *hour         = (encoded >> 12) & 0x1F;
-    *minute       = (encoded >> 7)  & 0x1F;
-    *version_code = encoded & 0x7F;
-}
-
-// Build encoded version number using current compile time
-uint32_t build_version_code(void) {
-    uint16_t y;
-    uint8_t m, d, h, min;
-    parse_build_date_time(&y, &m, &d, &h, &min);
-    return encode_datetime_version(y, m, d, h, min, OTMS_VERSION_CODE);
-}
-
-// Format version info as string: YYYYMMDDHHMM_VER
-void get_version_string(char* out_str, size_t max_len) {
-    uint16_t y;
-    uint8_t m, d, h, min;
-    parse_build_date_time(&y, &m, &d, &h, &min);
-    snprintf(out_str, max_len, "%04u%02u%02u%02u%02u_%03u", y, m, d, h, min, OTMS_VERSION_CODE);
-}
-
-void decode_version_string(char* out_str, size_t max_len) {
+void flash_decode_active_version(char* out_str, size_t max_len) {
 	  uint32_t version = 0;
     uint16_t y1;
     uint8_t m1, d1, h1, min1, code1;
@@ -684,51 +595,7 @@ void decode_version_string(char* out_str, size_t max_len) {
 			version = app_meta_data.loader_version;
 		
     decode_datetime_version(version, &y1, &m1, &d1, &h1, &min1, &code1);
-    snprintf(out_str, max_len, "%04u%02u%02u%02u%02u_%03u", y1, m1, d1, h1, min1, OTMS_VERSION_CODE);
-}
-/**
- * @brief Compare two encoded version values.
- * 
- * @param v1 First version (encoded uint32_t)
- * @param v2 Second version (encoded uint32_t)
- * @return int 
- *        < 0 if v1 < v2 (v2 is newer)
- *        = 0 if v1 == v2
- *        > 0 if v1 > v2 (v1 is newer)
- */
-int32_t compare_versions(uint32_t v1, uint32_t v2) {
-    uint16_t y1, y2;
-    uint8_t m1, d1, h1, min1, code1;
-    uint8_t m2, d2, h2, min2, code2;
-
-    decode_datetime_version(v1, &y1, &m1, &d1, &h1, &min1, &code1);
-    decode_datetime_version(v2, &y2, &m2, &d2, &h2, &min2, &code2);
-
-    LOG_LEVEL("Bank Slot A Version: %04d%02d%02d%02d%02d (Code: %d)\n", y1, m1, d1, h1, min1, code1);
-    LOG_LEVEL("Bank Slot B Version: %04d%02d%02d%02d%02d (Code: %d)\n", y2, m2, d2, h2, min2, code2);
-
-    return (int32_t)(v1 - v2);
+    snprintf(out_str, max_len, "%04u%02u%02u%02u%02u_%03u", y1, m1, d1, h1, min1, code1);
 }
 
-// Validate the encoded version information
-bool check_encoded_version_valid(uint32_t encoded_version) {
-    uint16_t year, month, day, hour, minute, version_code;
 
-    // Decode fields from the 32-bit version code
-    year         = 2000 + ((encoded_version >> 26) & 0x3F);  // 6 bits for year (2000-2063)
-    month        = (encoded_version >> 22) & 0x0F;           // 4 bits for month (1-12)
-    day          = (encoded_version >> 17) & 0x1F;           // 5 bits for day (1-31)
-    hour         = (encoded_version >> 12) & 0x1F;           // 5 bits for hour (0-23)
-    minute       = (encoded_version >> 7)  & 0x1F;           // 5 bits for minute (0-59)
-    version_code = encoded_version & 0x7F;                    // 7 bits for version code (1-127)
-
-    // Validate ranges for year, month, day, hour, minute, and version code
-    if (year < 2000 || year > 2063)        return false;  // Year should be between 2000 and 2063
-    if (month == 0 || month > 12)          return false;  // Month should be between 1 and 12
-    if (day == 0 || day > 31)              return false;  // Day should be between 1 and 31
-    if (hour > 23)                         return false;  // Hour should be between 0 and 23
-    if (minute > 59)                       return false;  // Minute should be between 0 and 59
-    if (version_code == 0 || version_code > 127) return false;  // Version code should be between 1 and 127
-
-    return true;
-}

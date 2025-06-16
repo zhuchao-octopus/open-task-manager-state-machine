@@ -114,38 +114,40 @@ extern "C"
         CMD_MODUPDATE_UPDATE_FW_STATE = 0x07, ///< Update firmware state
         CMD_MODUPDATE_ENTER_FW_UPDATE = 0x08, ///< Enter firmware update mode
         CMD_MODUPDATE_EXIT_FW_UPDATE = 0x09,  ///< Exit firmware update mode
-        CMD_MODUPDATE_SEND_FW_DATA = 0x0A,    ///< Send firmware data
-        CMD_MODUPDATE_REBOOT = 0x0B,          ///< Reboot system
+        CMD_MODUPDATE_REQUEST_FW_DATA = 0x0A,    ///< Send firmware data
+			  CMD_MODUPDATE_SEND_FW_DATA = 0x0B,    ///< Send firmware data
+        CMD_MODUPDATE_REBOOT = 0x0C,          ///< Reboot system
 
         /* MOD_TRANSFER commands */
-        CMD_MODTRANSFER_A2M = 0x0C, ///< A2M data transfer
-        CMD_MODTRANSFER_M2A = 0x0D, ///< M2A data transfer
+        CMD_MODTRANSFER_A2M = 0x0D, ///< A2M data transfer
+        CMD_MODTRANSFER_M2A = 0x0E, ///< M2A data transfer
 
         /* MOD_METER commands */
-        CMD_MODMETER_RPM_SPEED = 0x0E,    ///< RPM and speed
-        CMD_MODMETER_FUEL_TEMPTER = 0x0F, ///< Fuel and temperature
-        CMD_MODMETER_SOC = 0x10,          ///< State of charge (SOC)
+        CMD_MODMETER_RPM_SPEED = 0x0F,    ///< RPM and speed
+        CMD_MODMETER_FUEL_TEMPTER = 0x10, ///< Fuel and temperature
+        CMD_MODMETER_SOC = 0x11,          ///< State of charge (SOC)
 
         /* MOD_INDICATOR commands */
-        CMD_MOD_CARINFOR_INDICATOR = 0x11, ///< Indicator status
-        CMD_MOD_CARINFOR_METER = 0x12,     ///< Indicator status
-        CMD_MOD_CARINFOR_BATTERY = 0x13,
-        CMD_MOD_CARINFOR_ERROR = 0x14, ///< Error information
+        CMD_MOD_CARINFOR_INDICATOR = 0x12, ///< Indicator status
+        CMD_MOD_CARINFOR_METER = 0x13,     ///< Indicator status
+        CMD_MOD_CARINFOR_BATTERY = 0x14,
+        CMD_MOD_CARINFOR_ERROR = 0x15, ///< Error information
 
         /* MOD_DRIV_INFO commands */
-        CMD_MODDRIVINFO_ODO = 0x15,             ///< Odometer data
-        CMD_MODDRIVINFO_DRIV_DATA = 0x16,       ///< Driving data
-        CMD_MODDRIVINFO_GEAR = 0x17,            ///< Gear information
-        CMD_MODDRIVINFO_NAVI = 0x18,            ///< Navigation data
-        CMD_MODDRIVINFO_DRIV_DATA_CLEAR = 0x19, ///< Clear driving data
+        CMD_MODDRIVINFO_ODO = 0x16,             ///< Odometer data
+        CMD_MODDRIVINFO_DRIV_DATA = 0x17,       ///< Driving data
+        CMD_MODDRIVINFO_GEAR = 0x18,            ///< Gear information
+        CMD_MODDRIVINFO_NAVI = 0x19,            ///< Navigation data
+        CMD_MODDRIVINFO_DRIV_DATA_CLEAR = 0x1A, ///< Clear driving data
 
         /* MOD_SETUP commands */
-        CMD_MODSETUP_UPDATE_TIME = 0x1A, ///< Update time
-        CMD_MODSETUP_SET_TIME = 0x1B,    ///< Set time
-        CMD_MODSETUP_KEY = 0x1C,         ///< Key input
+        CMD_MODSETUP_UPDATE_TIME = 0x1B, ///< Update time
+        CMD_MODSETUP_SET_TIME = 0x1C,    ///< Set time
+        CMD_MODSETUP_KEY = 0x1D,         ///< Key input
 
-        CMD_MOD_CAR_SET_LIGHT = 0x1d,
-        CMD_MOD_CAR_SET_GEAR_LEVEL = 0x1e,
+        CMD_MOD_CAR_SET_LIGHT = 0x1E,
+        CMD_MOD_CAR_SET_GEAR_LEVEL = 0x1F,
+				
         CMD_MOD_CARINFOR_MAX = 0x64
     } ptl_frame_cmd_t;
 

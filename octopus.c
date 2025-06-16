@@ -111,7 +111,7 @@ void TaskManagerStateMachineInit(void)
     TaskManagerStateStopRunning();
 #endif
     char version_str[32];
-    decode_version_string(version_str, sizeof(version_str));
+    flash_decode_active_version(version_str, sizeof(version_str));
     LOG_LEVEL("OTMS task_id :%02x initializing...\r\n", TaskManagerStateMachine_Id_);
     LOG_LEVEL("OTMS version :%s \r\n", version_str);
 
@@ -159,10 +159,10 @@ void TaskManagerStateMachineInit(void)
 #if defined(PLATFORM_ITE_OPEN_RTOS) || defined(PLATFORM_LINUX_RISC)
     TaskManagerStateGoRunning();
 #endif
-    /////////////////////////////////////////////////////////////////////////////////////////////////////
-    // LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
-    LOG_NONE("-----------------------------------------------------------------------------\r\n");
-		system_set_mb_state(MB_POWER_ST_ON);
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
+	// LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
+	LOG_NONE("-----------------------------------------------------------------------------\r\n");
+	system_set_mb_state(MB_POWER_ST_ON);
 }
 
 #if defined(PLATFORM_ITE_OPEN_RTOS) || defined(PLATFORM_LINUX_RISC)

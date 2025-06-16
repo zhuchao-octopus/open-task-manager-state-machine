@@ -44,8 +44,8 @@
 #define ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 
 ///////////////////////////////////////////////////////////////////////////////////
-#define OTMS_VERSION_CODE     100
-#define OTMS_VERSION_NAME     "1.0.0"
+#define OTMS_VERSION_CODE     (001)
+#define OTMS_VERSION_NAME     ("0.0.1")
 ///////////////////////////////////////////////////////////////////////////////////
 /*******************************************************************************
  * PROJECT SWITCH MACROS
@@ -106,7 +106,7 @@
 #include <assert.h>  // Debugging support for assertions
 #include <time.h>    // Time manipulation functions
 #include <stdlib.h>  // for rand()
-
+#include <ctype.h>
 /****************************************************************************************
  * OCTOPUS INCLUDES
  ****************************************************************************************/
@@ -116,6 +116,7 @@
 #include "octopus_tickcounter.h"  // Include tick counter for timing operations
 #include "octopus_msgqueue.h"     // Include message queue header for task communication
 #include "octopus_message.h"      // Include message id for inter-task communication
+#include "octopus_utils.h"
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
 #include <sys/ioctl.h>         // System I/O control definitions
@@ -264,7 +265,15 @@ extern volatile uint32_t system_timer_tick_50us;
     ( ((uint32_t)(p)[0] << 24) | \
       ((uint32_t)(p)[1] << 16) | \
       ((uint32_t)(p)[2] << 8)  | \
-      ((uint32_t)(p)[3]) )			
+      ((uint32_t)(p)[3]) )		
+
+#define UINT32_TO_BYTES_LE(val, p)   \
+    do {                             \
+        (p)[0] = (uint8_t)((val) & 0xFF);        \
+        (p)[1] = (uint8_t)(((val) >> 8) & 0xFF); \
+        (p)[2] = (uint8_t)(((val) >> 16) & 0xFF);\
+        (p)[3] = (uint8_t)(((val) >> 24) & 0xFF);\
+    } while (0)
 /*******************************************************************************
  * CONSTANTS
  * Define mathematical constants and other useful values.

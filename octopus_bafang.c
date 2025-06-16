@@ -243,15 +243,12 @@ void task_bfang_ptl_running(void)
 
 void task_bfang_ptl_post_running(void)
 {
-    // printf("%s\n", __FUNCTION__);
-    // if(true != system_get_power_off_req())
-    {
-        OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_ASSERT_RUN);
-    }
+    OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_ASSERT_RUN);  
 }
 
 void task_bfang_ptl_stop_running(void)
 {
+		LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_INVALID);
 }
 

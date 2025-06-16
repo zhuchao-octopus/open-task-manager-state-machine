@@ -71,10 +71,12 @@ void task_key_running(void)
 
 void task_key_post_running(void)
 {
+	  OTMS(TASK_MODULE_KEY, OTMS_S_ASSERT_RUN); 
 }
 
 void task_key_stop_running(void)
 {
+		LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_KEY, OTMS_S_INVALID);
 }
 

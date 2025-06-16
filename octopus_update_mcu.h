@@ -50,8 +50,8 @@ extern "C"
      */
 		typedef struct
 		{
-			 uint16_t length;	
-			 uint32_t max_length;	
+			 file_info_t file_info;
+			 uint32_t length;	
 		} mcu_update_pragress_t;
     /*******************************************************************************
      * CONSTANTS

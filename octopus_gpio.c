@@ -142,10 +142,12 @@ void task_gpio_running(void)
 
 void task_gpio_post_running(void)
 {
+	  OTMS(TASK_MODULE_GPIO, OTMS_S_ASSERT_RUN); 
 }
 
 void task_gpio_stop_running(void)
 {
+		LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_GPIO, OTMS_S_INVALID);
 }
 /////////////////////////////////////////////////////////////////////////////////////////

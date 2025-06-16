@@ -223,12 +223,7 @@ extern "C"
 	
 	uint32_t flash_erase_user_app_arear(void);
 	uint32_t flash_calculate_crc_32(uint8_t *data, uint32_t length);
-	
-	void get_version_string(char* out_str, size_t max_len);
-	void decode_version_string(char* out_str, size_t max_len);
-	uint32_t build_version_code(void);
-	int32_t compare_versions(uint32_t v1, uint32_t v2);
-	bool is_version_code_valid(uint32_t version_code);
+	void flash_decode_active_version(char* out_str, size_t max_len);
 #ifdef __cplusplus
 }
 #endif

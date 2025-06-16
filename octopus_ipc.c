@@ -171,10 +171,12 @@ void task_ipc_running(void)
 
 void task_ipc_post_running(void)
 {
+		OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_ASSERT_RUN); 
 }
 
 void task_ipc_stop_running(void)
 {
+		LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_INVALID);
 }
 

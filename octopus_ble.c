@@ -171,10 +171,12 @@ void task_ble_running(void)
 
 void task_ble_post_running(void)
 {
+  OTMS(TASK_MODULE_BLE, OTMS_S_ASSERT_RUN);  
 }
 
 void task_ble_stop_running(void)
 {
+	LOG_LEVEL("_stop_running\r\n");
 	OTMS(TASK_MODULE_BLE, OTMS_S_INVALID);
 }
 

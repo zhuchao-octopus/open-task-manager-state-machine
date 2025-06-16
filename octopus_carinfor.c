@@ -156,12 +156,12 @@ void task_carinfo_running(void)
 void task_carinfo_post_running(void)
 {
     ptl_release_running(MCU_TO_SOC_MOD_CARINFOR);
-    // ptl_release_running(MCU_TO_SOC_MOD_INDICATOR);
-    // ptl_release_running(MCU_TO_SOC_MOD_DRIV_INFO);
+    OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_ASSERT_RUN); 
 }
 
 void task_carinfo_stop_running(void)
 {
+		LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_INVALID);
 }
 /////////////////////////////////////////////////////////////////////////////

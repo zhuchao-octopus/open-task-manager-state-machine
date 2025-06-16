@@ -185,10 +185,12 @@ void task_system_running(void)
 
 void task_system_post_running(void)
 {
+		OTMS(TASK_MODULE_SYSTEM, OTMS_S_ASSERT_RUN); 
 }
 
 void task_system_stop_running(void)
 {
+	  LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_SYSTEM, OTMS_S_INVALID);
 }
 

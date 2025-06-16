@@ -66,11 +66,12 @@ void task_can_running(void)
 
 void task_can_post_running(void)
 {
-	
+  OTMS(TASK_MODULE_CAN, OTMS_S_ASSERT_RUN); 	
 }
 
 void task_can_stop_running(void)
 {
+		LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_CAN, OTMS_S_INVALID);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

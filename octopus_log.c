@@ -40,7 +40,7 @@
 
 DBG_LOG_LEVEL current_log_level = LOG_LEVEL_DEBUG;
 
-#ifdef TASK_MANAGER_STATE_MACHINE_MY_PRINTF
+#ifdef USE_MY_PRINTF
 static const char *digits = "0123456789abcdefghijklmnopqrstuvwxyz";
 static const char *upper_digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -415,7 +415,7 @@ void dbg_log_printf(const char *format, ...)
 {
     va_list args;
     va_start(args, format); // Initialize the va_list to process the variable arguments
-#ifdef TASK_MANAGER_STATE_MACHINE_MY_PRINTF
+#ifdef USE_MY_PRINTF
     vsprintf__(native_uart_putc, format, args); // Call formatted print function
 #else
     vprintf(format, args);
@@ -459,7 +459,7 @@ void dbg_log_printf_level(const char *function_name, const char *format, ...)
     }
 
 // Print log header with timestamp, level, function name
-#ifdef TASK_MANAGER_STATE_MACHINE_MY_PRINTF
+#ifdef USE_MY_PRINTF
     dbg_log_printf("[%s][%28s] ", level_str, function_name);
 #else
     printf("[%s][%28s] ", level_str, function_name);
@@ -473,7 +473,7 @@ void dbg_log_printf_level(const char *function_name, const char *format, ...)
     va_list args;
     va_start(args, format);
 // Print formatted log message
-#ifdef TASK_MANAGER_STATE_MACHINE_MY_PRINTF
+#ifdef USE_MY_PRINTF
     vsprintf__(native_uart_putc, format, args);
 #else
     vprintf(format, args);
@@ -490,13 +490,13 @@ void dbg_log_printf_buffer(uint8_t *buff, uint16_t length)
 {
     for (int i = 0; i < length; i++)
     {
-#ifdef TASK_MANAGER_STATE_MACHINE_MY_PRINTF
+#ifdef USE_MY_PRINTF
         dbg_log_printf("%02x ", buff[i]);
 #else
         printf("%02x ", buff[i]);
 #endif
     }
-#ifdef TASK_MANAGER_STATE_MACHINE_MY_PRINTF
+#ifdef USE_MY_PRINTF
     dbg_log_printf("\r\n");
 #else
     printf("\r\n");
@@ -519,13 +519,13 @@ void dbg_log_printf_buffer_level(const char *function_name, const uint8_t *buff,
     dbg_log_printf_level(function_name, "");
     for (int i = 0; i < length; i++)
     {
-#ifdef TASK_MANAGER_STATE_MACHINE_MY_PRINTF
+#ifdef USE_MY_PRINTF
         dbg_log_printf("%02x ", buff[i]);
 #else
         printf("%02x ", buff[i]);
 #endif
     }
-#ifdef TASK_MANAGER_STATE_MACHINE_MY_PRINTF
+#ifdef USE_MY_PRINTF
     dbg_log_printf("\r\n");
 #else
     printf("\r\n");
