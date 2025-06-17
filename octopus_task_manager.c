@@ -266,7 +266,7 @@ void task_manager_start_module(TaskModule_t TaskModule)
     otms_id_t i;
     for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
     {
-			  if(i == TaskModule)
+	     if(i == TaskModule)
            otms_exec_state(i, OTMS_S_START); // Set each task to the START state.
     }
 }
@@ -283,14 +283,25 @@ void task_manager_stop(void)
     }
 }
 
-void task_manager_stop_except(TaskModule_t TaskModule)
+void task_manager_stop_except_1(TaskModule_t task_module1)
 {
     otms_id_t i;
 
     for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
     {
-	   if(i != TaskModule)
-          otms_exec_state(i, OTMS_S_STOP); // Set each task to the STOP state.
+	   if(i != task_module1)
+        otms_exec_state(i, OTMS_S_STOP); // Set each task to the STOP state.
+    }
+}
+
+void task_manager_stop_except_2(TaskModule_t task_module1,TaskModule_t task_module2)
+{
+    otms_id_t i;
+
+    for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
+    {
+	   if(i != task_module1 && i != task_module2)
+        otms_exec_state(i, OTMS_S_STOP); // Set each task to the STOP state.
     }
 }
 

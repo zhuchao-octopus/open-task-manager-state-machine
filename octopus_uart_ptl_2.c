@@ -124,7 +124,7 @@ void ptl_2_assert_running(void)
     StartTickCounter(&l_t_ptl_tx_main_timer);
     StartTickCounter(&l_t_ptl_error_detect_timer);
     lb_com_error = false;
-	  OTMS(TASK_MODULE_PTL_2, OTMS_S_RUNNING);
+	OTMS(TASK_MODULE_PTL_2, OTMS_S_RUNNING);
 }
 
 // Main running function for UART communication
@@ -150,18 +150,18 @@ void ptl_2_post_running(void)
 {
     if (true == ptl_2_is_sleep_enable())
     {
-			 OTMS(TASK_MODULE_PTL_2, OTMS_S_STOP); 
+		OTMS(TASK_MODULE_PTL_2, OTMS_S_STOP); 
     }
     else
     {
-			  OTMS(TASK_MODULE_PTL_2, OTMS_S_ASSERT_RUN); 
+		OTMS(TASK_MODULE_PTL_2, OTMS_S_ASSERT_RUN); 
     }
 }
 
 // Stop the UART communication task
 void ptl_2_stop_running(void)
 {
-	LOG_LEVEL("_stop_running\r\n");
+  LOG_LEVEL("_stop_running\r\n");
   OTMS(TASK_MODULE_PTL_2, OTMS_S_INVALID);
 }
 

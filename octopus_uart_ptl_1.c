@@ -110,13 +110,13 @@ void ptl_help(void)
     /// LOG_LEVEL("app ptl help guide\r\n");
 
     /// tmp[0] = 0x00;
-    /// ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    /// ptl_build_frame(P2M_MOD_DEBUG, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
     /// LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
     ///  tmp[0] = 0x01;
-    ///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    ///  ptl_build_frame(P2M_MOD_DEBUG, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
     ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
     ///  tmp[0] = 0x02;
-    ///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    ///  ptl_build_frame(P2M_MOD_DEBUG, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
     ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
     print_all_registered_module();
 }
@@ -174,7 +174,7 @@ void ptl_post_running(void)
 {
     if (true == ptl_is_sleep_enable())
     {
-			OTMS(TASK_MODULE_PTL_1, OTMS_S_STOP);
+	 OTMS(TASK_MODULE_PTL_1, OTMS_S_STOP);
     }
     else
     {
@@ -185,7 +185,7 @@ void ptl_post_running(void)
 // Stop the UART communication task
 void ptl_stop_running(void)
 {
-	  LOG_LEVEL("_stop_running\r\n");
+    LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_PTL_1, OTMS_S_INVALID);
 }
 

@@ -248,7 +248,7 @@ void task_bfang_ptl_post_running(void)
 
 void task_bfang_ptl_stop_running(void)
 {
-		LOG_LEVEL("_stop_running\r\n");
+	LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_INVALID);
 }
 
@@ -643,11 +643,11 @@ bool proc_protocol_frame_system_state(uint8_t* buff, int count)
             if (code == ERROR_CODE_BRAKE)
             {
                 lt_carinfo_indicator.brake = true;
-                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR); // CMD_MOD_CARINFOR_INDICATOR
+                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR); // FRAME_CMD__CARINFOR_INDICATOR
             }
             else
             {
-                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, CMD_MOD_CARINFOR_INDICATOR); // CMD_MOD_CARINFOR_INDICATOR
+                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR); // FRAME_CMD__CARINFOR_INDICATOR
                 task_carinfo_add_error_code(code);
             }
 
@@ -697,7 +697,7 @@ bool proc_protocol_frame_speed(uint8_t* buff, int count)
 							lt_carinfo_meter.speed_actual = (uint16_t)kph;
 							lt_carinfo_meter.speed = (uint16_t)kph; 
 							//LOG_LEVEL("lt_meter.speed=%d\r\n",lt_meter.speed);
-							send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_METER, 0);	 
+							send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);	 
             }
             return true;
         }
@@ -718,7 +718,7 @@ bool proc_protocol_frame_soc(uint8_t* buff, int count)
 
                 lt_carinfo_battery.soc = soc;
                 lt_carinfo_battery.range = (lt_carinfo_battery.max_range * soc) / 100;
-                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
+                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
             }
             return true;
         }
@@ -740,7 +740,7 @@ bool proc_protocol_frame_instantaneous_current(uint8_t* buff, int count)
                 lt_carinfo_battery.current = current_val * 5;
 
                 lt_carinfo_battery.power = lt_carinfo_battery.voltage * lt_carinfo_battery.current / 100;
-                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
+                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
             }
             return true;
         }
@@ -804,7 +804,7 @@ bool proc_protocol_frame_battery_info(uint8_t* buff, int count)
 
                 /// lt_carinfo_battery.max_uncharge_time = (int32_t)maxUnchargeHour * 60 + (int32_t)maxUnchargeMintues;
                 /// lt_carinfo_battery.last_uncharge_time = (int32_t)lastUnchargeHour * 60 + (int32_t)lastUnchargeMintues;
-                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
+                send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
             }
             return true;
         }
@@ -837,7 +837,7 @@ bool proc_protocol_frame_cell_info(uint8_t* buff, int count)
             {
                 /// lt_carinfo_battery.cell_voltage[i] = MK_WORD(buff[i * 2 + 2], buff[i * 2 + 1]);
             }
-            send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
+            send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
             return true;
         }
     }

@@ -161,7 +161,7 @@ void task_carinfo_post_running(void)
 
 void task_carinfo_stop_running(void)
 {
-		LOG_LEVEL("_stop_running\r\n");
+	LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_INVALID);
 }
 /////////////////////////////////////////////////////////////////////////////
@@ -207,18 +207,18 @@ bool meter_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uin
     {
         switch (param1)
         {
-        case CMD_MOD_CARINFOR_INDICATOR:
-            ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, (uint8_t *)&lt_carinfo_indicator, sizeof(carinfo_indicator_t), buff);
+        case FRAME_CMD_CARINFOR_INDICATOR:
+            ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, (uint8_t *)&lt_carinfo_indicator, sizeof(carinfo_indicator_t), buff);
             return true;
-        case CMD_MOD_CARINFOR_METER:
+        case FRAME_CMD_CARINFOR_METER:
             // LOG_LEVEL("lt_meter.speed=%d\r\n",lt_carinfo_meter.speed);
-            ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_METER, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t), buff);
+            ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t), buff);
             return true;
-        case CMD_MOD_CARINFOR_BATTERY:
-            ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, (uint8_t *)&lt_carinfo_battery, sizeof(carinfo_battery_t), buff);
+        case FRAME_CMD_CARINFOR_BATTERY:
+            ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, (uint8_t *)&lt_carinfo_battery, sizeof(carinfo_battery_t), buff);
             return true;
-        case CMD_MOD_CARINFOR_ERROR:
-            ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, (uint8_t *)&lt_carinfo_error, sizeof(carinfo_error_t), buff);
+        case FRAME_CMD_CARINFOR_ERROR:
+            ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, (uint8_t *)&lt_carinfo_error, sizeof(carinfo_error_t), buff);
             return true;
         default:
             break;
@@ -239,7 +239,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
     {
         switch (payload->frame_cmd)
         {
-        case CMD_MOD_CARINFOR_INDICATOR:
+        case FRAME_CMD_CARINFOR_INDICATOR:
             if (payload->data_len == sizeof(carinfo_indicator_t))
             {
                 memcpy(&lt_carinfo_indicator, payload->data, payload->data_len);
@@ -251,7 +251,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             }
             break;
 
-        case CMD_MOD_CARINFOR_METER:
+        case FRAME_CMD_CARINFOR_METER:
             if (payload->data_len == sizeof(carinfo_meter_t))
             {
                 memcpy(&lt_carinfo_meter, payload->data, payload->data_len);
@@ -263,7 +263,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             }
             break;
 
-        case CMD_MOD_CARINFOR_BATTERY:
+        case FRAME_CMD_CARINFOR_BATTERY:
             if (payload->data_len == sizeof(carinfo_battery_t))
             {
                 memcpy(&lt_carinfo_battery, payload->data, payload->data_len);
@@ -274,7 +274,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
                 LOG_LEVEL("wrong battery data payload->data_len=%d\r\n", payload->data_len);
             }
             break;
-        case CMD_MOD_CARINFOR_ERROR:
+        case FRAME_CMD_CARINFOR_ERROR:
             if (payload->data_len == sizeof(carinfo_error_t))
             {
                 memcpy(&lt_carinfo_error, payload->data, payload->data_len);
@@ -339,10 +339,10 @@ void task_car_controller_msg_handler(void)
     {
         switch (msg->param1)
         {
-        case CMD_MOD_CARINFOR_INDICATOR:
-            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_INDICATOR, 0);
+        case FRAME_CMD_CARINFOR_INDICATOR:
+            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, 0);
             break;
-        case CMD_MOD_CARINFOR_METER:
+        case FRAME_CMD_CARINFOR_METER:
             if ((lt_carinfo_meter.speed_actual > 0))
             {
 							 if(!IsTickCounterStart(&l_t_msg_car_trip_timer))
@@ -352,13 +352,13 @@ void task_car_controller_msg_handler(void)
             {
                 StopTickCounter(&l_t_msg_car_trip_timer);
             }
-            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_METER, 0);
+            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);
             break;
-        case CMD_MOD_CARINFOR_BATTERY:
-            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_BATTERY, 0);
+        case FRAME_CMD_CARINFOR_BATTERY:
+            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
             break;
-        case CMD_MOD_CARINFOR_ERROR:
-            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, 0);
+        case FRAME_CMD_CARINFOR_ERROR:
+            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, 0);
             break;
         default:
             break;
@@ -418,7 +418,7 @@ void task_carinfo_add_error_code(ERROR_CODE error_code)
         lt_carinfo_error.battery_fault = 0;
         lt_carinfo_error.brake_fault = 0;
         lt_carinfo_error.throttle_fault = 0;
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR);
+        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR);
     }
     switch (error_code)
     {
@@ -429,26 +429,26 @@ void task_carinfo_add_error_code(ERROR_CODE error_code)
     case ERROR_CODE_THROTTLE_NOT_ZERO:
     case ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY:
         lt_carinfo_error.throttle_fault = lt_carinfo_error.error[0];
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR); // CMD_MOD_CARINFOR_ERROR
+        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
         break;
 
     case ERROR_CODE_HALLSENSOR_ABNORMALITY:
     case ERROR_CODE_MOTOR_ABNORMALITY:
     case ERROR_CODE_CONTROLLER_ABNORMALITY:
         lt_carinfo_error.motorFault = lt_carinfo_error.error[0];
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR); // CMD_MOD_CARINFOR_ERROR
+        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
         break;
 
     case ERROR_CODE_BATTERY_OVERHEAT:
         lt_carinfo_error.battery_fault = lt_carinfo_error.error[0];
         lt_carinfo_error.fuse_fault = lt_carinfo_error.error[0];
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR); // CMD_MOD_CARINFOR_ERROR
+        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
         break;
 
     case ERROR_CODE_LOW_VOLTAGE_PROTECTION:
     case ERROR_CODE_OVER_VOLTAGE_PROTECTION:
         lt_carinfo_error.plug_fault = lt_carinfo_error.error[0];
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR); // CMD_MOD_CARINFOR_ERROR
+        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
         break;
 
     case ERROR_CODE_CONTROLLER_OVERHEAT:
@@ -459,14 +459,14 @@ void task_carinfo_add_error_code(ERROR_CODE error_code)
     case ERROR_CODE_SPEED_SENSOR_ABNORMALITY:
     case ERROR_CODE_LAMP_SENSOR_ABNORMALITY:
         lt_carinfo_error.sensorFault = lt_carinfo_error.error[0];
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR); // CMD_MOD_CARINFOR_ERROR
+        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
         break;
 
     case ERROR_CODE_LAMP_ABNORMALITY:
     case ERROR_CODE_COMMUNICATION_ABNORMALITY:
     case ERROR_CODE_BMS_ABNORMALITY:
         lt_carinfo_error.ecuFault = lt_carinfo_error.error[0];
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, CMD_MOD_CARINFOR_ERROR, CMD_MOD_CARINFOR_ERROR); // CMD_MOD_CARINFOR_ERROR
+        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
         break;
 
     default:
@@ -533,14 +533,14 @@ void task_car_controller_sif_updating(void)
         {
             // l_t_gear_changed = true;
             LOG_LEVEL("SIF DATA:lt_drivinfo.gear changed\r\n");
-            send_message(TASK_MODULE_PTL, MCU_TO_SOC_MOD_DRIV_INFO, CMD_MODDRIVINFO_GEAR, 0);
+            send_message(TASK_MODULE_PTL, MCU_TO_SOC_MOD_DRIV_INFO, FRAME_CMD_DRIVINFO_GEAR, 0);
         }
         lt_drivinfo.gear = (carinfo_drivinfo_gear_t)lt_sif.gear;
         if (lt_meter.actual_speed != lt_meter_current_speed)
         {
             // l_t_speed_changed=true;
             LOG_LEVEL("SIF DATA:lt_drivinfo.actual_speed changed\r\n");
-            send_message(TASK_MODULE_PTL, MCU_TO_SOC_MOD_METER, CMD_MODMETER_RPM_SPEED, 0);
+            send_message(TASK_MODULE_PTL, MCU_TO_SOC_MOD_METER, FRAME_CMD_METER_RPM_SPEED, 0);
         }
         lt_meter.actual_speed = lt_meter_current_speed;
     }

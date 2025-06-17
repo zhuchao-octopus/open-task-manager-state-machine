@@ -71,7 +71,7 @@ typedef struct
 
 static program_buf_t lt_mcu_program_buf;
 
-mcu_update_pragress_t mcu_pragress_status;
+mcu_update_progress_t mcu_upgrade_status;
 /*******************************************************************************
  * CONSTANTS
  */
@@ -79,7 +79,8 @@ mcu_update_pragress_t mcu_pragress_status;
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-char update_path_filename[25]={0};
+static FILE *file_handle_upgrade = NULL; 
+char file_path_name_upgrade[25]={0};
 /*******************************************************************************
  * STATIC VARIABLES
  */
@@ -206,20 +207,20 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 	{
 		switch (param1)
 		{
-		case CMD_MODUPDATE_UPDATE_FW_STATE:
+		case FRAME_CMD_UPDATE_UPDATE_FW_STATE:
 		{
 			buffer[0] = lt_mcu_program_buf.state;
 			buffer[1] = lt_mcu_program_buf.state; // ack success
-			ptl_build_frame(MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_UPDATE_FW_STATE, buffer, 2, buff);
+			ptl_build_frame(MCU_TO_SOC_MOD_UPDATE, FRAME_CMD_UPDATE_UPDATE_FW_STATE, buffer, 2, buff);
 			return true;
 		}
-		case CMD_MODUPDATE_REQUEST_FW_DATA://request data from
+		case FRAME_CMD_UPDATE_REQUEST_FW_DATA://request data from
 		{
 			// bootloader_iap_mode = 1;
 			buffer[0] = lt_mcu_program_buf.state; // ack success
 			buffer[1] = MK_MSB(lt_mcu_program_buf.f_count); // ack success
 			buffer[2] = MK_LSB(lt_mcu_program_buf.f_count);
-			ptl_build_frame(MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_REQUEST_FW_DATA, buffer, 3, buff);
+			ptl_build_frame(MCU_TO_SOC_MOD_UPDATE, FRAME_CMD_UPDATE_REQUEST_FW_DATA, buffer, 3, buff);
 			return true;
 		}
 
@@ -232,61 +233,87 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 	{
 		switch (param1)
 		{
-			case CMD_MODUPDATE_ENTER_FW_UPDATE:
+			case FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE:
 			{
-				mcu_pragress_status.file_info = parse_firmware_file(update_path_filename);
-				lt_mcu_program_buf.bank_address = mcu_pragress_status.file_info.reset_handler & 0xFFFF0000;
-				lt_mcu_program_buf.total_length = mcu_pragress_status.file_info.file_size;
-				if((mcu_pragress_status.file_info.file_type == FILE_TYPE_UNKNOWN || lt_mcu_program_buf.total_length == 0) &&  
-				(lt_mcu_program_buf.bank_address != MAIN_APP_SLOT_A_START_ADDR || lt_mcu_program_buf.bank_address != MAIN_APP_SLOT_B_START_ADDR)		
+				mcu_upgrade_status.file_info = parse_firmware_file(file_path_name_upgrade);
+				uint32_t bank_address = mcu_upgrade_status.file_info.reset_handler & 0xFFFF0000;
+				mcu_upgrade_status.s_length = 0;
+				mcu_upgrade_status.f_counter = 0;
+				mcu_upgrade_status.file_pos = 0;
+				
+				LOG_LEVEL("File Type     : %d\n", mcu_upgrade_status.file_info.file_type);
+				LOG_LEVEL("File Size     : %zu bytes\n", mcu_upgrade_status.file_info.file_size);
+				LOG_LEVEL("File Version  : 0x%08X\n", mcu_upgrade_status.file_info.file_version);
+				LOG_LEVEL("CRC-32        : 0x%08X\n", mcu_upgrade_status.file_info.crc_32);
+				LOG_LEVEL("Reset Handler : 0x%08X\n", mcu_upgrade_status.file_info.reset_handler);
+				
+				if((mcu_upgrade_status.file_info.file_type == FILE_TYPE_UNKNOWN || mcu_upgrade_status.file_info.file_size == 0) &&  
+				(bank_address != MAIN_APP_SLOT_A_START_ADDR || bank_address != MAIN_APP_SLOT_B_START_ADDR)		
 				)
 				{
-					LOG_LEVEL("CMD_MODUPDATE_UPDATE_FW_STATE error file_type=%d total_length=%d bank_address=%08x\r\n",mcu_pragress_status.file_info.file_type,
-					mcu_pragress_status.file_info.file_size,mcu_pragress_status.file_info.reset_handler);
+					LOG_LEVEL("FRAME_CMD_UPDATE_UPDATE_FW_STATE error file_type=%d total_length=%d bank_address=%08x\r\n",mcu_upgrade_status.file_info.file_type,
+					mcu_upgrade_status.file_info.file_size,mcu_upgrade_status.file_info.reset_handler);
 					return false;
 				}
 				
-				buffer[0] = (uint8_t)(lt_mcu_program_buf.bank_address & 0xFF);
-				buffer[1] = (uint8_t)((lt_mcu_program_buf.bank_address >> 8) & 0xFF);
-				buffer[2] = (uint8_t)((lt_mcu_program_buf.bank_address >> 16) & 0xFF);
-				buffer[3] = (uint8_t)((lt_mcu_program_buf.bank_address >> 24) & 0xFF);
-
-				buffer[4] = (uint8_t)(lt_mcu_program_buf.total_length & 0xFF);
-				buffer[5] = (uint8_t)((lt_mcu_program_buf.total_length >> 8) & 0xFF);
-				buffer[6] = (uint8_t)((lt_mcu_program_buf.total_length >> 16) & 0xFF);
-				buffer[7] = (uint8_t)((lt_mcu_program_buf.total_length >> 24) & 0xFF);
-				ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, CMD_MODUPDATE_ENTER_FW_UPDATE, buffer, 8, buff);
+				UINT32_TO_BYTES_LE(bank_address,&buffer[0]);
+				UINT32_TO_BYTES_LE(mcu_upgrade_status.file_info.file_size,&buffer[4]);
+					
+				file_handle_upgrade = fopen(file_path_name_upgrade, "r");
+				if(file_handle_upgrade)
+				{
+					ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE, buffer, 8, buff);
+					return true;
+				}
+				else
+				{
+					LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE opend file error %ds\r\n",file_path_name_upgrade);
+					return false;
+				}
+			}
+			case FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE:	
+			{
+				if(file_handle_upgrade)
+				{
+				  fclose(file_handle_upgrade);
+					file_handle_upgrade = NULL;
+				}
+				UINT32_TO_BYTES_LE(mcu_upgrade_status.file_info.crc_32,&buffer[0]);
+				UINT32_TO_BYTES_LE(mcu_upgrade_status.s_length,&buffer[4]);
+				ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE, buffer, 8, buff);
 				return true;
 			}
+			
 			default:
 				break;
 		}
 	}
 	return false;
 }
+
 // Function to handle receiving update module requests, process the payload, and send acknowledgment.
 bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
 {
 	MY_ASSERT(payload);
 	MY_ASSERT(ackbuff);
-	uint8_t buffer[20] = {0};
+	uint8_t buffer[64] = {0};
 	if (SOC_TO_MCU_MOD_UPDATE == payload->frame_type)
 	{
 
 		switch (payload->frame_cmd)
 		{
-		case CMD_MODUPDATE_CHECK_FW_STATE:
-		case CMD_MODUPDATE_UPDATE_FW_STATE: // second
+		case FRAME_CMD_UPDATE_CHECK_FW_STATE:
+		case FRAME_CMD_UPDATE_UPDATE_FW_STATE: // second
 		{
-			LOG_LEVEL("CMD_MODUPDATE_UPDATE_FW_STATE \n");
+			LOG_LEVEL("FRAME_CMD_UPDATE_UPDATE_FW_STATE \n");
 			buffer[0] = lt_mcu_program_buf.state;
 			buffer[1] = lt_mcu_program_buf.state;
-			ptl_build_frame(MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_CHECK_FW_STATE, buffer, 2, ackbuff);
+			ptl_build_frame(MCU_TO_SOC_MOD_UPDATE, FRAME_CMD_UPDATE_CHECK_FW_STATE, buffer, 2, ackbuff);
 			return true;
 		}
-		case CMD_MODUPDATE_ENTER_FW_UPDATE: // first
+		case FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE: // first
 		{
-			//LOG_LEVEL("CMD_MODUPDATE_ENTER_FW_UPDATE \n");
+			//LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPDATE \n");
 			//uint32_t address = BYTES_TO_UINT32_LE(&payload->data[0]);
 			lt_mcu_program_buf.bank_address = BYTES_TO_UINT32_LE(&payload->data[0]);
 			lt_mcu_program_buf.total_length = BYTES_TO_UINT32_LE(&payload->data[4]);
@@ -299,27 +326,24 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 
 			if(lt_mcu_program_buf.total_length == 0)
 			{
-				LOG_LEVEL("CMD_MODUPDATE_ENTER_FW_UPDATE faild update bank:%d address:%08x total_length=%d\r\n",lt_mcu_program_buf.bank_slot,lt_mcu_program_buf.bank_address,lt_mcu_program_buf.total_length);	
+				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPDATE faild update bank:%d address:%08x total_length=%d\r\n",lt_mcu_program_buf.bank_slot,lt_mcu_program_buf.bank_address,lt_mcu_program_buf.total_length);	
 				return false;
 			}
 			if(update_and_verify_dest_bank(lt_mcu_program_buf.bank_address))
 			{
-				LOG_LEVEL("CMD_MODUPDATE_ENTER_FW_UPDATE update bank:%d address:%08x\r\n",lt_mcu_program_buf.bank_slot,lt_mcu_program_buf.bank_address);
+				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPDATE update bank:%d address:%08x\r\n",lt_mcu_program_buf.bank_slot,lt_mcu_program_buf.bank_address);
 				lt_mcu_program_buf.state = MCU_UPDATE_STATE_INIT;
 			}
 			else
 			{
 				lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
-				LOG_LEVEL("CMD_MODUPDATE_ENTER_FW_UPDATE failed update bank:%d address:%08x\r\n",lt_mcu_program_buf.bank_slot,lt_mcu_program_buf.bank_address);
+				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPDATE failed update bank:%d address:%08x\r\n",lt_mcu_program_buf.bank_slot,lt_mcu_program_buf.bank_address);
 			}
 		
 			return false;
 		}
-		case CMD_MODUPDATE_EXIT_FW_UPDATE:
+		case FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE:
 		{		
-			// tmp[0] = lt_mcu_program_buf.state;
-			// tmp[1] = lt_mcu_program_buf.state;
-			// ptl_build_frame(MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_EXIT_FW_UPDATE, tmp, 2, ackbuff);
 			lt_mcu_program_buf.total_crc_32 = BYTES_TO_UINT32_LE(&payload->data[0]);
 			uint32_t total_length = BYTES_TO_UINT32_LE(&payload->data[4]);
 			
@@ -328,10 +352,10 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 			else
 				lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;
 			
-			LOG_LEVEL("CMD_MODUPDATE_EXIT_FW_UPDATE total_crc_32=%08x total_length=%d\r\n",lt_mcu_program_buf.total_crc_32,total_length);
+			LOG_LEVEL("FRAME_CMD_UPDATE_EXIT_FW_UPDATE total_crc_32=%08x total_length=%d\r\n",lt_mcu_program_buf.total_crc_32,total_length);
 			return false;
 		}
-		case CMD_MODUPDATE_SEND_FW_DATA:
+		case FRAME_CMD_UPDATE_SEND_FW_DATA:
 		{
 			lt_mcu_program_buf.r_address = (payload->data[3] << 24) | (payload->data[2] << 16) | (payload->data[1] << 8) | payload->data[0];
 			//MK_DWORD(MK_WORD(payload->data[0], payload->data[1]), MK_WORD(payload->data[2], payload->data[3]));
@@ -347,13 +371,13 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 			if (lt_mcu_program_buf.state == MCU_UPDATE_STATE_RECEIVING)
 		    	lt_mcu_program_buf.state = MCU_UPDATE_STATE_UPDATING;
 			else
-				  lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;
+				lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;
 			
 			return false;
 		}
-		case CMD_MODUPDATE_REBOOT:
+		case FRAME_CMD_UPDATE_REBOOT:
 		{
-			LOG_LEVEL("CMD_MODUPDATE_REBOOT\n");
+			LOG_LEVEL("FRAME_CMD_UPDATE_REBOOT\n");
 			return true;
 		}
 		default:
@@ -361,40 +385,67 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 		}
 	}
 	
-	/*else if (MCU_TO_SOC_MOD_SYSTEM == payload->frame_type)
+	else if (MCU_TO_SOC_MOD_SYSTEM == payload->frame_type)
 	{
 		switch (payload->frame_cmd)
 		{
-			case CMD_MODUPDATE_SEND_FW_DATA:
+			case FRAME_CMD_UPDATE_REQUEST_FW_DATA:
 			{
-				
-				buffer[0] = (uint8_t)(lt_mcu_program_buf.bank_address & 0xFF);
-				buffer[1] = (uint8_t)((lt_mcu_program_buf.bank_address >> 8) & 0xFF);
-				buffer[2] = (uint8_t)((lt_mcu_program_buf.bank_address >> 16) & 0xFF);
-				buffer[3] = (uint8_t)((lt_mcu_program_buf.bank_address >> 24) & 0xFF);
-				
-				if(lt_mcu_program_buf.r_length + 4 <= sizeof(lt_mcu_program_buf.r_buff))
+				uint16_t frame_index = payload->data[1] << 8 | payload->data[2];
+				if(payload->data[0] != MCU_UPDATE_STATE_RECEIVING && frame_index != mcu_upgrade_status.f_counter)
 				{
-				  for(uint16_t i = 0; i < lt_mcu_program_buf.r_length; i++)
-					{
-						 buffer[i+4] = lt_mcu_program_buf.r_buff[i];	
-					}
-			  }
-				else
-				{
-					LOG_LEVEL("CMD_MODUPDATE_UPDATE_FW_STATE error lt_mcu_program_buf.r_length=%d\r\n",lt_mcu_program_buf.r_length);
+					LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA error mcu_upgrade_status.progress=%d\r\n",mcu_upgrade_status.f_counter);
+					return false;
 				}
-				ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, CMD_MODUPDATE_SEND_FW_DATA, buffer, 20, ackbuff);
-				return true;
+				if(!file_handle_upgrade)
+				{
+					LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA error file_handle_upgrade=NULL\r\n");
+					return false;
+				}
+				hex_record_t hex_record;
+				file_read_status_t file_read_status = read_next_hex_record(file_handle_upgrade,&mcu_upgrade_status.file_pos,&hex_record);
+				while(file_read_status != FILE_READ_OK)
+        {
+					 file_read_status = read_next_hex_record(file_handle_upgrade,&mcu_upgrade_status.file_pos,&hex_record);
+					 switch (file_read_status)
+					 {
+						 case FILE_READ_OK:
+							  break;
+						 
+						 case FILE_READ_EOF:
+								LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA successfully file_read_status=FILE_READ_EOF\r\n");
+								send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE, 0); 
+								return false; 
+
+						 case FILE_READ_ERROR:
+								LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA error file_read_status=FILE_READ_ERROR\r\n");
+								send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE, 0); 
+								return false; 						 
+
+						 default:
+							 LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA unimaginable exception  error\r\n"); 
+						   return false; 
+					 }
+		    }
+				
+				mcu_upgrade_status.s_length = mcu_upgrade_status.s_length + hex_record.length;
+				UINT32_TO_BYTES_LE(hex_record.address,&ackbuff->buff[0]);
+				
+				for(uint16_t i = 0; i < hex_record.length; i++)
+				{
+						ackbuff->buff[i+4] = hex_record.data[i];	
+				}
+				
+				mcu_upgrade_status.f_counter++;
+				ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_UPDATE_SEND_FW_DATA, buffer, hex_record.length + 4, ackbuff);
+				return true;		
 			}
-			case CMD_MODUPDATE_EXIT_FW_UPDATE:
-			{
-				return false;	
-			}
+		
 			default:
 				break;
 		}
-	}*/
+	}
+	
 	return false;
 }
 
@@ -412,19 +463,18 @@ static void mcu_update_state_proc(void)
 	case MCU_UPDATE_STATE_CHECK:
 		break;
 	case MCU_UPDATE_STATE_INIT:
-		LOG_LEVEL("MCU_UPDATE_STATE_INIT FLASH_BANK_CONFIG_MODE_SLOT:\r\n",FLASH_BANK_CONFIG_MODE_SLOT);
+		LOG_LEVEL("MCU_UPDATE_STATE_INIT FLASH_BANK_CONFIG_MODE_SLOT:%d\r\n",FLASH_BANK_CONFIG_MODE_SLOT);
 		if (lt_mcu_program_buf.bank_slot == BANK_SLOT_INVALID)
 		{
 			//lt_mcu_program_buf.bank_slot = BANK_SLOT_INVALID;
-			LOG_LEVEL("MCU_UPDATE_STATE_INIT error! FLASH_BANK_CONFIG_MODE_SLOT:\r\n",FLASH_BANK_CONFIG_MODE_SLOT);
+			LOG_LEVEL("MCU_UPDATE_STATE_INIT error! FLASH_BANK_CONFIG_MODE_SLOT:%d\r\n",FLASH_BANK_CONFIG_MODE_SLOT);
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
 			break;
 		}			
 		
 		lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERASE;
 		lt_mcu_program_buf.f_count = 0;
-		task_manager_stop_except(TASK_MODULE_UPDATE_MCU);
-		task_manager_start_module(TASK_MODULE_PTL_1);
+		task_manager_stop_except_2(TASK_MODULE_UPDATE_MCU,TASK_MODULE_PTL_1);
 		task_manager_start_module(TASK_MODULE_IPC_SOCKET);
 		
 		break;
@@ -447,7 +497,7 @@ static void mcu_update_state_proc(void)
 		else
 		{
 			lt_mcu_program_buf.bank_slot = BANK_SLOT_INVALID;
-			LOG_LEVEL("MCU_UPDATE_STATE_INIT error! bank_slot:\r\n",lt_mcu_program_buf.bank_slot);
+			LOG_LEVEL("MCU_UPDATE_STATE_INIT error! bank_slot:%d\r\n",lt_mcu_program_buf.bank_slot);
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
 			break;
 		}		
@@ -459,7 +509,7 @@ static void mcu_update_state_proc(void)
 			flash_save_app_meter_infor();
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_RECEIVING;
 			lt_mcu_program_buf.f_count = 0;//start receiving data
-			send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_REQUEST_FW_DATA, lt_mcu_program_buf.state);
+			send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_UPDATE, FRAME_CMD_UPDATE_REQUEST_FW_DATA, lt_mcu_program_buf.state);
 		}
 		else
 		{
@@ -481,7 +531,7 @@ static void mcu_update_state_proc(void)
 		{
 			lt_mcu_program_buf.f_count++;
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_RECEIVING;//continue receive data
-			send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_UPDATE, CMD_MODUPDATE_REQUEST_FW_DATA, lt_mcu_program_buf.state);
+			send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_UPDATE, FRAME_CMD_UPDATE_REQUEST_FW_DATA, lt_mcu_program_buf.state);
 			break;
 		}
 
@@ -501,20 +551,20 @@ static void mcu_update_state_proc(void)
 	  if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
 		{
 			DISABLE_IRQ;
-			crc_32 = flash_calculate_crc_32((uint8_t *)app_meta_data.slot_a_addr, lt_mcu_program_buf.total_length);
+			crc_32 = calculate_crc_32((uint8_t *)app_meta_data.slot_a_addr, lt_mcu_program_buf.total_length);
 			ENABLE_IRQ;
 		}
 	  else if(lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 		{
 			DISABLE_IRQ;
-			crc_32 = flash_calculate_crc_32((uint8_t *)app_meta_data.slot_b_addr, lt_mcu_program_buf.total_length);
+			crc_32 = calculate_crc_32((uint8_t *)app_meta_data.slot_b_addr, lt_mcu_program_buf.total_length);
 			ENABLE_IRQ;
 		}
 	  else
 		{
 			LOG_LEVEL("lt_mcu_program_buf.bank_slot error! bank_slot=%d\n",lt_mcu_program_buf.bank_slot);
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;	
-     		 break;			
+     	break;			
 		}
 	  
 	  if(crc_32 == lt_mcu_program_buf.total_crc_32)
@@ -592,7 +642,6 @@ static void mcu_update_state_proc(void)
 	  lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
 		break;
 	}
-	
 }
 
 #endif

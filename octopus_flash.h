@@ -222,7 +222,6 @@ extern "C"
 	void flash_save_carinfor_meter(void);
 	
 	uint32_t flash_erase_user_app_arear(void);
-	uint32_t flash_calculate_crc_32(uint8_t *data, uint32_t length);
 	void flash_decode_active_version(char* out_str, size_t max_len);
 #ifdef __cplusplus
 }

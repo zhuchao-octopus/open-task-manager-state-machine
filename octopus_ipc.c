@@ -131,12 +131,12 @@ void task_ipc_running(void)
         {
             if (l_u8_idle_swich > 0)
             {
-                ipc_notify_message_to_client(0, CMD_MOD_CARINFOR_INDICATOR);
+                ipc_notify_message_to_client(0, FRAME_CMD_CARINFOR_INDICATOR);
                 l_u8_idle_swich = 0;
             }
             else
             {
-                ipc_notify_message_to_client(0, CMD_MOD_CARINFOR_METER);
+                ipc_notify_message_to_client(0, FRAME_CMD_CARINFOR_METER);
                 l_u8_idle_swich = 1;
             }
 
@@ -154,15 +154,15 @@ void task_ipc_running(void)
         break;
     case MSG_IPC_CMD_CAR_SETTING_SAVE:
         LOG_LEVEL("MSG_IPC_CMD_CAR_SETTING_SAVE param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MODSYSTEM_SAVE_DATA, msg->param1);
+        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_SYSTEM_SAVE_DATA, msg->param1);
         break;
     case MSG_IPC_CMD_CAR_SET_LIGHT:
         LOG_LEVEL("MSG_IPC_CMD_CAR_SET_LIGHT param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_LIGHT, msg->param1);
+        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_LIGHT, msg->param1);
         break;
     case MSG_IPC_CMD_CAR_SET_GEAR_LEVEL:
         LOG_LEVEL("MSG_IPC_CMD_CAR_SET_GEAR_LEVEL param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_GEAR_LEVEL, msg->param1);
+        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_GEAR_LEVEL, msg->param1);
         break;
     }
 
@@ -171,12 +171,12 @@ void task_ipc_running(void)
 
 void task_ipc_post_running(void)
 {
-		OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_ASSERT_RUN); 
+	OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_ASSERT_RUN); 
 }
 
 void task_ipc_stop_running(void)
 {
-		LOG_LEVEL("_stop_running\r\n");
+	LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_INVALID);
 }
 
@@ -220,20 +220,20 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
     {
         switch (param1)
         {
-        case CMD_MODSYSTEM_SAVE_DATA:
+        case FRAME_CMD_SYSTEM_SAVE_DATA:
             tmp[0] = param2;
-            ptl_build_frame(SOC_TO_MCU_MOD_IPC, CMD_MODSYSTEM_SAVE_DATA, tmp, 2, buff);
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, FRAME_CMD_SYSTEM_SAVE_DATA, tmp, 2, buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
-        case CMD_MOD_CAR_SET_LIGHT:
+        case FRAME_CMD_CAR_SET_LIGHT:
             tmp[0] = param2;
-            ptl_build_frame(SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_LIGHT, tmp, 2, buff);
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_LIGHT, tmp, 2, buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
 
-        case CMD_MOD_CAR_SET_GEAR_LEVEL:
+        case FRAME_CMD_CAR_SET_GEAR_LEVEL:
             tmp[0] = param2;
-            ptl_build_frame(SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_GEAR_LEVEL, tmp, 2, buff);
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_GEAR_LEVEL, tmp, 2, buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
         default:
@@ -280,18 +280,18 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
     {
         switch (payload->frame_cmd)
         {
-        case CMD_MODSYSTEM_SAVE_DATA:
+        case FRAME_CMD_SYSTEM_SAVE_DATA:
             lt_carinfo_meter.unit_type = payload->data[0];
             flash_save_carinfor_meter();
             return true;
-        case CMD_MOD_CAR_SET_LIGHT:
+        case FRAME_CMD_CAR_SET_LIGHT:
             if (payload->data[0] == 1)
                 bafang_lamp_on_off(true);
             else
                 bafang_lamp_on_off(false);
 
             return true;
-        case CMD_MOD_CAR_SET_GEAR_LEVEL:
+        case FRAME_CMD_CAR_SET_GEAR_LEVEL:
             bafang_set_gear(payload->data[0]);
             return true;
         default:

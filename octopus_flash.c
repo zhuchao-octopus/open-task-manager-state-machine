@@ -18,20 +18,15 @@
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
 #include "octopus_carinfor.h"
 #endif
+
 void Print_VectorTable(void);
 void Print_Flash_VectorTable(void);
 void Print_SRAM_VectorTable(void);
 
 /////////////////////////////////////////////////////////////////////////////////////
-//typedef void (*AppEntryPoint)(void);  // Function pointer type for application entry
-//#define SCB_VTOR_ADDRESS (0xE000ED08) // SCB Vector Table Offset Register (VTOR)
-//#define SCB_VTOR (*(volatile uint32_t *)SCB_VTOR_ADDRESS)
-#define CRC32_POLYNOMIAL  (0x04C11DB7)  // Standard CRC32 polynomial
-//#define MAIN_APP_MAX_SIZE (100 * 1024) // 100KB Main Application size
-
 app_meta_data_t app_meta_data = {0};
 
-#ifdef MAPPING_VECT_TABle_TO_SRAM
+#ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
 #if (defined ( __CC_ARM ))
 __IO uint32_t Vector_Table[48] __attribute__((at(0x20000000)));
 #elif defined   (  __GNUC__  )
@@ -43,7 +38,7 @@ __IO uint32_t Vector_Table[48] __at(0x20000000);
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLEAR
  */
-#ifdef MAPPING_VECT_TABle_TO_SRAM
+#ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
 void flash_vector_table_config(uint8_t active_slot)
 {
 	if(active_slot == BANK_SLOT_AUTO)
@@ -143,9 +138,9 @@ void Print_SRAM_VectorTable(void)
 
 void flash_init(void)
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_FLASH
+	#ifdef TASK_MANAGER_STATE_MACHINE_FLASH
 	hal_flash_init(0);
-#endif
+	#endif
 }
 
 void flash_load_sync_data_infor(void)
@@ -169,9 +164,9 @@ void flash_load_sync_data_infor(void)
 	//    uint8_t  active_slot;           // Currently active slot: 0 for A, 1 for B
 	//    uint8_t  last_boot_ok;          // Last boot result: 0 = failed, 1 = successful
 	//    uint8_t  reserved[2];           // Reserved for alignment and future use
- LOG_NONE("\r\n");
-#ifdef USE_EEROM_FOR_DATA_SAVING
-  uint32_t calculated_crc = 0;
+    LOG_NONE("\r\n");
+#ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
+    uint32_t calculated_crc = 0;
 	E2ROMReadToBuff(EEROM_APP_MATA_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
 	app_meta_data.active_slot = FLASH_BANK_CONFIG_MODE_SLOT;
 	app_meta_data.loader_addr = BOOTLOADER_START_ADDR;
@@ -189,12 +184,13 @@ void flash_load_sync_data_infor(void)
 		
 		if (!(app_meta_data.app_state_flags & APP_FLAG_VALID_A) || !IS_SLOT_A_UPGRADED(app_meta_data.app_state_flags)) 
 		{		
-			LOG_LEVEL("First-Stage Boot Detected,Starting data synchronization...\r\n");
+			LOG_LEVEL("First-Stage Boot Detected.\r\n");
+			LOG_LEVEL("Starting data synchronization...\r\n");
 			app_meta_data.slot_a_size = MAIN_APP_SIZE;
 		 	if(app_meta_data.slot_a_size <= MAIN_APP_SIZE)
 			{
 				DISABLE_IRQ;
-				calculated_crc = flash_calculate_crc_32((uint8_t *)app_meta_data.slot_a_addr, app_meta_data.slot_a_size);
+				calculated_crc = calculate_crc_32((uint8_t *)app_meta_data.slot_a_addr, app_meta_data.slot_a_size);
 				ENABLE_IRQ;				
 		  }			
 			app_meta_data.slot_a_crc = calculated_crc;
@@ -207,12 +203,14 @@ void flash_load_sync_data_infor(void)
 		app_meta_data.slot_b_version = build_version_code();
 		if (!(app_meta_data.app_state_flags & APP_FLAG_VALID_B) || !IS_SLOT_B_UPGRADED(app_meta_data.app_state_flags)) 
 		{
-			LOG_LEVEL("First-Stage Boot Detected,Starting data synchronization...\r\n");
+			LOG_LEVEL("First-Stage Boot Detected.\r\n");
+			LOG_LEVEL("Starting data synchronization...\r\n");
+			
 			app_meta_data.slot_b_size = MAIN_APP_SIZE;
 			if(app_meta_data.slot_b_size <= MAIN_APP_SIZE)
 			{
 				DISABLE_IRQ;
-				calculated_crc = flash_calculate_crc_32((uint8_t *)app_meta_data.slot_b_addr, app_meta_data.slot_b_size);  
+				calculated_crc = calculate_crc_32((uint8_t *)app_meta_data.slot_b_addr, app_meta_data.slot_b_size);  
 				DISABLE_IRQ;
 			}
 
@@ -225,6 +223,7 @@ void flash_load_sync_data_infor(void)
 		app_meta_data.loader_version = build_version_code();
 	}
 	else{}
+		
 	E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));	
 	LOG_LEVEL("Bootloader Address    : 0x%08X\n", app_meta_data.loader_addr);
 	LOG_LEVEL("Slot A Address        : 0x%08X\n", app_meta_data.slot_a_addr);
@@ -244,9 +243,7 @@ void flash_load_sync_data_infor(void)
 	LOG_LEVEL("Loader Bank Mode      : 0x%02X\n", app_meta_data.bank_slot_mode);
 	//LOG_LEVEL("User Data Address    : 0x%08X\n", EEROM_DATAS_ADDRESS);
 	//LOG_LEVEL("VECT_TAB_OFFSET      : 0x%08X\n", SCB->AIRCR);
-#endif
-	
-#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
+
 	if (app_meta_data.meter_data_flags == EEROM_DATAS_VALID_FLAG)
 	{
 		LOG_LEVEL("load meter data[%02d] ", sizeof(carinfo_meter_t));
@@ -255,69 +252,31 @@ void flash_load_sync_data_infor(void)
 	}
 #endif
 	
-///#ifdef MAPPING_VECT_TABle_TO_SRAM
-///	Print_VectorTable();
-///#endif
-///Print_Flash_VectorTable();
-///Print_SRAM_VectorTable();
+#ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
+	///	Print_VectorTable();
+	///Print_Flash_VectorTable();
+	///Print_SRAM_VectorTable();
 	LOG_LEVEL("__get_MSP       = 0x%08X\r\n", __get_MSP());
 	LOG_LEVEL("Reset_Handler   = 0x%08X\r\n", ((uint32_t*)0x00000000)[1]);
 	LOG_LEVEL("SysTick_Handler = 0x%08X\r\n", ((uint32_t*)0x00000000)[15]);
+#endif
 }
 
 uint32_t flash_erase_user_app_arear(void)
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_FLASH
+	#ifdef TASK_MANAGER_STATE_MACHINE_FLASH
 	if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_A)
 		return hal_flash_erase_page_(MAIN_APP_SLOT_B_START_ADDR, MAIN_APP_BLOCK_COUNT);
 	else
 		return hal_flash_erase_page_(MAIN_APP_SLOT_A_START_ADDR, MAIN_APP_BLOCK_COUNT);
-	//return 0;
-	
-#else
-	return 0;
-#endif
-}
-
-#define FLASH_COPY_BLOCK_SIZE 64  // Size of each block to copy from source to destination
-
-/**
- * @brief Synchronize (copy) flash data from bank B to bank A.
- *
- * This function reads data from bank_b_address and writes it to bank_a_address.
- * It assumes both banks have the same size, and the destination region (bank A)
- * is already erased if required by the flash hardware.
- *
- * @param bank_a_address  Destination flash start address (e.g., active bank)
- * @param bank_b_address  Source flash start address (e.g., backup or update bank)
- */
-void flash_synch_banck_slot(uint32_t destination_address, uint32_t source_address)
-{
-    uint8_t buffer[FLASH_COPY_BLOCK_SIZE];
-
-    // Total size to copy (e.g., 20 KB)
-    //const uint32_t flash_size = 20 * 1024;
-
-    for (uint32_t offset = 0; offset < MAIN_APP_SIZE; offset += FLASH_COPY_BLOCK_SIZE)
-    {
-        // Copy data from source bank (bank B) into RAM buffer
-        memcpy(buffer, (const void*)(source_address + offset), FLASH_COPY_BLOCK_SIZE);
-
-        // Write buffer to destination bank (bank A)
-        if (FlashWriteBuffTo(destination_address + offset, buffer, FLASH_COPY_BLOCK_SIZE) != 0)
-        {
-            // If write fails, log error and break loop
-            printf("Flash write failed at offset 0x%08X\n", offset);
-            break;
-        }
-    }
-
-    LOG_LEVEL("Flash synchronization complete.\n");
+	#else
+		return 0;
+	#endif
 }
 
 void flash_save_app_meter_infor(void)
 {
-#ifdef USE_EEROM_FOR_DATA_SAVING
+#ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
   //LOG_LEVEL("flash_save_app_meter\r\n");
 	E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&app_meta_data, sizeof(app_meta_data_t));
 	//E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
@@ -327,7 +286,7 @@ void flash_save_app_meter_infor(void)
 // void flash_set_app_meta_
 void flash_save_carinfor_meter(void)
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
+#ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
 	LOG_BUFF_LEVEL((uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 	LOG_LEVEL("lt_carinfo_meter.odo:%d\r\n", lt_carinfo_meter.odo);
 	if (lt_carinfo_meter.odo == 0)
@@ -340,30 +299,7 @@ void flash_save_carinfor_meter(void)
 #endif
 }
 
-/*******************************************************************************
- * CRC Calculation
- *******************************************************************************/
-uint32_t flash_calculate_crc_32(uint8_t *data, uint32_t length)
-{
-	uint32_t crc = 0xFFFFFFFF;
-	for (uint32_t i = 0; i < length; i++)
-	{
-		crc ^= (uint32_t)data[i] << 24;
-		for (uint8_t j = 0; j < 8; j++)
-		{
-			if (crc & 0x80000000)
-			{
-				crc = (crc << 1) ^ CRC32_POLYNOMIAL;
-			}
-			else
-			{
-				crc <<= 1;
-			}
-		}
-	}
-	return crc ^ 0xFFFFFFFF;
-}
-
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
 /**
  * @brief Verify application CRC integrity
  *
@@ -387,7 +323,7 @@ bool flash_verify_bank_slot_crc(uint32_t slot_addr,uint32_t slot_size, uint32_t 
 	}
 	
 	DISABLE_IRQ;
-	uint32_t calculated_crc = flash_calculate_crc_32((uint8_t *)slot_addr, slot_size);
+	uint32_t calculated_crc = calculate_crc_32((uint8_t *)slot_addr, slot_size);
 	ENABLE_IRQ;
 	LOG_LEVEL("Bank crc verify at: 0x%08X, size:0x%08X, expected crc:0x%08X, calculate crc:%08x\r\n", slot_addr,slot_size,expected_crc,calculated_crc);
 
@@ -462,13 +398,7 @@ void boot_loader_active_user_app(void)
 	uint32_t active_app_addr = 0;
 	uint32_t expected_crc = 0;
 	uint32_t slot_length = 0;
-	//uint32_t state_flags = 0;
 	
-	//state_flags = app_meta_data.app_state_flags;
-	
-
-	//Select the currently active slot (A or B)
-	//if (app_meta_data.active_slot == BANK_SLOT_A)
 	if(compare_versions(app_meta_data.slot_a_version,app_meta_data.slot_b_version) >= 0)
 	{
 		if (IS_SLOT_A_VALID(app_meta_data.app_state_flags))
@@ -488,7 +418,7 @@ void boot_loader_active_user_app(void)
 			if(app_meta_data.active_slot == BANK_SLOT_B) return;
 		}
 	}
-	else// if (app_meta_data.active_slot == BANK_SLOT_B)
+	else
 	{
 		if (IS_SLOT_B_VALID(app_meta_data.app_state_flags))
 		{
@@ -527,7 +457,7 @@ void boot_loader_active_user_app(void)
 		}
 	}
 }
-
+#endif
 /**
  * @fn void printfFuncHex(const char *fun, int line, char *str, uint8_t *dat, int len)
  * @brief print input data in hex
@@ -554,31 +484,31 @@ void PrintfBuffHex(const char *fun, int line, char *str, uint8_t *dat, int len)
 uint32_t FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 {
 	uint32_t writed_bytes = 0;
+	#ifdef TASK_MANAGER_STATE_MACHINE_FLASH
 	DISABLE_IRQ;
-#ifdef TASK_MANAGER_STATE_MACHINE_FLASH
 	writed_bytes = hal_flash_write_(addr, buf, length);
-#endif
 	ENABLE_IRQ;
+	#endif
 	return writed_bytes;
 }
 
 void FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length)
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_FLASH
+	#ifdef TASK_MANAGER_STATE_MACHINE_FLASH
 	hal_flash_read_(addr, buf, length);
-#endif
+	#endif
 }
 
 void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length)
 {
-#ifdef USE_EEROM_FOR_DATA_SAVING	
+#ifdef FLASH_USE_EEROM_FOR_DATA_SAVING	
 	hal_eeprom_read_(addr, buf, length);
 #endif
 }
 
 void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 {
-#ifdef USE_EEROM_FOR_DATA_SAVING	
+#ifdef FLASH_USE_EEROM_FOR_DATA_SAVING	
 	hal_eeprom_write_(addr, buf, length);
 #endif
 }
@@ -587,12 +517,15 @@ void flash_decode_active_version(char* out_str, size_t max_len) {
 	  uint32_t version = 0;
     uint16_t y1;
     uint8_t m1, d1, h1, min1, code1;
+	
 	  if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_A)
 			version = app_meta_data.slot_a_version;
 		else if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_B)
 			version = app_meta_data.slot_b_version;
 		else if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_LOADER)
 			version = app_meta_data.loader_version;
+		else
+			version = build_version_code();
 		
     decode_datetime_version(version, &y1, &m1, &d1, &h1, &min1, &code1);
     snprintf(out_str, max_len, "%04u%02u%02u%02u%02u_%03u", y1, m1, d1, h1, min1, code1);

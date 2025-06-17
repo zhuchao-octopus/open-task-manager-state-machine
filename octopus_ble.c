@@ -171,7 +171,7 @@ void task_ble_running(void)
 
 void task_ble_post_running(void)
 {
-  OTMS(TASK_MODULE_BLE, OTMS_S_ASSERT_RUN);  
+	OTMS(TASK_MODULE_BLE, OTMS_S_ASSERT_RUN);  
 }
 
 void task_ble_stop_running(void)
@@ -273,9 +273,9 @@ void StartToUnlockRssi(void)
 
 	ble_status.to_lock = false;
 	//ble_status.locked = false;
-  ble_status.rssi_unlock = false;
+	ble_status.rssi_unlock = false;
 	LOG_LEVEL("Start to unlock system rssi=%d ...\r\n",ble_status.rssi);
-	send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, CMD_MODSYSTEM_POWER_ON);	
+	send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, FRAME_CMD_SYSTEM_POWER_ON);	
 }
 
 void StartToLock(void)
@@ -297,7 +297,7 @@ void StartToUnlock(void)
 	ble_status.to_lock = false;
 	//ble_status.locked = false;
 	LOG_LEVEL("Start to unlock system...\r\n");
-	send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, CMD_MODSYSTEM_POWER_ON);
+	send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, FRAME_CMD_SYSTEM_POWER_ON);
 }
 
 void ble_connecttion_polling(void)
@@ -311,7 +311,7 @@ void ble_connecttion_polling(void)
 		ble_status.to_lock = false;
 		
 		LOG_LEVEL("Start to power off system ...\r\n");
-		send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, CMD_MODSYSTEM_POWER_OFF);
+		send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, FRAME_CMD_SYSTEM_POWER_OFF);
 	}
 }
 #endif

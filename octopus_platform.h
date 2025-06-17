@@ -88,9 +88,9 @@
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
-#define USE_EEROM_FOR_DATA_SAVING
+#define FLASH_USE_EEROM_FOR_DATA_SAVING
 #define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A
-#define MAPPING_VECT_TABle_TO_SRAM
+#define FLASH_MAPPING_VECT_TABLE_TO_SRAM
 
 /***********************************************************************************
  * BASE INCLUDE FILES
