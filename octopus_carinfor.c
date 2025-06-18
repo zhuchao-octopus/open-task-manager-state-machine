@@ -156,12 +156,12 @@ void task_carinfo_running(void)
 void task_carinfo_post_running(void)
 {
     ptl_release_running(MCU_TO_SOC_MOD_CARINFOR);
-    OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_ASSERT_RUN); 
+    OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_ASSERT_RUN);
 }
 
 void task_carinfo_stop_running(void)
 {
-	LOG_LEVEL("_stop_running\r\n");
+    LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_INVALID);
 }
 /////////////////////////////////////////////////////////////////////////////
@@ -243,7 +243,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_indicator_t))
             {
                 memcpy(&lt_carinfo_indicator, payload->data, payload->data_len);
-                send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_IPC_CMD_CAR_GET_INDICATOR_INFO, 0);
+                send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_INDICATOR_INFO, 0);
             }
             else
             {
@@ -255,7 +255,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_meter_t))
             {
                 memcpy(&lt_carinfo_meter, payload->data, payload->data_len);
-                send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_IPC_CMD_CAR_GET_METER_INFO, 0);
+                send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_METER_INFO, 0);
             }
             else
             {
@@ -267,7 +267,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_battery_t))
             {
                 memcpy(&lt_carinfo_battery, payload->data, payload->data_len);
-                send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_IPC_CMD_CAR_GET_BATTERY_INFO, 0);
+                send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_BATTERY_INFO, 0);
             }
             else
             {
@@ -278,7 +278,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_error_t))
             {
                 memcpy(&lt_carinfo_error, payload->data, payload->data_len);
-                send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_INFOR_EVENT, MSG_IPC_CMD_CAR_GET_ERROR_INFO, 0);
+                send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_ERROR_INFO, 0);
             }
             else
             {
@@ -345,8 +345,8 @@ void task_car_controller_msg_handler(void)
         case FRAME_CMD_CARINFOR_METER:
             if ((lt_carinfo_meter.speed_actual > 0))
             {
-							 if(!IsTickCounterStart(&l_t_msg_car_trip_timer))
-                  StartTickCounter(&l_t_msg_car_trip_timer);
+                if (!IsTickCounterStart(&l_t_msg_car_trip_timer))
+                    StartTickCounter(&l_t_msg_car_trip_timer);
             }
             else
             {
@@ -365,7 +365,7 @@ void task_car_controller_msg_handler(void)
         }
     }
 
-    else if (MSG_OTSM_DEVICE_CAR_INFOR_EVENT == msg->msg_id)
+    else if (MSG_OTSM_DEVICE_CAR_EVENT == msg->msg_id)
     {
     }
 }

@@ -44,8 +44,8 @@
 #define ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 
 ///////////////////////////////////////////////////////////////////////////////////
-#define OTMS_VERSION_CODE     (001)
-#define OTMS_VERSION_NAME     ("0.0.1")
+#define OTMS_VERSION_CODE (001)
+#define OTMS_VERSION_NAME ("0.0.1")
 ///////////////////////////////////////////////////////////////////////////////////
 /*******************************************************************************
  * PROJECT SWITCH MACROS
@@ -105,8 +105,8 @@
 #include <string.h>  // String manipulation functions
 #include <assert.h>  // Debugging support for assertions
 #include <time.h>    // Time manipulation functions
-#include <stdlib.h>  // for rand()
 #include <ctype.h>
+
 /****************************************************************************************
  * OCTOPUS INCLUDES
  ****************************************************************************************/
@@ -164,12 +164,14 @@
 #elif defined(PLATFORM_LINUX_RISC)
 #include <pthread.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <fnmatch.h>
 #include "../HAL/octopus_serialport_c.h"
 
 #elif defined(PLATFORM_STM32_RTOS)
 #include "../src/native_devices.h"
 
-#else 
+#else
 
 #endif
 
@@ -188,15 +190,18 @@ extern "C"
  * Define common bit manipulation macros and constants.
  ******************************************************************************/
 #ifdef PLATFORM_CST_OSAL_RTOS
+
 #define GET_SYSTEM_TICK_COUNT (hal_systick() * 625 / 1000) // Convert system ticks to milliseconds
 #define DELAY_US(us) (WaitUs(us))                          // Introduce delay in microseconds
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
+
 #define CFG_OTSM_STACK_SIZE (200112L)          // Stack size for Octopus Task Manager
 #define GET_SYSTEM_TICK_COUNT (SDL_GetTicks()) // Retrieve system tick count in milliseconds
 #define DELAY_US(us) (usleep(us))              // Introduce delay in microseconds
 
 #elif defined(PLATFORM_LINUX_RISC)
+
 #define CFG_OTSM_STACK_SIZE (1024 * 1024) //(200112L)// Stack size for Octopus Task Manager
 #define DELAY_US(us) (usleep(us))         // Define empty macro for unsupported platforms
 #define GET_SYSTEM_TICK_COUNT ({                                                      \
@@ -213,7 +218,11 @@ extern "C"
     tick_count;                                                                       \
 }) // Return zero for unsupported platforms
 
+#define DISABLE_IRQ
+#define ENABLE_IRQ
 #else
+#define DISABLE_IRQ (__disable_irq())
+#define ENABLE_IRQ (__enable_irq())
 extern volatile uint32_t system_tick_ms;
 extern volatile uint32_t system_timer_tick_50us;
 #define GET_SYSTEM_TICK_COUNT system_tick_ms // Return zero for unsupported platforms
@@ -255,24 +264,25 @@ extern volatile uint32_t system_timer_tick_50us;
 #define MK_DWORD(MSB, LSB) (uint32_t)(((uint32_t)MSB << 16) + LSB) // Combine two 16-bit values (MSB and LSB) into a 32-bit double word
 #define MK_SIG_WORD(a) (*(int16_t *)(&a))                          // Interpret a word as a signed 16-bit value
 
-#define BYTES_TO_UINT32_LE(p)  \
-    ( ((uint32_t)(p)[0])       | \
-      ((uint32_t)(p)[1] << 8)  | \
-      ((uint32_t)(p)[2] << 16) | \
-      ((uint32_t)(p)[3] << 24) )
-			
-#define BYTES_TO_UINT32_BE(p)  \
-    ( ((uint32_t)(p)[0] << 24) | \
-      ((uint32_t)(p)[1] << 16) | \
-      ((uint32_t)(p)[2] << 8)  | \
-      ((uint32_t)(p)[3]) )		
+#define BYTES_TO_UINT32_LE(p)   \
+    (((uint32_t)(p)[0]) |       \
+     ((uint32_t)(p)[1] << 8) |  \
+     ((uint32_t)(p)[2] << 16) | \
+     ((uint32_t)(p)[3] << 24))
 
-#define UINT32_TO_BYTES_LE(val, p)   \
-    do {                             \
-        (p)[0] = (uint8_t)((val) & 0xFF);        \
-        (p)[1] = (uint8_t)(((val) >> 8) & 0xFF); \
-        (p)[2] = (uint8_t)(((val) >> 16) & 0xFF);\
-        (p)[3] = (uint8_t)(((val) >> 24) & 0xFF);\
+#define BYTES_TO_UINT32_BE(p)   \
+    (((uint32_t)(p)[0] << 24) | \
+     ((uint32_t)(p)[1] << 16) | \
+     ((uint32_t)(p)[2] << 8) |  \
+     ((uint32_t)(p)[3]))
+
+#define UINT32_TO_BYTES_LE(val, p)                \
+    do                                            \
+    {                                             \
+        (p)[0] = (uint8_t)((val) & 0xFF);         \
+        (p)[1] = (uint8_t)(((val) >> 8) & 0xFF);  \
+        (p)[2] = (uint8_t)(((val) >> 16) & 0xFF); \
+        (p)[3] = (uint8_t)(((val) >> 24) & 0xFF); \
     } while (0)
 /*******************************************************************************
  * CONSTANTS
@@ -280,24 +290,22 @@ extern volatile uint32_t system_timer_tick_50us;
  ******************************************************************************/
 #define PI_FLOAT (3.14159f) // Value of �� as a floating-point constant
 
-#define DISABLE_IRQ (__disable_irq())
-#define ENABLE_IRQ  (__enable_irq())
 /*******************************************************************************
-* FUNCTION DECLARATIONS
-* Declare any external functions used in this file.
-******************************************************************************/
-#define MY_ASSERT(expr)                                                                 \
-    do {                                                                                \
-        if (!(expr)) {                                                                  \
-            LOG_LEVEL("ASSERT WARNING: %s, FILE: %s, LINE: %d\n",                       \
-                      #expr, __FILE__, __LINE__);                                       \
-        }                                                                               \
+ * FUNCTION DECLARATIONS
+ * Declare any external functions used in this file.
+ ******************************************************************************/
+#define MY_ASSERT(expr)                                           \
+    do                                                            \
+    {                                                             \
+        if (!(expr))                                              \
+        {                                                         \
+            LOG_LEVEL("ASSERT WARNING: %s, FILE: %s, LINE: %d\n", \
+                      #expr, __FILE__, __LINE__);                 \
+        }                                                         \
     } while (0)
-
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif // ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
-

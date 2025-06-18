@@ -110,13 +110,13 @@ extern "C"
         FRAME_CMD_SYSTEM_SAVE_DATA = 0x05, ///< Power off
 
         /* MOD_UPDATE commands */
-        FRAME_CMD_UPDATE_CHECK_FW_STATE = 0x06,  ///< Check firmware state
-        FRAME_CMD_UPDATE_UPDATE_FW_STATE = 0x07, ///< Update firmware state
+        FRAME_CMD_UPDATE_CHECK_FW_STATE = 0x06,        ///< Check firmware state
+        FRAME_CMD_UPDATE_UPDATE_FW_STATE = 0x07,       ///< Update firmware state
         FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE = 0x08, ///< Enter firmware update mode
-        FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE = 0x09,  ///< Exit firmware update mode
-        FRAME_CMD_UPDATE_REQUEST_FW_DATA = 0x0A,    ///< Send firmware data
-			  FRAME_CMD_UPDATE_SEND_FW_DATA = 0x0B,    ///< Send firmware data
-        FRAME_CMD_UPDATE_REBOOT = 0x0C,          ///< Reboot system
+        FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE = 0x09, ///< Exit firmware update mode
+        FRAME_CMD_UPDATE_REQUEST_FW_DATA = 0x0A,       ///< Send firmware data
+        FRAME_CMD_UPDATE_SEND_FW_DATA = 0x0B,          ///< Send firmware data
+        FRAME_CMD_UPDATE_REBOOT = 0x0C,                ///< Reboot system
 
         /* MOD_TRANSFER commands */
         FRAME_CMD_TRANSFER_A2M = 0x0D, ///< A2M data transfer
@@ -147,7 +147,7 @@ extern "C"
 
         FRAME_CMD_CAR_SET_LIGHT = 0x1E,
         FRAME_CMD_CAR_SET_GEAR_LEVEL = 0x1F,
-				
+
         FRAME_CMD_CARINFOR_MAX = 0x64
     } ptl_frame_cmd_t;
 

@@ -317,7 +317,7 @@ void uart_init(void)
 
 void hal_uart_init(uint8_t task_id)
 {
-    LOG_LEVEL("hal init for protocol\r\n");
+    LOG_LEVEL("hal init uart & protocol\r\n");
     cFifo_Init(&ptl_1_usart_rx_fifo, ptl_1_usart_rx_fifo_buff, sizeof(ptl_1_usart_rx_fifo_buff));
 #ifdef TASK_MANAGER_STATE_MACHINE_PTL2
     cFifo_Init(&ptl_2_usart_rx_fifo, ptl_2_usart_rx_fifo_buff, sizeof(ptl_2_usart_rx_fifo_buff));

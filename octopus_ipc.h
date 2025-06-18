@@ -42,7 +42,7 @@ extern "C"
      * Define a function pointer type for the callback that takes an integer.
      ******************************************************************************/
     // Define a type for the callback that accepts an integer
-    typedef void (*CarInforCallback_t)(int cmd);
+    typedef void (*CarInforCallback_t)(uint16_t msg_grp, uint16_t msg_id);
 
     /*******************************************************************************
      * GLOBAL FUNCTIONS DECLARATION

@@ -29,18 +29,18 @@
  ******************************************************************************/
 
 /** Task states for Octopus Task Manager State Machine (OTMS). */
-#define OTMS_S_INIT 			(0x00U)   /**< Initial state. */
-#define OTMS_S_START 			(0x01U)   /**< Start state. */
+#define OTMS_S_INIT (0x00U)       /**< Initial state. */
+#define OTMS_S_START (0x01U)      /**< Start state. */
 #define OTMS_S_ASSERT_RUN (0x02U) /**< Assert run pre-check state. */
 
-#define OTMS_S_RUNNING 			(0x03U)   /**< Actively running state. */
+#define OTMS_S_RUNNING (0x03U) /**< Actively running state. */
 
-#define OTMS_S_POST_RUN 		(0x04U)   /**< Cleanup or post-run transition state. */
-#define OTMS_S_STOP 			(0x05U)   /**< Task stopped state. */
+#define OTMS_S_POST_RUN (0x04U) /**< Cleanup or post-run transition state. */
+#define OTMS_S_STOP (0x05U)     /**< Task stopped state. */
 
-#define OTMS_S_COUNT 			(6U) 	 /**< Total number of defined states. */
+#define OTMS_S_COUNT (6U) /**< Total number of defined states. */
 
-#define OTMS_S_INVALID (0xFFU)    		 /**< Invalid/uninitialized state. */
+#define OTMS_S_INVALID (0xFFU) /**< Invalid/uninitialized state. */
 
 /** Macro to set a task's state. */
 #define OTMS(TASK_MODULE, state) otms_set_state(TASK_MODULE, state)
@@ -67,7 +67,7 @@ typedef void (*otms_state_func_t)(void);
  */
 typedef struct
 {
-  //otms_state_t state_limit;                   /**< Max valid state value for task. */
+  // otms_state_t state_limit;                   /**< Max valid state value for task. */
   const otms_state_func_t func[OTMS_S_COUNT]; /**< State handler functions. */
 } otms_t;
 
@@ -117,7 +117,7 @@ extern "C"
   void task_manager_stop(void);
 
   void task_manager_stop_except_1(TaskModule_t task_module1);
-  void task_manager_stop_except_2(TaskModule_t task_module1,TaskModule_t task_module2);
+  void task_manager_stop_except_2(TaskModule_t task_module1, TaskModule_t task_module2);
   void task_manager_start_module(TaskModule_t TaskModule);
   /**
    * @brief Execute the current state handler for all registered tasks.
@@ -159,4 +159,3 @@ extern "C"
 #endif
 
 #endif /* __OCTOPUS_TASK_MANAGER_H__ */
-

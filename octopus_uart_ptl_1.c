@@ -142,13 +142,13 @@ void ptl_start_running(void)
 
 // Assert that UART communication is running
 void ptl_assert_running(void)
-{  
-		StartTickCounter(&l_t_ptl_rx_main_timer);
-		StartTickCounter(&l_t_ptl_tx_main_timer);
-		StartTickCounter(&l_t_ptl_error_detect_timer);
-		lb_com_error = false;
-		lb_opposite_running = false;
-		OTMS(TASK_MODULE_PTL_1, OTMS_S_RUNNING);		
+{
+    StartTickCounter(&l_t_ptl_rx_main_timer);
+    StartTickCounter(&l_t_ptl_tx_main_timer);
+    StartTickCounter(&l_t_ptl_error_detect_timer);
+    lb_com_error = false;
+    lb_opposite_running = false;
+    OTMS(TASK_MODULE_PTL_1, OTMS_S_RUNNING);
 }
 
 // Main running function for UART communication
@@ -174,11 +174,11 @@ void ptl_post_running(void)
 {
     if (true == ptl_is_sleep_enable())
     {
-	 OTMS(TASK_MODULE_PTL_1, OTMS_S_STOP);
+        OTMS(TASK_MODULE_PTL_1, OTMS_S_STOP);
     }
     else
     {
-      OTMS(TASK_MODULE_PTL_1, OTMS_S_ASSERT_RUN); 
+        OTMS(TASK_MODULE_PTL_1, OTMS_S_ASSERT_RUN);
     }
 }
 

@@ -142,12 +142,12 @@ void task_gpio_running(void)
 
 void task_gpio_post_running(void)
 {
-	OTMS(TASK_MODULE_GPIO, OTMS_S_ASSERT_RUN); 
+    OTMS(TASK_MODULE_GPIO, OTMS_S_ASSERT_RUN);
 }
 
 void task_gpio_stop_running(void)
 {
-	LOG_LEVEL("_stop_running\r\n");
+    LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_GPIO, OTMS_S_INVALID);
 }
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -163,7 +163,7 @@ void task_gpio_stop_running(void)
 void gpio_init(void)
 {
     // TODO: Implement GPIO initialization here
-    //LOG_LEVEL("gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
+    // LOG_LEVEL("gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
     hal_gpio_init(0);
 }
 

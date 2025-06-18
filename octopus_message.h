@@ -73,6 +73,13 @@ enum Message_Group_1_Cmd_Id
     MSG_IPC_CMD_CONFIG_IP          /**< Configure Socket IP Address */
 };
 
+enum Message_Group_2_Cmd_Id
+{
+    MSG_IPC_CMD_MCU_VERSION,
+    MSG_IPC_CMD_MCU_UPDATING,
+    MSG_IPC_CMD_MCU_REQUEST_UPGRADING,
+};
+
 /**
  * @enum    Message_Group_11_Cmd_Id
  * @brief   Command IDs for Message Group 11 (Car Information Commands).
@@ -108,36 +115,37 @@ typedef enum
  */
 typedef enum
 {
-	MSG_OTSM_DEVICE_NORMAL_EVENT = 0x64, // 100 Normal device event message after ptl_frame_type_t
-	MSG_OTSM_DEVICE_HANDSHAKE_EVENT,
+    MSG_OTSM_DEVICE_NORMAL_EVENT = 0x64, // 100 Normal device event message after ptl_frame_type_t
+    MSG_OTSM_DEVICE_HANDSHAKE_EVENT,
 
-	MSG_OTSM_DEVICE_POWER_EVENT,
-	MSG_OTSM_DEVICE_ACC_EVENT,
+    MSG_OTSM_DEVICE_POWER_EVENT,
+    MSG_OTSM_DEVICE_ACC_EVENT,
 
-	MSG_OTSM_DEVICE_KEY_EVENT,      // Key event message
-	MSG_OTSM_DEVICE_KEY_DOWN_EVENT, // Key event message
-	MSG_OTSM_DEVICE_KEY_UP_EVENT,   // Key event message
+    MSG_OTSM_DEVICE_KEY_EVENT,      // Key event message
+    MSG_OTSM_DEVICE_KEY_DOWN_EVENT, // Key event message
+    MSG_OTSM_DEVICE_KEY_UP_EVENT,   // Key event message
 
-	MSG_OTSM_DEVICE_GPIO_EVENT, // GPIO event message
-	MSG_OTSM_DEVICE_BLE_EVENT,
-	MSG_OTSM_DEVICE_CAN_EVENT,
-	MSG_OTSM_DEVICE_CAR_INFOR_EVENT,
-	MSG_OTSM_DEVICE_MCU_INFOR_EVENT,
+    MSG_OTSM_DEVICE_GPIO_EVENT, // GPIO event message
+    MSG_OTSM_DEVICE_BLE_EVENT,
+    MSG_OTSM_DEVICE_CAN_EVENT,
+    MSG_OTSM_DEVICE_CAR_EVENT,
+    MSG_OTSM_DEVICE_MCU_EVENT,
 } otsm_msg_t; // for sendmessage function
 
 typedef enum
 {
-	MSG_OTSM_CMD_CAR_SET_LIGHT = 0x64, // after CMD_MOD_CARINFOR_MAX = 0x64 //100
-	MSG_OTSM_CMD_CAR_SET_GEAR,
-	MSG_OTSM_CMD_BLE_PAIRING,
-	MSG_OTSM_CMD_BLE_PAIR_ON,
-	MSG_OTSM_CMD_BLE_PAIR_OFF,
-	MSG_OTSM_CMD_BLE_BONDED,
-	MSG_OTSM_CMD_BLE_CONNECTED,
-	MSG_OTSM_CMD_BLE_DISCONNECTED,
+    MSG_OTSM_CMD_CAR_SET_LIGHT = 0x64, // after CMD_MOD_CARINFOR_MAX = 0x64 //100
+    MSG_OTSM_CMD_CAR_SET_GEAR,
+    MSG_OTSM_CMD_BLE_PAIRING,
+    MSG_OTSM_CMD_BLE_PAIR_ON,
+    MSG_OTSM_CMD_BLE_PAIR_OFF,
+    MSG_OTSM_CMD_BLE_BONDED,
+    MSG_OTSM_CMD_BLE_CONNECTED,
+    MSG_OTSM_CMD_BLE_DISCONNECTED,
 
-	MSG_OTSM_CMD_MCU_UPDATING,
-	MSG_OTSM_CMD_MCU_VERSION,
+    MSG_OTSM_CMD_MCU_VERSION,
+    MSG_OTSM_CMD_MCU_UPDATING,
+    MSG_OTSM_CMD_MCU_REQUEST_UPGRADING,
 } otsm_msg_cmd_t;
 
 /****************************************************************************************
@@ -168,7 +176,10 @@ typedef enum
 #define MSG_GROUP_SET MSG_GROUP_1        /**< Alias for Configuration Group */
 #define MSG_GROUP_SETTING MSG_GROUP_1    /**< Alias for Settings Group */
 #define MSG_GROUP_IPC_CONFIG MSG_GROUP_1 /**< Alias for IPC Configuration Group */
-#define MSG_GROUP_CAR MSG_GROUP_11       /**< Alias for Car Information Group */
+
+#define MSG_GROUP_MCU MSG_GROUP_2
+
+#define MSG_GROUP_CAR MSG_GROUP_11 /**< Alias for Car Information Group */
 
 /****************************************************************************************
  *                                       ENDIF

@@ -80,7 +80,7 @@ void ptl_2_register_module(ptl_2_module_t module, ptl_2_module_receive_handler_t
 {
     if (l_u8_next_empty_module < PTL_MODULE_SUPPORT_CNT)
     {
-		 LOG_LEVEL("ptl_2_register_module %d\r\n",module);
+        LOG_LEVEL("ptl_2_register_module %d\r\n", module);
         l_t_module_info[l_u8_next_empty_module].module = module;
         l_t_module_info[l_u8_next_empty_module].receive_handler = receive_handler;
         l_u8_next_empty_module++;
@@ -124,7 +124,7 @@ void ptl_2_assert_running(void)
     StartTickCounter(&l_t_ptl_tx_main_timer);
     StartTickCounter(&l_t_ptl_error_detect_timer);
     lb_com_error = false;
-	OTMS(TASK_MODULE_PTL_2, OTMS_S_RUNNING);
+    OTMS(TASK_MODULE_PTL_2, OTMS_S_RUNNING);
 }
 
 // Main running function for UART communication
@@ -150,19 +150,19 @@ void ptl_2_post_running(void)
 {
     if (true == ptl_2_is_sleep_enable())
     {
-		OTMS(TASK_MODULE_PTL_2, OTMS_S_STOP); 
+        OTMS(TASK_MODULE_PTL_2, OTMS_S_STOP);
     }
     else
     {
-		OTMS(TASK_MODULE_PTL_2, OTMS_S_ASSERT_RUN); 
+        OTMS(TASK_MODULE_PTL_2, OTMS_S_ASSERT_RUN);
     }
 }
 
 // Stop the UART communication task
 void ptl_2_stop_running(void)
 {
-  LOG_LEVEL("_stop_running\r\n");
-  OTMS(TASK_MODULE_PTL_2, OTMS_S_INVALID);
+    LOG_LEVEL("_stop_running\r\n");
+    OTMS(TASK_MODULE_PTL_2, OTMS_S_INVALID);
 }
 
 // Check if there is a communication error
@@ -397,15 +397,15 @@ void ptl_2_proc_valid_frame(ptl_2_proc_buff_t *ptl_2_proc_buff, uint16_t length)
         LOG_BUFF(ptl_2_proc_buff->buffer, length);
     }
 #endif
-   
+
     for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
     {
-			  if(!l_t_module_info[i].receive_handler)
-				{
-					LOG_LEVEL("l_t_module_info[i].receive_handler is null.");
-					continue;
-				}
-			
+        if (!l_t_module_info[i].receive_handler)
+        {
+            LOG_LEVEL("l_t_module_info[i].receive_handler is null.");
+            continue;
+        }
+
         bool res = l_t_module_info[i].receive_handler(ptl_2_proc_buff);
 
         if (res)
@@ -415,9 +415,9 @@ void ptl_2_proc_valid_frame(ptl_2_proc_buff_t *ptl_2_proc_buff, uint16_t length)
             return;
         }
     }
-		
-	if( ptl_2_proc_buff->size > 10)
-    ptl_2_clear_revice_buff();
+
+    if (ptl_2_proc_buff->size > 10)
+        ptl_2_clear_revice_buff();
 }
 void ptl_2_clear_revice_buff(void)
 {

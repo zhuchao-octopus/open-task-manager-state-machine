@@ -96,7 +96,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR		
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
     [TASK_MODULE_CAR_INFOR] = {
         .func = {
             [OTMS_S_INIT] = task_carinfo_init_running,
@@ -266,8 +266,8 @@ void task_manager_start_module(TaskModule_t TaskModule)
     otms_id_t i;
     for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
     {
-	     if(i == TaskModule)
-           otms_exec_state(i, OTMS_S_START); // Set each task to the START state.
+        if (i == TaskModule)
+            otms_exec_state(i, OTMS_S_START); // Set each task to the START state.
     }
 }
 /**
@@ -289,19 +289,19 @@ void task_manager_stop_except_1(TaskModule_t task_module1)
 
     for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
     {
-	   if(i != task_module1)
-        otms_exec_state(i, OTMS_S_STOP); // Set each task to the STOP state.
+        if (i != task_module1)
+            otms_exec_state(i, OTMS_S_STOP); // Set each task to the STOP state.
     }
 }
 
-void task_manager_stop_except_2(TaskModule_t task_module1,TaskModule_t task_module2)
+void task_manager_stop_except_2(TaskModule_t task_module1, TaskModule_t task_module2)
 {
     otms_id_t i;
 
     for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
     {
-	   if(i != task_module1 && i != task_module2)
-        otms_exec_state(i, OTMS_S_STOP); // Set each task to the STOP state.
+        if (i != task_module1 && i != task_module2)
+            otms_exec_state(i, OTMS_S_STOP); // Set each task to the STOP state.
     }
 }
 
@@ -405,4 +405,3 @@ static void otms_exec_state(otms_id_t task_module, otms_state_t state)
         }
     }
 }
-
