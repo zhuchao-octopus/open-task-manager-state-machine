@@ -41,16 +41,7 @@ extern "C"
 /**
  * @brief Version information.
  */
-#define OTMS_VERSION "v1.0.5"                        /**< Current version of the Task Manager System. */
-#define OTMS_RELEASE_DATA_TIME __DATE__ " " __TIME__ /**< Compilation date and time. */
 
-/**
- * @brief Version strings for the application, hardware, and project.
- */
-#define APP_VER_STR OTMS_VERSION                                            //"v1.0.0"                   /**< Application version. */
-#define HW_VER_STR "v1.0.0"                                                 /**< Hardware version. */
-#define PRJ_VER_STR "otsm"                                                  /**< Project version. */
-#define VER_STR "MCU:" APP_VER_STR "HW:" HW_VER_STR "PRJ:" PRJ_VER_STR "\n" /**< Combined version string. */
 
 /**
  * @brief System MPU (Microprocessor Unit) state definitions.
@@ -65,21 +56,6 @@ extern "C"
     /*******************************************************************************
      * TYPEDEFS
      ******************************************************************************/
-
-    /**
-     * @brief MCU (Microcontroller Unit) update state enumeration.
-     */
-    typedef enum
-    {
-        MCU_UPDATE_ST_INIT = (0x00),         /**< Update initialization. */
-        MCU_UPDATE_ST_CHECK_FILE = (0x01),   /**< Check update file. */
-        MCU_UPDATE_ST_WAIT_CONFIRM = (0x02), /**< Wait for update confirmation. */
-        MCU_UPDATE_ST_START = (0x03),        /**< Start the update process. */
-        MCU_UPDATE_ST_WAIT_BOOT = (0x04),    /**< Wait for MCU to boot. */
-        MCU_UPDATE_ST_TRANSFER = (0x05),     /**< Transfer update data. */
-        MCU_UPDATE_ST_COMPLETED = (0x06),    /**< Update completed successfully. */
-        MCU_UPDATE_ST_FAILED = (0x07),       /**< Update failed. */
-    } mcu_update_state_t;
 
     /**
      * @brief Mainboard (MB) state enumeration.
@@ -167,6 +143,7 @@ extern "C"
 
     void system_set_mb_state(mb_state_t status);
     void system_power_on_off(bool onoff);
+
 #ifdef __cplusplus
 }
 #endif

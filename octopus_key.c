@@ -71,10 +71,12 @@ void task_key_running(void)
 
 void task_key_post_running(void)
 {
+	OTMS(TASK_MODULE_KEY, OTMS_S_ASSERT_RUN); 
 }
 
 void task_key_stop_running(void)
 {
+	LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_KEY, OTMS_S_INVALID);
 }
 
@@ -139,18 +141,17 @@ void task_key_power_event_process(GPIO_KEY_STATUS *key_status)
     {
     case KEY_STATE_RELEASED:
         LOG_LEVEL("OCTOPUS_KEY_POWER release key=%d key_status=%02x\r\n", key_status->key, key_status->state);
-        // power_key_password_index=0;
-        StopTickCounter(&power_key_wait_timer);
+		StartTickCounter(&power_key_wait_timer);
         break;
 
     case KEY_STATE_PRESSED:
         LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d key_status=%02x\r\n", key_status->key, key_status->state);
-        if ((IsTickCounterStart(&power_key_wait_timer)) && GetTickCounter(&power_key_wait_timer) >= 1000)
+		   
+        if (GetTickCounter(&power_key_wait_timer) >= 300)
         {
             power_key_password_index = 0;
         }
-
-        RestartTickCounter(&power_key_wait_timer);
+      
         power_key_password_index++;
         hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
         if (power_key_password_index == sizeof(power_key_password))
@@ -219,12 +220,12 @@ bool key_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
     {
         switch (param1)
         {
-        case CMD_MODSETUP_KEY:         //
+        case FRAME_CMD_SETUP_KEY:         //
             tmp[0] = MSB_WORD(param2); // KEYCODE
             tmp[1] = LSB_WORD(param2); // KEYSTATE
             tmp[2] = 0;                //
-            LOG_LEVEL("CMD_MODSETUP_KEY key %02x state %02x\n", tmp[0], tmp[1]);
-            ptl_build_frame(MCU_TO_SOC_MOD_KEY, CMD_MODSETUP_KEY, tmp, 3, buff);
+            LOG_LEVEL("FRAME_CMD_SETUP_KEY key %02x state %02x\n", tmp[0], tmp[1]);
+            ptl_build_frame(MCU_TO_SOC_MOD_KEY, FRAME_CMD_SETUP_KEY, tmp, 3, buff);
             return true;
         default:
             break;
@@ -243,21 +244,21 @@ bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
     {
         switch (payload->frame_cmd)
         {
-        case CMD_MODSETUP_UPDATE_TIME:
+        case FRAME_CMD_SETUP_UPDATE_TIME:
             tmp = 0x01;
-            ptl_build_frame(SOC_TO_MCU_MOD_SETUP, CMD_MODSETUP_UPDATE_TIME, &tmp, 1, ackbuff);
+            ptl_build_frame(SOC_TO_MCU_MOD_SETUP, FRAME_CMD_SETUP_UPDATE_TIME, &tmp, 1, ackbuff);
             return true;
-        case CMD_MODSETUP_SET_TIME:
+        case FRAME_CMD_SETUP_SET_TIME:
             // ACK, no thing to do
             return false;
-        case CMD_MODSETUP_KEY:
+        case FRAME_CMD_SETUP_KEY:
         {
             uint8_t code = payload->data[0];
             uint8_t state = payload->data[1];
-            LOG_LEVEL("CMD_MODSETUP_KEY key %02x state %02x\r\n", code, state);
+            LOG_LEVEL("FRAME_CMD_SETUP_KEY key %02x state %02x\r\n", code, state);
 
             tmp = 0x01;
-            /// ptl_build_frame(SOC_TO_MCU_MOD_SETUP, CMD_MODSETUP_KEY, &tmp, 1, ackbuff);
+            /// ptl_build_frame(SOC_TO_MCU_MOD_SETUP, FRAME_CMD_SETUP_KEY, &tmp, 1, ackbuff);
             return true;
         }
         default:

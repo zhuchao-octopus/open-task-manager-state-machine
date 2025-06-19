@@ -31,88 +31,159 @@
 #define EEROM_CARINFOR_METER_ADDRESS (EEROM_DATAS_ADDRESS + 0)
 
 #define EEROM_DATAS_VALID_FLAG (0xAA55)
-#define EEROM_APPPP_VALID_FLAG (0x55AA)
+// #define EEROM_APPPP_VALID_FLAG (0x55AA)
+/////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
+// Application Slot A requires an upgrade
+#define APP_FLAG_SLOT_A_UPGRADED (1U << 1)
 
-#define BOOTLOADER_ACTIVE_SLOT_A (0)
-#define BOOTLOADER_ACTIVE_SLOT_B (1)
+// Application Slot B requires an upgrade
+#define APP_FLAG_SLOT_B_UPGRADED (1U << 2)
 
-#define APP_FLAG_SLOT_A_NEED_UPGRADE (1 << 1)
-#define APP_FLAG_SLOT_B_NEED_UPGRADE (1 << 2)
-#define APP_FLAG_SLOT_A_NEED_REBOOT (1 << 3)
-#define APP_FLAG_SLOT_B_NEED_REBOOT (1 << 4)
-#define APP_FLAG_VALID_A (1 << 5)
-#define APP_FLAG_VALID_B (1 << 6)
-#define APP_FLAG_FORCE_SLOT_A (1 << 7)
-#define APP_FLAG_FORCE_SLOT_B (1 << 8)
+// Slot A application requires a system reboot to take effect
+#define APP_FLAG_SLOT_A_NEED_REBOOT (1U << 3)
+
+// Slot B application requires a system reboot to take effect
+#define APP_FLAG_SLOT_B_NEED_REBOOT (1U << 4)
+
+// Slot A application is verified and valid
+#define APP_FLAG_VALID_A (1U << 5)
+
+// Slot B application is verified and valid
+#define APP_FLAG_VALID_B (1U << 6)
+
+// Force booting from Slot A regardless of current active slot
+#define APP_FLAG_FORCE_SLOT_A (1U << 7)
+
+// Force booting from Slot B regardless of current active slot
+#define APP_FLAG_FORCE_SLOT_B (1U << 8)
+
+// Check if upgrade is needed for Slot A
+#define IS_SLOT_A_UPGRADED(flags) ((flags) & APP_FLAG_SLOT_A_UPGRADED)
+
+// Check if upgrade is needed for Slot B
+#define IS_SLOT_B_UPGRADED(flags) ((flags) & APP_FLAG_SLOT_B_UPGRADED)
+
+// Check if reboot is needed for Slot A
+#define IS_SLOT_A_NEED_REBOOT(flags) ((flags) & APP_FLAG_SLOT_A_NEED_REBOOT)
+
+// Check if reboot is needed for Slot B
+#define IS_SLOT_B_NEED_REBOOT(flags) ((flags) & APP_FLAG_SLOT_B_NEED_REBOOT)
+
+// Check if Slot A is marked as valid
+#define IS_SLOT_A_VALID(flags) ((flags) & APP_FLAG_VALID_A)
+
+// Check if Slot B is marked as valid
+#define IS_SLOT_B_VALID(flags) ((flags) & APP_FLAG_VALID_B)
+
+// Check if Slot A is forced to boot
+#define IS_FORCE_BOOT_SLOT_A(flags) ((flags) & APP_FLAG_FORCE_SLOT_A)
+
+// Check if Slot B is forced to boot
+#define IS_FORCE_BOOT_SLOT_B(flags) ((flags) & APP_FLAG_FORCE_SLOT_B)
+
+// Check if a specific flag is set
+#define IS_FLAG_SET(flags, flag) (((flags) & (flag)) != 0)
+// Set a specific flag
+#define SET_FLAG(flags, flag) ((flags) |= (flag))
+// Clear a specific flag
+#define CLEAR_FLAG(flags, flag) ((flags) &= ~(flag))
+// Toggle a specific flag
+#define TOGGLE_FLAG(flags, flag) ((flags) ^= (flag))
+/////////////////////////////////////////////////////////////////////////////////////////
+typedef enum
+{
+    BANK_SLOT_LOADER = 0, // Bootloader bank (reserved for the loader)
+    BANK_SLOT_A,          // Application Slot A
+    BANK_SLOT_B,          // Application Slot B
+    BANK_SLOT_AUTO,       // Automatically choose between Slot A or B
+    BANK_SLOT_INVALID,    // Invalid bank (used for error conditions)
+} boot_bank_t;
 
 typedef enum
 {
-    BOOT_MODE_SINGLE_BANK_NONE = 0,
-    BOOT_MODE_SINGLE_BANK_NO_LOADER,   // Bank,Bootloader
-    BOOT_MODE_DUAL_BANK_NO_LOADER,     // Bank,Bootloader
-    BOOT_MODE_SINGLE_BANK_WITH_LOADER, // Bank,Bootloader
-    BOOT_MODE_DUAL_BANK_WITH_LOADER    // Bank,Bootloader
+    BOOT_MODE_SINGLE_BANK_NONE = 0,    // No bootloader or second bank present
+    BOOT_MODE_SINGLE_BANK_NO_LOADER,   // Single bank without a bootloader
+    BOOT_MODE_DUAL_BANK_NO_LOADER,     // Two banks, but no dedicated bootloader
+    BOOT_MODE_SINGLE_BANK_WITH_LOADER, // Single bank with bootloader present
+    BOOT_MODE_DUAL_BANK_WITH_LOADER    // Two banks and a bootloader present
 } boot_mode_t;
 
 typedef struct
 {
-    uint32_t bootloader_addr; // Bootloader entry address
+    uint32_t loader_addr; // Bootloader entry address (if present)
 
-    uint32_t slot_a_addr; // Flash base address of application Slot A
-    uint32_t slot_b_addr; // Flash base address of application Slot B
+    uint32_t slot_a_addr; // Start address of application Slot A in flash
+    uint32_t slot_b_addr; // Start address of application Slot B in flash
 
-    uint32_t app_crc_slot_a; // CRC32 checksum for Slot A application
-    uint32_t app_crc_slot_b; // CRC32 checksum for Slot B application
+    uint32_t slot_a_size; // Total size (bytes) of Slot A application
+    uint32_t slot_b_size; // Total size (bytes) of Slot B application
 
-    uint32_t app_state_flags;   // Bit flags for application upgrade status
-    uint32_t meter_data_flags;  // Flags for meter/user data integrity
-    uint32_t config_data_flags; // Flags for config data state
+    uint32_t slot_a_crc; // CRC32 checksum for Slot A application image
+    uint32_t slot_b_crc; // CRC32 checksum for Slot B application image
 
-    uint8_t active_slot;  // Active slot indicator: 0 = A, 1 = B
-    uint8_t last_boot_ok; // Last boot result: 0 = fail, 1 = success
-    uint8_t boot_mode;    // Boot mode: defined by enum (e.g., normal, upgrade, recovery)
-    uint8_t reserved;     // Reserved for alignment or future fields
+    uint32_t loader_version; // Encoded version of the bootloader
+    uint32_t slot_a_version; // Encoded version of the application in Slot A
+    uint32_t slot_b_version; // Encoded version of the application in Slot B
+
+    uint32_t app_state_flags; // Bit flags representing upgrade, validity, reboot needs, etc.
+                              // e.g. APP_FLAG_SLOT_A_NEED_UPGRADE, APP_FLAG_VALID_B, etc.
+
+    uint32_t meter_data_flags; // Flags related to runtime/user/meter data validity
+
+    uint32_t config_data_flags; // Flags related to configuration data state (e.g., checksum pass/fail)
+
+    uint8_t active_slot;    // Indicates the current active slot (0 = A, 1 = B)
+    uint8_t bank_slot_mode; // Current boot mode, corresponds to boot_mode_t
+    uint8_t reserved1;      // Reserved for future use or 4-byte alignment
+    uint8_t reserved2;
 } app_meta_data_t;
 
+// Global instance holding metadata for application and bootloader
 extern app_meta_data_t app_meta_data;
 /////////////////////////////////////////////////////////////////////////////////////////
-
-#define BOOTLOADER_CONFIG_MODE_TYPE BOOT_MODE_DUAL_BANK_NO_LOADER
-#define BOOTLOADER_CONFIG_MODE_BANK BOOTLOADER_ACTIVE_SLOT_A
+// * MCU Flash Memory Layout Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
-/*******************************************************
- * MCU Flash Memory Layout Configuration
- *******************************************************/
-#define FLASH_BLOCK_SIZE (1024)                                 // 0x00000400                    /* FLASH Page Size 1KB(1024)*/
-#define FLASH_TOTAL_BLOCK (128)                                 // Total Flash size: 128KB
+
+#define FLASH_BLOCK_SIZE (1024)                                 // 0x00000400  /* FLASH Page Size 1KB(1024)*/
+#define FLASH_TOTAL_BLOCK (128)                                 // 128K 0x20000                   // Total Flash size: 128KB
 #define FLASH_TOTAL_SIZE (FLASH_TOTAL_BLOCK * FLASH_BLOCK_SIZE) // Total Flash size: 128KB
 
-/*************** Bootloader Configuration ***************/
-#if (BOOTLOADER_CONFIG_MODE <= BOOT_MODE_DUAL_BANK_NO_LOADER)
-#define BOOTLOADER_BLOCK_COUNT (0)
+#define FLASH_BANK_MASK (0xFFFF0000)
+/////////////////////////////////////////////////////////////////////////////////////////
+// Bootloader Configuration
+
+// #define BOOTLOADER_EXIST
+#define BOOTLOADER_LOCATION_TAIL // at end for flash
+#define BOOTLOADER_CONFIG_MODE_TYPE BOOT_MODE_DUAL_BANK_NO_LOADER
+
+#ifdef BOOTLOADER_EXIST
+#define BOOTLOADER_BLOCK_COUNT (20) // 20K(0x5000)
 #else
-#define BOOTLOADER_BLOCK_COUNT (10)
+#define BOOTLOADER_BLOCK_COUNT (0)
 #endif
 
-#define BOOTLOADER_START_ADDR (0x08000000)                          // Bootloader start address
+#define BOOTLOADER_START_ADDR (0x0801B000)                          // 0x08000000 + 0x20000 - 0x5000 // Bootloader start address
 #define BOOTLOADER_SIZE (BOOTLOADER_BLOCK_COUNT * FLASH_BLOCK_SIZE) // Bootloader size: 20KB
 #define BOOTLOADER_END_ADDR (BOOTLOADER_START_ADDR + BOOTLOADER_SIZE)
 
-/*************** Main Application Configuration ***************/
+/////////////////////////////////////////////////////////////////////////////////////////
+// Main Application Configuration
 
 #define MAIN_APP_BLOCK_COUNT ((FLASH_TOTAL_BLOCK - BOOTLOADER_BLOCK_COUNT) / 2)
 #define MAIN_APP_SIZE (MAIN_APP_BLOCK_COUNT * FLASH_BLOCK_SIZE) // Main Application size: 100KB
-
 // #define MAIN_APP_END_ADDR (MAIN_APP_START_ADDR + MAIN_APP_SIZE)
 
+#ifdef BOOTLOADER_LOCATION_TAIL
+#define MAIN_APP_SLOT_A_START_ADDR (0x08000000)                                 // Main Application start address
+#define MAIN_APP_SLOT_B_START_ADDR (MAIN_APP_SLOT_A_START_ADDR + MAIN_APP_SIZE) // Main Application start address
+#else
 #define MAIN_APP_SLOT_A_START_ADDR (BOOTLOADER_END_ADDR)                        // Main Application start address
 #define MAIN_APP_SLOT_B_START_ADDR (MAIN_APP_SLOT_A_START_ADDR + MAIN_APP_SIZE) // Main Application start address
+#endif
 
-/*************** Reserved or Free Space ***************/
-// #define RESERVED_START_ADDR (MAIN_APP_END_ADDR)
-// #define RESERVED_SIZE (FLASH_TOTAL_SIZE - (BOOTLOADER_SIZE + MAIN_APP_SIZE))
-// #define RESERVED_END_ADDR (RESERVED_START_ADDR + RESERVED_SIZE)
-
+/////////////////////////////////////////////////////////////////////////////////////////
+#define IS_FLASH_ADDR(addr) ((addr) >= 0x08000000 && (addr) < 0x08100000)
 /* Debug Information */
 #define DEBUG_BOOTLOADER_ADDR_INFO() \
     LOG_LEVEL("bootloader address: 0x%08X,0x%08X\n", BOOTLOADER_START_ADDR, BOOTLOADER_END_ADDR)
@@ -139,13 +210,20 @@ extern "C"
     /**< Writes data from a buffer to Flash memory. */
     extern void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length);
     extern void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length);
-    extern void BootloaderMainLoopEvent(void);
 
-    void flash_load_user_data_infor(void);
-    void flash_save_carinfor_meter(void);
+    void JumpToApplication(uint32_t app_address);
+    void boot_loader_active_user_app(void);
+
     void flash_init(void);
-    uint32_t Flash_erase_user_app_arear(void);
-    uint32_t CalculateCRC32(uint8_t *data, uint32_t length);
+    void flash_vector_table_config(uint8_t active_slot);
+    void flash_save_app_meter_infor(void);
+    void flash_load_sync_data_infor(void);
+    void flash_save_carinfor_meter(void);
+
+    uint32_t flash_erase_user_app_arear(void);
+    void flash_decode_active_version(char *out_str, size_t max_len);
+    bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);
+
 #ifdef __cplusplus
 }
 #endif

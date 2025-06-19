@@ -35,89 +35,105 @@ extern "C"
  * during development.
  */
 #ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
-    /*******************************************************************************
-     * MACROS
-     *
-     * Define any general macros required for the MCU update task manager.
-     * These can include constants, helper macros, or flags.
-     */
+  /*******************************************************************************
+   * MACROS
+   *
+   * Define any general macros required for the MCU update task manager.
+   * These can include constants, helper macros, or flags.
+   */
 
-    /*******************************************************************************
-     * TYPEDEFS
-     *
-     * Define data types specific to the MCU update task manager. These can include
-     * enumerations, structures, or aliases for existing types.
-     */
+  /*******************************************************************************
+   * TYPEDEFS
+   *
+   * Define data types specific to the MCU update task manager. These can include
+   * enumerations, structures, or aliases for existing types.
+   */
+  typedef struct
+  {
+    uint32_t s_length;
+    uint32_t s_total_lentgth; // frame counter
+  } mcu_update_progress_t;
 
-    /*******************************************************************************
-     * CONSTANTS
-     *
-     * Define any constant values used in the MCU update task manager.
-     * These may include default settings or configuration parameters.
-     */
+  typedef struct
+  {
+    file_info_t file_info;
+    long file_pos;
+    uint32_t s_length;
+    uint16_t f_counter; // frame counter
+  } mcu_update_progress_status_t;
 
-    /*******************************************************************************
-     * GLOBAL VARIABLES DECLARATION
-     *
-     * Declare any global variables that are required for the MCU update
-     * task manager. These variables will be defined in the implementation file.
-     */
+  /*******************************************************************************
+   * CONSTANTS
+   *
+   * Define any constant values used in the MCU update task manager.
+   * These may include default settings or configuration parameters.
+   */
 
-    /*******************************************************************************
-     * GLOBAL FUNCTIONS DECLARATION
-     *
-     * Declare the functions used to manage the lifecycle of the MCU update task.
-     */
+  /*******************************************************************************
+   * GLOBAL VARIABLES DECLARATION
+   *
+   * Declare any global variables that are required for the MCU update
+   * task manager. These variables will be defined in the implementation file.
+   */
+  extern mcu_update_progress_status_t mcu_update_status;
+  /*******************************************************************************
+   * GLOBAL FUNCTIONS DECLARATION
+   *
+   * Declare the functions used to manage the lifecycle of the MCU update task.
+   */
 
-    /**
-     * @brief Initialize the MCU update task.
-     *
-     * This function is called during system initialization to prepare
-     * the MCU update task for execution.
-     */
-    void task_update_mcu_init_running(void);
+  /**
+   * @brief Initialize the MCU update task.
+   *
+   * This function is called during system initialization to prepare
+   * the MCU update task for execution.
+   */
+  void task_update_init_running(void);
 
-    /**
-     * @brief Start the MCU update task.
-     *
-     * This function transitions the MCU update task to the start state and
-     * performs any necessary initialization or resource allocation.
-     */
-    void task_update_mcu_start_running(void);
+  /**
+   * @brief Start the MCU update task.
+   *
+   * This function transitions the MCU update task to the start state and
+   * performs any necessary initialization or resource allocation.
+   */
+  void task_update_start_running(void);
 
-    /**
-     * @brief Assert the running state of the MCU update task.
-     *
-     * This function checks the conditions for the MCU update task to run and
-     * ensures that all prerequisites are met.
-     */
-    void task_update_mcu_assert_running(void);
+  /**
+   * @brief Assert the running state of the MCU update task.
+   *
+   * This function checks the conditions for the MCU update task to run and
+   * ensures that all prerequisites are met.
+   */
+  void task_update_assert_running(void);
 
-    /**
-     * @brief Execute the running state of the MCU update task.
-     *
-     * This function performs the main operations of the MCU update task
-     * while it is in the running state.
-     */
-    void task_update_mcu_running(void);
+  /**
+   * @brief Execute the running state of the MCU update task.
+   *
+   * This function performs the main operations of the MCU update task
+   * while it is in the running state.
+   */
+  void task_update_running(void);
 
-    /**
-     * @brief Perform post-run operations for the MCU update task.
-     *
-     * This function handles any required cleanup or preparations for
-     * transitioning out of the running state.
-     */
-    void task_update_mcu_post_running(void);
+  /**
+   * @brief Perform post-run operations for the MCU update task.
+   *
+   * This function handles any required cleanup or preparations for
+   * transitioning out of the running state.
+   */
+  void task_update_post_running(void);
 
-    /**
-     * @brief Stop the MCU update task.
-     *
-     * This function transitions the MCU update task to the stopped state
-     * and releases any allocated resources.
-     */
-    void task_update_mcu_stop_running(void);
+  /**
+   * @brief Stop the MCU update task.
+   *
+   * This function transitions the MCU update task to the stopped state
+   * and releases any allocated resources.
+   */
+  void task_update_stop_running(void);
 
-    /** @} end of group APP_SETTING */
+  bool mcu_check_oupg_file_exists(void);
+  mcu_update_progress_t get_mcu_update_progress(void);
+  bool is_mcu_updating(void);
+  /** @} end of group APP_SETTING */
 
 #ifdef __cplusplus
 }

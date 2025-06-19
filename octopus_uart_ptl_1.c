@@ -110,13 +110,13 @@ void ptl_help(void)
     /// LOG_LEVEL("app ptl help guide\r\n");
 
     /// tmp[0] = 0x00;
-    /// ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    /// ptl_build_frame(P2M_MOD_DEBUG, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
     /// LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
     ///  tmp[0] = 0x01;
-    ///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    ///  ptl_build_frame(P2M_MOD_DEBUG, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
     ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
     ///  tmp[0] = 0x02;
-    ///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    ///  ptl_build_frame(P2M_MOD_DEBUG, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
     ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
     print_all_registered_module();
 }
@@ -143,15 +143,12 @@ void ptl_start_running(void)
 // Assert that UART communication is running
 void ptl_assert_running(void)
 {
-    if (PTL_RUNNING_NONE != l_t_ptl_running_req_mask)
-    {
-        OTMS(TASK_MODULE_PTL_1, OTMS_S_RUNNING);
-        StartTickCounter(&l_t_ptl_rx_main_timer);
-        StartTickCounter(&l_t_ptl_tx_main_timer);
-        StartTickCounter(&l_t_ptl_error_detect_timer);
-        lb_com_error = false;
-        lb_opposite_running = false;
-    }
+    StartTickCounter(&l_t_ptl_rx_main_timer);
+    StartTickCounter(&l_t_ptl_tx_main_timer);
+    StartTickCounter(&l_t_ptl_error_detect_timer);
+    lb_com_error = false;
+    lb_opposite_running = false;
+    OTMS(TASK_MODULE_PTL_1, OTMS_S_RUNNING);
 }
 
 // Main running function for UART communication
@@ -159,7 +156,7 @@ void ptl_running(void)
 {
     if (true == ptl_is_sleep_enable())
     {
-        OTMS(TASK_MODULE_PTL_1, OTMS_S_POST_RUN);
+        OTMS(TASK_MODULE_PTL_1, OTMS_S_STOP);
     }
     else
     {
@@ -177,16 +174,18 @@ void ptl_post_running(void)
 {
     if (true == ptl_is_sleep_enable())
     {
+        OTMS(TASK_MODULE_PTL_1, OTMS_S_STOP);
     }
     else
     {
-        OTMS(TASK_MODULE_PTL_1, OTMS_S_RUNNING);
+        OTMS(TASK_MODULE_PTL_1, OTMS_S_ASSERT_RUN);
     }
 }
 
 // Stop the UART communication task
 void ptl_stop_running(void)
 {
+    LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_PTL_1, OTMS_S_INVALID);
 }
 

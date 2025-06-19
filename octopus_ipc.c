@@ -24,6 +24,7 @@
 #include "octopus_uart_hal.h"
 #include "octopus_carinfor.h"
 #include "octopus_flash.h"
+#include "octopus_update_mcu.h"
 /*******************************************************************************
  * Debug Switch Macros
  * Define debug levels or other switches as required.
@@ -41,7 +42,7 @@
  ******************************************************************************/
 static bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer);
-static void ipc_notify_message_to_client(uint8_t msg_id, uint8_t cmd_parameter);
+static void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id);
 /*******************************************************************************
  * Global Variables
  * Define variables accessible across multiple files if needed.
@@ -121,9 +122,15 @@ void task_ipc_running(void)
 {
     if (GetTickCounter(&l_t_msg_wait_10_timer) < 10)
         return;
+
     StartTickCounter(&l_t_msg_wait_10_timer);
 
     Msg_t *msg = get_message(TASK_MODULE_IPC_SOCKET);
+
+    if(is_mcu_updating() && (msg->msg_id != MSG_OTSM_DEVICE_MCU_EVENT))
+     {
+         return;
+     }
 
     if (msg->msg_id == NO_MSG)
     {
@@ -131,12 +138,12 @@ void task_ipc_running(void)
         {
             if (l_u8_idle_swich > 0)
             {
-                ipc_notify_message_to_client(0, CMD_MOD_CARINFOR_INDICATOR);
+                ipc_notify_message_to_client(0, FRAME_CMD_CARINFOR_INDICATOR);
                 l_u8_idle_swich = 0;
             }
             else
             {
-                ipc_notify_message_to_client(0, CMD_MOD_CARINFOR_METER);
+                ipc_notify_message_to_client(0, FRAME_CMD_CARINFOR_METER);
                 l_u8_idle_swich = 1;
             }
 
@@ -147,22 +154,44 @@ void task_ipc_running(void)
 
     switch (msg->msg_id)
     {
-    case MSG_OTSM_DEVICE_CAR_INFOR_EVENT:
+    case MSG_OTSM_DEVICE_CAR_EVENT:
     case MSG_OTSM_DEVICE_CAN_EVENT:
-        // LOG_LEVEL("msg->id=%d param1=%d,param2=%d\r\n", msg->id, msg->param1,msg->param2);
-        ipc_notify_message_to_client(msg->msg_id, msg->param1);
+        switch (msg->param1)
+        {
+        case MSG_IPC_CMD_CAR_SETTING_SAVE:
+            LOG_LEVEL("MSG_IPC_CMD_CAR_SETTING_SAVE param1=%d,param2=%d \r\n", msg->param1, msg->param2);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_SYSTEM_SAVE_DATA, msg->param1);
+            break;
+        case MSG_IPC_CMD_CAR_SET_LIGHT:
+            LOG_LEVEL("MSG_IPC_CMD_CAR_SET_LIGHT param1=%d,param2=%d \r\n", msg->param1, msg->param2);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_LIGHT, msg->param1);
+            break;
+        case MSG_IPC_CMD_CAR_SET_GEAR_LEVEL:
+            LOG_LEVEL("MSG_IPC_CMD_CAR_SET_GEAR_LEVEL param1=%d,param2=%d \r\n", msg->param1, msg->param2);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_GEAR_LEVEL, msg->param1);
+            break;
+        case MSG_IPC_CMD_CAR_GET_INDICATOR_INFO:
+        case MSG_IPC_CMD_CAR_GET_METER_INFO:
+        default:
+            // LOG_LEVEL("msg->id=%d param1=%d,param2=%d\r\n", msg->id, msg->param1,msg->param2);
+            ipc_notify_message_to_client(MSG_GROUP_CAR, msg->param1);
+            break;
+        }
         break;
-    case MSG_IPC_CMD_CAR_SETTING_SAVE:
-        LOG_LEVEL("MSG_IPC_CMD_CAR_SETTING_SAVE param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MODSYSTEM_SAVE_DATA, msg->param1);
-        break;
-    case MSG_IPC_CMD_CAR_SET_LIGHT:
-        LOG_LEVEL("MSG_IPC_CMD_CAR_SET_LIGHT param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_LIGHT, msg->param1);
-        break;
-    case MSG_IPC_CMD_CAR_SET_GEAR_LEVEL:
-        LOG_LEVEL("MSG_IPC_CMD_CAR_SET_GEAR_LEVEL param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_GEAR_LEVEL, msg->param1);
+
+    case MSG_OTSM_DEVICE_MCU_EVENT:
+        switch (msg->param1)
+        {
+        case MSG_OTSM_CMD_MCU_REQUEST_UPGRADING:
+            if (mcu_check_oupg_file_exists() && !is_mcu_updating())
+            {
+                send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE, msg->param2);
+            }
+            break;
+        case MSG_OTSM_CMD_MCU_UPDATING:
+            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_UPDATING);
+            break;
+        }
         break;
     }
 
@@ -171,26 +200,15 @@ void task_ipc_running(void)
 
 void task_ipc_post_running(void)
 {
+    OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_ASSERT_RUN);
 }
 
 void task_ipc_stop_running(void)
 {
+    LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_INVALID);
 }
 
-void ipc_notify_message_to_client(uint8_t msg_id, uint8_t cmd_parameter)
-{
-    if (CarInforCallback)
-    {
-        LOG_LEVEL("msg_id=%d,cmd_parameter=%d \r\n", msg_id, cmd_parameter);
-        CarInforCallback(cmd_parameter);
-    }
-}
-
-void update_push_interval_ms(uint16_t delay_ms)
-{
-    l_t_callback_delay = delay_ms;
-}
 /*******************************************************************************
  * FUNCTION: ipc_send_handler
  *
@@ -218,20 +236,20 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
     {
         switch (param1)
         {
-        case CMD_MODSYSTEM_SAVE_DATA:
+        case FRAME_CMD_SYSTEM_SAVE_DATA:
             tmp[0] = param2;
-            ptl_build_frame(SOC_TO_MCU_MOD_IPC, CMD_MODSYSTEM_SAVE_DATA, tmp, 2, buff);
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, FRAME_CMD_SYSTEM_SAVE_DATA, tmp, 2, buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
-        case CMD_MOD_CAR_SET_LIGHT:
+        case FRAME_CMD_CAR_SET_LIGHT:
             tmp[0] = param2;
-            ptl_build_frame(SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_LIGHT, tmp, 2, buff);
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_LIGHT, tmp, 2, buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
 
-        case CMD_MOD_CAR_SET_GEAR_LEVEL:
+        case FRAME_CMD_CAR_SET_GEAR_LEVEL:
             tmp[0] = param2;
-            ptl_build_frame(SOC_TO_MCU_MOD_IPC, CMD_MOD_CAR_SET_GEAR_LEVEL, tmp, 2, buff);
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_GEAR_LEVEL, tmp, 2, buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
         default:
@@ -278,18 +296,18 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
     {
         switch (payload->frame_cmd)
         {
-        case CMD_MODSYSTEM_SAVE_DATA:
+        case FRAME_CMD_SYSTEM_SAVE_DATA:
             lt_carinfo_meter.unit_type = payload->data[0];
             flash_save_carinfor_meter();
             return true;
-        case CMD_MOD_CAR_SET_LIGHT:
+        case FRAME_CMD_CAR_SET_LIGHT:
             if (payload->data[0] == 1)
                 bafang_lamp_on_off(true);
             else
                 bafang_lamp_on_off(false);
 
             return true;
-        case CMD_MOD_CAR_SET_GEAR_LEVEL:
+        case FRAME_CMD_CAR_SET_GEAR_LEVEL:
             bafang_set_gear(payload->data[0]);
             return true;
         default:
@@ -298,5 +316,19 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
     }
     // Handle received commands for MCU_TO_SOC_MOD_SYSTEM frame type
     return false; // Command not processed
+}
+
+void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id)
+{
+    if (CarInforCallback)
+    {
+        LOG_LEVEL("msg_grp=%d,msg_id=%d \r\n", msg_grp, msg_id);
+        CarInforCallback(msg_grp, msg_id);
+    }
+}
+
+void update_push_interval_ms(uint16_t delay_ms)
+{
+    l_t_callback_delay = delay_ms;
 }
 
