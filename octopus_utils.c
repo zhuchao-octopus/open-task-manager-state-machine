@@ -35,7 +35,7 @@
  * MACROS
  */
 
-#define MAX_LINE_LEN 1024
+// #define MAX_LINE_LEN 1024
 // #define MAX_RECORDS  65536
 #define CRC32_POLYNOMIAL (0x04C11DB7) // Standard CRC32 polynomial
 /*******************************************************************************
@@ -402,11 +402,16 @@ file_info_t is_valid_hex_file(const char *path_filename)
         LOG_LEVEL("Can not open file %s\n", path_filename);
         return info;
     }
-    char line[512];
+    char line[256];
     while (fgets(line, sizeof(line), f))
     {
         if (line[0] != ':')
-            continue;
+        {
+            // 非法开头，可能是 BIN 文件
+            LOG_LEVEL("Line doesn't start with ':' -> Not a HEX file\n");
+            fclose(f);
+            return info;
+        }
 
         if (!validate_hex_crc(line))
         {
@@ -450,7 +455,11 @@ file_info_t is_valid_hex_file(const char *path_filename)
 // Check if file is valid BIN with vector table
 file_info_t is_valid_bin_file(const char *path_filename)
 {
-    file_info_t info = {.file_type = FILE_TYPE_UNKNOWN, .reset_handler = 0, .file_size = 0};
+    file_info_t info = {
+        .file_type = FILE_TYPE_UNKNOWN,
+        .reset_handler = 0,
+        .file_size = 0,
+        .crc_32 = 0xFFFFFFFF};
 
     FILE *f = fopen(path_filename, "rb");
     if (!f)
@@ -472,16 +481,37 @@ file_info_t is_valid_bin_file(const char *path_filename)
         fclose(f);
         return info;
     }
-    fclose(f);
 
     uint32_t sp = buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
     uint32_t reset_vector = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
 
-    if (sp < 0x20000000 || sp > 0x40000000)
+    if (sp < 0x20000000 || sp > 0x40000000 ||
+        reset_vector < 0x08000000 || reset_vector > 0x20000000)
+    {
+        fclose(f);
         return info;
-    if (reset_vector < 0x08000000 || reset_vector > 0x20000000)
-        return info;
+    }
 
+    // Calculate CRC over the full file
+    rewind(f);
+    clearerr(f);
+
+    uint8_t read_buf[256];
+    size_t total_read;
+    while ((total_read = fread(read_buf, 1, sizeof(read_buf), f)) > 0)
+    {
+        info.crc_32 = calculate_crc_32_step(info.crc_32, read_buf, total_read);
+    }
+
+    if (ferror(f))
+    {
+        LOG_LEVEL("fread failed during CRC calculation\n");
+        fclose(f);
+        return info;
+    }
+
+    fclose(f);
+    info.crc_32 ^= 0xFFFFFFFF;
     info.reset_handler = reset_vector;
     info.file_type = FILE_TYPE_BIN;
     info.file_version = decode_version_from_filename(path_filename);
@@ -492,7 +522,7 @@ file_info_t is_valid_bin_file(const char *path_filename)
 file_info_t parse_firmware_file(const char *filename)
 {
     file_info_t info = {.file_type = FILE_TYPE_UNKNOWN};
-
+    LOG_LEVEL("parse firmware file:%s\r\n",filename);
     info = is_valid_hex_file(filename);
     if (info.file_type == FILE_TYPE_HEX)
         return info;
@@ -556,7 +586,7 @@ int parse_hex_line(const char *line, hex_record_t *record_out)
 
 file_read_status_t read_next_hex_record(FILE *hex_file, long *file_pos, hex_record_t *hex_record)
 {
-    char line[MAX_LINE_LEN];
+    char line[256];
     uint8_t ret = 0;
 
     if (!hex_file)
@@ -577,11 +607,15 @@ file_read_status_t read_next_hex_record(FILE *hex_file, long *file_pos, hex_reco
         ret = parse_hex_line(line, hex_record);
         if (ret == 0)
         {
-            return FILE_READ_OK;
+            return FILE_READ_DATA_OK;
         }
         else if (ret == 1)
         {
             return FILE_READ_EOF;
+        }
+        else if (ret == 4)
+        {
+            return FILE_READ_CT_INFOR;
         }
         else if (ret == 5)
         {
@@ -594,6 +628,30 @@ file_read_status_t read_next_hex_record(FILE *hex_file, long *file_pos, hex_reco
     }
 
     return FILE_READ_EOF;
+}
+
+file_read_status_t read_next_bin_record(FILE *bin_file, long *file_pos, uint32_t base_address, hex_record_t *hex_record)
+{
+    if (!bin_file || !hex_record)
+        return FILE_READ_ERROR;
+
+    if (fseek(bin_file, *file_pos, SEEK_SET) != 0)
+        return FILE_READ_ERROR;
+
+    size_t bytes_read = fread(hex_record->data, 1, 32, bin_file);
+
+    if (bytes_read > 0)
+    {
+        hex_record->address = base_address + (uint32_t)(*file_pos);
+        hex_record->length = (uint8_t)bytes_read;
+        *file_pos += bytes_read;
+        return FILE_READ_DATA_OK;
+    }
+
+    if (feof(bin_file))
+        return FILE_READ_EOF;
+
+    return FILE_READ_ERROR;
 }
 
 int copy_file_to_tmp(const char *src_path, const char *filename, char *dst_path, size_t dst_size)
@@ -642,6 +700,7 @@ int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_
     {
         if (entry->d_type != DT_REG)
             continue;
+
         if (strlen(entry->d_name) > MAX_FILENAME_LEN)
             continue;
 

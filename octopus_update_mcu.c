@@ -97,7 +97,7 @@ char file_path_name_upgrade[40] = {0};
 static bool update_send_handler(ptl_frame_type_t module, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff); // Handle outgoing messages
 static bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);						   // Handle incoming messages
 static void update_state_process(void);
-
+static file_read_status_t read_next_record(FILE *fp, long *file_pos, file_type_t type, uint32_t base_address, hex_record_t *record);
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
@@ -283,6 +283,11 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 			LOG_LEVEL("CRC-32        : 0x%08X\n", mcu_upgrade_status.file_info.crc_32);
 			LOG_LEVEL("Reset Handler : 0x%08X\n", mcu_upgrade_status.file_info.reset_handler);
 
+			if (!flash_is_valid_bank_address(0,bank_address))
+			{
+				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE bank_address is invalid: %08x\r\n", bank_address);
+				return false;
+			}
 			if ((mcu_upgrade_status.file_info.file_type == FILE_TYPE_UNKNOWN || mcu_upgrade_status.file_info.file_size == 0) &&
 				(bank_address != MAIN_APP_SLOT_A_START_ADDR || bank_address != MAIN_APP_SLOT_B_START_ADDR))
 			{
@@ -304,7 +309,7 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 			}
 			else
 			{
-				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE open file error %ds\r\n", file_path_name_upgrade);
+				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE open file error %s\r\n", file_path_name_upgrade);
 				return false;
 			}
 		}
@@ -439,19 +444,27 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 				LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA error file_handle_oupg=NULL\r\n");
 				return false;
 			}
+
 			hex_record_t hex_record;
-			file_read_status_t file_read_status = read_next_hex_record(file_handle_oupg, &mcu_upgrade_status.file_pos, &hex_record);
-			while (file_read_status != FILE_READ_OK)
+			file_read_status_t file_read_status = FILE_READ_INVALID;
+			while (file_read_status != FILE_READ_DATA_OK)
 			{
-				file_read_status = read_next_hex_record(file_handle_oupg, &mcu_upgrade_status.file_pos, &hex_record);
+				file_read_status = read_next_record(
+					file_handle_oupg,
+					&mcu_upgrade_status.file_pos,
+					mcu_upgrade_status.file_info.file_type,
+					mcu_upgrade_status.file_info.reset_handler & FLASH_BANK_MASK,
+					&hex_record);
+
 				switch (file_read_status)
 				{
-				case FILE_READ_OK:
-					break;
+				case FILE_READ_DATA_OK:
+					break; // go and send data
 
-				case FILE_READ_INVALID:
+				case FILE_READ_CT_INFOR:
+				case FILE_READ_INVALID: // skip invalid eg: hex data type 0x05
 					LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA FILE_READ_INVALID Continue\r\n");
-					break;
+					break; // continue
 
 				case FILE_READ_EOF:
 					LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA successfully file_read_status=FILE_READ_EOF\r\n");
@@ -464,7 +477,7 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 					return false;
 
 				default:
-					LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA unimaginable exception  error\r\n");
+					LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA unimaginable exception  error file_read_status=%d\r\n", file_read_status);
 					return false;
 				}
 			}
@@ -499,6 +512,18 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 	return false;
 }
 
+file_read_status_t read_next_record(FILE *fp, long *file_pos, file_type_t type, uint32_t base_address, hex_record_t *record)
+{
+	if (type == FILE_TYPE_HEX)
+	{
+		return read_next_hex_record(fp, file_pos, record);
+	}
+	else if (type == FILE_TYPE_BIN)
+	{
+		return read_next_bin_record(fp, file_pos, base_address, record);
+	}
+	return FILE_READ_INVALID;
+}
 // Function to process the MCU reboot state machine. It handles different stages of the reboot process.
 static void update_state_process(void)
 {
@@ -699,6 +724,9 @@ static void update_state_process(void)
 
 		flash_save_app_meter_infor();
 		lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+		NVIC_SystemReset();
+#endif
 		break;
 	}
 }

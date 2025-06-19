@@ -275,6 +275,11 @@ bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address)
 		return (address >= MAIN_APP_SLOT_A_START_ADDR) && (address < MAIN_APP_SLOT_B_START_ADDR);
 	else if ((b_address & FLASH_BANK_MASK) == MAIN_APP_SLOT_B_START_ADDR)
 		return (address >= MAIN_APP_SLOT_B_START_ADDR) && (address < (MAIN_APP_SLOT_B_START_ADDR + MAIN_APP_SIZE));
+	else if (b_address == 0)
+	{
+		return ((address >= MAIN_APP_SLOT_A_START_ADDR) && (address < MAIN_APP_SLOT_B_START_ADDR) ||
+				(address >= MAIN_APP_SLOT_B_START_ADDR) && (address < (MAIN_APP_SLOT_B_START_ADDR + MAIN_APP_SIZE)));
+	}
 	else
 		return false;
 }
