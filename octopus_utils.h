@@ -54,11 +54,13 @@ extern "C"
 	{
 		FILE_READ_OK = 0,
 		FILE_READ_EOF = 1,
-		FILE_READ_ERROR = -1
+		FILE_READ_INVALID = -1,
+		FILE_READ_ERROR = -2
 	} file_read_status_t;
 
 	typedef struct
 	{
+		//uint32_t bank_address;
 		uint32_t address;
 		uint8_t data[64];
 		uint8_t length;

@@ -186,7 +186,7 @@ void flash_load_sync_data_infor(void)
 		calculated_crc = app_meta_data.slot_a_crc;
 		app_meta_data.slot_a_version = build_version_code();
 
-		if (!(app_meta_data.app_state_flags & APP_FLAG_VALID_A) || !IS_SLOT_A_UPGRADED(app_meta_data.app_state_flags))
+		if (!(app_meta_data.app_state_flags & APP_FLAG_VALID_A)) //|| !IS_SLOT_A_UPGRADED(app_meta_data.app_state_flags)
 		{
 			LOG_LEVEL("First-Stage Boot Detected.\r\n");
 			LOG_LEVEL("Starting data synchronization...\r\n");
@@ -205,7 +205,7 @@ void flash_load_sync_data_infor(void)
 	else if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_B)
 	{
 		app_meta_data.slot_b_version = build_version_code();
-		if (!(app_meta_data.app_state_flags & APP_FLAG_VALID_B) || !IS_SLOT_B_UPGRADED(app_meta_data.app_state_flags))
+		if (!(app_meta_data.app_state_flags & APP_FLAG_VALID_B)) //|| !IS_SLOT_B_UPGRADED(app_meta_data.app_state_flags)
 		{
 			LOG_LEVEL("First-Stage Boot Detected.\r\n");
 			LOG_LEVEL("Starting data synchronization...\r\n");
@@ -269,24 +269,34 @@ void flash_load_sync_data_infor(void)
 #endif
 }
 
+bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address)
+{
+	if ((b_address & FLASH_BANK_MASK) == MAIN_APP_SLOT_A_START_ADDR)
+		return (address >= MAIN_APP_SLOT_A_START_ADDR) && (address < MAIN_APP_SLOT_B_START_ADDR);
+	else if ((b_address & FLASH_BANK_MASK) == MAIN_APP_SLOT_B_START_ADDR)
+		return (address >= MAIN_APP_SLOT_B_START_ADDR) && (address < (MAIN_APP_SLOT_B_START_ADDR + MAIN_APP_SIZE));
+	else
+		return false;
+}
+
 uint32_t flash_erase_user_app_arear(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_FLASH
 	uint32_t ret = 0;
 	if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_A)
 	{
-		LOG_LEVEL("erase address: 0x%08X size:%08X\r\n", MAIN_APP_SLOT_B_START_ADDR,MAIN_APP_BLOCK_COUNT);
-		DISABLE_IRQ;	
+		LOG_LEVEL("erase address: 0x%08X size:%08X\r\n", MAIN_APP_SLOT_B_START_ADDR, MAIN_APP_BLOCK_COUNT);
+		DISABLE_IRQ;
 		ret = hal_flash_erase_page_(MAIN_APP_SLOT_B_START_ADDR, MAIN_APP_BLOCK_COUNT);
 		ENABLE_IRQ;
 	}
 	else
 	{
-		LOG_LEVEL("erase address: 0x%08X size:%08X\r\n", MAIN_APP_SLOT_A_START_ADDR,MAIN_APP_BLOCK_COUNT);
-		DISABLE_IRQ;	
+		LOG_LEVEL("erase address: 0x%08X size:%08X\r\n", MAIN_APP_SLOT_A_START_ADDR, MAIN_APP_BLOCK_COUNT);
+		DISABLE_IRQ;
 		ret = hal_flash_erase_page_(MAIN_APP_SLOT_A_START_ADDR, MAIN_APP_BLOCK_COUNT);
 		ENABLE_IRQ;
-	}	
+	}
 	return ret;
 #else
 	return 0;

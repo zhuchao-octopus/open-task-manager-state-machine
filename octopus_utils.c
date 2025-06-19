@@ -522,7 +522,8 @@ int parse_hex_line(const char *line, hex_record_t *record_out)
     {
         if (record_out)
         {
-            record_out->address = record_out->address | offset;
+            record_out->address = offset;
+            // LOG_LEVEL("%08x = %08x + %08x\r\n",record_out->address,record_out->bank_address,offset);
             record_out->length = len;
             for (int i = 0; i < len; ++i)
             {
@@ -530,23 +531,33 @@ int parse_hex_line(const char *line, hex_record_t *record_out)
                     return -3;
             }
         }
-        return 1;
+        return 0;
     }
     else if (type == 0x04)
     {
         uint8_t high, low;
         if (parse_hex_byte(&line[9], &high) < 0 || parse_hex_byte(&line[11], &low) < 0)
             return -4;
-        record_out->address = (((uint32_t)high << 8) | low) << 16;
-        return 2;
+        // record_out->bank_address = (((uint32_t)high << 8) | low) << 16;
+        LOG_LEVEL("record_out->bank_address=%08x\r\n", (((uint32_t)high << 8) | low) << 16);
+        return 4;
+    }
+    else if (type == 0x05)
+    {
+        return 5;
+    }
+    else if (type == 0x01)
+    {
+        return 1;
     }
 
-    return 0;
+    return -5;
 }
 
 file_read_status_t read_next_hex_record(FILE *hex_file, long *file_pos, hex_record_t *hex_record)
 {
     char line[MAX_LINE_LEN];
+    uint8_t ret = 0;
 
     if (!hex_file)
         return FILE_READ_ERROR;
@@ -563,10 +574,18 @@ file_read_status_t read_next_hex_record(FILE *hex_file, long *file_pos, hex_reco
             return FILE_READ_ERROR;
         }
 
-        if (parse_hex_line(line, hex_record) == 1)
+        ret = parse_hex_line(line, hex_record);
+        if (ret == 0)
         {
-            //LOG_BUFF_LEVEL(hex_record->data,hex_record->length);
             return FILE_READ_OK;
+        }
+        else if (ret == 1)
+        {
+            return FILE_READ_EOF;
+        }
+        else if (ret == 5)
+        {
+            return FILE_READ_INVALID;
         }
         else
         {
@@ -606,7 +625,7 @@ int copy_file_to_tmp(const char *src_path, const char *filename, char *dst_path,
 
     fclose(src);
     fclose(dst);
-#endif		
+#endif
     return 0;
 }
 

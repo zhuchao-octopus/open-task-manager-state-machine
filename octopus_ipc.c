@@ -127,6 +127,11 @@ void task_ipc_running(void)
 
     Msg_t *msg = get_message(TASK_MODULE_IPC_SOCKET);
 
+    if(is_mcu_updating() && (msg->msg_id != MSG_OTSM_DEVICE_MCU_EVENT))
+     {
+         return;
+     }
+
     if (msg->msg_id == NO_MSG)
     {
         if ((GetTickCounter(&l_t_msg_wait_500_timer) >= l_t_callback_delay) && (l_t_callback_delay > 0))
@@ -178,7 +183,7 @@ void task_ipc_running(void)
         switch (msg->param1)
         {
         case MSG_OTSM_CMD_MCU_REQUEST_UPGRADING:
-            if (mcu_check_oupg_file_exists())
+            if (mcu_check_oupg_file_exists() && !is_mcu_updating())
             {
                 send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE, msg->param2);
             }
@@ -204,19 +209,6 @@ void task_ipc_stop_running(void)
     OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_INVALID);
 }
 
-void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id)
-{
-    if (CarInforCallback)
-    {
-        LOG_LEVEL("msg_grp=%d,msg_id=%d \r\n", msg_grp, msg_id);
-        CarInforCallback(msg_grp, msg_id);
-    }
-}
-
-void update_push_interval_ms(uint16_t delay_ms)
-{
-    l_t_callback_delay = delay_ms;
-}
 /*******************************************************************************
  * FUNCTION: ipc_send_handler
  *
@@ -325,3 +317,18 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
     // Handle received commands for MCU_TO_SOC_MOD_SYSTEM frame type
     return false; // Command not processed
 }
+
+void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id)
+{
+    if (CarInforCallback)
+    {
+        LOG_LEVEL("msg_grp=%d,msg_id=%d \r\n", msg_grp, msg_id);
+        CarInforCallback(msg_grp, msg_id);
+    }
+}
+
+void update_push_interval_ms(uint16_t delay_ms)
+{
+    l_t_callback_delay = delay_ms;
+}
+

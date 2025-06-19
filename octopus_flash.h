@@ -149,6 +149,7 @@ extern app_meta_data_t app_meta_data;
 #define FLASH_TOTAL_BLOCK (128)                                 // 128K 0x20000                   // Total Flash size: 128KB
 #define FLASH_TOTAL_SIZE (FLASH_TOTAL_BLOCK * FLASH_BLOCK_SIZE) // Total Flash size: 128KB
 
+#define FLASH_BANK_MASK (0xFFFF0000)
 /////////////////////////////////////////////////////////////////////////////////////////
 // Bootloader Configuration
 
@@ -221,6 +222,8 @@ extern "C"
 
     uint32_t flash_erase_user_app_arear(void);
     void flash_decode_active_version(char *out_str, size_t max_len);
+    bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);
+
 #ifdef __cplusplus
 }
 #endif

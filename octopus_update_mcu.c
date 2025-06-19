@@ -79,7 +79,7 @@ mcu_update_progress_status_t mcu_upgrade_status;
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-static FILE *file_handle_upgrade = NULL;
+static FILE *file_handle_oupg = NULL;
 char file_path_name_upgrade[40] = {0};
 /*******************************************************************************
  * STATIC VARIABLES
@@ -96,7 +96,7 @@ char file_path_name_upgrade[40] = {0};
 // Function declarations
 static bool update_send_handler(ptl_frame_type_t module, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff); // Handle outgoing messages
 static bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);						   // Handle incoming messages
-static void mcu_update_state_proc(void);
+static void update_state_process(void);
 
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
@@ -137,7 +137,7 @@ void task_update_assert_running(void)
  */
 void task_update_running(void)
 {
-	mcu_update_state_proc(); // Call the reboot state machine processing function
+	update_state_process(); // Call the reboot state machine processing function
 }
 
 /**
@@ -161,6 +161,11 @@ void task_update_stop_running(void)
 /*******************************************************************************
  * LOCAL FUNCTIONS IMPLEMENTATION
  */
+bool is_mcu_updating(void)
+{
+	return (file_handle_oupg != NULL);
+}
+
 mcu_update_progress_t get_mcu_update_progress(void)
 {
 	mcu_update_progress_t mcu_update_progress;
@@ -171,7 +176,7 @@ mcu_update_progress_t get_mcu_update_progress(void)
 
 bool mcu_check_oupg_file_exists(void)
 {
-	const char *usb_dirs[] = {"/tmp","/mnt/usb1", "/mnt/usb2", "/mnt/usb3"};
+	const char *usb_dirs[] = {"/tmp", "/mnt/usb1", "/mnt/usb2", "/mnt/usb3"};
 	for (int i = 0; i < 4; i++)
 	{
 		if (search_and_copy_oupg_files(usb_dirs[i], file_path_name_upgrade, sizeof(file_path_name_upgrade)))
@@ -267,7 +272,7 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 				return false;
 			}
 			mcu_upgrade_status.file_info = parse_firmware_file(file_path_name_upgrade);
-			uint32_t bank_address = mcu_upgrade_status.file_info.reset_handler & 0xFFFF0000;
+			uint32_t bank_address = mcu_upgrade_status.file_info.reset_handler & FLASH_BANK_MASK;
 			mcu_upgrade_status.s_length = 0;
 			mcu_upgrade_status.f_counter = 0;
 			mcu_upgrade_status.file_pos = 0;
@@ -291,24 +296,24 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 			UINT32_TO_BYTES_LE(bank_address, &buffer[0]);
 			UINT32_TO_BYTES_LE(mcu_upgrade_status.file_info.file_size, &buffer[4]);
 
-			file_handle_upgrade = fopen(file_path_name_upgrade, "r");
-			if (file_handle_upgrade)
+			file_handle_oupg = fopen(file_path_name_upgrade, "r");
+			if (file_handle_oupg)
 			{
 				ptl_build_frame(SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE, buffer, 8, buff);
 				return true;
 			}
 			else
 			{
-				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE opend file error %ds\r\n", file_path_name_upgrade);
+				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE open file error %ds\r\n", file_path_name_upgrade);
 				return false;
 			}
 		}
 		case FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE:
 		{
-			if (file_handle_upgrade)
+			if (file_handle_oupg)
 			{
-				fclose(file_handle_upgrade);
-				file_handle_upgrade = NULL;
+				fclose(file_handle_oupg);
+				file_handle_oupg = NULL;
 			}
 			UINT32_TO_BYTES_LE(mcu_upgrade_status.file_info.crc_32, &buffer[0]);
 			UINT32_TO_BYTES_LE(mcu_upgrade_status.s_length, &buffer[4]);
@@ -429,20 +434,25 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 				LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA error mcu_upgrade_status.progress=%d\r\n", mcu_upgrade_status.f_counter);
 				return false;
 			}
-			if (!file_handle_upgrade)
+			if (!file_handle_oupg)
 			{
-				LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA error file_handle_upgrade=NULL\r\n");
+				LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA error file_handle_oupg=NULL\r\n");
 				return false;
 			}
 			hex_record_t hex_record;
-			file_read_status_t file_read_status = read_next_hex_record(file_handle_upgrade, &mcu_upgrade_status.file_pos, &hex_record);
+			file_read_status_t file_read_status = read_next_hex_record(file_handle_oupg, &mcu_upgrade_status.file_pos, &hex_record);
 			while (file_read_status != FILE_READ_OK)
 			{
-				file_read_status = read_next_hex_record(file_handle_upgrade, &mcu_upgrade_status.file_pos, &hex_record);
+				file_read_status = read_next_hex_record(file_handle_oupg, &mcu_upgrade_status.file_pos, &hex_record);
 				switch (file_read_status)
 				{
 				case FILE_READ_OK:
 					break;
+
+				case FILE_READ_INVALID:
+					LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA FILE_READ_INVALID Continue\r\n");
+					break;
+
 				case FILE_READ_EOF:
 					LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA successfully file_read_status=FILE_READ_EOF\r\n");
 					send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE, 0);
@@ -457,6 +467,14 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 					LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA unimaginable exception  error\r\n");
 					return false;
 				}
+			}
+
+			hex_record.address = (mcu_upgrade_status.file_info.reset_handler & FLASH_BANK_MASK) | hex_record.address;
+			if (!flash_is_valid_bank_address(mcu_upgrade_status.file_info.reset_handler, hex_record.address))
+			{
+				LOG_LEVEL("Invalid flash address hex_record.address=%08x\n", hex_record.address);
+				LOG_BUFF_LEVEL(hex_record.data, hex_record.length);
+				return false;
 			}
 
 			mcu_upgrade_status.s_length = mcu_upgrade_status.s_length + hex_record.length;
@@ -482,7 +500,7 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 }
 
 // Function to process the MCU reboot state machine. It handles different stages of the reboot process.
-static void mcu_update_state_proc(void)
+static void update_state_process(void)
 {
 	// static uint16_t writed_total_count;
 	uint16_t erase_count = 0;
@@ -556,8 +574,17 @@ static void mcu_update_state_proc(void)
 		lt_mcu_program_buf.error_count = 0;
 
 	RETRY_PROGRAM:
-		writed_count = FlashWriteBuffTo(lt_mcu_program_buf.r_address, lt_mcu_program_buf.r_buff, lt_mcu_program_buf.r_length);
-		MCU_Print_Program_Data(lt_mcu_program_buf.r_address, lt_mcu_program_buf.r_buff, lt_mcu_program_buf.r_length);
+		if (flash_is_valid_bank_address(lt_mcu_program_buf.bank_address, lt_mcu_program_buf.r_address))
+		{
+			writed_count = FlashWriteBuffTo(lt_mcu_program_buf.r_address, lt_mcu_program_buf.r_buff, lt_mcu_program_buf.r_length);
+			MCU_Print_Program_Data(lt_mcu_program_buf.r_address, lt_mcu_program_buf.r_buff, lt_mcu_program_buf.r_length);
+		}
+		else
+		{
+			LOG_LEVEL("Invalid flash address lt_mcu_program_buf.r_address=%08x\n", lt_mcu_program_buf.r_address);
+			lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;
+			break;
+		}
 
 		if (writed_count == lt_mcu_program_buf.r_length)
 		{

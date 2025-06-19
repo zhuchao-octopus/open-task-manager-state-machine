@@ -132,6 +132,7 @@ extern "C"
 
   bool mcu_check_oupg_file_exists(void);
   mcu_update_progress_t get_mcu_update_progress(void);
+  bool is_mcu_updating(void);
   /** @} end of group APP_SETTING */
 
 #ifdef __cplusplus
