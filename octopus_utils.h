@@ -52,10 +52,12 @@ extern "C"
 	 ******************************************************************************/
 	typedef enum
 	{
-		FILE_READ_OK = 0,
-		FILE_READ_EOF = 1,
-		FILE_READ_INVALID = -1,
-		FILE_READ_ERROR = -2
+		FILE_READ_DATA_OK = 0,
+		FILE_READ_CT_INFOR,
+		FILE_READ_EOF,
+
+		FILE_READ_INVALID,
+		FILE_READ_ERROR
 	} file_read_status_t;
 
 	typedef struct
@@ -110,6 +112,7 @@ extern "C"
 
 	file_info_t parse_firmware_file(const char *filename);
 	file_read_status_t read_next_hex_record(FILE *hex_file, long *file_pos, hex_record_t *hex_record);
+	file_read_status_t read_next_bin_record(FILE *bin_file, long *file_pos, uint32_t base_address, hex_record_t *hex_record);
 	int search_and_copy_oupg_files(const char* dir_path, char* out_path, size_t out_path_size);
 	int file_exists(const char *file_path_name);
 	/**
