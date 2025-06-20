@@ -127,10 +127,10 @@ void task_ipc_running(void)
 
     Msg_t *msg = get_message(TASK_MODULE_IPC_SOCKET);
 
-    if(is_mcu_updating() && (msg->msg_id != MSG_OTSM_DEVICE_MCU_EVENT))
-     {
-         return;
-     }
+    if (is_mcu_updating() && (msg->msg_id != MSG_OTSM_DEVICE_MCU_EVENT))
+    {
+        return;
+    }
 
     if (msg->msg_id == NO_MSG)
     {
@@ -183,9 +183,24 @@ void task_ipc_running(void)
         switch (msg->param1)
         {
         case MSG_OTSM_CMD_MCU_REQUEST_UPGRADING:
-            if (mcu_check_oupg_file_exists() && !is_mcu_updating())
+            if (flash_is_meta_infor_valid())
             {
-                send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE, msg->param2);
+                if (mcu_check_oupg_file_exists())
+                {
+                    if (is_mcu_updating())
+                    {
+                        LOG_LEVEL("The device is currently in upgrade mode.\r\n");
+                    }
+                    else
+                    {
+                        LOG_LEVEL("start to enter upgrading mode\r\n");
+                        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE, msg->param2);
+                    }
+                }
+            }
+            else
+            {
+                send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
             }
             break;
         case MSG_OTSM_CMD_MCU_UPDATING:
@@ -241,6 +256,7 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
             ptl_build_frame(SOC_TO_MCU_MOD_IPC, FRAME_CMD_SYSTEM_SAVE_DATA, tmp, 2, buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
+
         case FRAME_CMD_CAR_SET_LIGHT:
             tmp[0] = param2;
             ptl_build_frame(SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_LIGHT, tmp, 2, buff);
@@ -252,6 +268,7 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
             ptl_build_frame(SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_GEAR_LEVEL, tmp, 2, buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
+
         default:
             break;
         }
@@ -331,4 +348,3 @@ void update_push_interval_ms(uint16_t delay_ms)
 {
     l_t_callback_delay = delay_ms;
 }
-

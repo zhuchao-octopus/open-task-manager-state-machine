@@ -85,7 +85,7 @@ char file_path_name_upgrade[40] = {0};
  * STATIC VARIABLES
  */
 // Declare static variables for managing reboot process
-
+static uint32_t l_t_msg_wait_2000_timer; // Timer for 1000 ms message wait
 /*******************************************************************************
  * EXTERNAL VARIABLES
  */
@@ -97,7 +97,7 @@ char file_path_name_upgrade[40] = {0};
 static bool update_send_handler(ptl_frame_type_t module, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff); // Handle outgoing messages
 static bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);						   // Handle incoming messages
 static void update_state_process(void);
-static file_read_status_t read_next_record(FILE *fp, long *file_pos, file_type_t type, uint32_t base_address, hex_record_t *record);
+static file_read_status_t read_next_record(FILE *fp, long *file_offset, file_type_t type, hex_record_t *record);
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
@@ -171,6 +171,7 @@ mcu_update_progress_t get_mcu_update_progress(void)
 	mcu_update_progress_t mcu_update_progress;
 	mcu_update_progress.s_length = mcu_upgrade_status.s_length;
 	mcu_update_progress.s_total_lentgth = mcu_upgrade_status.file_info.file_size;
+	mcu_update_progress.error_code = mcu_upgrade_status.error_code;
 	return mcu_update_progress;
 }
 
@@ -203,29 +204,33 @@ void MCU_Print_Receive_Data(uint32_t address, uint8_t *buff, uint8_t length)
 
 bool update_and_verify_dest_bank(uint32_t slot_addr)
 {
-	if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_LOADER)
-		lt_mcu_program_buf.bank_slot = BANK_SLOT_A;
-	else if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_A)
-		lt_mcu_program_buf.bank_slot = BANK_SLOT_B;
-	else if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_B)
-		lt_mcu_program_buf.bank_slot = BANK_SLOT_A;
-	else
-		lt_mcu_program_buf.bank_slot = BANK_SLOT_INVALID;
-
+	lt_mcu_program_buf.bank_slot = update_get_target_bank();
 	switch (lt_mcu_program_buf.bank_slot)
 	{
 	case BANK_SLOT_A:
-		if (slot_addr != app_meta_data.slot_a_addr)
+		if (slot_addr != flash_meta_infor.slot_a_addr)
 			return false;
 		break;
 	case BANK_SLOT_B:
-		if (slot_addr != app_meta_data.slot_b_addr)
+		if (slot_addr != flash_meta_infor.slot_b_addr)
 			return false;
 		break;
 	default:
 		return false;
 	}
 	return true;
+}
+
+uint8_t update_get_target_bank(void)
+{
+	if (flash_meta_infor.active_slot == BANK_SLOT_LOADER)
+		return BANK_SLOT_A;
+	else if (flash_meta_infor.active_slot == BANK_SLOT_A)
+		return BANK_SLOT_B;
+	else if (flash_meta_infor.active_slot == BANK_SLOT_B)
+		return BANK_SLOT_A;
+	else
+		return BANK_SLOT_INVALID;
 }
 
 // Function to handle sending update module requests based on the module type and parameters
@@ -271,28 +276,43 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 				LOG_LEVEL("File do not exists : %s\n", file_path_name_upgrade);
 				return false;
 			}
-			mcu_upgrade_status.file_info = parse_firmware_file(file_path_name_upgrade);
+
+			if (!flash_is_allow_update_bank(update_get_target_bank()))
+			{
+				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE failed bank: %d flash_meta_infor.bank_slot_mode=%d\r\n", update_get_target_bank(), flash_meta_infor.bank_slot_mode);
+				mcu_upgrade_status.error_code = MCU_ERROR_CODE_BANK_MODE;
+				send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_UPDATING, 0);
+				return false;
+			}
+
+			uint32_t target_bank_address = flash_get_bank_address(update_get_target_bank());
+			mcu_upgrade_status.file_offset = flash_get_bank_offset_address(update_get_target_bank());
+
+			mcu_upgrade_status.file_info = parse_firmware_file(mcu_upgrade_status.file_offset, file_path_name_upgrade);
 			uint32_t bank_address = mcu_upgrade_status.file_info.reset_handler & FLASH_BANK_MASK;
 			mcu_upgrade_status.s_length = 0;
 			mcu_upgrade_status.f_counter = 0;
-			mcu_upgrade_status.file_pos = 0;
 
 			LOG_LEVEL("File Type     : %d\n", mcu_upgrade_status.file_info.file_type);
 			LOG_LEVEL("File Size     : %zu bytes\n", mcu_upgrade_status.file_info.file_size);
 			LOG_LEVEL("File Version  : 0x%08X\n", mcu_upgrade_status.file_info.file_version);
-			LOG_LEVEL("CRC-32        : 0x%08X\n", mcu_upgrade_status.file_info.crc_32);
+			LOG_LEVEL("File CRC-32   : 0x%08X\n", mcu_upgrade_status.file_info.file_crc_32);
 			LOG_LEVEL("Reset Handler : 0x%08X\n", mcu_upgrade_status.file_info.reset_handler);
 
-			if (!flash_is_valid_bank_address(0,bank_address))
+			if ((!flash_is_valid_bank_address(0, bank_address)) || (target_bank_address != bank_address))
 			{
-				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE bank_address is invalid: %08x\r\n", bank_address);
+				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE bank_address is invalid: %08x / %08x\r\n", bank_address, target_bank_address);
+				mcu_upgrade_status.error_code = MCU_ERROR_CODE_ADDRESS;
+				send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_UPDATING, 0);
 				return false;
 			}
-			if ((mcu_upgrade_status.file_info.file_type == FILE_TYPE_UNKNOWN || mcu_upgrade_status.file_info.file_size == 0) &&
-				(bank_address != MAIN_APP_SLOT_A_START_ADDR || bank_address != MAIN_APP_SLOT_B_START_ADDR))
+
+			if (mcu_upgrade_status.file_info.file_type == FILE_TYPE_UNKNOWN || mcu_upgrade_status.file_info.file_size == 0)
 			{
 				LOG_LEVEL("FRAME_CMD_UPDATE_UPDATE_FW_STATE error file_type=%d total_length=%d bank_address=%08x\r\n", mcu_upgrade_status.file_info.file_type,
 						  mcu_upgrade_status.file_info.file_size, mcu_upgrade_status.file_info.reset_handler);
+				mcu_upgrade_status.error_code = MCU_ERROR_CODE_UNKNOW_FILE;
+				send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_UPDATING, 0);
 				return false;
 			}
 
@@ -310,6 +330,8 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 			else
 			{
 				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE open file error %s\r\n", file_path_name_upgrade);
+				mcu_upgrade_status.error_code = MCU_ERROR_CODE_OPEN_FILE;
+				send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_UPDATING, 0);
 				return false;
 			}
 		}
@@ -320,7 +342,7 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 				fclose(file_handle_oupg);
 				file_handle_oupg = NULL;
 			}
-			UINT32_TO_BYTES_LE(mcu_upgrade_status.file_info.crc_32, &buffer[0]);
+			UINT32_TO_BYTES_LE(mcu_upgrade_status.file_info.file_crc_32, &buffer[0]);
 			UINT32_TO_BYTES_LE(mcu_upgrade_status.s_length, &buffer[4]);
 			ptl_build_frame(SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE, buffer, 8, buff);
 			return true;
@@ -387,14 +409,15 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 		case FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE:
 		{
 			lt_mcu_program_buf.total_crc_32 = BYTES_TO_UINT32_LE(&payload->data[0]);
-			uint32_t total_length = BYTES_TO_UINT32_LE(&payload->data[4]);
+			uint32_t received_length = BYTES_TO_UINT32_LE(&payload->data[4]);
 
-			if (total_length == lt_mcu_program_buf.total_length)
+			if (received_length == lt_mcu_program_buf.total_length)
 				lt_mcu_program_buf.state = MCU_UPDATE_STATE_EXIT;
 			else
 				lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;
 
-			LOG_LEVEL("FRAME_CMD_UPDATE_EXIT_FW_UPDATE total_crc_32=%08x total_length=%d\r\n", lt_mcu_program_buf.total_crc_32, total_length);
+			LOG_LEVEL("FRAME_CMD_UPDATE_EXIT_FW_UPDATE lt_mcu_program_buf.total_length=%d received_length=%d\r\n", lt_mcu_program_buf.total_length, received_length);
+			LOG_LEVEL("FRAME_CMD_UPDATE_EXIT_FW_UPDATE received_crc_32=%08x received_length=%d\r\n", lt_mcu_program_buf.total_crc_32, received_length);
 			return false;
 		}
 		case FRAME_CMD_UPDATE_SEND_FW_DATA:
@@ -437,23 +460,25 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 			if (payload->data[0] != MCU_UPDATE_STATE_RECEIVING && frame_index != mcu_upgrade_status.f_counter)
 			{
 				LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA error mcu_upgrade_status.progress=%d\r\n", mcu_upgrade_status.f_counter);
+				mcu_upgrade_status.error_code = MCU_ERROR_CODE_FRAME;
 				return false;
 			}
 			if (!file_handle_oupg)
 			{
 				LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA error file_handle_oupg=NULL\r\n");
+				mcu_upgrade_status.error_code = MCU_ERROR_CODE_FILE;
 				return false;
 			}
 
 			hex_record_t hex_record;
 			file_read_status_t file_read_status = FILE_READ_INVALID;
+
 			while (file_read_status != FILE_READ_DATA_OK)
 			{
 				file_read_status = read_next_record(
 					file_handle_oupg,
-					&mcu_upgrade_status.file_pos,
+					&mcu_upgrade_status.file_offset,
 					mcu_upgrade_status.file_info.file_type,
-					mcu_upgrade_status.file_info.reset_handler & FLASH_BANK_MASK,
 					&hex_record);
 
 				switch (file_read_status)
@@ -467,25 +492,31 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 					break; // continue
 
 				case FILE_READ_EOF:
-					LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA successfully file_read_status=FILE_READ_EOF\r\n");
+					LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA finished file_read_status=FILE_READ_EOF\r\n");
 					send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE, 0);
 					return false;
 
 				case FILE_READ_ERROR:
 					LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA error file_read_status=FILE_READ_ERROR\r\n");
+					mcu_upgrade_status.error_code = MCU_ERROR_CODE_FILE;
 					send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE, 0);
 					return false;
 
 				default:
 					LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA unimaginable exception  error file_read_status=%d\r\n", file_read_status);
+					mcu_upgrade_status.error_code = MCU_ERROR_CODE_FILE;
 					return false;
 				}
 			}
+			if (mcu_upgrade_status.file_info.file_type == FILE_TYPE_HEX)
+				hex_record.address = (mcu_upgrade_status.file_info.reset_handler & FLASH_BANK_MASK) | hex_record.address;
+			else if (mcu_upgrade_status.file_info.file_type == FILE_TYPE_BIN)
+				hex_record.address = FLASH_BASE_START_ADDR | hex_record.address; // address of flash
 
-			hex_record.address = (mcu_upgrade_status.file_info.reset_handler & FLASH_BANK_MASK) | hex_record.address;
 			if (!flash_is_valid_bank_address(mcu_upgrade_status.file_info.reset_handler, hex_record.address))
 			{
 				LOG_LEVEL("Invalid flash address hex_record.address=%08x\n", hex_record.address);
+				mcu_upgrade_status.error_code = MCU_ERROR_CODE_ADDRESS;
 				LOG_BUFF_LEVEL(hex_record.data, hex_record.length);
 				return false;
 			}
@@ -498,7 +529,7 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 			{
 				buffer[i + 4] = hex_record.data[i];
 			}
-
+			mcu_upgrade_status.error_code = MCU_ERROR_CODE_OK;
 			send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_UPDATING, 0);
 			ptl_build_frame(SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_SEND_FW_DATA, buffer, hex_record.length + 4, ackbuff);
 			return true;
@@ -512,15 +543,15 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 	return false;
 }
 
-file_read_status_t read_next_record(FILE *fp, long *file_pos, file_type_t type, uint32_t base_address, hex_record_t *record)
+file_read_status_t read_next_record(FILE *fp, long *file_offset, file_type_t type, hex_record_t *record)
 {
 	if (type == FILE_TYPE_HEX)
 	{
-		return read_next_hex_record(fp, file_pos, record);
+		return read_next_hex_record(fp, file_offset, record);
 	}
 	else if (type == FILE_TYPE_BIN)
 	{
-		return read_next_bin_record(fp, file_pos, base_address, record);
+		return read_next_bin_record(fp, file_offset, record);
 	}
 	return FILE_READ_INVALID;
 }
@@ -557,17 +588,17 @@ static void update_state_process(void)
 		LOG_LEVEL("MCU_UPDATE_STATE_ERASE...\n");
 		if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
 		{
-			app_meta_data.slot_a_crc = 0;
-			app_meta_data.slot_a_size = 0;
-			app_meta_data.slot_a_version = 0;
-			app_meta_data.app_state_flags &= ~APP_FLAG_VALID_A;
+			flash_meta_infor.slot_a_crc = 0;
+			flash_meta_infor.slot_a_size = 0;
+			flash_meta_infor.slot_a_version = 0;
+			flash_meta_infor.app_state_flags &= ~APP_FLAG_VALID_A;
 		}
 		else if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 		{
-			app_meta_data.slot_b_crc = 0;
-			app_meta_data.slot_b_size = 0;
-			app_meta_data.slot_b_version = 0;
-			app_meta_data.app_state_flags &= ~APP_FLAG_VALID_B;
+			flash_meta_infor.slot_b_crc = 0;
+			flash_meta_infor.slot_b_size = 0;
+			flash_meta_infor.slot_b_version = 0;
+			flash_meta_infor.app_state_flags &= ~APP_FLAG_VALID_B;
 		}
 		else
 		{
@@ -584,6 +615,7 @@ static void update_state_process(void)
 			flash_save_app_meter_infor();
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_RECEIVING;
 			lt_mcu_program_buf.f_count = 0; // start receiving data
+			StartTickCounter(&l_t_msg_wait_2000_timer);
 			send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_UPDATE, FRAME_CMD_UPDATE_REQUEST_FW_DATA, lt_mcu_program_buf.state);
 		}
 		else
@@ -592,7 +624,11 @@ static void update_state_process(void)
 		}
 		break;
 	case MCU_UPDATE_STATE_RECEIVING:
-
+		if (GetTickCounter(&l_t_msg_wait_2000_timer) > 5000)
+		{
+			lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;
+			LOG_LEVEL("MCU_UPDATE_STATE_RECEIVING timeout \n");
+		}
 		break;
 	case MCU_UPDATE_STATE_UPDATING:
 		// LOG_LEVEL("MCU_UPDATE_STATE_UPDATING \n");
@@ -615,6 +651,7 @@ static void update_state_process(void)
 		{
 			lt_mcu_program_buf.f_count++;
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_RECEIVING; // continue receive data
+			StartTickCounter(&l_t_msg_wait_2000_timer);
 			send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_UPDATE, FRAME_CMD_UPDATE_REQUEST_FW_DATA, lt_mcu_program_buf.state);
 			break;
 		}
@@ -635,13 +672,13 @@ static void update_state_process(void)
 		if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
 		{
 			DISABLE_IRQ;
-			crc_32 = calculate_crc_32((uint8_t *)(uintptr_t)app_meta_data.slot_a_addr, lt_mcu_program_buf.total_length);
+			crc_32 = calculate_crc_32((uint8_t *)(uintptr_t)flash_meta_infor.slot_a_addr, lt_mcu_program_buf.total_length);
 			ENABLE_IRQ;
 		}
 		else if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 		{
 			DISABLE_IRQ;
-			crc_32 = calculate_crc_32((uint8_t *)(uintptr_t)app_meta_data.slot_b_addr, lt_mcu_program_buf.total_length);
+			crc_32 = calculate_crc_32((uint8_t *)(uintptr_t)flash_meta_infor.slot_b_addr, lt_mcu_program_buf.total_length);
 			ENABLE_IRQ;
 		}
 		else
@@ -655,17 +692,17 @@ static void update_state_process(void)
 		{
 			if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
 			{
-				app_meta_data.slot_a_crc = crc_32;
-				app_meta_data.app_state_flags |= APP_FLAG_VALID_A;
-				app_meta_data.slot_a_size = lt_mcu_program_buf.total_length;
-				SET_FLAG(app_meta_data.app_state_flags, APP_FLAG_SLOT_A_UPGRADED);
+				flash_meta_infor.slot_a_crc = crc_32;
+				flash_meta_infor.app_state_flags |= APP_FLAG_VALID_A;
+				flash_meta_infor.slot_a_size = lt_mcu_program_buf.total_length;
+				SET_FLAG(flash_meta_infor.app_state_flags, APP_FLAG_SLOT_A_UPGRADED);
 			}
 			if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 			{
-				app_meta_data.slot_b_crc = crc_32;
-				app_meta_data.app_state_flags |= APP_FLAG_VALID_B;
-				app_meta_data.slot_b_size = lt_mcu_program_buf.total_length;
-				SET_FLAG(app_meta_data.app_state_flags, APP_FLAG_SLOT_B_UPGRADED);
+				flash_meta_infor.slot_b_crc = crc_32;
+				flash_meta_infor.app_state_flags |= APP_FLAG_VALID_B;
+				flash_meta_infor.slot_b_size = lt_mcu_program_buf.total_length;
+				SET_FLAG(flash_meta_infor.app_state_flags, APP_FLAG_SLOT_B_UPGRADED);
 			}
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_COMPLETE;
 		}
@@ -673,16 +710,18 @@ static void update_state_process(void)
 		{
 			if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
 			{
-				app_meta_data.slot_a_crc = crc_32;
-				app_meta_data.app_state_flags &= ~APP_FLAG_VALID_A;
-				app_meta_data.slot_a_size = lt_mcu_program_buf.total_length;
+				flash_meta_infor.slot_a_crc = crc_32;
+				flash_meta_infor.app_state_flags &= ~APP_FLAG_VALID_A;
+				flash_meta_infor.slot_a_size = lt_mcu_program_buf.total_length;
+				CLEAR_FLAG(flash_meta_infor.app_state_flags, APP_FLAG_SLOT_A_UPGRADED);
 			}
 
 			if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 			{
-				app_meta_data.slot_b_crc = crc_32;
-				app_meta_data.app_state_flags &= ~APP_FLAG_VALID_B;
-				app_meta_data.slot_b_size = lt_mcu_program_buf.total_length;
+				flash_meta_infor.slot_b_crc = crc_32;
+				flash_meta_infor.app_state_flags &= ~APP_FLAG_VALID_B;
+				flash_meta_infor.slot_b_size = lt_mcu_program_buf.total_length;
+				CLEAR_FLAG(flash_meta_infor.app_state_flags, APP_FLAG_SLOT_B_UPGRADED);
 			}
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;
 		}
@@ -693,39 +732,39 @@ static void update_state_process(void)
 
 		if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
 		{
-			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE app_meta_data.slot_a_crc=%08x,received crc_32=%08x\n", app_meta_data.slot_a_crc, lt_mcu_program_buf.total_crc_32);
-			// app_meta_data.slot_a_version = build_version_code();
+			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_a_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
 			flash_save_app_meter_infor();
-			JumpToApplication(app_meta_data.slot_a_addr);
+			JumpToApplication(flash_meta_infor.slot_a_addr);
 		}
 		else if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 		{
-			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE app_meta_data.slot_b_crc=%08x,received crc_32=%08x\n", app_meta_data.slot_b_crc, lt_mcu_program_buf.total_crc_32);
-			/// app_meta_data.slot_b_version = build_version_code();
+			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_b_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
 			flash_save_app_meter_infor();
-			JumpToApplication(app_meta_data.slot_b_addr);
+			JumpToApplication(flash_meta_infor.slot_b_addr);
 		}
 		else
 		{
 			LOG_LEVEL("lt_mcu_program_buf.bank_slot error! bank_slot=%d\n", lt_mcu_program_buf.bank_slot);
 		}
+		StopTickCounter(&l_t_msg_wait_2000_timer);
 		lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
 		break;
 
 	case MCU_UPDATE_STATE_ERROR:
 		if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
-			LOG_LEVEL("MCU_UPDATE_STATE_ERROR app_meta_data.slot_a_crc=%08x,received crc_32=%08x\n", app_meta_data.slot_a_crc, lt_mcu_program_buf.total_crc_32);
+			LOG_LEVEL("MCU_UPDATE_STATE_ERROR flash_meta_infor.slot_a_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
 
 		else if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
-			LOG_LEVEL("MCU_UPDATE_STATE_ERROR app_meta_data.slot_b_crc=%08x,received crc_32=%08x\n", app_meta_data.slot_b_crc, lt_mcu_program_buf.total_crc_32);
+			LOG_LEVEL("MCU_UPDATE_STATE_ERROR flash_meta_infor.slot_b_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
 
 		else
 			LOG_LEVEL("lt_mcu_program_buf.bank_slot error! bank_slot=%d\n", lt_mcu_program_buf.bank_slot);
 
 		flash_save_app_meter_infor();
+		StopTickCounter(&l_t_msg_wait_2000_timer);
 		lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-		NVIC_SystemReset();
+		// NVIC_SystemReset();
 #endif
 		break;
 	}

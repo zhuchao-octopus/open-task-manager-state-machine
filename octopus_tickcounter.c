@@ -124,9 +124,9 @@ uint32_t GetSystemTickClock(void)
 {
 	//return GET_SYSTEM_TICK_COUNT; // Calls a macro or function to get the system tick count
 	
-	//DISABLE_IRQ;	
+	DISABLE_IRQ;	
 	uint32_t system_tick = GET_SYSTEM_TICK_COUNT;
-	//ENABLE_IRQ;
+	ENABLE_IRQ;
 	return system_tick;
 }
 

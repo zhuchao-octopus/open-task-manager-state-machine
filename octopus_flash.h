@@ -104,8 +104,8 @@ typedef enum
 {
     BOOT_MODE_SINGLE_BANK_NONE = 0,    // No bootloader or second bank present
     BOOT_MODE_SINGLE_BANK_NO_LOADER,   // Single bank without a bootloader
-    BOOT_MODE_DUAL_BANK_NO_LOADER,     // Two banks, but no dedicated bootloader
     BOOT_MODE_SINGLE_BANK_WITH_LOADER, // Single bank with bootloader present
+    BOOT_MODE_DUAL_BANK_NO_LOADER,     // Two banks, but no dedicated bootloader
     BOOT_MODE_DUAL_BANK_WITH_LOADER    // Two banks and a bootloader present
 } boot_mode_t;
 
@@ -137,10 +137,10 @@ typedef struct
     uint8_t bank_slot_mode; // Current boot mode, corresponds to boot_mode_t
     uint8_t reserved1;      // Reserved for future use or 4-byte alignment
     uint8_t reserved2;
-} app_meta_data_t;
+} flash_meta_infor_t;
 
 // Global instance holding metadata for application and bootloader
-extern app_meta_data_t app_meta_data;
+extern flash_meta_infor_t flash_meta_infor;
 /////////////////////////////////////////////////////////////////////////////////////////
 // * MCU Flash Memory Layout Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -149,7 +149,9 @@ extern app_meta_data_t app_meta_data;
 #define FLASH_TOTAL_BLOCK (128)                                 // 128K 0x20000                   // Total Flash size: 128KB
 #define FLASH_TOTAL_SIZE (FLASH_TOTAL_BLOCK * FLASH_BLOCK_SIZE) // Total Flash size: 128KB
 
+#define FLASH_BASE_START_ADDR (0x08000000) 
 #define FLASH_BANK_MASK (0xFFFF0000)
+#define FLASH_BANK_UNMASK (0x00FFFFFF)
 /////////////////////////////////////////////////////////////////////////////////////////
 // Bootloader Configuration
 
@@ -163,7 +165,7 @@ extern app_meta_data_t app_meta_data;
 #define BOOTLOADER_BLOCK_COUNT (0)
 #endif
 
-#define BOOTLOADER_START_ADDR (0x0801B000)                          // 0x08000000 + 0x20000 - 0x5000 // Bootloader start address
+#define BOOTLOADER_START_ADDR (0x08000000)                          // 0x08000000 + 0x20000 - 0x5000 // Bootloader start address
 #define BOOTLOADER_SIZE (BOOTLOADER_BLOCK_COUNT * FLASH_BLOCK_SIZE) // Bootloader size: 20KB
 #define BOOTLOADER_END_ADDR (BOOTLOADER_START_ADDR + BOOTLOADER_SIZE)
 
@@ -220,10 +222,16 @@ extern "C"
     void flash_load_sync_data_infor(void);
     void flash_save_carinfor_meter(void);
 
+    uint32_t flash_get_bank_address(uint8_t bank_type);
     uint32_t flash_erase_user_app_arear(void);
+    uint32_t flash_get_bank_offset_address(uint8_t bank_type);
+
     void flash_decode_active_version(char *out_str, size_t max_len);
     bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);
+    bool flash_is_meta_infor_valid(void);
+    bool flash_is_allow_update_bank(uint8_t bank_type);
 
+    flash_meta_infor_t *flash_get_meta_infor(void);
 #ifdef __cplusplus
 }
 #endif
