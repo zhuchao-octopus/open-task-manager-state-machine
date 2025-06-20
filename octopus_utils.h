@@ -45,7 +45,7 @@ extern "C"
 	 * MACROS
 	 * Define commonly used macros for this module.
 	 ******************************************************************************/
-
+#define APP_MATA_INFO_MAGIC 0xDEADBEEF
 	/*******************************************************************************
 	 * TYPEDEFS
 	 * Define types used in the MCU update process.
@@ -62,7 +62,7 @@ extern "C"
 
 	typedef struct
 	{
-		//uint32_t bank_address;
+		// uint32_t bank_address;
 		uint32_t address;
 		uint8_t data[64];
 		uint8_t length;
@@ -80,9 +80,23 @@ extern "C"
 		file_type_t file_type;
 		uint32_t file_size;
 		uint32_t file_version;
-		uint32_t crc_32;
+		uint32_t file_crc_32;
 		uint32_t reset_handler;
 	} file_info_t;
+
+	typedef struct
+	{
+		uint32_t magic;
+		uint32_t size;
+		uint32_t crc32;
+		uint32_t reserved;
+	} app_info_t;
+
+	typedef struct
+	{
+		app_info_t app1;
+		app_info_t app2;
+	} meta_info_t;
 
 	/*******************************************************************************
 	 * CONSTANTS
@@ -110,10 +124,10 @@ extern "C"
 	int32_t compare_versions(uint32_t v1, uint32_t v2);
 	bool is_version_code_valid(uint32_t version_code);
 
-	file_info_t parse_firmware_file(const char *filename);
-	file_read_status_t read_next_hex_record(FILE *hex_file, long *file_pos, hex_record_t *hex_record);
-	file_read_status_t read_next_bin_record(FILE *bin_file, long *file_pos, uint32_t base_address, hex_record_t *hex_record);
-	int search_and_copy_oupg_files(const char* dir_path, char* out_path, size_t out_path_size);
+	file_info_t parse_firmware_file(uint32_t target_bank_offset, const char *filename);
+	file_read_status_t read_next_hex_record(FILE *hex_file, long *file_offset, hex_record_t *hex_record);
+	file_read_status_t read_next_bin_record(FILE *bin_file, long *file_offset, hex_record_t *hex_record);
+	int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_path_size);
 	int file_exists(const char *file_path_name);
 	/**
 	 * @brief Get the error code from the update process.

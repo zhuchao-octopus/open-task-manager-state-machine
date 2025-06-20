@@ -48,18 +48,33 @@ extern "C"
    * Define data types specific to the MCU update task manager. These can include
    * enumerations, structures, or aliases for existing types.
    */
+  typedef enum
+  {
+    MCU_ERROR_CODE_OK = 0,
+    MCU_ERROR_CODE_BANK_MODE,
+    MCU_ERROR_CODE_ADDRESS,
+    MCU_ERROR_CODE_CRC,
+    MCU_ERROR_CODE_FRAME,
+    MCU_ERROR_CODE_FILE,
+    MCU_ERROR_CODE_UNKNOW_FILE,
+    MCU_ERROR_CODE_OPEN_FILE,
+
+  } mcu_error_code_t;
+
   typedef struct
   {
     uint32_t s_length;
     uint32_t s_total_lentgth; // frame counter
+    uint8_t error_code;
   } mcu_update_progress_t;
 
   typedef struct
   {
     file_info_t file_info;
-    long file_pos;
+    long file_offset;
     uint32_t s_length;
     uint16_t f_counter; // frame counter
+    uint8_t error_code;
   } mcu_update_progress_status_t;
 
   /*******************************************************************************
@@ -133,6 +148,8 @@ extern "C"
   bool mcu_check_oupg_file_exists(void);
   mcu_update_progress_t get_mcu_update_progress(void);
   bool is_mcu_updating(void);
+  uint8_t update_get_target_bank(void);
+
   /** @} end of group APP_SETTING */
 
 #ifdef __cplusplus
