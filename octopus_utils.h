@@ -62,10 +62,10 @@ extern "C"
 
 	typedef struct
 	{
-		// uint32_t bank_address;
 		uint32_t address;
 		uint8_t data[64];
 		uint8_t length;
+		uint16_t f_count;
 	} hex_record_t;
 
 	typedef enum
@@ -78,24 +78,24 @@ extern "C"
 	typedef struct
 	{
 		file_type_t file_type;
-		uint32_t file_size;
+		uint32_t file_size; // target bank size
 		uint32_t file_version;
-		uint32_t file_crc_32;
-		uint32_t reset_handler;
-	} file_info_t;
+		uint32_t file_crc_32;	// target bank crc
+		uint32_t reset_handler; // target bank vect reset address
+	} file_info_t;				// HEX/BIN FILE
 
 	typedef struct
 	{
-		uint32_t magic;
-		uint32_t size;
-		uint32_t crc32;
-		uint32_t reserved;
-	} app_info_t;
+		uint32_t magic;			// Magic constant for validation
+		uint32_t start_address; // Start address (e.g. 0x00000000 or 0x00010000)
+		uint32_t size;			// Actual app size in bytes
+		uint32_t crc32;			// CRC32 of the app binary
+	} bank_info_t;
 
 	typedef struct
 	{
-		app_info_t app1;
-		app_info_t app2;
+		bank_info_t bank1;
+		bank_info_t bank2;
 	} meta_info_t;
 
 	/*******************************************************************************
