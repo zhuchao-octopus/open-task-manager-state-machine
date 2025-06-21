@@ -64,7 +64,7 @@ extern "C"
   typedef struct
   {
     uint32_t s_length;
-    uint32_t s_total_lentgth; // frame counter
+    uint32_t s_total_length; 
     uint8_t error_code;
   } mcu_update_progress_t;
 

@@ -126,14 +126,11 @@ typedef struct
     uint32_t slot_a_version; // Encoded version of the application in Slot A
     uint32_t slot_b_version; // Encoded version of the application in Slot B
 
-    uint32_t app_state_flags; // Bit flags representing upgrade, validity, reboot needs, etc.
-                              // e.g. APP_FLAG_SLOT_A_NEED_UPGRADE, APP_FLAG_VALID_B, etc.
+    uint32_t slot_stat_flags; // Bit flags representing upgrade, validity, reboot needs, etc.
+    uint32_t mete_data_flags; // Flags related to runtime/user/meter data validity
+    uint32_t user_data_flags; // Flags related to configuration data state (e.g., checksum pass/fail)
 
-    uint32_t meter_data_flags; // Flags related to runtime/user/meter data validity
-
-    uint32_t config_data_flags; // Flags related to configuration data state (e.g., checksum pass/fail)
-
-    uint8_t active_slot;    // Indicates the current active slot (0 = A, 1 = B)
+    uint8_t active_slot;    // Indicates the current active slot (1 = A, 2 = B)
     uint8_t bank_slot_mode; // Current boot mode, corresponds to boot_mode_t
     uint8_t reserved1;      // Reserved for future use or 4-byte alignment
     uint8_t reserved2;
