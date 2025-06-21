@@ -387,6 +387,56 @@ bool validate_hex_crc(const char *line)
     return ((sum + checksum) & 0xFF) == 0x00;
 }
 
+int parse_hex_line(const char *line, hex_record_t *record_out)
+{
+    if (!line || line[0] != ':')
+        return -1;
+
+    uint8_t len, addr_hi, addr_lo, type;
+    if (parse_hex_byte(&line[1], &len) < 0 ||
+        parse_hex_byte(&line[3], &addr_hi) < 0 ||
+        parse_hex_byte(&line[5], &addr_lo) < 0 ||
+        parse_hex_byte(&line[7], &type) < 0)
+        return -2;
+
+    uint16_t offset = ((uint16_t)addr_hi << 8) | addr_lo;
+
+    if (type == 0x00)
+    {
+        if (record_out)
+        {
+            record_out->address = offset;
+            // LOG_LEVEL("%08x = %08x + %08x\r\n",record_out->address,record_out->bank_address,offset);
+            record_out->length = len;
+            for (int i = 0; i < len; ++i)
+            {
+                if (parse_hex_byte(&line[9 + i * 2], &record_out->data[i]) < 0)
+                    return -3;
+            }
+        }
+        return 0;
+    }
+    else if (type == 0x04)
+    {
+        uint8_t high, low;
+        if (parse_hex_byte(&line[9], &high) < 0 || parse_hex_byte(&line[11], &low) < 0)
+            return -4;
+        // record_out->bank_address = (((uint32_t)high << 8) | low) << 16;
+        LOG_LEVEL("record_out->bank_address=%08x\r\n", (((uint32_t)high << 8) | low) << 16);
+        return 4;
+    }
+    else if (type == 0x05)
+    {
+        return 5;
+    }
+    else if (type == 0x01)
+    {
+        return 1;
+    }
+
+    return -5;
+}
+
 // Check if file is HEX
 file_info_t is_valid_hex_file(const char *path_filename)
 {
@@ -452,179 +502,6 @@ file_info_t is_valid_hex_file(const char *path_filename)
     return info;
 }
 
-// Check if file is valid BIN with vector table
-file_info_t is_valid_bin_file(uint32_t target_bank_offset, const char *path_filename)
-{
-    file_info_t info = {
-        .file_type = FILE_TYPE_UNKNOWN,
-        .reset_handler = 0,
-        .file_size = 0,
-        .file_crc_32 = 0xFFFFFFFF};
-
-    FILE *f = fopen(path_filename, "rb");
-    if (!f)
-        return info;
-
-    // Step 1: Get total file size
-    fseek(f, 0, SEEK_END);
-    long file_size = ftell(f);
-
-    // Ensure the file is large enough to contain at least header + meta
-    if (file_size < (long)(target_bank_offset + 8 + sizeof(meta_info_t)))
-    {
-        fclose(f);
-        return info;
-    }
-
-    // Step 2: Try reading meta info from the tail
-    meta_info_t meta;
-    int has_valid_meta = 0;
-    fseek(f, file_size - sizeof(meta_info_t), SEEK_SET);
-    if (fread(&meta, 1, sizeof(meta_info_t), f) == sizeof(meta_info_t))
-    {
-        if (meta.app1.magic == APP_MATA_INFO_MAGIC && meta.app2.magic == APP_MATA_INFO_MAGIC)
-        {
-            has_valid_meta = 1;
-        }
-    }
-
-    // Step 3: Read first 8 bytes from target offset (SP + Reset Vector)
-    if (fseek(f, target_bank_offset, SEEK_SET) != 0)
-    {
-        fclose(f);
-        return info;
-    }
-
-    uint8_t header_buf[8];
-    if (fread(header_buf, 1, 8, f) != 8)
-    {
-        fclose(f);
-        return info;
-    }
-
-    uint32_t sp = header_buf[0] | (header_buf[1] << 8) | (header_buf[2] << 16) | (header_buf[3] << 24);
-    uint32_t reset_vector = header_buf[4] | (header_buf[5] << 8) | (header_buf[6] << 16) | (header_buf[7] << 24);
-
-    // Step 4: Validate stack pointer and reset handler address range
-    if (sp < 0x20000000 || sp > 0x40000000 ||
-        reset_vector < 0x08000000 || reset_vector > 0x20000000)
-    {
-        fclose(f);
-        return info;
-    }
-
-    // Step 5: Determine valid size
-    uint32_t valid_size;
-    if (has_valid_meta)
-    {
-        valid_size = (target_bank_offset == 0) ? meta.app1.size : meta.app2.size;
-    }
-    else
-    {
-        valid_size = (uint32_t)(file_size - target_bank_offset); // fallback: full to EOF
-    }
-
-    // Step 6: Calculate CRC from target offset to end of valid range
-    if (fseek(f, target_bank_offset, SEEK_SET) != 0)
-    {
-        fclose(f);
-        return info;
-    }
-
-    uint32_t remain = valid_size;
-    uint8_t read_buf[256];
-    while (remain > 0)
-    {
-        size_t chunk = (remain > sizeof(read_buf)) ? sizeof(read_buf) : remain;
-        if (fread(read_buf, 1, chunk, f) != chunk)
-        {
-            fclose(f);
-            return info;
-        }
-        info.file_crc_32 = calculate_crc_32_step(info.file_crc_32, read_buf, chunk);
-        remain -= chunk;
-    }
-
-    fclose(f);
-
-    // Step 7: Fill final info
-    info.file_crc_32 ^= 0xFFFFFFFF;
-    info.reset_handler = reset_vector;
-    info.file_type = FILE_TYPE_BIN;
-    info.file_size = valid_size;
-    info.file_version = decode_version_from_filename(path_filename);
-
-    return info;
-}
-
-// Main parsing function
-file_info_t parse_firmware_file(uint32_t target_bank_offset, const char *filename)
-{
-    file_info_t info = {.file_type = FILE_TYPE_UNKNOWN};
-    LOG_LEVEL("parse firmware file:%s\r\n", filename);
-    LOG_LEVEL("parse firmware file target_address:%08x\r\n", target_bank_offset);
-
-    info = is_valid_hex_file(filename);
-    if (info.file_type == FILE_TYPE_HEX)
-        return info;
-
-    info = is_valid_bin_file(target_bank_offset, filename);
-    if (info.file_type == FILE_TYPE_BIN)
-        return info;
-
-    return info;
-}
-
-int parse_hex_line(const char *line, hex_record_t *record_out)
-{
-    if (!line || line[0] != ':')
-        return -1;
-
-    uint8_t len, addr_hi, addr_lo, type;
-    if (parse_hex_byte(&line[1], &len) < 0 ||
-        parse_hex_byte(&line[3], &addr_hi) < 0 ||
-        parse_hex_byte(&line[5], &addr_lo) < 0 ||
-        parse_hex_byte(&line[7], &type) < 0)
-        return -2;
-
-    uint16_t offset = ((uint16_t)addr_hi << 8) | addr_lo;
-
-    if (type == 0x00)
-    {
-        if (record_out)
-        {
-            record_out->address = offset;
-            // LOG_LEVEL("%08x = %08x + %08x\r\n",record_out->address,record_out->bank_address,offset);
-            record_out->length = len;
-            for (int i = 0; i < len; ++i)
-            {
-                if (parse_hex_byte(&line[9 + i * 2], &record_out->data[i]) < 0)
-                    return -3;
-            }
-        }
-        return 0;
-    }
-    else if (type == 0x04)
-    {
-        uint8_t high, low;
-        if (parse_hex_byte(&line[9], &high) < 0 || parse_hex_byte(&line[11], &low) < 0)
-            return -4;
-        // record_out->bank_address = (((uint32_t)high << 8) | low) << 16;
-        LOG_LEVEL("record_out->bank_address=%08x\r\n", (((uint32_t)high << 8) | low) << 16);
-        return 4;
-    }
-    else if (type == 0x05)
-    {
-        return 5;
-    }
-    else if (type == 0x01)
-    {
-        return 1;
-    }
-
-    return -5;
-}
-
 file_read_status_t read_next_hex_record(FILE *hex_file, long *file_offset, hex_record_t *hex_record)
 {
     char line[256];
@@ -671,47 +548,183 @@ file_read_status_t read_next_hex_record(FILE *hex_file, long *file_offset, hex_r
     return FILE_READ_EOF;
 }
 
+// Check if file is valid BIN with vector table
+file_info_t is_valid_bin_file(uint32_t target_bank_offset, const char *path_filename)
+{
+    file_info_t info = {
+        .file_type = FILE_TYPE_UNKNOWN,
+        .reset_handler = 0,
+        .file_size = 0,
+        .file_crc_32 = 0xFFFFFFFF};
+
+    FILE *f = fopen(path_filename, "rb");
+    if (!f)
+        return info;
+
+    // Step 1: Get total file size
+    fseek(f, 0, SEEK_END);
+    uint32_t file_size = ftell(f);
+
+    // Ensure the file is large enough to contain at least header + meta
+    if (file_size < (long)(target_bank_offset + 8 + sizeof(meta_info_t)))
+    {
+        fclose(f);
+        return info;
+    }
+
+    // Step 2: Try reading meta info from the tail
+    meta_info_t meta;
+    int has_valid_meta = 0;
+    fseek(f, file_size - sizeof(meta_info_t), SEEK_SET);
+    if (fread(&meta, 1, sizeof(meta_info_t), f) == sizeof(meta_info_t))
+    {
+        if (meta.bank1.magic == APP_MATA_INFO_MAGIC && meta.bank2.magic == APP_MATA_INFO_MAGIC)
+        {
+            has_valid_meta = 1;
+        }
+    }
+
+    // Step 3: Read first 8 bytes from target offset (SP + Reset Vector)
+    if (fseek(f, target_bank_offset, SEEK_SET) != 0)
+    {
+        fclose(f);
+        return info;
+    }
+
+    uint8_t header_buf[8];
+    if (fread(header_buf, 1, 8, f) != 8)
+    {
+        fclose(f);
+        return info;
+    }
+
+    uint32_t sp = header_buf[0] | (header_buf[1] << 8) | (header_buf[2] << 16) | (header_buf[3] << 24);
+    uint32_t reset_vector = header_buf[4] | (header_buf[5] << 8) | (header_buf[6] << 16) | (header_buf[7] << 24);
+
+    // Step 4: Validate stack pointer and reset handler address range
+    if (sp < 0x20000000 || sp > 0x40000000 ||
+        reset_vector < 0x08000000 || reset_vector > 0x20000000)
+    {
+        fclose(f);
+        return info;
+    }
+
+    // Step 5: Determine valid size
+    uint32_t valid_size;
+    if (has_valid_meta)
+    {
+        // valid_size = (target_bank_offset == meta.app1.start_address) ? meta.app1.size : meta.app2.size;
+        if (target_bank_offset == meta.bank1.start_address)
+            valid_size = meta.bank1.size;
+        else if (target_bank_offset == meta.bank2.start_address)
+            valid_size = meta.bank2.size;
+        else
+        {
+            fclose(f);
+            return info;
+        }
+    }
+    else
+    {
+        valid_size = (uint32_t)(file_size - target_bank_offset); // fallback: full to EOF
+    }
+
+    // Step 6: Calculate CRC from target offset to end of valid range
+    if (fseek(f, target_bank_offset, SEEK_SET) != 0)
+    {
+        fclose(f);
+        return info;
+    }
+
+    uint32_t remain = valid_size;
+    uint8_t read_buf[256];
+    while (remain > 0)
+    {
+        size_t chunk = (remain > sizeof(read_buf)) ? sizeof(read_buf) : remain;
+        if (fread(read_buf, 1, chunk, f) != chunk)
+        {
+            fclose(f);
+            return info;
+        }
+        info.file_crc_32 = calculate_crc_32_step(info.file_crc_32, read_buf, chunk);
+        remain -= chunk;
+    }
+
+    fclose(f);
+
+    // Step 7: Fill final info
+    info.file_crc_32 ^= 0xFFFFFFFF;
+    info.reset_handler = reset_vector;
+    info.file_type = FILE_TYPE_BIN;
+    info.file_size = valid_size;
+    info.file_version = decode_version_from_filename(path_filename);
+
+    return info;
+}
+
+#define DEFAULT_READ_BIN_MAX_SIZE 32
 file_read_status_t read_next_bin_record(FILE *bin_file, long *file_offset, hex_record_t *hex_record)
 {
-    static long file_end = -1; // Cached file end offset
-    static long meta_start = -1;
+    uint32_t file_total_size = 0;
+    static uint8_t meta_valid = 0;
+    static meta_info_t meta;
 
-    if (!bin_file || !hex_record || !file_offset)
+    if (!bin_file || !file_offset || !hex_record)
         return FILE_READ_ERROR;
 
-    // Step 1: Initialize file_end and meta_start only once
-    if (file_end == -1)
+    // Step 1: On first call, read META
+    if (hex_record->f_count == 0)
     {
+        // Get total file size
         if (fseek(bin_file, 0, SEEK_END) != 0)
             return FILE_READ_ERROR;
 
-        file_end = ftell(bin_file);
+        file_total_size = ftell(bin_file);
 
-        // Try reading meta_info from tail
-        if (file_end >= sizeof(meta_info_t))
+        if (file_total_size >= sizeof(meta_info_t))
         {
-            meta_info_t meta;
-            if (fseek(bin_file, file_end - sizeof(meta_info_t), SEEK_SET) == 0 &&
+            if (fseek(bin_file, file_total_size - sizeof(meta_info_t), SEEK_SET) == 0 &&
                 fread(&meta, 1, sizeof(meta_info_t), bin_file) == sizeof(meta_info_t) &&
-                meta.app1.magic == APP_MATA_INFO_MAGIC && meta.app2.magic == APP_MATA_INFO_MAGIC)
+                meta.bank1.magic == APP_MATA_INFO_MAGIC &&
+                meta.bank2.magic == APP_MATA_INFO_MAGIC)
             {
-                meta_start = file_end - sizeof(meta_info_t);
-                file_end = meta_start; // Don't read META section
+                meta_valid = 1;
             }
         }
     }
 
-    // Step 2: Check EOF
-    if (*file_offset >= file_end)
+	// Step 2: Determine which app region current offset is in
+	//long region_start = 0;
+	uint32_t region_end = file_total_size;
+
+    if (meta_valid)
+    {
+        if (*file_offset >= (long)meta.bank2.start_address)
+        {
+            // Reading bank2
+            //region_start = meta.bank2.start_address;
+            region_end = meta.bank2.start_address + meta.bank2.size;
+        }
+        else
+        {
+            // Reading bank1
+            //region_start = meta.bank1.start_address;
+            region_end = meta.bank1.start_address + meta.bank1.size;
+        }
+    }
+
+    // Step 3: Check if we've reached the end of this app region
+    if (*file_offset >= region_end)
         return FILE_READ_EOF;
 
-    // Step 3: Seek and read up to 32 bytes
+    // Step 4: Seek and read up to DEFAULT_READ_BIN_MAX_SIZE bytes
     if (fseek(bin_file, *file_offset, SEEK_SET) != 0)
         return FILE_READ_ERROR;
 
-    size_t to_read = (file_end - *file_offset >= 32) ? 32 : (size_t)(file_end - *file_offset);
-    size_t bytes_read = fread(hex_record->data, 1, to_read, bin_file);
+    size_t remain = (size_t)(region_end - *file_offset);
+    size_t to_read = remain > DEFAULT_READ_BIN_MAX_SIZE ? DEFAULT_READ_BIN_MAX_SIZE : remain;
 
+    size_t bytes_read = fread(hex_record->data, 1, to_read, bin_file);
     if (bytes_read > 0)
     {
         hex_record->address = (uint32_t)(*file_offset);
@@ -721,6 +734,24 @@ file_read_status_t read_next_bin_record(FILE *bin_file, long *file_offset, hex_r
     }
 
     return feof(bin_file) ? FILE_READ_EOF : FILE_READ_ERROR;
+}
+
+// Main parsing function
+file_info_t parse_firmware_file(uint32_t target_bank_offset, const char *filename)
+{
+    file_info_t info = {.file_type = FILE_TYPE_UNKNOWN};
+    LOG_LEVEL("parse firmware file:%s\r\n", filename);
+    LOG_LEVEL("parse firmware file target_address:%08x\r\n", target_bank_offset);
+
+    info = is_valid_hex_file(filename);
+    if (info.file_type == FILE_TYPE_HEX)
+        return info;
+
+    info = is_valid_bin_file(target_bank_offset, filename);
+    if (info.file_type == FILE_TYPE_BIN)
+        return info;
+
+    return info;
 }
 
 int copy_file_to_tmp(const char *src_path, const char *filename, char *dst_path, size_t dst_size)

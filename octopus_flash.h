@@ -149,7 +149,7 @@ extern flash_meta_infor_t flash_meta_infor;
 #define FLASH_TOTAL_BLOCK (128)                                 // 128K 0x20000                   // Total Flash size: 128KB
 #define FLASH_TOTAL_SIZE (FLASH_TOTAL_BLOCK * FLASH_BLOCK_SIZE) // Total Flash size: 128KB
 
-#define FLASH_BASE_START_ADDR (0x08000000) 
+#define FLASH_BASE_START_ADDR (0x08000000)
 #define FLASH_BANK_MASK (0xFFFF0000)
 #define FLASH_BANK_UNMASK (0x00FFFFFF)
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -222,6 +222,7 @@ extern "C"
     void flash_load_sync_data_infor(void);
     void flash_save_carinfor_meter(void);
 
+    uint8_t flash_get_current_bank(void);
     uint32_t flash_get_bank_address(uint8_t bank_type);
     uint32_t flash_erase_user_app_arear(void);
     uint32_t flash_get_bank_offset_address(uint8_t bank_type);
@@ -230,7 +231,7 @@ extern "C"
     bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);
     bool flash_is_meta_infor_valid(void);
     bool flash_is_allow_update_bank(uint8_t bank_type);
-
+    const char *flash_get_current_bank_name(void);
     flash_meta_infor_t *flash_get_meta_infor(void);
 #ifdef __cplusplus
 }

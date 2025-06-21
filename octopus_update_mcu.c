@@ -471,6 +471,7 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 			}
 
 			hex_record_t hex_record;
+			hex_record.f_count = 0;
 			file_read_status_t file_read_status = FILE_READ_INVALID;
 
 			while (file_read_status != FILE_READ_DATA_OK)
@@ -484,6 +485,7 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 				switch (file_read_status)
 				{
 				case FILE_READ_DATA_OK:
+					hex_record.f_count++;
 					break; // go and send data
 
 				case FILE_READ_CT_INFOR:

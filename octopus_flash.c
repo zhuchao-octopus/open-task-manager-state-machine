@@ -319,6 +319,26 @@ bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address)
 		return false;
 }
 
+uint8_t flash_get_current_bank(void)
+{
+	return flash_meta_infor.active_slot;
+}
+
+const char *flash_get_current_bank_name(void)
+{
+	switch (flash_meta_infor.active_slot)
+	{
+	case 0:
+		return "Loader";
+	case 1:
+		return "A";
+	case 3:
+		return "B";
+	default:
+		return "Unknown";
+	}
+}
+
 uint32_t flash_get_bank_address(uint8_t bank_type)
 {
 	switch (bank_type)
@@ -515,9 +535,11 @@ void boot_loader_active_user_app(void)
 			active_app_addr = flash_meta_infor.slot_b_addr;
 			expected_crc = flash_meta_infor.slot_b_crc;
 			slot_length = flash_meta_infor.slot_b_size;
-			LOG_LEVEL("Active slot A is invalid! try to active slot B\r\n");
+			LOG_LEVEL("Slot A activation failed. Fallback to Slot B initiated.\r\n");
 			if (flash_meta_infor.active_slot == BANK_SLOT_B)
+			{
 				return;
+			}
 		}
 	}
 	else
@@ -536,7 +558,7 @@ void boot_loader_active_user_app(void)
 			active_app_addr = flash_meta_infor.slot_a_addr;
 			expected_crc = flash_meta_infor.slot_a_crc;
 			slot_length = flash_meta_infor.slot_a_size;
-			LOG_LEVEL("Active slot B is invalid! try to active slot A\r\n");
+			LOG_LEVEL("Slot B activation failed. Fallback to Slot A initiated.\r\n");
 			if (flash_meta_infor.active_slot == BANK_SLOT_A)
 				return;
 		}
@@ -550,6 +572,7 @@ void boot_loader_active_user_app(void)
 	}
 	else
 	{
+		LOG_LEVEL("Bank verified crc failed,Can Not Jumping to application at 0x%08X...\r\n", active_app_addr);
 		if (flash_meta_infor.active_slot == BANK_SLOT_A)
 			return;
 		if (flash_meta_infor.active_slot == BANK_SLOT_B)
