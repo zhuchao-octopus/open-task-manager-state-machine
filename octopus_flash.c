@@ -319,7 +319,7 @@ bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address)
 		return false;
 }
 
-uint8_t flash_get_current_bank(void)
+uint32_t flash_get_current_bank(void)
 {
 	return flash_meta_infor.active_slot;
 }

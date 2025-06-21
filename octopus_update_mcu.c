@@ -161,23 +161,14 @@ void task_update_stop_running(void)
 /*******************************************************************************
  * LOCAL FUNCTIONS IMPLEMENTATION
  */
-bool is_mcu_updating(void)
+bool update_is_mcu_updating(void)
 {
 	return (file_handle_oupg != NULL);
 }
 
-mcu_update_progress_t get_mcu_update_progress(void)
+bool update_check_oupg_file_exists(void)
 {
-	mcu_update_progress_t mcu_update_progress;
-	mcu_update_progress.s_length = mcu_upgrade_status.s_length;
-	mcu_update_progress.s_total_lentgth = mcu_upgrade_status.file_info.file_size;
-	mcu_update_progress.error_code = mcu_upgrade_status.error_code;
-	return mcu_update_progress;
-}
-
-bool mcu_check_oupg_file_exists(void)
-{
-	const char *usb_dirs[] = {"/tmp", "/mnt/usb1", "/mnt/usb2", "/mnt/usb3"};
+	const char *usb_dirs[] = {"/mnt/usbotg", "/mnt/usb1", "/mnt/usb2", "/mnt/usb3", "/tmp"};
 	for (int i = 0; i < 4; i++)
 	{
 		if (search_and_copy_oupg_files(usb_dirs[i], file_path_name_upgrade, sizeof(file_path_name_upgrade)))
@@ -188,6 +179,15 @@ bool mcu_check_oupg_file_exists(void)
 	}
 	LOG_LEVEL("Not Found and copied file: %s\n", file_path_name_upgrade);
 	return false;
+}
+
+mcu_update_progress_t get_mcu_update_progress(void)
+{
+	mcu_update_progress_t mcu_update_progress;
+	mcu_update_progress.s_length = mcu_upgrade_status.s_length;
+	mcu_update_progress.s_total_lentgth = mcu_upgrade_status.file_info.file_size;
+	mcu_update_progress.error_code = mcu_upgrade_status.error_code;
+	return mcu_update_progress;
 }
 
 void MCU_Print_Program_Data(uint32_t address, uint8_t *buff, uint8_t length)

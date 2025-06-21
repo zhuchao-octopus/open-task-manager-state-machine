@@ -217,15 +217,16 @@ extern "C"
     void boot_loader_active_user_app(void);
 
     void flash_init(void);
+
     void flash_vector_table_config(uint8_t active_slot);
     void flash_save_app_meter_infor(void);
     void flash_load_sync_data_infor(void);
     void flash_save_carinfor_meter(void);
 
-    uint8_t flash_get_current_bank(void);
+    uint32_t flash_get_current_bank(void);
     uint32_t flash_get_bank_address(uint8_t bank_type);
-    uint32_t flash_erase_user_app_arear(void);
     uint32_t flash_get_bank_offset_address(uint8_t bank_type);
+    uint32_t flash_erase_user_app_arear(void);
 
     void flash_decode_active_version(char *out_str, size_t max_len);
     bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);

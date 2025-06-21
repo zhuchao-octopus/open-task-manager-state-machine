@@ -145,11 +145,11 @@ extern "C"
    */
   void task_update_stop_running(void);
 
-  bool mcu_check_oupg_file_exists(void);
-  mcu_update_progress_t get_mcu_update_progress(void);
-  bool is_mcu_updating(void);
+  bool update_check_oupg_file_exists(void);
+  bool update_is_mcu_updating(void);
   uint8_t update_get_target_bank(void);
 
+  mcu_update_progress_t get_mcu_update_progress(void);
   /** @} end of group APP_SETTING */
 
 #ifdef __cplusplus
