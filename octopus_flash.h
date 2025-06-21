@@ -126,14 +126,11 @@ typedef struct
     uint32_t slot_a_version; // Encoded version of the application in Slot A
     uint32_t slot_b_version; // Encoded version of the application in Slot B
 
-    uint32_t app_state_flags; // Bit flags representing upgrade, validity, reboot needs, etc.
-                              // e.g. APP_FLAG_SLOT_A_NEED_UPGRADE, APP_FLAG_VALID_B, etc.
+    uint32_t slot_stat_flags; // Bit flags representing upgrade, validity, reboot needs, etc.
+    uint32_t mete_data_flags; // Flags related to runtime/user/meter data validity
+    uint32_t user_data_flags; // Flags related to configuration data state (e.g., checksum pass/fail)
 
-    uint32_t meter_data_flags; // Flags related to runtime/user/meter data validity
-
-    uint32_t config_data_flags; // Flags related to configuration data state (e.g., checksum pass/fail)
-
-    uint8_t active_slot;    // Indicates the current active slot (0 = A, 1 = B)
+    uint8_t active_slot;    // Indicates the current active slot (1 = A, 2 = B)
     uint8_t bank_slot_mode; // Current boot mode, corresponds to boot_mode_t
     uint8_t reserved1;      // Reserved for future use or 4-byte alignment
     uint8_t reserved2;
@@ -217,15 +214,16 @@ extern "C"
     void boot_loader_active_user_app(void);
 
     void flash_init(void);
+
     void flash_vector_table_config(uint8_t active_slot);
     void flash_save_app_meter_infor(void);
     void flash_load_sync_data_infor(void);
     void flash_save_carinfor_meter(void);
 
-    uint8_t flash_get_current_bank(void);
+    uint32_t flash_get_current_bank(void);
     uint32_t flash_get_bank_address(uint8_t bank_type);
-    uint32_t flash_erase_user_app_arear(void);
     uint32_t flash_get_bank_offset_address(uint8_t bank_type);
+    uint32_t flash_erase_user_app_arear(void);
 
     void flash_decode_active_version(char *out_str, size_t max_len);
     bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);

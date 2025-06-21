@@ -127,7 +127,7 @@ void task_ipc_running(void)
 
     Msg_t *msg = get_message(TASK_MODULE_IPC_SOCKET);
 
-    if (is_mcu_updating() && (msg->msg_id != MSG_OTSM_DEVICE_MCU_EVENT))
+    if (update_is_mcu_updating() && (msg->msg_id != MSG_OTSM_DEVICE_MCU_EVENT))
     {
         return;
     }
@@ -185,9 +185,9 @@ void task_ipc_running(void)
         case MSG_OTSM_CMD_MCU_REQUEST_UPGRADING:
             if (flash_is_meta_infor_valid())
             {
-                if (mcu_check_oupg_file_exists())
+                if (update_check_oupg_file_exists())
                 {
-                    if (is_mcu_updating())
+                    if (update_is_mcu_updating())
                     {
                         LOG_LEVEL("The device is currently in upgrade mode.\r\n");
                     }
@@ -205,6 +205,9 @@ void task_ipc_running(void)
             break;
         case MSG_OTSM_CMD_MCU_UPDATING:
             ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_UPDATING);
+            break;
+        case MSG_OTSM_CMD_MCU_VERSION:
+            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_VERSION);
             break;
         }
         break;

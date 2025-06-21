@@ -161,23 +161,14 @@ void task_update_stop_running(void)
 /*******************************************************************************
  * LOCAL FUNCTIONS IMPLEMENTATION
  */
-bool is_mcu_updating(void)
+bool update_is_mcu_updating(void)
 {
 	return (file_handle_oupg != NULL);
 }
 
-mcu_update_progress_t get_mcu_update_progress(void)
+bool update_check_oupg_file_exists(void)
 {
-	mcu_update_progress_t mcu_update_progress;
-	mcu_update_progress.s_length = mcu_upgrade_status.s_length;
-	mcu_update_progress.s_total_lentgth = mcu_upgrade_status.file_info.file_size;
-	mcu_update_progress.error_code = mcu_upgrade_status.error_code;
-	return mcu_update_progress;
-}
-
-bool mcu_check_oupg_file_exists(void)
-{
-	const char *usb_dirs[] = {"/tmp", "/mnt/usb1", "/mnt/usb2", "/mnt/usb3"};
+	const char *usb_dirs[] = {"/mnt/usbotg", "/mnt/usb1", "/mnt/usb2", "/mnt/usb3", "/tmp"};
 	for (int i = 0; i < 4; i++)
 	{
 		if (search_and_copy_oupg_files(usb_dirs[i], file_path_name_upgrade, sizeof(file_path_name_upgrade)))
@@ -188,6 +179,15 @@ bool mcu_check_oupg_file_exists(void)
 	}
 	LOG_LEVEL("Not Found and copied file: %s\n", file_path_name_upgrade);
 	return false;
+}
+
+mcu_update_progress_t get_mcu_update_progress(void)
+{
+	mcu_update_progress_t mcu_update_progress;
+	mcu_update_progress.s_length = mcu_upgrade_status.s_length;
+	mcu_update_progress.s_total_length = mcu_upgrade_status.file_info.file_size;
+	mcu_update_progress.error_code = mcu_upgrade_status.error_code;
+	return mcu_update_progress;
 }
 
 void MCU_Print_Program_Data(uint32_t address, uint8_t *buff, uint8_t length)
@@ -593,14 +593,14 @@ static void update_state_process(void)
 			flash_meta_infor.slot_a_crc = 0;
 			flash_meta_infor.slot_a_size = 0;
 			flash_meta_infor.slot_a_version = 0;
-			flash_meta_infor.app_state_flags &= ~APP_FLAG_VALID_A;
+			flash_meta_infor.slot_stat_flags &= ~APP_FLAG_VALID_A;
 		}
 		else if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 		{
 			flash_meta_infor.slot_b_crc = 0;
 			flash_meta_infor.slot_b_size = 0;
 			flash_meta_infor.slot_b_version = 0;
-			flash_meta_infor.app_state_flags &= ~APP_FLAG_VALID_B;
+			flash_meta_infor.slot_stat_flags &= ~APP_FLAG_VALID_B;
 		}
 		else
 		{
@@ -695,16 +695,16 @@ static void update_state_process(void)
 			if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
 			{
 				flash_meta_infor.slot_a_crc = crc_32;
-				flash_meta_infor.app_state_flags |= APP_FLAG_VALID_A;
+				flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_A;
 				flash_meta_infor.slot_a_size = lt_mcu_program_buf.total_length;
-				SET_FLAG(flash_meta_infor.app_state_flags, APP_FLAG_SLOT_A_UPGRADED);
+				SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_UPGRADED);
 			}
 			if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 			{
 				flash_meta_infor.slot_b_crc = crc_32;
-				flash_meta_infor.app_state_flags |= APP_FLAG_VALID_B;
+				flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_B;
 				flash_meta_infor.slot_b_size = lt_mcu_program_buf.total_length;
-				SET_FLAG(flash_meta_infor.app_state_flags, APP_FLAG_SLOT_B_UPGRADED);
+				SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_UPGRADED);
 			}
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_COMPLETE;
 		}
@@ -713,17 +713,17 @@ static void update_state_process(void)
 			if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
 			{
 				flash_meta_infor.slot_a_crc = crc_32;
-				flash_meta_infor.app_state_flags &= ~APP_FLAG_VALID_A;
+				flash_meta_infor.slot_stat_flags &= ~APP_FLAG_VALID_A;
 				flash_meta_infor.slot_a_size = lt_mcu_program_buf.total_length;
-				CLEAR_FLAG(flash_meta_infor.app_state_flags, APP_FLAG_SLOT_A_UPGRADED);
+				CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_UPGRADED);
 			}
 
 			if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 			{
 				flash_meta_infor.slot_b_crc = crc_32;
-				flash_meta_infor.app_state_flags &= ~APP_FLAG_VALID_B;
+				flash_meta_infor.slot_stat_flags &= ~APP_FLAG_VALID_B;
 				flash_meta_infor.slot_b_size = lt_mcu_program_buf.total_length;
-				CLEAR_FLAG(flash_meta_infor.app_state_flags, APP_FLAG_SLOT_B_UPGRADED);
+				CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_UPGRADED);
 			}
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;
 		}
