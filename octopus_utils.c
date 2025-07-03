@@ -38,6 +38,8 @@
 // #define MAX_LINE_LEN 1024
 // #define MAX_RECORDS  65536
 #define CRC32_POLYNOMIAL (0x04C11DB7) // Standard CRC32 polynomial
+#define DEFAULT_OUPG_FILENAME_MAX_LENGTH 30
+#define DEFAULT_OUPG_BINFILE_READ_MAX_SIZE 48
 /*******************************************************************************
  * TYPEDEFS
  */
@@ -662,7 +664,6 @@ file_info_t is_valid_bin_file(uint32_t target_bank_offset, const char *path_file
     return info;
 }
 
-#define DEFAULT_READ_BIN_MAX_SIZE 32
 file_read_status_t read_next_bin_record(FILE *bin_file, long *file_offset, hex_record_t *hex_record)
 {
     uint32_t file_total_size = 0;
@@ -722,7 +723,7 @@ file_read_status_t read_next_bin_record(FILE *bin_file, long *file_offset, hex_r
         return FILE_READ_ERROR;
 
     size_t remain = (size_t)(region_end - *file_offset);
-    size_t to_read = remain > DEFAULT_READ_BIN_MAX_SIZE ? DEFAULT_READ_BIN_MAX_SIZE : remain;
+    size_t to_read = remain > DEFAULT_OUPG_BINFILE_READ_MAX_SIZE ? DEFAULT_OUPG_BINFILE_READ_MAX_SIZE : remain;
 
     size_t bytes_read = fread(hex_record->data, 1, to_read, bin_file);
     if (bytes_read > 0)
@@ -787,7 +788,6 @@ int copy_file_to_tmp(const char *src_path, const char *filename, char *dst_path,
     return 0;
 }
 
-#define MAX_FILENAME_LEN 30
 int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_path_size)
 {
 #ifdef PLATFORM_LINUX_RISC
@@ -801,7 +801,7 @@ int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_
         if (entry->d_type != DT_REG)
             continue;
 
-        if (strlen(entry->d_name) > MAX_FILENAME_LEN)
+        if (strlen(entry->d_name) > DEFAULT_OUPG_FILENAME_MAX_LENGTH)
             continue;
 
         if (fnmatch("*.oupg", entry->d_name, 0) == 0)
