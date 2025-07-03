@@ -86,7 +86,7 @@ extern "C"
      * @param format Format string.
      * @param ... Additional arguments for formatting.
      */
-    void dbg_log_printf(const char *format, ...);
+    void dbg_log_printf_(const char *format, ...);
 
     /**
      * @brief Logs a formatted message with a function name and log level.
@@ -125,9 +125,9 @@ extern "C"
 #define LOG_LEVEL(...) dbg_log_printf_level(__FUNCTION__, __VA_ARGS__)
 
 /** Macro to log a simple message. */
-#define LOG_NONE(...) dbg_log_printf(__VA_ARGS__)
+#define LOG_NONE(...) dbg_log_printf_(__VA_ARGS__)
 
-#define DBG(...) dbg_log_printf(__VA_ARGS__)
+///#define ODBG(...) dbg_log_printf_(__VA_ARGS__)
 
 /** Macro to log a buffer. */
 #define LOG_BUFF(a, b) dbg_log_printf_buffer(a, b)

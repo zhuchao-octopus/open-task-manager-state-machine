@@ -498,7 +498,7 @@ uint8_t hal_com_uart_send_buffer_1(const uint8_t *buffer, uint16_t length)
 #endif
     }
 #else
-    PTL_1_UART_Send_Buffer(buffer, length);
+    //PTL_1_UART_Send_Buffer(buffer, length);
 #endif
     return ret_code;
 }
@@ -523,7 +523,7 @@ uint8_t hal_com_uart_send_buffer_2(const uint8_t *buffer, uint16_t length)
         LOG_LEVEL("write failed linux_uart_serial_handle==null\r\n");
 
 #else
-    PTL_2_UART_Send_Buffer(buffer, length);
+    //PTL_2_UART_Send_Buffer(buffer, length);
 #endif
     return ret_code;
 }
@@ -531,7 +531,7 @@ uint8_t hal_com_uart_send_buffer_2(const uint8_t *buffer, uint16_t length)
 uint8_t hal_com_uart_send_buffer_3(const uint8_t *buffer, uint16_t length)
 {
     LOG_BUFF_LEVEL(buffer, length);
-    UART2_Send_Buffer(buffer, length);
+    //UART2_Send_Buffer(buffer, length);
     return 0;
 }
 #endif

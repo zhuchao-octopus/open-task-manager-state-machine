@@ -164,6 +164,9 @@ typedef uint8_t GPIO_GROUP;
 
 #define GPIO_POWER_SWITCH_GROUP 0
 #define GPIO_POWER_SWITCH_PIN 0
+
+#define GPIO_POWER_ENABLE_GROUP 0
+#define GPIO_POWER_ENABLE_PIN 0
 #endif
 
     /*********************************************************************

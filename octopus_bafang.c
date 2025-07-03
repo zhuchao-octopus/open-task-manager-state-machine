@@ -443,28 +443,36 @@ void uart_send_protocol_cmd_speed(void)
 // 发送写入限速命令
 void uart_send_protocol_cmd_speed_limit(void)
 {
-    static uint16_t speed_limit_rpm = 241;
-    static uint32_t speed_limit = 0;
-
-    if (speed_limit != lt_carinfo_meter.speed_limit)
-    {
+	static uint16_t speed_limit_rpm = 241;
+	static uint32_t speed_limit = 0;
+	double radius;
+	double kph;
+	double v;
+	double w; 
+	double rpm;
+	uint8_t word_h;
+	uint8_t word_l;
+	uint8_t send_data[5];
+	
+  if (speed_limit != lt_carinfo_meter.speed_limit)
+  {
         speed_limit = lt_carinfo_meter.speed_limit;
 
-        double radius = get_wheel_radius_mm() / 1000.0; // 轮毂半径，单位：米
+        radius = get_wheel_radius_mm() / 1000.0; // 轮毂半径，单位：米
         if (radius)
         {
-            double kph = speed_limit / 10.0;        // 限速,单位km/h
-            double v = kph * 1000.0 / 3600.0;       // 线速度,单位：米/秒
-            double w = v / radius;                  // 转换角速度，单位：弧度/秒
-            double rpm = w * 60.0 / 2.0 / PI_FLOAT; // 转速rpm
+            kph = speed_limit / 10.0;        // 限速,单位km/h
+            v = kph * 1000.0 / 3600.0;       // 线速度,单位：米/秒
+            w = v / radius;                  // 转换角速度，单位：弧度/秒
+            rpm = w * 60.0 / 2.0 / PI_FLOAT; // 转速rpm
             speed_limit_rpm = (uint16_t)rpm;
         }
-    }
+   }
 
-    uint8_t word_h = ((speed_limit_rpm >> 8) & 0xFF);
-    uint8_t word_l = (speed_limit_rpm & 0xFF);
+    word_h = ((speed_limit_rpm >> 8) & 0xFF);
+    word_l = (speed_limit_rpm & 0xFF);
 
-    uint8_t send_data[5];
+    
     send_data[0] = 0x16;
     send_data[1] = 0x1F;
     send_data[2] = word_h;
@@ -684,8 +692,9 @@ bool proc_protocol_frame_speed(uint8_t *buff, int count)
                 // v（线速度） = ω* r
 
                 uint16_t rpm = MK_WORD(buff[0], buff[1]);
+							  double w = rpm * (2.0 * PI_FLOAT / 60.0);       // 转换角速度，单位：弧度/秒
+							
                 double radius = get_wheel_radius_mm() / 1000.0; // 轮毂半径，单位：米
-                double w = rpm * (2.0 * PI_FLOAT / 60.0);       // 转换角速度，单位：弧度/秒
                 double v = w * radius;                          // 线速度,单位：米/秒
                 double kph = v * 3600.0 / 1000.0 * 10;
 

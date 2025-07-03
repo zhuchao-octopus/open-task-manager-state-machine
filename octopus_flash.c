@@ -478,25 +478,6 @@ void JumpToApplication(uint32_t app_address)
 	// Disable global interrupts
 	DISABLE_IRQ;
 
-	// Stop SysTick to avoid unwanted interrupts
-	SysTick->CTRL = 0;
-	SysTick->LOAD = 0;
-	SysTick->VAL = 0;
-
-	// Disable all NVIC interrupts and clear pending ones (M0 has up to 32 IRQs)
-	for (uint32_t i = 0; i < 1; ++i)
-	{
-		NVIC->ICER[i] = 0xFFFFFFFF; // Disable IRQs
-		NVIC->ICPR[i] = 0xFFFFFFFF; // Clear pending IRQs
-	}
-
-	// Ensure all memory and peripheral accesses complete before jump
-	__DSB();
-	__ISB();
-
-	// Set Main Stack Pointer to application's initial MSP
-	__set_MSP(app_msp);
-
 	// Cast application's Reset_Handler address to function pointer and call
 	jump_to_app = (pFunction)app_reset;
 

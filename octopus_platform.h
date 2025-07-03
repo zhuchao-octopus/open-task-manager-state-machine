@@ -54,9 +54,9 @@
 // #define PLATFORM_ITE_OPEN_RTOS   // Enable ITE platform with OPEN RTOS
 // #define PLATFORM_CST_OSAL_RTOS   // Uncomment to use CST platform with OSAL RTOS
 // #define PLATFORM_X86_WIND_RTOS   // Uncomment to use XB6 platform with WIND RTOS
-#define PLATFORM_STM32_RTOS
+// #define PLATFORM_STM32_RTOS
 // #define PLATFORM_LINUX_RISC         // X86 ARM linux
-
+#define PLATFORM_NATION_RTOS
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
@@ -71,7 +71,7 @@
  /* @brief Task Manager state machine modules.
  */
  
-#define TASK_MANAGER_STATE_MACHINE_FLASH 1 
+//#define TASK_MANAGER_STATE_MACHINE_FLASH 1 
 #define TASK_MANAGER_STATE_MACHINE_KEY 1 
 #define TASK_MANAGER_STATE_MACHINE_GPIO 1 
 //#define TASK_MANAGER_STATE_MACHINE_SIF 1 /**< Secondary interface mode. */
@@ -83,14 +83,14 @@
 
 //#define TASK_MANAGER_STATE_MACHINE_CAN 1 
 #define TASK_MANAGER_STATE_MACHINE_PTL2 1 
-#define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
+//#define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
 #define TASK_MANAGER_STATE_MACHINE_IPC_SOCKET 1 
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
-#define FLASH_USE_EEROM_FOR_DATA_SAVING
+//#define FLASH_USE_EEROM_FOR_DATA_SAVING
 #define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A
-#define FLASH_MAPPING_VECT_TABLE_TO_SRAM
+//#define FLASH_MAPPING_VECT_TABLE_TO_SRAM
 
 /***********************************************************************************
  * BASE INCLUDE FILES
@@ -169,8 +169,9 @@
 #include "../HAL/octopus_serialport_c.h"
 
 #elif defined(PLATFORM_STM32_RTOS)
-#include "../src/native_devices.h"
 
+#elif defined(PLATFORM_NATION_RTOS)
+#include "../native_devices.h"
 #else
 
 #endif
@@ -288,7 +289,7 @@ extern volatile uint32_t system_timer_tick_50us;
  * CONSTANTS
  * Define mathematical constants and other useful values.
  ******************************************************************************/
-#define PI_FLOAT (3.14159f) // Value of �� as a floating-point constant
+#define PI_FLOAT (3.141592653589793) // Value of as a double/floating-point constant
 
 /*******************************************************************************
  * FUNCTION DECLARATIONS

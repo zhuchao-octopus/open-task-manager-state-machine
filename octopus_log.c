@@ -411,7 +411,7 @@ static void native_uart_putc(char *data, uint16_t size)
  * @param format The format string.
  * @param ... The variable arguments.
  */
-void dbg_log_printf(const char *format, ...)
+void dbg_log_printf_(const char *format, ...)
 {
     va_list args;
     va_start(args, format); // Initialize the va_list to process the variable arguments
@@ -460,7 +460,7 @@ void dbg_log_printf_level(const char *function_name, const char *format, ...)
 
 // Print log header with timestamp, level, function name
 #ifdef USE_MY_PRINTF
-    dbg_log_printf("[%s][%28s] ", level_str, function_name);
+    dbg_log_printf_("[%s][%28s] ", level_str, function_name);
 #else
     printf("[%s][%28s] ", level_str, function_name);
 #endif
@@ -491,13 +491,13 @@ void dbg_log_printf_buffer(uint8_t *buff, uint16_t length)
     for (int i = 0; i < length; i++)
     {
 #ifdef USE_MY_PRINTF
-        dbg_log_printf("%02x ", buff[i]);
+        dbg_log_printf_("%02x ", buff[i]);
 #else
         printf("%02x ", buff[i]);
 #endif
     }
 #ifdef USE_MY_PRINTF
-    dbg_log_printf("\r\n");
+    dbg_log_printf_("\r\n");
 #else
     printf("\r\n");
 #endif
@@ -520,13 +520,13 @@ void dbg_log_printf_buffer_level(const char *function_name, const uint8_t *buff,
     for (int i = 0; i < length; i++)
     {
 #ifdef USE_MY_PRINTF
-        dbg_log_printf("%02x ", buff[i]);
+        dbg_log_printf_("%02x ", buff[i]);
 #else
         printf("%02x ", buff[i]);
 #endif
     }
 #ifdef USE_MY_PRINTF
-    dbg_log_printf("\r\n");
+    dbg_log_printf_("\r\n");
 #else
     printf("\r\n");
 #endif

@@ -137,7 +137,7 @@ void task_system_running(void)
         if (GetTickCounter(&l_t_msg_lowpower_wait_timer) > 8000)
         {
             task_manager_stop();
-            enter_sleep_mode();
+            //enter_sleep_mode();
             lt_mb_state = MB_POWER_ST_BOOTING;
             StartTickCounter(&l_t_msg_booting_wait_timer);
             task_manager_start();

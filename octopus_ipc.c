@@ -319,17 +319,11 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
         case FRAME_CMD_SYSTEM_SAVE_DATA:
             lt_carinfo_meter.unit_type = payload->data[0];
             flash_save_carinfor_meter();
-            return true;
+            return false;
         case FRAME_CMD_CAR_SET_LIGHT:
-            if (payload->data[0] == 1)
-                bafang_lamp_on_off(true);
-            else
-                bafang_lamp_on_off(false);
-
-            return true;
+            return false;
         case FRAME_CMD_CAR_SET_GEAR_LEVEL:
-            bafang_set_gear(payload->data[0]);
-            return true;
+            return false;
         default:
             break;
         }
