@@ -326,13 +326,18 @@ uint32_t flash_get_current_bank(void)
 
 const char *flash_get_current_bank_name(void)
 {
-	switch (flash_meta_infor.active_slot)
+	return flash_get_bank_name(flash_meta_infor.active_slot);
+}
+
+const char *flash_get_bank_name(uint8_t bank)
+{
+	switch (bank)
 	{
-	case 0:
+	case BANK_SLOT_LOADER:
 		return "Loader";
-	case 1:
+	case BANK_SLOT_A:
 		return "A";
-	case 3:
+	case BANK_SLOT_B:
 		return "B";
 	default:
 		return "Unknown";

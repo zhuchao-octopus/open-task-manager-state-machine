@@ -87,6 +87,7 @@ extern "C"
 	typedef struct
 	{
 		uint32_t magic;			// Magic constant for validation
+		uint32_t model;
 		uint32_t start_address; // Start address (e.g. 0x00000000 or 0x00010000)
 		uint32_t size;			// Actual app size in bytes
 		uint32_t crc32;			// CRC32 of the app binary
@@ -124,7 +125,7 @@ extern "C"
 	int32_t compare_versions(uint32_t v1, uint32_t v2);
 	bool is_version_code_valid(uint32_t version_code);
 
-	file_info_t parse_firmware_file(uint32_t target_bank_offset, const char *filename);
+	file_info_t parse_firmware_file(uint32_t model_number, uint32_t target_bank_offset, const char *filename);
 	file_read_status_t read_next_hex_record(FILE *hex_file, long *file_offset, hex_record_t *hex_record);
 	file_read_status_t read_next_bin_record(FILE *bin_file, long *file_offset, hex_record_t *hex_record);
 	int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_path_size);

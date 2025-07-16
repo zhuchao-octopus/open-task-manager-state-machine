@@ -23,9 +23,12 @@
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_system.h"
 #include "octopus_gpio.h"
+#include "octopus_key.h"
+
 #include "octopus_carinfor.h"
 #include "octopus_ble.h"
-#include "octopus_key.h"
+#include "octopus_4g.h"
+
 #include "octopus_update_mcu.h"
 #include "octopus_ipc.h"
 #include "octopus_bafang.h"
@@ -96,6 +99,20 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
+		
+#ifdef TASK_MANAGER_STATE_MACHINE_KEY
+    [TASK_MODULE_KEY] = {
+        .func = {
+            [OTMS_S_INIT] = task_key_init_running,
+            [OTMS_S_START] = task_key_start_running,
+            [OTMS_S_ASSERT_RUN] = task_key_assert_running,
+            [OTMS_S_RUNNING] = task_key_running,
+            [OTMS_S_POST_RUN] = task_key_post_running,
+            [OTMS_S_STOP] = task_key_stop_running,
+        },
+    },
+#endif
+		
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
     [TASK_MODULE_CAR_INFOR] = {
         .func = {
@@ -123,15 +140,15 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
     },
 #endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_KEY
-    [TASK_MODULE_KEY] = {
+#ifdef TASK_MANAGER_STATE_MACHINE_4G
+    [TASK_MODULE_4G] = {
         .func = {
-            [OTMS_S_INIT] = task_key_init_running,
-            [OTMS_S_START] = task_key_start_running,
-            [OTMS_S_ASSERT_RUN] = task_key_assert_running,
-            [OTMS_S_RUNNING] = task_key_running,
-            [OTMS_S_POST_RUN] = task_key_post_running,
-            [OTMS_S_STOP] = task_key_stop_running,
+            [OTMS_S_INIT] = task_4g_init_running,
+            [OTMS_S_START] = task_4g_start_running,
+            [OTMS_S_ASSERT_RUN] = task_4g_assert_running,
+            [OTMS_S_RUNNING] = task_4g_running,
+            [OTMS_S_POST_RUN] = task_4g_post_running,
+            [OTMS_S_STOP] = task_4g_stop_running,
         },
     },
 #endif

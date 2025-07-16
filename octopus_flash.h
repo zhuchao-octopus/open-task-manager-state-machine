@@ -230,6 +230,7 @@ extern "C"
     bool flash_is_meta_infor_valid(void);
     bool flash_is_allow_update_bank(uint8_t bank_type);
     const char *flash_get_current_bank_name(void);
+    const char *flash_get_bank_name(uint8_t bank);
     flash_meta_infor_t *flash_get_meta_infor(void);
 #ifdef __cplusplus
 }

@@ -35,21 +35,21 @@ extern "C"
 #define PTL_FRAME_MAX_SIZE 255 ///< Maximum frame size
 #define PTL_TX_TIMEOUT 50
 #define PTL_MODULE_SUPPORT_CNT 16
-    /*******************************************************************************
-     * ENUMERATIONS
-     *******************************************************************************/
 
-    // Protocol types
-    typedef enum
-    {
-        SETTING_PTL_BAFANG = 0x00,        ///< Protocol for Bafang
-        SETTING_PTL_LINGHUILIION2 = 0x01, ///< Protocol for Linghuiliion2
-        SETTING_PTL_KEY_DISP = 0x02,      ///< Protocol for KEY_DISP (KDS)
+	/*******************************************************************************
+	* ENUMERATIONS
+	*******************************************************************************/
+	typedef enum
+	{
+		SETTING_PTL_BAFANG = 0x00,        ///< Protocol for Bafang
+		SETTING_PTL_LINGHUILIION2, ///< Protocol for Linghuiliion2
+		SETTING_PTL_KEY_DISP,      ///< Protocol for KEY_DISP (KDS)
+		SETTING_PTL_LOT4G,   
+	} SETTING_PTL;
 
-        SETTING_PTL_BEGIN = SETTING_PTL_BAFANG,
-        SETTING_PTL_END = SETTING_PTL_KEY_DISP,
-    } SETTING_PTL;
-
+	#define  SETTING_PTL_BEGIN SETTING_PTL_BAFANG
+	#define  SETTING_PTL_END   SETTING_PTL_LOT4G
+		
 /* ============================== UART PTL ============================== */
 #define PTL_FRAME_MAX_SIZE 255
 
