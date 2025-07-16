@@ -99,8 +99,8 @@ void TaskManagerStateMachineInit(void)
 
     LOG_NONE(" Firmware  : v%s\r\n", OTMS_VERSION_NAME);
     LOG_NONE(" Compiled  : %s %s\r\n", __DATE__, __TIME__);
-    LOG_NONE(" Module    : %s\r\n",flash_get_current_bank_name());
-	  LOG_NONE(" Author    : Octopus Dev Team\r\n");
+    LOG_NONE(" Module    : %s\r\n", flash_get_current_bank_name());
+    LOG_NONE(" Author    : Octopus Dev Team\r\n");
     LOG_NONE("-----------------------------------------------------------------------------\r\n");
 
 #ifdef PLATFORM_CST_OSAL_RTOS

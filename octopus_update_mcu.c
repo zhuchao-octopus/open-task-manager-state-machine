@@ -26,6 +26,7 @@
 #include "octopus_update_mcu.h" // Include header for MCU update management
 #include "octopus_flash.h"		// Include flash memory handling utilities
 #include "octopus_system.h"
+
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -33,6 +34,8 @@
 /*******************************************************************************
  * MACROS
  */
+#define MCU_MODEL_NAME "HK32L088KBT6"
+
 #ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
 /*******************************************************************************
  * TYPEDEFS
@@ -169,15 +172,15 @@ bool update_is_mcu_updating(void)
 bool update_check_oupg_file_exists(void)
 {
 	const char *usb_dirs[] = {"/mnt/usbotg", "/mnt/usb1", "/mnt/usb2", "/mnt/usb3", "/tmp"};
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i <= 4; i++)
 	{
 		if (search_and_copy_oupg_files(usb_dirs[i], file_path_name_upgrade, sizeof(file_path_name_upgrade)))
 		{
-			LOG_LEVEL("Found and copied to: %s\n", file_path_name_upgrade);
+			LOG_LEVEL("Found and copied to: %s\r\n", file_path_name_upgrade);
 			return true;
 		}
 	}
-	LOG_LEVEL("Not Found and copied file: %s\n", file_path_name_upgrade);
+	LOG_LEVEL("Not Found and copied file: %s\r\n", file_path_name_upgrade);
 	return false;
 }
 
@@ -233,6 +236,12 @@ uint8_t update_get_target_bank(void)
 		return BANK_SLOT_INVALID;
 }
 
+uint32_t update_get_model_number(void)
+{
+	LOG_LEVEL("MCU_MODEL_NAME: %s\r\n", MCU_MODEL_NAME);
+	uint32_t crc = calculate_crc_32((uint8_t *)MCU_MODEL_NAME, strlen(MCU_MODEL_NAME));
+	return crc;
+}
 // Function to handle sending update module requests based on the module type and parameters
 bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
 {
@@ -288,11 +297,15 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 			uint32_t target_bank_address = flash_get_bank_address(update_get_target_bank());
 			mcu_upgrade_status.file_offset = flash_get_bank_offset_address(update_get_target_bank());
 
-			mcu_upgrade_status.file_info = parse_firmware_file(mcu_upgrade_status.file_offset, file_path_name_upgrade);
+			uint32_t model_number = update_get_model_number();
+			
+			mcu_upgrade_status.file_info = parse_firmware_file(model_number, mcu_upgrade_status.file_offset, file_path_name_upgrade);
 			uint32_t bank_address = mcu_upgrade_status.file_info.reset_handler & FLASH_BANK_MASK;
 			mcu_upgrade_status.s_length = 0;
 			mcu_upgrade_status.f_counter = 0;
 
+			LOG_LEVEL("Target Bank   : %s\n", flash_get_bank_name(update_get_target_bank()));
+            LOG_LEVEL("Model Number  : %08x\n", model_number);
 			LOG_LEVEL("File Type     : %d\n", mcu_upgrade_status.file_info.file_type);
 			LOG_LEVEL("File Size     : %zu bytes\n", mcu_upgrade_status.file_info.file_size);
 			LOG_LEVEL("File Version  : 0x%08X\n", mcu_upgrade_status.file_info.file_version);
@@ -618,6 +631,7 @@ static void update_state_process(void)
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_RECEIVING;
 			lt_mcu_program_buf.f_count = 0; // start receiving data
 			StartTickCounter(&l_t_msg_wait_2000_timer);
+			StartTickCounter(&mcu_upgrade_status.start_time);
 			send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_UPDATE, FRAME_CMD_UPDATE_REQUEST_FW_DATA, lt_mcu_program_buf.state);
 		}
 		else
@@ -735,19 +749,24 @@ static void update_state_process(void)
 		if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
 		{
 			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_a_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
+			LOG_LEVEL("It took %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
+
 			flash_save_app_meter_infor();
 			JumpToApplication(flash_meta_infor.slot_a_addr);
 		}
 		else if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 		{
 			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_b_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
+			LOG_LEVEL("It took %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
 			flash_save_app_meter_infor();
 			JumpToApplication(flash_meta_infor.slot_b_addr);
 		}
 		else
 		{
+			/// LOG_LEVEL("It took %d seconds",GetTickCounter(&mcu_upgrade_status.start_time)/1000);
 			LOG_LEVEL("lt_mcu_program_buf.bank_slot error! bank_slot=%d\n", lt_mcu_program_buf.bank_slot);
 		}
+		StopTickCounter(&mcu_upgrade_status.start_time);
 		StopTickCounter(&l_t_msg_wait_2000_timer);
 		lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
 		break;
@@ -763,6 +782,9 @@ static void update_state_process(void)
 			LOG_LEVEL("lt_mcu_program_buf.bank_slot error! bank_slot=%d\n", lt_mcu_program_buf.bank_slot);
 
 		flash_save_app_meter_infor();
+
+		LOG_LEVEL("It took %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
+		StopTickCounter(&mcu_upgrade_status.start_time);
 		StopTickCounter(&l_t_msg_wait_2000_timer);
 		lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU

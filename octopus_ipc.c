@@ -193,7 +193,7 @@ void task_ipc_running(void)
                     }
                     else
                     {
-                        LOG_LEVEL("start to enter upgrading mode\r\n");
+                        LOG_LEVEL("start to enter upgrading mode.\r\n");
                         send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE, msg->param2);
                     }
                 }
