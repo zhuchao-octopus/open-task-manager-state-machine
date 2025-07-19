@@ -23,6 +23,7 @@
  * INCLUDES
  */
 #include "octopus_platform.h"
+#include "octopus_cfifo.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -32,28 +33,31 @@ extern "C"
 /*******************************************************************************
  * MACROS
  *******************************************************************************/
-#define PTL_FRAME_MAX_SIZE 255 ///< Maximum frame size
-#define PTL_TX_TIMEOUT 50
-#define PTL_MODULE_SUPPORT_CNT 16
+#define PTL2_FIFO_MAX_SIZE 255 
+#define PTL2_FRAME_MAX_SIZE 255 ///< Maximum frame size
+//#define PTL_TX_TIMEOUT 50
+#define PTL2_MODULE_SUPPORT_CNT 3
 
 	/*******************************************************************************
 	* ENUMERATIONS
 	*******************************************************************************/
 	typedef enum
 	{
-		SETTING_PTL_BAFANG = 0x00,        ///< Protocol for Bafang
+		SETTING_PTL_BAFANG = 0x00, ///< Protocol for Bafang
 		SETTING_PTL_LINGHUILIION2, ///< Protocol for Linghuiliion2
 		SETTING_PTL_KEY_DISP,      ///< Protocol for KEY_DISP (KDS)
-		SETTING_PTL_LOT4G,   
-	} SETTING_PTL;
+		SETTING_PTL_LOT4G,  
+		SETTING_PTL_BT,		
+		SETTING_PTL_MAX,		
+	} PTL2_MODEL;
 
 	#define  SETTING_PTL_BEGIN SETTING_PTL_BAFANG
-	#define  SETTING_PTL_END   SETTING_PTL_LOT4G
+	#define  SETTING_PTL_END   (SETTING_PTL_MAX-1)
 		
 /* ============================== UART PTL ============================== */
 #define PTL_FRAME_MAX_SIZE 255
 
-    typedef SETTING_PTL ptl_2_module_t;
+    typedef PTL2_MODEL ptl_2_module_t;
 
     typedef struct
     {
@@ -65,8 +69,11 @@ extern "C"
 
     typedef struct
     {
-        ptl_2_module_t module;
-        ptl_2_module_receive_handler_t receive_handler;
+			ptl_2_module_t module;
+			ptl_2_proc_buff_t ptl_2_proc_buff;
+			ptl_2_module_receive_handler_t receive_handler;
+			cFifo_t *ptl_2_usart_rx_fifo;
+			uint8_t ptl_2_usart_rx_fifo_buff[cFifo_ObjSize(PTL2_FIFO_MAX_SIZE)];
     } ptl_2_module_info_t;
 
     void ptl_2_init_running(void);
@@ -77,10 +84,12 @@ extern "C"
     void ptl_2_stop_running(void);
 
     bool ptl_2_is_com_error(void);
-
+		
+	  uint8_t ptl_2_get_fifo_data(cFifo_t *a_ptFifo,uint8_t *buffer, uint16_t length);
+		
     void ptl_2_register_module(ptl_2_module_t module, ptl_2_module_receive_handler_t receive_handler);
-    void ptl_2_clear_revice_buff(void);
-    int ptl_2_send(const uint8_t *dataptr, size_t size);
+		void ptl_2_receive_callback(ptl_2_module_t ptl_2_module ,const uint8_t *buffer, uint16_t length);
+    void ptl_2_send_buffer(ptl_2_module_t ptl_2_module,const uint8_t *buffer, size_t size);
 
 #ifdef __cplusplus
 }

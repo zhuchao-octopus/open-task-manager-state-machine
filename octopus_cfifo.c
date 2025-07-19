@@ -120,3 +120,24 @@ bool cFifo_Pop(cFifo_t *a_ptFifo, uint8_t *a_pu8Data)
 
     return bRet;
 }
+/**
+ * @brief Check if a full line (ending with '\n') is present in the FIFO.
+ * @param[in] a_ptFifo Pointer to the circular FIFO structure.
+ * @return True if a full line is available, false otherwise.
+ */
+bool cFifo_HasLine(cFifo_t *a_ptFifo)
+{
+    if (cFifo_isEmpty(a_ptFifo)) {
+        return false;
+    }
+
+    uint32_t idx = a_ptFifo->head;
+    while (idx != a_ptFifo->tail) {
+        if (a_ptFifo->aucArr[idx] == '\n') {
+            return true; // Found a newline = complete line
+        }
+        idx = cFifo_Inc(a_ptFifo->capacity, idx);
+    }
+
+    return false; // No newline found
+}

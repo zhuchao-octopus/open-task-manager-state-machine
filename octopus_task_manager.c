@@ -28,6 +28,7 @@
 #include "octopus_carinfor.h"
 #include "octopus_ble.h"
 #include "octopus_4g.h"
+#include "octopus_bt.h"
 
 #include "octopus_update_mcu.h"
 #include "octopus_ipc.h"
@@ -153,6 +154,19 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
     },
 #endif
 
+#ifdef TASK_MANAGER_STATE_MACHINE_BT
+    [TASK_MODULE_BT] = {
+        .func = {
+            [OTMS_S_INIT] = task_bt_init_running,
+            [OTMS_S_START] = task_bt_start_running,
+            [OTMS_S_ASSERT_RUN] = task_bt_assert_running,
+            [OTMS_S_RUNNING] = task_bt_running,
+            [OTMS_S_POST_RUN] = task_bt_post_running,
+            [OTMS_S_STOP] = task_bt_stop_running,
+        },
+    },
+#endif
+		
 #ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
     [TASK_MODULE_UPDATE_MCU] = {
         .func = {

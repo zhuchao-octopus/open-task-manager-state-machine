@@ -46,6 +46,8 @@
 ///////////////////////////////////////////////////////////////////////////////////
 #define OTMS_VERSION_CODE (001)
 #define OTMS_VERSION_NAME ("0.0.1")
+
+//#define OTSM_RELEASE_VERSION OTMS_VERSION_CODE
 ///////////////////////////////////////////////////////////////////////////////////
 /*******************************************************************************
  * PROJECT SWITCH MACROS
@@ -77,7 +79,8 @@
 //#define TASK_MANAGER_STATE_MACHINE_SIF 1 /**< Secondary interface mode. */
 //#define TASK_MANAGER_STATE_MACHINE_BLE 1 
 //#define TASK_MANAGER_STATE_MACHINE_BMS 1 
-#define TASK_MANAGER_STATE_MACHINE_4G 1 
+//#define TASK_MANAGER_STATE_MACHINE_4G 1 
+#define TASK_MANAGER_STATE_MACHINE_BT 1
 #define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
 
 #define TASK_MANAGER_STATE_MACHINE_CARINFOR 1

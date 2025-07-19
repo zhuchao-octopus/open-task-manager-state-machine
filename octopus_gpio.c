@@ -415,7 +415,6 @@ bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint1
     return true;
 }
 
-
 bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
 {
   return true;

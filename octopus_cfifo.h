@@ -116,4 +116,10 @@ bool cFifo_Push(cFifo_t *a_ptFifo, uint8_t a_u8Data);
  */
 bool cFifo_Pop(cFifo_t *a_ptFifo, uint8_t *a_pu8Data);
 
+/**
+ * @brief Check if a full line (ending with '\n') is present in the FIFO.
+ * @param[in] a_ptFifo Pointer to the circular FIFO structure.
+ * @return True if a full line is available, false otherwise.
+ */
+bool cFifo_HasLine(cFifo_t *a_ptFifo);
 #endif // __OCTOPUS_TASK_MANAGER_CFIFO_H__

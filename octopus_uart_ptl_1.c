@@ -695,5 +695,5 @@ void ptl_1_hal_tx(uint8_t *data, uint16_t length)
     LOG_LEVEL("data[%02d] ", length);
     LOG_BUFF(data, length);
 #endif
-    hal_com_uart_send_buffer_1(data, length);
+    hal_com_uart_send_buffer(data, length);
 }

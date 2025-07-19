@@ -85,7 +85,7 @@ typedef enum
 	TASK_MODULE_CAR_INFOR,  /**< Car information. */
 	TASK_MODULE_BLE,        /**< BLE communication. */
 	TASK_MODULE_4G,
- 
+  TASK_MODULE_BT,
 	TASK_MODULE_UPDATE_MCU, /**< MCU firmware update. */
 	TASK_MODULE_UPDATE_SOC, /**< SOC firmware update. */
 	TASK_MODULE_CAN,

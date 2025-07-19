@@ -45,16 +45,9 @@
 // Declare function prototypes for various tasks and processing functions
 #ifdef TASK_MANAGER_STATE_MACHINE_PTL2
 
-void ptl_2_remove_none_header_data(ptl_2_proc_buff_t *buffer);           // Remove data that is not part of the header
-void ptl_2_find_valid_frame(ptl_2_proc_buff_t *buffer);                  // Find a valid frame from the received data
-void ptl_2_proc_valid_frame(ptl_2_proc_buff_t *buffer, uint16_t length); // Process the valid frame
-void ptl_2_frame_analysis_handler(void);
-void ptl_2_clear_revice_buff(void);
-
-void ptl_2_tx_event_message_handler(void); // Handle the transmission event message
+void ptl_2_proc_valid_frame(void); // Process the valid frame
 void ptl_2_rx_event_message_handler(void);
 
-void ptl_2_hal_tx(uint8_t *buffer, uint16_t length);
 bool ptl_2_is_sleep_enable(void); // Check if sleep mode is enabled
 void ptl_2_error_detect(void);    // Detect communication errors
 /*******************************************************************************
@@ -62,15 +55,15 @@ void ptl_2_error_detect(void);    // Detect communication errors
  */
 
 // static ptl_2_proc_buff_t l_t_tx_proc_buf;
-static ptl_2_proc_buff_t ptl_2_proc_buff;
+//static ptl_2_proc_buff_t ptl_2_proc_buff;
 
 static uint32_t l_t_ptl_rx_main_timer;
 static uint32_t l_t_ptl_tx_main_timer;
 static uint32_t l_t_ptl_error_detect_timer;
 static bool lb_com_error = false;
 
-static ptl_2_module_info_t l_t_module_info[PTL_MODULE_SUPPORT_CNT];
-static uint8_t l_u8_next_empty_module = 0;
+static ptl_2_module_info_t ptl_2_module_info[PTL2_MODULE_SUPPORT_CNT];
+static uint8_t ptl_2_next_empty_module = 0;
 
 /*******************************************************************************
  * GLOBAL FUNCTIONS IMPLEMENTATION
@@ -78,24 +71,26 @@ static uint8_t l_u8_next_empty_module = 0;
 
 void ptl_2_register_module(ptl_2_module_t module, ptl_2_module_receive_handler_t receive_handler)
 {
-    if (l_u8_next_empty_module < PTL_MODULE_SUPPORT_CNT)
+    if (ptl_2_next_empty_module < PTL2_MODULE_SUPPORT_CNT)
     {
         LOG_LEVEL("ptl_2_register_module %d\r\n", module);
-        l_t_module_info[l_u8_next_empty_module].module = module;
-        l_t_module_info[l_u8_next_empty_module].receive_handler = receive_handler;
-        l_u8_next_empty_module++;
-    }
+        ptl_2_module_info[ptl_2_next_empty_module].module = module;
+        ptl_2_module_info[ptl_2_next_empty_module].receive_handler = receive_handler;
+			  cFifo_Init(&ptl_2_module_info[ptl_2_next_empty_module].ptl_2_usart_rx_fifo, ptl_2_module_info[ptl_2_next_empty_module].ptl_2_usart_rx_fifo_buff, sizeof(ptl_2_module_info[ptl_2_next_empty_module].ptl_2_usart_rx_fifo_buff));
+        
+			  ptl_2_next_empty_module++;
+		}
 }
 
 ptl_2_module_info_t *ptl_2_get_module(ptl_2_module_t module)
 {
     ptl_2_module_info_t *module_info = NULL;
 
-    for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
+    for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
     {
-        if (l_t_module_info[i].module == (module))
+        if (ptl_2_module_info[i].module == (module))
         {
-            module_info = &l_t_module_info[i];
+            module_info = &ptl_2_module_info[i];
             break;
         }
     }
@@ -136,12 +131,9 @@ void ptl_2_running(void)
     }
     else
     {
-        ptl_2_tx_event_message_handler();
         ptl_2_rx_event_message_handler();
 
-        /// ptl_2_frame_analysis_handler();
-        ptl_2_proc_valid_frame(&ptl_2_proc_buff, ptl_2_proc_buff.size);
-        /// ptl_2_error_detect();
+        ptl_2_proc_valid_frame();
     }
 }
 
@@ -188,16 +180,42 @@ bool ptl_2_is_sleep_enable(void)
     }
 }
 
-void ptl_2_receive_handler(uint8_t data)
+uint8_t ptl_2_get_fifo_data(cFifo_t *a_ptFifo,uint8_t *buffer, uint16_t length)
 {
-}
+    uint8_t data = 0;  // Variable to hold each byte read from the FIFO
+    uint8_t index = 0; // Index to track how many bytes have been stored in the buffer
 
-/**
- * Handles the event message for transmitting data via UART.
- * Checks if enough time has passed since the last transmission and sends the data if necessary.
- */
-void ptl_2_tx_event_message_handler(void)
-{
+    // Get the current size of the FIFO (number of available bytes to read)
+    // uint8_t datasize = cFifo_DataSize(ptl_1_usart_rx_fifo);
+    // if(datasize <= 0) return index;
+    // Loop to read data from FIFO until we either fill the buffer or run out of data
+    while (1)
+    {
+        // If we haven't reached the desired length and there's still data in the FIFO
+        if (index < length)
+        {
+            // Try to pop a byte from the FIFO
+            if (true == cFifo_Pop(a_ptFifo, &data))
+            {
+                // Store the byte in the provided buffer
+                buffer[index] = data;
+                index++; // Increment the index to store the next byte
+            }
+            else
+            {
+                // If no more data is available in the FIFO, exit the loop
+                break;
+            }
+        }
+        else
+        {
+            // If we've already read the desired number of bytes, exit the loop
+            break;
+        }
+    }
+
+    // Return the number of bytes actually read from the FIFO
+    return index;
 }
 
 /**
@@ -206,176 +224,50 @@ void ptl_2_tx_event_message_handler(void)
  */
 void ptl_2_rx_event_message_handler(void)
 {
-    // Call the HAL function to process received byte
-    // #ifdef PLATFORM_ITE_OPEN_RTOS
-    /// uint8_t data = 0;
     uint8_t count = 0;
-    while (1)
+    //while (1)
+	  for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
     {
-        if (ptl_2_proc_buff.size < PTL_FRAME_MAX_SIZE)
+			 ptl_2_proc_buff_t *proc_buffer = &ptl_2_module_info[i].ptl_2_proc_buff;
+       uint8_t module_id = ptl_2_module_info[i].module;
+			
+       if (ptl_2_module_info[i].ptl_2_proc_buff.size < PTL2_FRAME_MAX_SIZE)
         {
-            count = hal_com_uart_get_fifo_data_2(&ptl_2_proc_buff.buffer[ptl_2_proc_buff.size], PTL_FRAME_MAX_SIZE - ptl_2_proc_buff.size);
+					 if(module_id == SETTING_PTL_BT)
+					 {
+						  // For AT command module: Read until we get a '\n' or fill the buffer
+							while (cFifo_HasLine(ptl_2_module_info[i].ptl_2_usart_rx_fifo))
+							{
+									uint8_t byte = 0;
+									count = ptl_2_get_fifo_data(ptl_2_module_info[i].ptl_2_usart_rx_fifo, &byte, 1);
+									if (count > 0)
+									{
+										proc_buffer->buffer[proc_buffer->size++] = byte;
+										// Stop when reaching end of an AT command line
+										if (byte == '\n')
+										{
+											proc_buffer->buffer[proc_buffer->size++] = '\0';
+											//LOG_LEVEL("%s",proc_buffer->buffer);
+											if (ptl_2_module_info[i].ptl_2_proc_buff.size >= PTL2_FRAME_MAX_SIZE/2) break;
+										}
+								  }
+							}
+					 }
+					 else
+					 {
+            count = ptl_2_get_fifo_data(
+					          ptl_2_module_info[i].ptl_2_usart_rx_fifo, 
+					          &ptl_2_module_info[i].ptl_2_proc_buff.buffer[ptl_2_module_info[i].ptl_2_proc_buff.size], 
+					          PTL2_FRAME_MAX_SIZE - ptl_2_module_info[i].ptl_2_proc_buff.size);	 
             if (count <= 0)
-                break;
-            ptl_2_proc_buff.size = ptl_2_proc_buff.size + count;
+               continue;
+            ptl_2_module_info[i].ptl_2_proc_buff.size = ptl_2_module_info[i].ptl_2_proc_buff.size + count;
+				  }
         }
-        else
+       else
         {
-            break;
+            continue;
         }
-    }
-    // #endif
-}
-
-/**
- * Analyzes the received frame by first removing any non-header data,
- * and then processing any valid frames.
- */
-void ptl_2_frame_analysis_handler(void)
-{
-    // Remove data that is not part of the header
-    ptl_2_remove_none_header_data(&ptl_2_proc_buff);
-
-    // Process the valid frame found in the buffer
-    ptl_2_find_valid_frame(&ptl_2_proc_buff);
-}
-
-/**
- * Removes any data from the buffer that is not part of the header.
- * Only keeps the data after the SOC_TO_MCU_PTL_HEADER byte.
- */
-void ptl_2_remove_none_header_data(ptl_2_proc_buff_t *proc_buff)
-{
-// If the first byte is SOC_TO_MCU_PTL_HEADER, no action needed
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    if (proc_buff->buffer[0] == SOC_TO_MCU_PTL_HEADER)
-        return;
-    // Search for SOC_TO_MCU_PTL_HEADER and remove data before it
-    for (uint16_t i = 0; i < proc_buff->size; i++)
-    {
-        if (proc_buff->buffer[i] == SOC_TO_MCU_PTL_HEADER)
-        {
-            // Shift data to remove the position before the header
-            for (uint16_t j = i; j < proc_buff->size; j++)
-            {
-                proc_buff->buffer[j - i] = proc_buff->buffer[j];
-            }
-            proc_buff->size -= i;
-            return;
-        }
-    }
-#endif
-#ifdef TASK_MANAGER_STATE_MACHINE_SOC
-    if (proc_buff->buffer[0] == MCU_TO_SOC_PTL_HEADER)
-        return;
-    for (uint16_t i = 0; i < proc_buff->size; i++)
-    {
-        if (proc_buff->buffer[i] == MCU_TO_SOC_PTL_HEADER)
-        {
-            // remove data before header
-            for (uint16_t j = i; j < proc_buff->size; j++)
-            {
-                proc_buff->buffer[j - i] = proc_buff->buffer[j];
-            }
-            proc_buff->size -= i;
-            return;
-        }
-    }
-
-#endif
-    // If _PTL_HEADER is not found, clear the buffer
-    proc_buff->size = 0;
-}
-
-/**
- * Finds a valid frame in the received buffer.
- * Validates the header and frame checksums.
- */
-void ptl_2_find_valid_frame(ptl_2_proc_buff_t *proc_buff)
-{
-    uint8_t datalen = 0;            // Data length
-    uint8_t framelen = 0;           // Frame length
-    uint8_t crc;                    // Header checksum
-    uint8_t crc_read = 0;           // Read checksum value
-    bool head_crc_ok = false;       // Flag for header checksum validity
-    bool frame_crc_ok = false;      // Flag for frame checksum validity
-    bool found = false;             // Flag to indicate if a valid frame is found
-    bool header_invalid = false;    // Flag for invalid header detection
-    uint16_t next_valid_offset = 0; // Next valid frame offset
-    uint16_t offset = 0;            // Header offset
-
-    // Iterate through the received buffer to find a valid frame
-    for (uint16_t i = 0; i < proc_buff->size; i++)
-    {
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
-        if (proc_buff->buffer[i] == SOC_TO_MCU_PTL_HEADER)
-        {
-#else
-        if (proc_buff->buffer[i] == MCU_TO_SOC_PTL_HEADER)
-        {
-#endif
-            offset = i;
-            datalen = proc_buff->buffer[i + 3];
-            framelen = datalen + PTL_FRAME_HEADER_SIZE + 1;
-
-            // Ensure minimum frame size is met
-            if ((framelen < PTL_FRAME_MIN_SIZE) && (proc_buff->size >= PTL_FRAME_MIN_SIZE) && (offset == 0))
-            {
-                next_valid_offset = PTL_FRAME_MIN_SIZE;
-            }
-            else if ((framelen >= PTL_FRAME_MIN_SIZE) && (framelen <= (proc_buff->size - offset)))
-            {
-                // Validate header checksum
-                crc = ptl_get_checksum(&proc_buff->buffer[offset], PTL_FRAME_HEADER_SIZE - 1);
-                crc_read = proc_buff->buffer[offset + PTL_FRAME_HEADER_SIZE - 1];
-                head_crc_ok = (crc == crc_read);
-
-                if (head_crc_ok)
-                {
-                    // Validate frame checksum
-                    crc = ptl_get_checksum(&(proc_buff->buffer[offset + PTL_FRAME_HEADER_SIZE - 1]), (datalen + 1));
-                    crc_read = proc_buff->buffer[offset + PTL_FRAME_HEADER_SIZE + datalen];
-                    frame_crc_ok = (crc == crc_read);
-                }
-
-                // If both header and frame checksums are valid, process the frame
-                if (head_crc_ok && frame_crc_ok)
-                {
-                    next_valid_offset = offset + framelen;
-                    found = true;
-                    break;
-                }
-                else
-                {
-                    // If the first header is invalid, mark it and skip to next frame
-                    if ((offset == 0) || (header_invalid == true))
-                    {
-                        header_invalid = true;
-                        next_valid_offset = framelen + offset;
-                    }
-                }
-            }
-            else
-            {
-                // No valid frame found yet, continue searching
-            }
-        }
-    }
-
-    // If a valid frame is found, process it
-    if (found == true)
-    {
-        // ptl_2_proc_valid_frame(proc_buff->buffer + offset, framelen);
-    }
-
-    // Shift buffer data if a valid frame is found
-    if (next_valid_offset != 0)
-    {
-        for (uint16_t i = next_valid_offset; i < proc_buff->size; i++)
-        {
-            proc_buff->buffer[i - next_valid_offset] = proc_buff->buffer[i];
-        }
-        proc_buff->size = proc_buff->size - next_valid_offset;
     }
 }
 
@@ -383,13 +275,8 @@ void ptl_2_find_valid_frame(ptl_2_proc_buff_t *proc_buff)
  * Processes the valid frame after it has been extracted from the buffer.
  * The payload is passed to the appropriate module handler.
  */
-void ptl_2_proc_valid_frame(ptl_2_proc_buff_t *ptl_2_proc_buff, uint16_t length)
+void ptl_2_proc_valid_frame(void)
 {
-    if (0 == ptl_2_proc_buff->size)
-    {
-        return;
-    }
-
 #ifdef TEST_LOG_DEBUG_PTL_RX_FRAME
     if (length > 0)
     {
@@ -398,31 +285,30 @@ void ptl_2_proc_valid_frame(ptl_2_proc_buff_t *ptl_2_proc_buff, uint16_t length)
     }
 #endif
 
-    for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
+    for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
     {
-        if (!l_t_module_info[i].receive_handler)
-        {
-            LOG_LEVEL("l_t_module_info[i].receive_handler is null.");
-            continue;
-        }
+				ptl_2_module_info_t *module_info = &ptl_2_module_info[i];
 
-        bool res = l_t_module_info[i].receive_handler(ptl_2_proc_buff);
+				if(module_info->receive_handler == NULL)
+				{
+					LOG_LEVEL("l_t_module_info[i].receive_handler is null.");
+					continue;
+				}
 
+        bool res = module_info->receive_handler(&(module_info->ptl_2_proc_buff));
         if (res)
         {
-            ptl_2_proc_buff->size = 0;
-            ptl_2_clear_revice_buff();
-            return;
+            module_info->ptl_2_proc_buff.size = 0;
         }
     }
+		
+    for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
+		{
+      if (ptl_2_module_info[i].ptl_2_proc_buff.size > 10)
+        ptl_2_module_info[i].ptl_2_proc_buff.size = 0;
+	  }
+}
 
-    if (ptl_2_proc_buff->size > 10)
-        ptl_2_clear_revice_buff();
-}
-void ptl_2_clear_revice_buff(void)
-{
-    ptl_2_proc_buff.size = 0;
-}
 /**
  * Detects communication errors based on the error detection timer.
  * If the opposite side is running and the timeout expires, mark an error.
@@ -432,19 +318,51 @@ void ptl_2_error_detect(void)
     if (GetTickCounter(&l_t_ptl_error_detect_timer) > 5000)
     {
         StartTickCounter(&l_t_ptl_error_detect_timer);
-        /// if (lb_opposite_running)
-        ///{
-        ///     lb_com_error = true;
-        /// }
     }
 }
 
-/**
- * Sends data over UART using the hardware abstraction layer.
- */
-void ptl_2_hal_tx(uint8_t *buffer, uint16_t length)
+void ptl_2_receive_callback(ptl_2_module_t ptl_2_module ,const uint8_t *buffer, uint16_t length)
 {
-    hal_com_uart_send_buffer_2(buffer, length);
+#ifdef TEST_LOG_DEBUG_UART_RX_DATA
+    LOG_BUFF_LEVEL(buffer, length);
+#endif
+	for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
+	{
+		if(ptl_2_module_info[i].module == ptl_2_module)
+		{
+				for (i = 0; i < length; i++)
+				{
+						cFifo_Push(ptl_2_module_info[i].ptl_2_usart_rx_fifo, buffer[i]);
+				}
+				return;
+	  }
+	}
+}
+
+void ptl_2_send_buffer(ptl_2_module_t ptl_2_module,const uint8_t *buffer, size_t size)
+{
+		if (buffer == NULL || size == 0) {
+				return;
+		}
+
+    switch (ptl_2_module) {
+        case SETTING_PTL_BAFANG:
+            LPUART_Send_Buffer(buffer, size);
+            break;
+
+        case SETTING_PTL_LINGHUILIION2:
+            break;
+
+        case SETTING_PTL_KEY_DISP:
+            break;
+
+        case SETTING_PTL_LOT4G:
+            UART4_Send_Buffer(buffer, size);
+            break;
+
+        default:
+            break;
+    }	
 }
 
 #endif

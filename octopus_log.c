@@ -28,75 +28,66 @@
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_log.h"      // Include logging functions for debugging
 
-#define ZEROPAD 1  // Pad with zero
-#define SIGN 2     // Unsigned/signed long
-#define PLUS 4     // Show plus
-#define SPACE 8    // Space if plus
-#define LEFT 16    // Left justified
-#define SPECIAL 32 // 0x
-#define LARGE 64   // Use 'ABCDEF' instead of 'abcdef'
-#define is_digit(c) ((c) >= '0' && (c) <= '9')
-#define LOG_DEFAULT_MAX_WIDTH 28
-
+#ifdef OTSM_RELEASE_VERSION
+DBG_LOG_LEVEL current_log_level = LOG_LEVEL_NONE;
+#else
 DBG_LOG_LEVEL current_log_level = LOG_LEVEL_DEBUG;
+#endif
+
+#define LOG_DEFAULT_MAX_WIDTH 28
+#define USE_MY_PRINTF
 
 #ifdef USE_MY_PRINTF
+
+#define FMT_FLAG_LEFT     (1 << 0)  // Left justify (for '-')
+#define FMT_FLAG_PLUS     (1 << 1)  // Show positive sign '+' (for signed numbers)
+#define FMT_FLAG_SPACE    (1 << 2)  // Show space for positive numbers (for signed numbers)
+#define FMT_FLAG_ZERO     (1 << 3)  // Pad with zeros (for numbers)
+#define FMT_FLAG_SPECIAL  (1 << 4)  // Prefix for octal (0) or hexadecimal (0x)
+#define FMT_FLAG_SIGN     (1 << 5)  // Flag for signed numbers (e.g. positive or negative integers)
+#define FMT_FLAG_LARGE    (1 << 6)  // Use uppercase letters for hexadecimal (e.g., 'A'-'F')
+
 static const char *digits = "0123456789abcdefghijklmnopqrstuvwxyz";
 static const char *upper_digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-/**
- * @brief Calculates the length of a string up to a specified limit.
- * @param s The string to be measured.
- * @param count The maximum number of characters to check.
- * @return The length of the string, or `count` if the string exceeds `count`.
- */
-static size_t strnlen__(const char *s, size_t count)
-{
-    const char *sc;
-    for (sc = s; *sc != '\0' && count--; ++sc)
-        ;
+// Check if a character is a digit
+static inline int is_digital(char c) {
+    return c >= '0' && c <= '9';
+}
+
+// Calculate string length with max limit
+static size_t strnlen__(const char *s, size_t count) {
+    const char *sc = s;
+    while (*sc != '\0' && count--) ++sc;
     return sc - s;
 }
 
-/**
- * @brief Converts a string to an integer (atoi), skipping non-digit characters.
- * @param s Pointer to the string to process.
- * @return The converted integer.
- */
-static int skip_atoi__(const char **s)
-{
+// Convert string to int (used for width/precision parsing)
+static int skip_atoi__(const char **s) {
     int i = 0;
-    while (is_digit(**s))
+    while (is_digital(**s))
         i = i * 10 + *((*s)++) - '0';
     return i;
 }
 
-/**
- * @brief Formats and outputs a number in various bases (decimal, hexadecimal, etc.).
- * @param putc Callback function for output.
- * @param num The number to be printed.
- * @param base The base to use (e.g., 10 for decimal, 16 for hexadecimal).
- * @param size The width of the field (for padding).
- * @param precision The minimum number of digits to display.
- * @param type Format flags (e.g., left padding, sign, zero padding).
- */
+// Print number in specified base with formatting
 static void number__(std_putc putc, long num, int base, int size, int precision, int type)
 {
-    char c, sign, tmp[66];
+    char sign, tmp[66];
     const char *dig = digits;
     int i;
     char tmpch;
 
-    if (type & LARGE)
+    if (type & FMT_FLAG_LARGE)
         dig = upper_digits;
-    if (type & LEFT)
-        type &= ~ZEROPAD;
+    if (type & FMT_FLAG_LEFT)
+        type &= ~FMT_FLAG_ZERO;
     if (base < 2 || base > 36)
         return;
 
-    c = (type & ZEROPAD) ? '0' : ' ';
+    //c = (type & FMT_FLAG_ZERO) ? '0' : ' ';
     sign = 0;
-    if (type & SIGN)
+    if (type & FMT_FLAG_SIGN)
     {
         if (num < 0)
         {
@@ -104,24 +95,25 @@ static void number__(std_putc putc, long num, int base, int size, int precision,
             num = -num;
             size--;
         }
-        else if (type & PLUS)
+        else if (type & FMT_FLAG_PLUS)
         {
             sign = '+';
             size--;
         }
-        else if (type & SPACE)
+        else if (type & FMT_FLAG_SPACE)
         {
             sign = ' ';
             size--;
         }
     }
-    if (type & SPECIAL)
+    if (type & FMT_FLAG_SPECIAL)
     {
         if (base == 16)
             size -= 2;
         else if (base == 8)
             size--;
     }
+
     i = 0;
     if (num == 0)
         tmp[i++] = '0';
@@ -133,10 +125,16 @@ static void number__(std_putc putc, long num, int base, int size, int precision,
             num = ((unsigned long)num) / (unsigned)base;
         }
     }
+
+    // Handle precision for zero-padded hexadecimal numbers
+    if (base == 16 && precision < 2)
+        precision = 2; // Ensure at least two digits for hexadecimal (e.g., "0x01" instead of "0x1")
+
     if (i > precision)
         precision = i;
+
     size -= precision;
-    if (!(type & (ZEROPAD | LEFT)))
+    if (!(type & (FMT_FLAG_ZERO | FMT_FLAG_LEFT)))
     {
         while (size-- > 0)
         {
@@ -144,12 +142,13 @@ static void number__(std_putc putc, long num, int base, int size, int precision,
             putc(&tmpch, 1);
         }
     }
+
     if (sign)
     {
         putc(&sign, 1);
     }
 
-    if (type & SPECIAL)
+    if (type & FMT_FLAG_SPECIAL)
     {
         if (base == 8)
         {
@@ -160,27 +159,32 @@ static void number__(std_putc putc, long num, int base, int size, int precision,
         {
             tmpch = '0';
             putc(&tmpch, 1);
-            tmpch = digits[33];
+            tmpch = 'x'; // '0x' prefix for hexadecimal numbers
             putc(&tmpch, 1);
         }
     }
-    if (!(type & LEFT))
+
+    if (!(type & FMT_FLAG_LEFT))
     {
         while (size-- > 0)
         {
-            putc(&c, 1);
+            tmpch = ' ';
+            putc(&tmpch, 1);
         }
     }
+
     while (i < precision--)
     {
-        tmpch = '0';
+        tmpch = '0';  // Fill with zeroes if the number is shorter than precision
         putc(&tmpch, 1);
     }
+
     while (i-- > 0)
     {
         tmpch = tmp[i];
         putc(&tmpch, 1);
     }
+
     while (size-- > 0)
     {
         tmpch = ' ';
@@ -188,30 +192,26 @@ static void number__(std_putc putc, long num, int base, int size, int precision,
     }
 }
 
-/**
- * @brief Internal function for formatted string processing.
- * @param putc Callback function to handle character output.
- * @param fmt The format string.
- * @param args Variable arguments to process the format string.
- */
 static void vsprintf__(std_putc putc, const char *fmt, va_list args)
 {
     int len;
     unsigned long num;
     int base;
     char *s;
-    int flags;       // Flags to number()
-    int field_width; // Width of output field
-    int precision;   // Min. # of digits for integers; max number of chars for strings
-    int qualifier;   // 'h', 'l', or 'L' for integer fields
+    int flags = 0;       // Flags for number formatting
+    int field_width = -1; // Width of output field
+    int precision = -1;   // Min. # of digits for integers; max for strings
+    int qualifier = -1;   // 'h', 'l', or 'L' for integer fields
     char *tmpstr = NULL;
     int tmpstr_size = 0;
     char tmpch;
 
+    // Iterate over the format string
     for (; *fmt; fmt++)
     {
         if (*fmt != '%')
         {
+            // Process non-format characters
             if (tmpstr == NULL)
             {
                 tmpstr = (char *)fmt;
@@ -227,32 +227,32 @@ static void vsprintf__(std_putc putc, const char *fmt, va_list args)
             tmpstr_size = 0;
         }
 
-        // Process flags
+        // Parse flags like '-', '+', ' ', etc.
         flags = 0;
     repeat:
         fmt++; // Skip the first '%'
         switch (*fmt)
         {
         case '-':
-            flags |= LEFT;
+            flags |= FMT_FLAG_LEFT;
             goto repeat;
         case '+':
-            flags |= PLUS;
+            flags |= FMT_FLAG_PLUS;
             goto repeat;
         case ' ':
-            flags |= SPACE;
+            flags |= FMT_FLAG_SPACE;
             goto repeat;
         case '#':
-            flags |= SPECIAL;
+            flags |= FMT_FLAG_SPECIAL;
             goto repeat;
         case '0':
-            flags |= ZEROPAD;
+            flags |= FMT_FLAG_ZERO;
             goto repeat;
         }
 
-        // Get field width
+        // Get field width (e.g., for padding)
         field_width = -1;
-        if (is_digit(*fmt))
+        if (is_digital(*fmt))
             field_width = skip_atoi__(&fmt);
         else if (*fmt == '*')
         {
@@ -261,16 +261,16 @@ static void vsprintf__(std_putc putc, const char *fmt, va_list args)
             if (field_width < 0)
             {
                 field_width = -field_width;
-                flags |= LEFT;
+                flags |= FMT_FLAG_LEFT;
             }
         }
 
-        // Get precision
+        // Get precision for integers or strings
         precision = -1;
         if (*fmt == '.')
         {
             ++fmt;
-            if (is_digit(*fmt))
+            if (is_digital(*fmt))
                 precision = skip_atoi__(&fmt);
             else if (*fmt == '*')
             {
@@ -281,7 +281,7 @@ static void vsprintf__(std_putc putc, const char *fmt, va_list args)
                 precision = 0;
         }
 
-        // Get the conversion qualifier
+        // Get the conversion qualifier (e.g., 'h', 'l')
         qualifier = -1;
         if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L')
         {
@@ -289,12 +289,13 @@ static void vsprintf__(std_putc putc, const char *fmt, va_list args)
             fmt++;
         }
 
-        // Default base
+        // Default base (decimal)
         base = 10;
         switch (*fmt)
         {
         case 'c':
-            if (!(flags & LEFT))
+            // Character
+            if (!(flags & FMT_FLAG_LEFT))
             {
                 while (--field_width > 0)
                 {
@@ -304,7 +305,6 @@ static void vsprintf__(std_putc putc, const char *fmt, va_list args)
             }
             tmpch = (unsigned char)va_arg(args, int);
             putc(&tmpch, 1);
-
             while (--field_width > 0)
             {
                 tmpch = ' ';
@@ -312,11 +312,12 @@ static void vsprintf__(std_putc putc, const char *fmt, va_list args)
             }
             continue;
         case 's':
+            // String
             s = va_arg(args, char *);
             if (!s)
                 s = "<NULL>";
             len = strnlen__(s, precision);
-            if (!(flags & LEFT))
+            if (!(flags & FMT_FLAG_LEFT))
             {
                 while (len < field_width--)
                 {
@@ -332,25 +333,31 @@ static void vsprintf__(std_putc putc, const char *fmt, va_list args)
             }
             continue;
         case 'p':
+            // Pointer (address)
             if (field_width == -1)
             {
                 field_width = 2 * sizeof(void *);
-                flags |= ZEROPAD;
+                flags |= FMT_FLAG_ZERO;
             }
             number__(putc, (unsigned long)va_arg(args, void *), 16, field_width, precision, flags);
             continue;
         case 'o':
+            // Octal
             base = 8;
             break;
         case 'X':
-            flags |= LARGE;
+            // Uppercase hexadecimal
+            flags |= FMT_FLAG_LARGE;
         case 'x':
+            // Hexadecimal
             base = 16;
             break;
         case 'd':
         case 'i':
-            flags |= SIGN;
+            // Signed decimal
+            flags |= FMT_FLAG_SIGN;
         case 'u':
+            // Unsigned decimal
             break;
         default:
             if (*fmt != '%')
@@ -370,40 +377,37 @@ static void vsprintf__(std_putc putc, const char *fmt, va_list args)
             continue;
         }
 
+        // Determine the number type (signed or unsigned)
         if (qualifier == 'l')
             num = va_arg(args, unsigned long);
         else if (qualifier == 'h')
         {
-            if (flags & SIGN)
+            if (flags & FMT_FLAG_SIGN)
                 num = va_arg(args, int);
             else
                 num = va_arg(args, unsigned int);
         }
-        else if (flags & SIGN)
+        else if (flags & FMT_FLAG_SIGN)
             num = va_arg(args, int);
         else
             num = va_arg(args, unsigned int);
 
+        // Output the formatted number
         number__(putc, num, base, field_width, precision, flags);
     }
+
+    // Output any remaining characters
     if (tmpstr_size)
     {
         putc(tmpstr, tmpstr_size);
-        tmpstr = NULL;
-        tmpstr_size = 0;
     }
 }
 
-/**
- * @brief Native UART function to send a buffer of data.
- * @param data The data buffer to send.
- * @param size The size of the data buffer.
- */
 static void native_uart_putc(char *data, uint16_t size)
 {
-    //HalUartSendBuf(UART0, (uint8_t *)data, size);
-	UART1_Send_Buffer((uint8_t *)data, size);
+	UART2_Send_Buffer((uint8_t *)data, size);
 }
+
 #endif
 
 /**
