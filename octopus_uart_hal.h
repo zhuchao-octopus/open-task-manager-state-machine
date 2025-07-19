@@ -60,7 +60,6 @@ extern "C"
      * FUNCTIONS
      * Function prototypes for UART communication and protocol handling.
      */
-    // void dbg_log_printf_init(void);
     void uart_init(void);
     // Initializes the UART protocol (e.g., UART configuration, GPIO, etc.)
     void hal_uart_init(uint8_t task_id);

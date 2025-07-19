@@ -28,6 +28,8 @@
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_log.h"      // Include logging functions for debugging
 
+#define OTSM_DEBUG_USART1 
+
 #ifdef OTSM_RELEASE_VERSION
 DBG_LOG_LEVEL current_log_level = LOG_LEVEL_NONE;
 #else
@@ -405,7 +407,11 @@ static void vsprintf__(std_putc putc, const char *fmt, va_list args)
 
 static void native_uart_putc(char *data, uint16_t size)
 {
+	#ifdef OTSM_DEBUG_USART2
 	UART2_Send_Buffer((uint8_t *)data, size);
+	#else
+	UART1_Send_Buffer((uint8_t *)data, size);
+	#endif
 }
 
 #endif
@@ -517,7 +523,6 @@ void dbg_log_printf_buffer_level(const char *function_name, const uint8_t *buff,
 {
     if (buff == NULL || length == 0)
     {
-        /// dbg_log_printf_level(function_name, "Invalid buffer or length");
         return;
     }
     dbg_log_printf_level(function_name, "");

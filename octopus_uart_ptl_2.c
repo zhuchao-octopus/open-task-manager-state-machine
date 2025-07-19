@@ -50,13 +50,10 @@ void ptl_2_rx_event_message_handler(void);
 
 bool ptl_2_is_sleep_enable(void); // Check if sleep mode is enabled
 void ptl_2_error_detect(void);    // Detect communication errors
+
 /*******************************************************************************
  * STATIC VARIABLES
  */
-
-// static ptl_2_proc_buff_t l_t_tx_proc_buf;
-//static ptl_2_proc_buff_t ptl_2_proc_buff;
-
 static uint32_t l_t_ptl_rx_main_timer;
 static uint32_t l_t_ptl_tx_main_timer;
 static uint32_t l_t_ptl_error_detect_timer;

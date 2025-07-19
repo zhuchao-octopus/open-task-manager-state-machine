@@ -25,9 +25,14 @@
 #include "octopus_uart_ptl_2.h" // Include UART protocol header
 
 /*******************************************************************************
- * DEBUG SWITCH MACROS
- */
- 
+* DEBUG SWITCH MACROS
+*/
+
+/*******************************************************************************
+* MACROS
+*/
+#define BT_PAIRED_DISTANCE -30
+
 #ifdef TASK_MANAGER_STATE_MACHINE_BT
 
 static bt_device_t bt_device_list[MAX_BT_DEVICES];
@@ -44,24 +49,24 @@ bt_device_t last_best_dev = {0};
 
 void bt_module_init(void);
 void bt_state_manager(void);
+
 void bt_connect_last_device(void);
+void bt_connect_selected_device(void);
 void bt_send_at_command(const char *format, ...);
 bool bt_is_audio_device(const bt_device_t *dev); 
 bool bt_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff);
-
-void bt_query_connected_devices(void);
 
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
 
 static uint32_t l_t_msg_wait_10_timer = 0;
-static uint32_t l_t_bt_state_polling_timer_3s = 0;
+static uint32_t l_t_bt_state_polling_timer_10s = 0;
 //static uint32_t l_t_msg_ble_pair_wait_timer = 0;
 //static uint32_t l_t_msg_ble_lock_wait_timer = 0;
 static bool bt_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff);
-// static bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff);
-// static bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
+//static bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff);
+//static bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
@@ -86,7 +91,7 @@ void task_bt_start_running(void)
 void task_bt_assert_running(void)
 {
 	StartTickCounter(&l_t_msg_wait_10_timer);
-	StartTickCounter(&l_t_bt_state_polling_timer_3s);
+	StartTickCounter(&l_t_bt_state_polling_timer_10s);
 	OTMS(TASK_MODULE_BT, OTMS_S_RUNNING);
 }
 
@@ -121,7 +126,7 @@ void bt_module_init(void)
 {
 	// Optional: wait for module to power up and stabilize
 	// delay_ms(800);
-  LOG_LEVEL("bt init...\r\n");
+  LOG_LEVEL("bt module init...\r\n");
 	// 1. Check if the Bluetooth module is alive
 	bt_send_at_command("AT\r\n");  // Expect "OK"
 
@@ -152,55 +157,82 @@ void bt_module_init(void)
 	// send_at_command("AT+A2DPCONN=AC:DE:48:00:11:22\r\n");  // Replace with actual BT address
 }
 
-void bt_state_manager(void)
-{
-    if (GetTickCounter(&l_t_bt_state_polling_timer_3s) < 10000)
-        return;
-		
-    StartTickCounter(&l_t_bt_state_polling_timer_3s);
-	
-		LOG_LEVEL("bt a2dp status... \r\n");
-    bt_send_at_command("AT+A2DPSTAT\r\n");
-
-    switch (bt_current_state)
-    {
-        case BT_STATE_DISCONNECTED:		   
-						if (last_best_dev.address[0] != '\0') {
-								//bt_connect_last_device();
-								bt_connect_by_name("C3");
-						} 
-			
-						{ 
-								bt_start_scan();          
-						}
-				break;
-        case BT_STATE_CONNECTED:
-        case BT_STATE_PLAYING:
-        default:
-            break;
-    }
-}
-
-void bt_clear_device_list(void)
-{
-	bt_device_count = 0;
-	//memset(bt_device_list, 0, sizeof(bt_device_t));
-	bt_device_count = 0;
-	//memset(&selected_best_dev, 0, sizeof(bt_device_t));
-	selected_best_dev.address[0] = '\0';
-	selected_best_dev.rssi = -100;
-	
-	last_best_dev.address[0] = '\0';
-	last_best_dev.rssi = -100;
-	
-	bt_current_state = BT_STATE_DISCONNECTED;
-}
-
+/**
+ * @brief Start scanning for nearby Bluetooth devices.
+ *
+ * This function performs the following:
+ *  1. Logs a debug message indicating that scanning is about to begin.
+ *  2. Clears the internal list of previously found Bluetooth devices.
+ *  3. Sends the AT command "AT+SCAN=1,10" to the Bluetooth module:
+ *     - "1" starts the scan mode.
+ *     - "10" sets the scan duration to 10 units of 1.28s = ~12.8 seconds.
+ *
+ * The scan results are expected to be received asynchronously through the UART
+ * in the form of "+SCAN=type,rssi,addr,name,class" lines, which should be parsed 
+ * and stored elsewhere (e.g., in bt_parse_scan_line()).
+ */
 void bt_start_scan(void)
 {
-	LOG_LEVEL("bt scan... devices\r\n");
-	bt_clear_device_list();
-	bt_send_at_command("AT+SCAN=1,10\r\n"); // scan for ~12.8s
+    // Log scan initiation
+    LOG_LEVEL("bt scan... devices\r\n");
+
+    // Clear the previously stored device list to start fresh
+    bt_clear_device_list();
+
+    // Send AT command to initiate scan
+    bt_send_at_command("AT+SCAN=1,10\r\n"); // Scan for ~12.8 seconds
+}
+
+/**
+ * @brief Manage Bluetooth state and perform periodic actions.
+ * 
+ * This function is designed to be called periodically (e.g., in a main loop or timer event).
+ * It handles:
+ *  - Periodic A2DP status querying
+ *  - Attempting to reconnect to a previously connected device
+ *  - Scanning for available Bluetooth devices if not connected
+ */
+void bt_state_manager(void)
+{
+    // Check if 10 seconds have passed since the last state check
+    if (GetTickCounter(&l_t_bt_state_polling_timer_10s) < 10000)
+        return;
+
+    // Restart the 10-second timer
+    StartTickCounter(&l_t_bt_state_polling_timer_10s);
+
+    // Log and send an AT command to check A2DP playback status
+    LOG_LEVEL("bt a2dp status... \r\n");
+    bt_send_at_command("AT+A2DPSTAT\r\n");
+
+    // Handle actions based on the current Bluetooth connection state
+    switch (bt_current_state)
+    {
+        case BT_STATE_DISCONNECTED:
+            // If a previously connected device is available, try to reconnect
+            if (last_best_dev.address[0] != '\0') 
+            {
+                bt_connect_last_device();
+            }
+            // If a "best scanned device" was selected, attempt to connect (disabled for now)
+            else if (selected_best_dev.address[0] != '\0') 
+            {
+                // bt_connect_selected_device(); // Optional reconnect logic
+            }
+
+            // Always start scanning when not connected
+            bt_start_scan(); 
+            break;
+        case BT_STATE_CONNECTING:
+        case BT_STATE_CONNECTED:
+        case BT_STATE_PLAYING:
+            // Do nothing; connected or actively playing audio
+            break;
+
+        default:
+            // Unknown state, ignore
+            break;
+    }
 }
 
 bool bt_parse_state_response(const char *resp)
@@ -222,7 +254,6 @@ bool bt_parse_state_response(const char *resp)
 				case 3:
 						bt_current_state = BT_STATE_CONNECTED;
 						LOG_LEVEL("bt_current_state=BT_STATE_CONNECTED\r\n");
-				    bt_query_connected_devices();
 						//connect_start_time = 0;
 						return true;
 
@@ -236,35 +267,57 @@ bool bt_parse_state_response(const char *resp)
 	return false;
 }
 
-// Parse line like: +SCAN=4,-42,00755810FD4F,C3,240404
-bool bt_parse_scanning_line(const char *line) {
-    bt_device_t dev = {0};
+/**
+ * @brief Parse a Bluetooth scan result line and update the device list and best candidates.
+ *
+ * Example input format: "+SCAN=2,-23,413094F84E3F,KLD_A374,240408"
+ * Format breakdown:
+ *  - type: 2 = classic Bluetooth
+ *  - rssi: signal strength (dBm)
+ *  - address: 12-character hex string, no colons
+ *  - name: Bluetooth device name
+ *  - class_str: Bluetooth class hex string (e.g., 240408 for audio devices)
+ *
+ * @param line A null-terminated string containing a single scan result line.
+ * @return true if the line was successfully parsed and added, false otherwise.
+ */
+bool bt_parse_scanning_line(const char *line) 
+{
+	bt_device_t dev = {0};
 
-    //+SCAN=2,-23,413094F84E3F,KLD_A374,240408
-    if (sscanf(line, "+SCAN=%d,%d,%12[^,],%31[^,],%7s",&dev.type, &dev.rssi, dev.address, dev.name, dev.class_str) == 5)
-    {
-			  if (bt_device_count < MAX_BT_DEVICES) {
-            bt_device_list[bt_device_count++] = dev;
-        }
-				LOG_LEVEL("bt scan %s %s %s %d %d \r\n",  dev.name,dev.address,dev.class_str,dev.rssi,dev.type);
-        if (bt_is_audio_device(&dev)) 
-				{					 
-            if (dev.rssi > -35 && dev.rssi > selected_best_dev.rssi ) 
-						{
-               selected_best_dev = dev;
-							 LOG_LEVEL("got a best bt device %s \r\n", dev.name);
-							 if (last_best_dev.address[0] == '\0')
-								last_best_dev = dev;
-            }
-						if (dev.rssi > -35 && dev.rssi > last_best_dev.rssi ) 
-						{
-							 LOG_LEVEL("got a new bt device %s \r\n", dev.name);
-							 last_best_dev = selected_best_dev;
-            }
-        }
-				return true;
-    }
-		return false;
+	// Parse the scan result line
+	if (sscanf(line, "+SCAN=%d,%d,%12[^,],%31[^,],%7s", &dev.type, &dev.rssi, dev.address, dev.name, dev.class_str) == 5)
+	{
+			// Add to the device list if there's room
+			if (bt_device_count < MAX_BT_DEVICES) {
+					bt_device_list[bt_device_count++] = dev;
+			}
+
+			// Debug print parsed device info
+			LOG_LEVEL("bt scan %s %s %s %d %d \r\n",dev.name, dev.address, dev.class_str, dev.rssi, dev.type);
+
+			// Check if it's an audio device (e.g., speaker/headset)
+			if (bt_is_audio_device(&dev)) 
+			{
+					// Select best device with strongest RSSI
+					if (dev.rssi > selected_best_dev.rssi) 
+					{
+							selected_best_dev = dev;
+							LOG_LEVEL("got a best bt device %s \r\n", dev.name);
+					}
+
+					// Update last_best_dev only if RSSI is above a threshold and stronger
+					if (dev.rssi > BT_PAIRED_DISTANCE && dev.rssi > last_best_dev.rssi) 
+					{
+							last_best_dev = dev;
+							LOG_LEVEL("got a new bt device %s \r\n", dev.name);
+					}
+			}
+
+			return true;
+	}
+
+	return false;
 }
 
 // Connect to a device by name match
@@ -290,6 +343,14 @@ void bt_connect_last_device(void)
     }
 }
 
+void bt_connect_selected_device(void)
+{
+	  LOG_LEVEL("bt connecte to %s\r\n",selected_best_dev.name);
+    if (selected_best_dev.address[0] != '\0') {
+        bt_send_at_command("AT+A2DPCONN=%s\r\n", selected_best_dev.address);
+    }
+}
+
 // Connect to a device by index
 void bt_connect_by_index(int index)
 {
@@ -301,12 +362,25 @@ void bt_connect_by_index(int index)
 // For debugging: print the device list via UART
 void bt_list_devices(void)
 {
-    for (int i = 0; i < bt_device_count; i++) {
-        printf("[%d] %s (%s) RSSI=%d\n", i,
-            bt_device_list[i].name,
-            bt_device_list[i].address,
-            bt_device_list[i].rssi);
-    }
+	for (int i = 0; i < bt_device_count; i++) {
+			LOG_LEVEL("[%d] %s (%s) RSSI=%d\n", i,
+					bt_device_list[i].name,
+					bt_device_list[i].address,
+					bt_device_list[i].rssi);
+	}
+}
+
+void bt_clear_device_list(void)
+{
+	//memset(bt_device_list, 0, sizeof(bt_device_t));
+	bt_device_count = 0;
+	//memset(&selected_best_dev, 0, sizeof(bt_device_t));
+	selected_best_dev.address[0] = '\0';
+	selected_best_dev.rssi = -128;
+	
+	last_best_dev.address[0] = '\0';
+	last_best_dev.rssi = -128;
+	bt_current_state = BT_STATE_DISCONNECTED;
 }
 
 void bt_send_at_command(const char *format, ...)
@@ -396,7 +470,7 @@ bool bt_is_audio_device(const bt_device_t *dev) {
         "Headset", "Headphone", "Earbuds", "AirPods", "Buds", "FreeBuds", "Neckband"
     };
 
-    // audio/video wearable/headset/speaker ???
+    // audio/video wearable/headset/speaker ?
     if (strcmp(dev->class_str, "240408") == 0 ||
         strcmp(dev->class_str, "240404") == 0 ||
         strcmp(dev->class_str, "240414") == 0) {
@@ -419,13 +493,6 @@ bool bt_is_audio_device(const bt_device_t *dev) {
 			}
 		}
     return false;
-}
-
-void bt_query_connected_devices(void)
-{
-	  LOG_LEVEL("bt get connection\r\n");
-    bt_send_at_command("AT+A2DPDEV\r\n");
-    bt_send_at_command("AT+HFPDEV\r\n");
 }
 
 bool bt_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff)

@@ -91,9 +91,10 @@ void task_gpio_running(void)
     // PollingGPIOStatus(GPIO_DDD_PIN,&ddd_status);
     // PollingGPIOStatus(GPIO_ZZD_PIN,&zzd_status);
     // PollingGPIOStatus(GPIO_YZD_PIN,&yzd_status);
+#if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)	
     if (system_get_mb_state() != MB_POWER_ST_ON)
         return;
-
+#endif
     PollingGPIOStatus(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, &power_pin_status);
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -104,9 +105,13 @@ void task_gpio_running(void)
 
     if (power_pin_status.changed)
     {
-        LOG_LEVEL("power_pin_status=%d\r\n", power_pin_status.offon);
-        send_message(TASK_MODULE_KEY, MSG_OTSM_DEVICE_GPIO_EVENT, GPIO_POWER_KEY_PIN, power_pin_status.offon);
-        power_pin_status.changed = false;
+		if(power_pin_status.offon)
+		LOG_LEVEL("Power pin transitioned from LOW to HIGH %d\r\n", power_pin_status.offon);
+		else
+		LOG_LEVEL("Power pin transitioned from HIGH to LOW %d\r\n", power_pin_status.offon);
+				
+		send_message(TASK_MODULE_KEY, MSG_OTSM_DEVICE_GPIO_EVENT, GPIO_POWER_KEY_PIN, power_pin_status.offon);
+		power_pin_status.changed = false;
     }
 
 #if 0

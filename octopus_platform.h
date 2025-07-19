@@ -47,7 +47,7 @@
 #define OTMS_VERSION_CODE (001)
 #define OTMS_VERSION_NAME ("0.0.1")
 
-//#define OTSM_RELEASE_VERSION OTMS_VERSION_CODE
+#define OTSM_RELEASE_VERSION OTMS_VERSION_CODE
 ///////////////////////////////////////////////////////////////////////////////////
 /*******************************************************************************
  * PROJECT SWITCH MACROS
@@ -72,30 +72,31 @@
 ///////////////////////////////////////////////////////////////////////////////////
  /* @brief Task Manager state machine modules.
  */
- 
+#define TASK_MANAGER_STATE_MACHINE_GPIO 1  
+#define TASK_MANAGER_STATE_MACHINE_SYSTEM 1  
 #define TASK_MANAGER_STATE_MACHINE_FLASH 1 
 #define TASK_MANAGER_STATE_MACHINE_KEY 1 
-#define TASK_MANAGER_STATE_MACHINE_GPIO 1 
-//#define TASK_MANAGER_STATE_MACHINE_SIF 1 /**< Secondary interface mode. */
+
+#define TASK_MANAGER_STATE_MACHINE_IPC 1 
+#define TASK_MANAGER_STATE_MACHINE_PTL2 1 
+
+#define TASK_MANAGER_STATE_MACHINE_CARINFOR 1
+//#define TASK_MANAGER_STATE_MACHINE_CAN 1 
+
+#define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
+//#define TASK_MANAGER_STATE_MACHINE_SIF 1 
 //#define TASK_MANAGER_STATE_MACHINE_BLE 1 
 //#define TASK_MANAGER_STATE_MACHINE_BMS 1 
 //#define TASK_MANAGER_STATE_MACHINE_4G 1 
 #define TASK_MANAGER_STATE_MACHINE_BT 1
+
 #define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
-
-#define TASK_MANAGER_STATE_MACHINE_CARINFOR 1
-
-//#define TASK_MANAGER_STATE_MACHINE_CAN 1 
-#define TASK_MANAGER_STATE_MACHINE_PTL2 1 
-#define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
-#define TASK_MANAGER_STATE_MACHINE_IPC_SOCKET 1 
-
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 #define FLASH_USE_EEROM_FOR_DATA_SAVING
-#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A
 #define FLASH_MAPPING_VECT_TABLE_TO_SRAM
 
+#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A
 /***********************************************************************************
  * BASE INCLUDE FILES
  * Include necessary standard libraries and platform-specific headers.
@@ -228,7 +229,7 @@ extern "C"
 #define DISABLE_IRQ (__disable_irq())
 #define ENABLE_IRQ (__enable_irq())
 extern volatile uint32_t system_tick_ms;
-extern volatile uint32_t system_timer_tick_50us;
+
 #define GET_SYSTEM_TICK_COUNT system_tick_ms // Return zero for unsupported platforms
 #endif
 

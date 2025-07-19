@@ -259,13 +259,17 @@ void flash_load_sync_data_infor(void)
 
 	E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 	flash_print_mcu_meta_infor();
+	
 
 	if (flash_meta_infor.mete_data_flags == EEROM_DATAS_VALID_FLAG)
 	{
+		#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
 		LOG_LEVEL("load meter data[%02d] ", sizeof(carinfo_meter_t));
 		E2ROMReadToBuff(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
 		LOG_BUFF((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+	  #endif
 	}
+
 #endif
 
 #ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
@@ -410,7 +414,7 @@ void flash_save_app_meter_infor(void)
 // void flash_set_app_meta_
 void flash_save_carinfor_meter(void)
 {
-#ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
+#if defined(FLASH_USE_EEROM_FOR_DATA_SAVING) && defined(TASK_MANAGER_STATE_MACHINE_CARINFOR)
 	LOG_BUFF_LEVEL((uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 	LOG_LEVEL("lt_carinfo_meter.odo:%d\r\n", lt_carinfo_meter.odo);
 	if (lt_carinfo_meter.odo == 0)
@@ -592,27 +596,6 @@ void boot_loader_active_user_app(void)
 	}
 }
 #endif
-/**
- * @fn void printfFuncHex(const char *fun, int line, char *str, uint8_t *dat, int len)
- * @brief print input data in hex
- * @param fun: print function name
- * @param line: Print line number
- * @param str: print data in string
- * @param dat: print data in hex
- * @param len: length of data
- * @return NONE.
- */
-
-// PrintfBuffHex(__func__, __LINE__, "READ After Write By Dma", tempStr, osal_strlen(str));
-void PrintfBuffHex(const char *fun, int line, char *str, uint8_t *dat, int len)
-{
-	/// LOG_("%s(%d):%s:", fun, line, str);
-	/// for (int ii = 0; ii < len; ii++)
-	///{
-	///	LOG_("%02x ", dat[ii]);
-	/// }
-	/// LOG_("\r\n");
-}
 
 //__attribute__((section(".ramfunc")))
 uint32_t FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)

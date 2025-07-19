@@ -10,7 +10,7 @@
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
-
+#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
 /*******************************************************************************
  * MACROS
  */
@@ -201,7 +201,7 @@ static const UartSendPtlBafangCmdCtrl_t protocolProcessCmdTable[] =
  */
 void task_bfang_ptl_init_running(void)
 {
-    OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_BAFANG, OTMS_S_INVALID);
     LOG_LEVEL("task_bafang_ptl_init_running\r\n");
 }
 
@@ -212,14 +212,14 @@ void task_bfang_ptl_start_running(void)
     {
         /// ptl_register_module(SETTING_PTL_BAFANG, bafang_send_handler,bafang_receive_handler);
         ptl_2_register_module(SETTING_PTL_BAFANG, bafang_receive_handler);
-        OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_ASSERT_RUN);
+        OTMS(TASK_MODULE_BAFANG, OTMS_S_ASSERT_RUN);
     }
 }
 
 void task_bfang_ptl_assert_running(void)
 {
     StartTickCounter(&lt_timer);
-    OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_RUNNING);
+    OTMS(TASK_MODULE_BAFANG, OTMS_S_RUNNING);
 }
 
 void task_bfang_ptl_running(void)
@@ -232,7 +232,7 @@ void task_bfang_ptl_running(void)
 
     // if(true == system_get_power_off_req())
     {
-        OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_POST_RUN);
+        OTMS(TASK_MODULE_BAFANG, OTMS_S_POST_RUN);
     }
 
     // lt_indicator.walk_assist = theMeterInfo.walk_assist;
@@ -241,13 +241,13 @@ void task_bfang_ptl_running(void)
 
 void task_bfang_ptl_post_running(void)
 {
-    OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_ASSERT_RUN);
+    OTMS(TASK_MODULE_BAFANG, OTMS_S_ASSERT_RUN);
 }
 
 void task_bfang_ptl_stop_running(void)
 {
     LOG_LEVEL("_stop_running\r\n");
-    OTMS(TASK_MODULE_PTL_BAFANG, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_BAFANG, OTMS_S_INVALID);
 }
 
 /*******************************************************************************
@@ -311,7 +311,6 @@ void com_uart_ptl_bafang_tx_process(void)
                     {
                         // TODO
                         // add_error_code;
-                        /// printf("add_error_code\n");
                         /// add_error_code(ERROR_CODE_COMMUNICATION_ABNORMALITY);
                     }
                     protocolProcessState = PTL_BAFANG_PROCESS_STATE_NEXT_CMD;
@@ -532,11 +531,6 @@ void bike_Uart_Send(unsigned char data)
     send_data[0] = 0x11;
     send_data[1] = data;
     ptl_2_send_buffer(SETTING_PTL_BAFANG,send_data, 2);
-
-    if (data == 0x20)
-    {
-        // printf("bike_Uart_Send data: %02x %02x tick:%u\n", send_data[0], send_data[1], SDL_GetTicks());
-    }
 }
 
 void Bike_pas_level_send_depend_max_9_level(void)
@@ -674,7 +668,6 @@ bool proc_protocol_frame_speed(uint8_t *buff, int count)
     {
         if (count == 3)
         {
-            // printf("proc_protocol_frame_speed count:%d  buff: %02x %02x %02x %02x  tick:%u\n", count, buff[0], buff[1], buff[2], buff[3], SDL_GetTicks());
             uint8_t checksum = buff[0] + buff[1] + 0x20;
             if (checksum == buff[2])
             {
@@ -943,3 +936,4 @@ void bafang_set_gear(uint8_t level)
         Bike_pas_level_send_depend_max_5_level();
     }
 }
+#endif

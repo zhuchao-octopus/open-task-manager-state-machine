@@ -15,6 +15,7 @@
 
 #include "can/can_function.h"
 
+#ifdef TASK_MANAGER_STATE_MACHINE_CAN
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
 extern carinfo_meter_t lt_meter;         // Local meter data structure
@@ -98,15 +99,12 @@ void parse_can_message(const CAN_Message_t* message)
     switch (message->StdId)
     {
     case 0x100:
-        ///printf("[CAN] Received control message. Data[0] = %02X\n", message->Data[0]);
         break;
     case 0x200:
-        ///printf("[CAN] Received telemetry message. Data = ");
         break;
     default:
-        ///printf("[CAN] Unknown message ID: 0x%03X\n", message->StdId);
         break;
     }
 }
-
+#endif
 
