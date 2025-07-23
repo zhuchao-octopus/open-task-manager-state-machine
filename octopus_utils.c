@@ -38,7 +38,7 @@
 // #define MAX_LINE_LEN 1024
 // #define MAX_RECORDS  65536
 #define CRC32_POLYNOMIAL (0x04C11DB7) // Standard CRC32 polynomial
-#define DEFAULT_OUPG_FILENAME_MAX_LENGTH 30
+#define DEFAULT_OUPG_FILENAME_MAX_LENGTH 40
 #define DEFAULT_OUPG_BINFILE_READ_MAX_SIZE 48
 /*******************************************************************************
  * TYPEDEFS

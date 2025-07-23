@@ -69,7 +69,6 @@ void task_4g_start_running(void)
 
 void task_4g_assert_running(void)
 {
-
 	StartTickCounter(&l_t_msg_wait_10_timer);
 	OTMS(TASK_MODULE_4G, OTMS_S_RUNNING);
 }

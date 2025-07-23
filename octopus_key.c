@@ -164,23 +164,25 @@ void task_key_power_event_process(GPIO_KEY_STATUS *key_status)
     case KEY_STATE_LONG_PRESSED:
         if (!key_status->ignore)
         {
-            LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d long duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
-            // if(is_power_on())
-            //	hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
-            send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, 0, 0);
-            key_status->ignore = true;
+            
         }
         break;
 
     case KEY_STATE_LONG_LONG_PRESSED:
         if (!key_status->ignore)
         {
+					
         }
         break;
 
     case KEY_STATE_LONG_LONG_LONG_PRESSED:
         if (!key_status->ignore)
         {
+					LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d 3long duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
+					// if(is_power_on())
+					//	hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
+					send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, 0, 0);
+					key_status->ignore = true;
         }
         break;
     case KEY_STATE_NONE:

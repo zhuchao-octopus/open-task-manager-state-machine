@@ -201,7 +201,7 @@ extern "C"
      * @details  These functions include Flash read/write operations and debugging
      *           utilities for printing Flash data in hexadecimal format.
      */
-    extern void PrintfBuffHex(const char *fun, int line, char *str, uint8_t *dat, int len);
+
     /**< Prints a buffer in hexadecimal format for debugging. */
     extern void FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t len);
     /**< Reads data from Flash memory into a buffer. */

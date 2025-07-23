@@ -259,13 +259,17 @@ void flash_load_sync_data_infor(void)
 
 	E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 	flash_print_mcu_meta_infor();
+	
 
 	if (flash_meta_infor.mete_data_flags == EEROM_DATAS_VALID_FLAG)
 	{
+		#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
 		LOG_LEVEL("load meter data[%02d] ", sizeof(carinfo_meter_t));
 		E2ROMReadToBuff(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
 		LOG_BUFF((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+	  #endif
 	}
+
 #endif
 
 #ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
@@ -280,7 +284,6 @@ void flash_load_sync_data_infor(void)
 
 bool flash_is_meta_infor_valid(void)
 {
-	flash_print_mcu_meta_infor();
 	if ((flash_meta_infor.active_slot == BANK_SLOT_INVALID) || (flash_meta_infor.bank_slot_mode == BOOT_MODE_SINGLE_BANK_NONE))
 		return false;
 	else if ((flash_meta_infor.slot_a_addr == 0) || (flash_meta_infor.slot_b_addr == 0))
@@ -410,7 +413,7 @@ void flash_save_app_meter_infor(void)
 // void flash_set_app_meta_
 void flash_save_carinfor_meter(void)
 {
-#ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
+#if defined(FLASH_USE_EEROM_FOR_DATA_SAVING) && defined(TASK_MANAGER_STATE_MACHINE_CARINFOR)
 	LOG_BUFF_LEVEL((uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 	LOG_LEVEL("lt_carinfo_meter.odo:%d\r\n", lt_carinfo_meter.odo);
 	if (lt_carinfo_meter.odo == 0)
@@ -445,6 +448,8 @@ bool flash_verify_bank_slot_crc(uint32_t slot_addr, uint32_t slot_size, uint32_t
 		LOG_LEVEL("CRC check failed because the bank size is incorrect.\r\n", slot_size);
 		return false;
 	}
+	
+  LOG_LEVEL("Bank crc verify at: 0x%08X, size:0x%08X, expected crc:0x%08X\r\n", slot_addr, slot_size, expected_crc);
 
 	DISABLE_IRQ;
 	uint32_t calculated_crc = calculate_crc_32((uint8_t *)slot_addr, slot_size);
@@ -523,8 +528,27 @@ void boot_loader_active_user_app(void)
 	uint32_t active_app_addr = 0;
 	uint32_t expected_crc = 0;
 	uint32_t slot_length = 0;
-
-	if (compare_versions(flash_meta_infor.slot_a_version, flash_meta_infor.slot_b_version) >= 0)
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	if (flash_meta_infor.active_slot == BANK_SLOT_LOADER)
+	{
+		if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
+		{
+			active_app_addr = flash_meta_infor.slot_b_addr;
+			expected_crc = flash_meta_infor.slot_b_crc;
+			slot_length = flash_meta_infor.slot_b_size;
+			LOG_LEVEL("Bootloader start to active slot B...\r\n");
+			if (flash_meta_infor.active_slot == BANK_SLOT_B)
+				return;
+		}	
+		else
+		{
+			LOG_LEVEL("Bank slot B is invalid Fallback to loader...\r\n");
+			return;
+		}
+	}
+  //////////////////////////////////////////////////////////////////////////////////////////////////////// 
+	else if (compare_versions(flash_meta_infor.slot_a_version, flash_meta_infor.slot_b_version) >= 0)
 	{
 		if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
 		{
@@ -547,6 +571,7 @@ void boot_loader_active_user_app(void)
 			}
 		}
 	}
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
 	else
 	{
 		if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
@@ -568,7 +593,7 @@ void boot_loader_active_user_app(void)
 				return;
 		}
 	}
-
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Verify CRC of the active application
 	if (flash_verify_bank_slot_crc(active_app_addr, slot_length, expected_crc))
 	{
@@ -583,36 +608,15 @@ void boot_loader_active_user_app(void)
 		if (flash_meta_infor.active_slot == BANK_SLOT_B)
 			return;
 
-		if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_LOADER)
+		if (flash_meta_infor.active_slot == BANK_SLOT_LOADER)
 		{
 			// Both slots failed integrity check, enter firmware update mode
-			LOG_LEVEL("Active slot A/B failed! Both slots failed verification. Entering upgrade mode.\r\n");
+			LOG_LEVEL("Active slot A/B failed! Both slots failed verification. Entering upgrade mode...\r\n");
 			// EnterFirmwareUpgradeMode();  // Implement your IAP or OTA entry point
 		}
 	}
 }
 #endif
-/**
- * @fn void printfFuncHex(const char *fun, int line, char *str, uint8_t *dat, int len)
- * @brief print input data in hex
- * @param fun: print function name
- * @param line: Print line number
- * @param str: print data in string
- * @param dat: print data in hex
- * @param len: length of data
- * @return NONE.
- */
-
-// PrintfBuffHex(__func__, __LINE__, "READ After Write By Dma", tempStr, osal_strlen(str));
-void PrintfBuffHex(const char *fun, int line, char *str, uint8_t *dat, int len)
-{
-	/// LOG_("%s(%d):%s:", fun, line, str);
-	/// for (int ii = 0; ii < len; ii++)
-	///{
-	///	LOG_("%02x ", dat[ii]);
-	/// }
-	/// LOG_("\r\n");
-}
 
 //__attribute__((section(".ramfunc")))
 uint32_t FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)

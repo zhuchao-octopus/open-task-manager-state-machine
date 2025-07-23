@@ -62,8 +62,8 @@ extern "C"
     {
         bool offon;     ///< GPIO pin status (0 for off, 1 for on).
         bool changed;   ///< Indicates if the GPIO pin status has changed.
-        uint8_t count1; ///< A counter used for GPIO pin event tracking.
-        uint8_t count2; ///< Another counter used for tracking GPIO events.
+        uint32_t count1; ///< A counter used for GPIO pin event tracking.
+        uint32_t count2; ///< Another counter used for tracking GPIO events.
     } GPIO_STATUS;
 
     /*******************************************************************************

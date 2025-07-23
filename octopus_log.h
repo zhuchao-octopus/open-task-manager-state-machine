@@ -65,7 +65,7 @@ extern "C"
      * @param fmt Format string.
      * @param args Variable argument list.
      */
-    void vsprintf__(std_putc putc, const char *fmt, va_list args);
+    //void vsprintf__(std_putc putc, const char *fmt, va_list args);
     // #endif
 
     /**

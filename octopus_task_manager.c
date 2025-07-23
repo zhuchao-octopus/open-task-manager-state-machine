@@ -28,28 +28,17 @@
 #include "octopus_carinfor.h"
 #include "octopus_ble.h"
 #include "octopus_4g.h"
+#include "octopus_bt.h"
 
 #include "octopus_update_mcu.h"
 #include "octopus_ipc.h"
 #include "octopus_bafang.h"
 #include "octopus_uart_ptl_1.h" // Include UART protocol header
 #include "octopus_uart_ptl_2.h" // Include UART protocol header
-/*******************************************************************************
- * MACROS
- ******************************************************************************/
-
-/* Add any necessary macros here */
-
-/*******************************************************************************
- * TYPEDEFS
- ******************************************************************************/
-
-/* Define any custom types here */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-
 /** Static configuration for all tasks in the OTMS. */
 const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
 
@@ -76,7 +65,19 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-
+#ifdef TASK_MANAGER_STATE_MACHINE_IPC
+    [TASK_MODULE_IPC] = {
+        .func = {
+            [OTMS_S_INIT] = task_ipc_init_running,
+            [OTMS_S_START] = task_ipc_start_running,
+            [OTMS_S_ASSERT_RUN] = task_ipc_assert_running,
+            [OTMS_S_RUNNING] = task_ipc_running,
+            [OTMS_S_POST_RUN] = task_ipc_post_running,
+            [OTMS_S_STOP] = task_ipc_stop_running,
+        },
+    },
+#endif
+#ifdef TASK_MANAGER_STATE_MACHINE_SYSTEM		
     [TASK_MODULE_SYSTEM] = {
         .func = {
             [OTMS_S_INIT] = task_system_init_running,
@@ -87,6 +88,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
             [OTMS_S_STOP] = task_system_stop_running,
         },
     },
+#endif		
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     [TASK_MODULE_GPIO] = {
         .func = {
@@ -153,19 +155,19 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
     },
 #endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
-    [TASK_MODULE_UPDATE_MCU] = {
+#ifdef TASK_MANAGER_STATE_MACHINE_BT
+    [TASK_MODULE_BT] = {
         .func = {
-            [OTMS_S_INIT] = task_update_init_running,
-            [OTMS_S_START] = task_update_start_running,
-            [OTMS_S_ASSERT_RUN] = task_update_assert_running,
-            [OTMS_S_RUNNING] = task_update_running,
-            [OTMS_S_POST_RUN] = task_update_post_running,
-            [OTMS_S_STOP] = task_update_stop_running,
+            [OTMS_S_INIT] = task_bt_init_running,
+            [OTMS_S_START] = task_bt_start_running,
+            [OTMS_S_ASSERT_RUN] = task_bt_assert_running,
+            [OTMS_S_RUNNING] = task_bt_running,
+            [OTMS_S_POST_RUN] = task_bt_post_running,
+            [OTMS_S_STOP] = task_bt_stop_running,
         },
     },
 #endif
-
+		
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
     [TASK_MODULE_CAN] = {
         .func = {
@@ -180,7 +182,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
-    [TASK_MODULE_PTL_BAFANG] = {
+    [TASK_MODULE_BAFANG] = {
         .func = {
             [OTMS_S_INIT] = task_bfang_ptl_init_running,
             [OTMS_S_START] = task_bfang_ptl_start_running,
@@ -192,20 +194,19 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
     },
 #endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_IPC_SOCKET
-    [TASK_MODULE_IPC_SOCKET] = {
+#ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
+    [TASK_MODULE_UPDATE_MCU] = {
         .func = {
-            [OTMS_S_INIT] = task_ipc_init_running,
-            [OTMS_S_START] = task_ipc_start_running,
-            [OTMS_S_ASSERT_RUN] = task_ipc_assert_running,
-            [OTMS_S_RUNNING] = task_ipc_running,
-            [OTMS_S_POST_RUN] = task_ipc_post_running,
-            [OTMS_S_STOP] = task_ipc_stop_running,
+            [OTMS_S_INIT] = task_update_init_running,
+            [OTMS_S_START] = task_update_start_running,
+            [OTMS_S_ASSERT_RUN] = task_update_assert_running,
+            [OTMS_S_RUNNING] = task_update_running,
+            [OTMS_S_POST_RUN] = task_update_post_running,
+            [OTMS_S_STOP] = task_update_stop_running,
         },
     },
 #endif
 };
-/* Add any constants here */
 
 /*******************************************************************************
  * LOCAL FUNCTION DECLARATIONS

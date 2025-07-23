@@ -77,8 +77,13 @@
  */
 void cFifo_Init(cFifo_t **ptFifo, uint8_t *pucMem, uint32_t uiMemSize)
 {
-    *ptFifo = (cFifo_t *)pucMem;                       // Use the provided memory for FIFO structure
-    (*ptFifo)->capacity = uiMemSize - sizeof(cFifo_t); // Adjust capacity excluding metadata
+	if (ptFifo == NULL || pucMem == NULL || uiMemSize <= sizeof(cFifo_t))
+	return;
+	*ptFifo = (cFifo_t *)pucMem;                       // Use the provided memory for FIFO structure
+	(*ptFifo)->capacity = uiMemSize - sizeof(cFifo_t); // Adjust capacity excluding metadata
+	(*ptFifo)->head = 0;
+	(*ptFifo)->tail = 0;
+	(*ptFifo)->buffer = pucMem + sizeof(cFifo_t);
 }
 
 /**
@@ -93,7 +98,7 @@ bool cFifo_Push(cFifo_t *a_ptFifo, uint8_t a_u8Data)
 
     if (!cFifo_isFull(a_ptFifo))
     {                                                                   // Check if FIFO is not full
-        a_ptFifo->aucArr[a_ptFifo->tail] = a_u8Data;                    // Add data to the tail
+        a_ptFifo->buffer[a_ptFifo->tail] = a_u8Data;                    // Add data to the tail
         a_ptFifo->tail = cFifo_Inc(a_ptFifo->capacity, a_ptFifo->tail); // Update tail position
         bRet = true;
     }
@@ -113,10 +118,31 @@ bool cFifo_Pop(cFifo_t *a_ptFifo, uint8_t *a_pu8Data)
 
     if (!cFifo_isEmpty(a_ptFifo))
     {                                                                   // Check if FIFO is not empty
-        *a_pu8Data = a_ptFifo->aucArr[a_ptFifo->head];                  // Retrieve data from the head
+       *a_pu8Data = a_ptFifo->buffer[a_ptFifo->head];                   // Retrieve data from the head
         a_ptFifo->head = cFifo_Inc(a_ptFifo->capacity, a_ptFifo->head); // Update head position
         bRet = true;
     }
 
     return bRet;
+}
+/**
+ * @brief Check if a full line (ending with '\n') is present in the FIFO.
+ * @param[in] a_ptFifo Pointer to the circular FIFO structure.
+ * @return True if a full line is available, false otherwise.
+ */
+bool cFifo_HasLine(cFifo_t *a_ptFifo)
+{
+    if (cFifo_isEmpty(a_ptFifo)) {
+        return false;
+    }
+
+    uint32_t idx = a_ptFifo->head;
+    while (idx != a_ptFifo->tail) {
+        if (a_ptFifo->buffer[idx] == '\n') {
+            return true; // Found a newline = complete line
+        }
+        idx = cFifo_Inc(a_ptFifo->capacity, idx);
+    }
+
+    return false; // No newline found
 }
