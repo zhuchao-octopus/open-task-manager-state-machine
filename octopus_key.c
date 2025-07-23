@@ -71,12 +71,12 @@ void task_key_running(void)
 
 void task_key_post_running(void)
 {
-	OTMS(TASK_MODULE_KEY, OTMS_S_ASSERT_RUN); 
+    OTMS(TASK_MODULE_KEY, OTMS_S_ASSERT_RUN);
 }
 
 void task_key_stop_running(void)
 {
-	LOG_LEVEL("_stop_running\r\n");
+    LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_KEY, OTMS_S_INVALID);
 }
 
@@ -122,7 +122,7 @@ static void task_key_action_hanlder(void)
 
 void task_key_goto_bootloader(void)
 {
-  LOG_LEVEL("reboot to dul ota to upgrade mcu ble sw.\r\n");
+    LOG_LEVEL("reboot to dul ota to upgrade mcu ble sw.\r\n");
 #if 0
 	write_reg(ADDR_OTA_FLAG,0x55AAAA55);
 	GAPRole_TerminateConnection();
@@ -141,17 +141,17 @@ void task_key_power_event_process(GPIO_KEY_STATUS *key_status)
     {
     case KEY_STATE_RELEASED:
         LOG_LEVEL("OCTOPUS_KEY_POWER release key=%d key_status=%02x\r\n", key_status->key, key_status->state);
-		StartTickCounter(&power_key_wait_timer);
+        StartTickCounter(&power_key_wait_timer);
         break;
 
     case KEY_STATE_PRESSED:
         LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d key_status=%02x\r\n", key_status->key, key_status->state);
-		   
+
         if (GetTickCounter(&power_key_wait_timer) >= 300)
         {
             power_key_password_index = 0;
         }
-      
+
         power_key_password_index++;
         hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
         if (power_key_password_index == sizeof(power_key_password))
@@ -164,11 +164,6 @@ void task_key_power_event_process(GPIO_KEY_STATUS *key_status)
     case KEY_STATE_LONG_PRESSED:
         if (!key_status->ignore)
         {
-            LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d long duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
-            // if(is_power_on())
-            //	hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
-            send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, 0, 0);
-            key_status->ignore = true;
         }
         break;
 
@@ -181,6 +176,11 @@ void task_key_power_event_process(GPIO_KEY_STATUS *key_status)
     case KEY_STATE_LONG_LONG_LONG_PRESSED:
         if (!key_status->ignore)
         {
+            LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d 3long duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
+            // if(is_power_on())
+            //	hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
+            send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, 0, 0);
+            key_status->ignore = true;
         }
         break;
     case KEY_STATE_NONE:
@@ -220,7 +220,7 @@ bool key_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
     {
         switch (param1)
         {
-        case FRAME_CMD_SETUP_KEY:         //
+        case FRAME_CMD_SETUP_KEY:      //
             tmp[0] = MSB_WORD(param2); // KEYCODE
             tmp[1] = LSB_WORD(param2); // KEYSTATE
             tmp[2] = 0;                //

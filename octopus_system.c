@@ -137,7 +137,7 @@ void task_system_running(void)
         if (GetTickCounter(&l_t_msg_lowpower_wait_timer) > 8000)
         {
             task_manager_stop();
-            enter_sleep_mode();
+            native_enter_sleep_mode();
             lt_mb_state = MB_POWER_ST_BOOTING;
             StartTickCounter(&l_t_msg_booting_wait_timer);
             task_manager_start();
@@ -303,22 +303,22 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
     MY_ASSERT(ackbuff); // Ensure acknowledgment buffer is valid
     uint8_t tmp;        // Temporary variable for holding command data
 
-	if (SOC_TO_MCU_MOD_SYSTEM == payload->frame_type)
+    if (SOC_TO_MCU_MOD_SYSTEM == payload->frame_type)
     {
         switch (payload->frame_cmd)
         {
         case FRAME_CMD_SYSTEM_HANDSHAKE:
             LOG_LEVEL("system handshake from soc payload->frame_type=%02x\r\n", payload->frame_type);
-				    // after got handshake then send indicate respond by message
-            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, 0); 
-				    // return mcu mata infor directly
+            // after got handshake then send indicate respond by message
+            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, 0);
+            // return mcu mata infor directly
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ackbuff);
             return true;
-				
+
         case FRAME_CMD_SYSTEM_MCU_META:
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ackbuff);
             return true;
-				
+
         case MSG_OTSM_CMD_BLE_CONNECTED:
             if (!is_power_on())
             {
@@ -350,7 +350,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             break;
         }
     }
-		
+
     // Handle received commands for MCU_TO_SOC_MOD_SYSTEM frame type
     if (MCU_TO_SOC_MOD_SYSTEM == payload->frame_type)
     {
@@ -398,7 +398,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             break;
         }
     }
-		
+
     return false; // Command not processed
 }
 

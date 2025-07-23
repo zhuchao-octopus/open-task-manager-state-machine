@@ -45,21 +45,18 @@
 // Declare function prototypes for various tasks and processing functions
 #ifdef TASK_MANAGER_STATE_MACHINE_PTL2
 
-void ptl_2_proc_valid_frame(void); // Process the valid frame
-void ptl_2_rx_event_message_handler(void);
-
-bool ptl_2_is_sleep_enable(void); // Check if sleep mode is enabled
-void ptl_2_error_detect(void);    // Detect communication errors
+static void ptl_2_proc_valid_frame(void); // Process the valid frame
+static void ptl_2_rx_event_message_handler(void);
 
 /*******************************************************************************
  * STATIC VARIABLES
  */
 static uint32_t l_t_ptl_rx_main_timer;
-static uint32_t l_t_ptl_tx_main_timer;
-static uint32_t l_t_ptl_error_detect_timer;
-static bool lb_com_error = false;
+// static uint32_t l_t_ptl_tx_main_timer;
+// static uint32_t l_t_ptl_error_detect_timer;
+// static bool lb_com_error = false;
 
-static ptl_2_module_info_t ptl_2_module_info[PTL2_MODULE_SUPPORT_CNT];
+static ptl_2_module_info_t ptl_2_module_info[PTL2_MODULE_MAX];
 static uint8_t ptl_2_next_empty_module = 0;
 
 /*******************************************************************************
@@ -68,15 +65,19 @@ static uint8_t ptl_2_next_empty_module = 0;
 
 void ptl_2_register_module(ptl_2_module_t module, ptl_2_module_receive_handler_t receive_handler)
 {
-    if (ptl_2_next_empty_module < PTL2_MODULE_SUPPORT_CNT)
+    if (ptl_2_next_empty_module < PTL2_MODULE_MAX)
     {
         LOG_LEVEL("ptl_2_register_module %d\r\n", module);
+
         ptl_2_module_info[ptl_2_next_empty_module].module = module;
         ptl_2_module_info[ptl_2_next_empty_module].receive_handler = receive_handler;
-			  cFifo_Init(&ptl_2_module_info[ptl_2_next_empty_module].ptl_2_usart_rx_fifo, ptl_2_module_info[ptl_2_next_empty_module].ptl_2_usart_rx_fifo_buff, sizeof(ptl_2_module_info[ptl_2_next_empty_module].ptl_2_usart_rx_fifo_buff));
-        
-			  ptl_2_next_empty_module++;
-		}
+
+        cFifo_Init(&ptl_2_module_info[ptl_2_next_empty_module].ptl_2_usart_rx_fifo,
+                   ptl_2_module_info[ptl_2_next_empty_module].ptl_2_usart_rx_fifo_buff,
+                   sizeof(ptl_2_module_info[ptl_2_next_empty_module].ptl_2_usart_rx_fifo_buff));
+
+        ptl_2_next_empty_module++;
+    }
 }
 
 ptl_2_module_info_t *ptl_2_get_module(ptl_2_module_t module)
@@ -85,7 +86,7 @@ ptl_2_module_info_t *ptl_2_get_module(ptl_2_module_t module)
 
     for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
     {
-        if (ptl_2_module_info[i].module == (module))
+        if (ptl_2_module_info[i].module == module)
         {
             module_info = &ptl_2_module_info[i];
             break;
@@ -95,17 +96,26 @@ ptl_2_module_info_t *ptl_2_get_module(ptl_2_module_t module)
     return module_info;
 }
 
+void print_ptl2_registered_module(void)
+{
+    // module_info_t *module_info = NULL;
+    for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
+    {
+        LOG_LEVEL("registered ptl_2_module_info[%d]=%02x \r\n", i, ptl_2_module_info[i].module);
+    }
+}
+
 // Initialize UART communication for the task
 void ptl_2_init_running(void)
 {
-    LOG_LEVEL("ptl_init_running\r\n");
+    LOG_LEVEL("ptl2_init_running\r\n");
     OTMS(TASK_MODULE_PTL_2, OTMS_S_INVALID);
 }
 
 // Start the UART communication for the task
 void ptl_2_start_running(void)
 {
-    LOG_LEVEL("ptl_start_running\r\n");
+    LOG_LEVEL("ptl2_start_running\r\n");
     OTMS(TASK_MODULE_PTL_2, OTMS_S_ASSERT_RUN);
 }
 
@@ -113,38 +123,25 @@ void ptl_2_start_running(void)
 void ptl_2_assert_running(void)
 {
     StartTickCounter(&l_t_ptl_rx_main_timer);
-    StartTickCounter(&l_t_ptl_tx_main_timer);
-    StartTickCounter(&l_t_ptl_error_detect_timer);
-    lb_com_error = false;
+    // StartTickCounter(&l_t_ptl_tx_main_timer);
+    // StartTickCounter(&l_t_ptl_error_detect_timer);
     OTMS(TASK_MODULE_PTL_2, OTMS_S_RUNNING);
 }
 
 // Main running function for UART communication
 void ptl_2_running(void)
 {
-    if (true == ptl_2_is_sleep_enable())
-    {
-        OTMS(TASK_MODULE_PTL_2, OTMS_S_STOP);
-    }
-    else
-    {
-        ptl_2_rx_event_message_handler();
-
-        ptl_2_proc_valid_frame();
-    }
+    // if(GetTickCounter(&l_t_ptl_rx_main_timer) < 10)
+    //	return;
+    StartTickCounter(&l_t_ptl_rx_main_timer);
+    ptl_2_rx_event_message_handler();
+    ptl_2_proc_valid_frame();
 }
 
 // Post-running function for UART communication
 void ptl_2_post_running(void)
 {
-    if (true == ptl_2_is_sleep_enable())
-    {
-        OTMS(TASK_MODULE_PTL_2, OTMS_S_STOP);
-    }
-    else
-    {
-        OTMS(TASK_MODULE_PTL_2, OTMS_S_ASSERT_RUN);
-    }
+    OTMS(TASK_MODULE_PTL_2, OTMS_S_ASSERT_RUN);
 }
 
 // Stop the UART communication task
@@ -154,30 +151,24 @@ void ptl_2_stop_running(void)
     OTMS(TASK_MODULE_PTL_2, OTMS_S_INVALID);
 }
 
-// Check if there is a communication error
-bool ptl_2_is_com_error(void)
+void ptl_2_receive_callback(ptl_2_module_t ptl_2_module, const uint8_t *buffer, uint16_t length)
 {
-    return lb_com_error;
-}
-
-/**
- * Check if sleep mode is enabled based on UART pending state.
- * Returns true if no task is currently running.
- */
-bool ptl_2_is_sleep_enable(void)
-{
-    // Check if there are no tasks running
-    // if (l_t_ptl_running_req_mask == PTL_RUNNING_NONE)
-    //{
-    // return true; // Sleep mode is enabled
-    //}
-    // else
+#ifdef TEST_LOG_DEBUG_UART_RX_DATA
+    LOG_BUFF_LEVEL(buffer, length);
+#endif
+#if 1
+    ptl_2_module_info_t *ptl_2_module_infor = ptl_2_get_module(ptl_2_module);
+    if (ptl_2_module_infor != NULL)
     {
-        return false; // Sleep mode is not enabled, tasks are running
+        for (uint8_t j = 0; j < length; j++)
+        {
+            cFifo_Push(ptl_2_module_infor->ptl_2_usart_rx_fifo, buffer[j]);
+        }
     }
+#endif
 }
 
-uint8_t ptl_2_get_fifo_data(cFifo_t *a_ptFifo,uint8_t *buffer, uint16_t length)
+uint8_t ptl_2_get_fifo_data(cFifo_t *a_ptFifo, uint8_t *buffer, uint16_t length)
 {
     uint8_t data = 0;  // Variable to hold each byte read from the FIFO
     uint8_t index = 0; // Index to track how many bytes have been stored in the buffer
@@ -222,50 +213,54 @@ uint8_t ptl_2_get_fifo_data(cFifo_t *a_ptFifo,uint8_t *buffer, uint16_t length)
 void ptl_2_rx_event_message_handler(void)
 {
     uint8_t count = 0;
-    //while (1)
-	  for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
+    // while (1)
+    for (uint8_t i = 0; i < ptl_2_next_empty_module; i++) // handle all modules
     {
-			 ptl_2_proc_buff_t *proc_buffer = &ptl_2_module_info[i].ptl_2_proc_buff;
-       uint8_t module_id = ptl_2_module_info[i].module;
-			
-       if (ptl_2_module_info[i].ptl_2_proc_buff.size < PTL2_FRAME_MAX_SIZE)
-        {
-					 if(module_id == SETTING_PTL_BT)
-					 {
-						  // For AT command module: Read until we get a '\n' or fill the buffer
-							while (cFifo_HasLine(ptl_2_module_info[i].ptl_2_usart_rx_fifo))
-							{
-									uint8_t byte = 0;
-									count = ptl_2_get_fifo_data(ptl_2_module_info[i].ptl_2_usart_rx_fifo, &byte, 1);
-									if (count > 0)
-									{
-										proc_buffer->buffer[proc_buffer->size++] = byte;
-										// Stop when reaching end of an AT command line
-										if (byte == '\n')
-										{
-											proc_buffer->buffer[proc_buffer->size++] = '\0';
-											//LOG_LEVEL("%s",proc_buffer->buffer);
-											if (ptl_2_module_info[i].ptl_2_proc_buff.size >= PTL2_FRAME_MAX_SIZE/2) break;
-										}
-								  }
-							}
-					 }
-					 else
-					 {
-            count = ptl_2_get_fifo_data(
-					          ptl_2_module_info[i].ptl_2_usart_rx_fifo, 
-					          &ptl_2_module_info[i].ptl_2_proc_buff.buffer[ptl_2_module_info[i].ptl_2_proc_buff.size], 
-					          PTL2_FRAME_MAX_SIZE - ptl_2_module_info[i].ptl_2_proc_buff.size);	 
-            if (count <= 0)
-               continue;
-            ptl_2_module_info[i].ptl_2_proc_buff.size = ptl_2_module_info[i].ptl_2_proc_buff.size + count;
-				  }
-        }
-       else
-        {
+#if 1
+        ptl_2_module_info_t *module_info = &ptl_2_module_info[i];
+        if (module_info->ptl_2_proc_buff.size >= PTL2_FRAME_MAX_SIZE)
+        { // ptl_2_proc_buff is full must to be processed first before get from fifo
             continue;
         }
-    }
+#endif
+
+        if (module_info->module == PTL2_MODULE_BT)
+        {
+#if 1
+            // For AT command module: Read until we get a '\n' or fill the buffer
+            while (cFifo_HasLine(module_info->ptl_2_usart_rx_fifo))
+            {
+                if (module_info->ptl_2_proc_buff.size >= PTL2_FRAME_MAX_SIZE / 2)
+                    break; // wait for processing
+                uint8_t byte = 0;
+                count = ptl_2_get_fifo_data(module_info->ptl_2_usart_rx_fifo, &byte, 1);
+                if (count > 0)
+                {
+                    module_info->ptl_2_proc_buff.buffer[module_info->ptl_2_proc_buff.size++] = byte;
+                    // Stop when reaching end of an AT command line
+                    if (byte == '\n')
+                    {
+                        module_info->ptl_2_proc_buff.buffer[module_info->ptl_2_proc_buff.size++] = '\0';
+                        // LOG_LEVEL("%s",proc_buffer->buffer);
+                    }
+                }
+            }
+#endif
+        }
+        else
+        {
+#if 1
+            count = ptl_2_get_fifo_data(
+                module_info->ptl_2_usart_rx_fifo,
+                &module_info->ptl_2_proc_buff.buffer[module_info->ptl_2_proc_buff.size],
+                PTL2_FRAME_MAX_SIZE - module_info->ptl_2_proc_buff.size);
+
+            if (count > 0)
+                module_info->ptl_2_proc_buff.size = module_info->ptl_2_proc_buff.size + count;
+#endif
+        }
+
+    } // for
 }
 
 /**
@@ -282,15 +277,17 @@ void ptl_2_proc_valid_frame(void)
     }
 #endif
 
-    for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
+    for (uint8_t i = 0; i < ptl_2_next_empty_module; i++) // handle all modules
     {
-				ptl_2_module_info_t *module_info = &ptl_2_module_info[i];
+        ptl_2_module_info_t *module_info = &ptl_2_module_info[i];
 
-				if(module_info->receive_handler == NULL)
-				{
-					LOG_LEVEL("l_t_module_info[i].receive_handler is null.");
-					continue;
-				}
+        if (module_info->receive_handler == NULL)
+        {
+            LOG_LEVEL("l_t_module_info[i].receive_handler is null.");
+            continue;
+        }
+        if (module_info->ptl_2_proc_buff.size == 0)
+            continue;
 
         bool res = module_info->receive_handler(&(module_info->ptl_2_proc_buff));
         if (res)
@@ -298,68 +295,40 @@ void ptl_2_proc_valid_frame(void)
             module_info->ptl_2_proc_buff.size = 0;
         }
     }
-		
-    for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
-		{
-      if (ptl_2_module_info[i].ptl_2_proc_buff.size > 10)
-        ptl_2_module_info[i].ptl_2_proc_buff.size = 0;
-	  }
-}
 
-/**
- * Detects communication errors based on the error detection timer.
- * If the opposite side is running and the timeout expires, mark an error.
- */
-void ptl_2_error_detect(void)
-{
-    if (GetTickCounter(&l_t_ptl_error_detect_timer) > 5000)
+    for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
     {
-        StartTickCounter(&l_t_ptl_error_detect_timer);
+        ptl_2_module_info_t *module_info = &ptl_2_module_info[i];
+        if (ptl_2_module_info[i].module == PTL2_MODULE_BAFANG)
+        {
+
+            if (module_info->ptl_2_proc_buff.size > 10)
+                module_info->ptl_2_proc_buff.size = 0;
+        }
     }
 }
 
-void ptl_2_receive_callback(ptl_2_module_t ptl_2_module ,const uint8_t *buffer, uint16_t length)
+void ptl_2_send_buffer(ptl_2_module_t ptl_2_module, const uint8_t *buffer, size_t size)
 {
-#ifdef TEST_LOG_DEBUG_UART_RX_DATA
-    LOG_BUFF_LEVEL(buffer, length);
-#endif
-	for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
-	{
-		if(ptl_2_module_info[i].module == ptl_2_module)
-		{
-				for (i = 0; i < length; i++)
-				{
-						cFifo_Push(ptl_2_module_info[i].ptl_2_usart_rx_fifo, buffer[i]);
-				}
-				return;
-	  }
-	}
-}
+    if (buffer == NULL || size == 0)
+    {
+        return;
+    }
 
-void ptl_2_send_buffer(ptl_2_module_t ptl_2_module,const uint8_t *buffer, size_t size)
-{
-		if (buffer == NULL || size == 0) {
-				return;
-		}
-
-    switch (ptl_2_module) {
-        case SETTING_PTL_BAFANG:
-            LPUART_Send_Buffer(buffer, size);
-            break;
-
-        case SETTING_PTL_LINGHUILIION2:
-            break;
-
-        case SETTING_PTL_KEY_DISP:
-            break;
-
-        case SETTING_PTL_LOT4G:
-            UART4_Send_Buffer(buffer, size);
-            break;
-
-        default:
-            break;
-    }	
+    switch (ptl_2_module)
+    {
+    case PTL2_MODULE_BAFANG:
+        LPUART_Send_Buffer(buffer, size);
+        break;
+    case PTL2_MODULE_LOT4G:
+        UART4_Send_Buffer(buffer, size);
+        break;
+    case PTL2_MODULE_BT:
+        UART1_Send_Buffer(buffer, size);
+        break;
+    default:
+        break;
+    }
 }
 
 #endif

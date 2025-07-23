@@ -33,63 +33,62 @@ extern "C"
 /*******************************************************************************
  * MACROS
  *******************************************************************************/
-#define PTL2_FIFO_MAX_SIZE 255 
+#define PTL2_FIFO_MAX_SIZE 255
 #define PTL2_FRAME_MAX_SIZE 255 ///< Maximum frame size
-//#define PTL_TX_TIMEOUT 50
-#define PTL2_MODULE_SUPPORT_CNT 3
+								// #define PTL_TX_TIMEOUT 50
+	// #define PTL2_MODULE_SUPPORT_CNT 3
 
 	/*******************************************************************************
-	* ENUMERATIONS
-	*******************************************************************************/
+	 * ENUMERATIONS
+	 *******************************************************************************/
 	typedef enum
 	{
-		SETTING_PTL_BAFANG = 0x00, ///< Protocol for Bafang
-		SETTING_PTL_LINGHUILIION2, ///< Protocol for Linghuiliion2
-		SETTING_PTL_KEY_DISP,      ///< Protocol for KEY_DISP (KDS)
-		SETTING_PTL_LOT4G,  
-		SETTING_PTL_BT,		
-		SETTING_PTL_MAX,		
+		PTL2_MODULE_BAFANG = 0x00, ///< Protocol for Bafang
+		PTL2_MODULE_LOT4G,
+		PTL2_MODULE_BT,
+		PTL2_MODULE_MAX,
 	} PTL2_MODEL;
 
-	#define  SETTING_PTL_BEGIN SETTING_PTL_BAFANG
-	#define  SETTING_PTL_END   (SETTING_PTL_MAX-1)
-		
+	// #define  SETTING_PTL_BEGIN SETTING_PTL_BAFANG
+	// #define  SETTING_PTL_END   (SETTING_PTL_MAX-1)
+
 /* ============================== UART PTL ============================== */
 #define PTL_FRAME_MAX_SIZE 255
 
-    typedef PTL2_MODEL ptl_2_module_t;
+	typedef PTL2_MODEL ptl_2_module_t;
 
-    typedef struct
-    {
-        uint16_t size;
-        uint8_t buffer[PTL_FRAME_MAX_SIZE];
-    } ptl_2_proc_buff_t;
+	typedef struct
+	{
+		uint16_t size;
+		uint8_t buffer[PTL_FRAME_MAX_SIZE];
+	} ptl_2_proc_buff_t;
 
-    typedef bool (*ptl_2_module_receive_handler_t)(ptl_2_proc_buff_t *buffer);
+	typedef bool (*ptl_2_module_receive_handler_t)(ptl_2_proc_buff_t *buffer);
 
-    typedef struct
-    {
-			ptl_2_module_t module;
-			ptl_2_proc_buff_t ptl_2_proc_buff;
-			ptl_2_module_receive_handler_t receive_handler;
-			cFifo_t *ptl_2_usart_rx_fifo;
-			uint8_t ptl_2_usart_rx_fifo_buff[cFifo_ObjSize(PTL2_FIFO_MAX_SIZE)];
-    } ptl_2_module_info_t;
+	typedef struct
+	{
+		ptl_2_module_t module;
+		ptl_2_proc_buff_t ptl_2_proc_buff;
+		ptl_2_module_receive_handler_t receive_handler;
+		cFifo_t *ptl_2_usart_rx_fifo;
+		uint8_t ptl_2_usart_rx_fifo_buff[cFifo_ObjSize(PTL2_FIFO_MAX_SIZE)];
+	} ptl_2_module_info_t;
 
-    void ptl_2_init_running(void);
-    void ptl_2_start_running(void);
-    void ptl_2_assert_running(void);
-    void ptl_2_running(void);
-    void ptl_2_post_running(void);
-    void ptl_2_stop_running(void);
+	void ptl_2_init_running(void);
+	void ptl_2_start_running(void);
+	void ptl_2_assert_running(void);
+	void ptl_2_running(void);
+	void ptl_2_post_running(void);
+	void ptl_2_stop_running(void);
 
-    bool ptl_2_is_com_error(void);
-		
-	  uint8_t ptl_2_get_fifo_data(cFifo_t *a_ptFifo,uint8_t *buffer, uint16_t length);
-		
-    void ptl_2_register_module(ptl_2_module_t module, ptl_2_module_receive_handler_t receive_handler);
-		void ptl_2_receive_callback(ptl_2_module_t ptl_2_module ,const uint8_t *buffer, uint16_t length);
-    void ptl_2_send_buffer(ptl_2_module_t ptl_2_module,const uint8_t *buffer, size_t size);
+	bool ptl_2_is_com_error(void);
+
+	uint8_t ptl_2_get_fifo_data(cFifo_t *a_ptFifo, uint8_t *buffer, uint16_t length);
+
+	void ptl_2_register_module(ptl_2_module_t module, ptl_2_module_receive_handler_t receive_handler);
+	void ptl_2_receive_callback(ptl_2_module_t ptl_2_module, const uint8_t *buffer, uint16_t length);
+	void ptl_2_send_buffer(ptl_2_module_t ptl_2_module, const uint8_t *buffer, size_t size);
+	void print_ptl2_registered_module(void);
 
 #ifdef __cplusplus
 }

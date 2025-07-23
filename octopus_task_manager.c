@@ -77,7 +77,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-#ifdef TASK_MANAGER_STATE_MACHINE_SYSTEM		
+#ifdef TASK_MANAGER_STATE_MACHINE_SYSTEM
     [TASK_MODULE_SYSTEM] = {
         .func = {
             [OTMS_S_INIT] = task_system_init_running,
@@ -88,7 +88,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
             [OTMS_S_STOP] = task_system_stop_running,
         },
     },
-#endif		
+#endif
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     [TASK_MODULE_GPIO] = {
         .func = {
@@ -101,7 +101,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-		
+
 #ifdef TASK_MANAGER_STATE_MACHINE_KEY
     [TASK_MODULE_KEY] = {
         .func = {
@@ -114,7 +114,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-		
+
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
     [TASK_MODULE_CAR_INFOR] = {
         .func = {
@@ -167,7 +167,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-		
+
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
     [TASK_MODULE_CAN] = {
         .func = {

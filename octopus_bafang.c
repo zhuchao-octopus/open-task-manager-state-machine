@@ -211,7 +211,7 @@ void task_bfang_ptl_start_running(void)
     // if (SETTING_PTL_BAFANG == theEnvInfo.ptl)
     {
         /// ptl_register_module(SETTING_PTL_BAFANG, bafang_send_handler,bafang_receive_handler);
-        ptl_2_register_module(SETTING_PTL_BAFANG, bafang_receive_handler);
+        ptl_2_register_module(PTL2_MODULE_BAFANG, bafang_receive_handler);
         OTMS(TASK_MODULE_BAFANG, OTMS_S_ASSERT_RUN);
     }
 }
@@ -469,7 +469,7 @@ void uart_send_protocol_cmd_speed_limit(void)
     send_data[2] = word_h;
     send_data[3] = word_l;
     send_data[4] = send_data[0] + send_data[1] + send_data[2] + send_data[3];
-    ptl_2_send_buffer(SETTING_PTL_BAFANG,send_data, 5);
+    ptl_2_send_buffer(PTL2_MODULE_BAFANG, send_data, 5);
 }
 
 // 发送写入档位命令
@@ -477,7 +477,7 @@ void uart_send_protocol_cmd_gear(void)
 {
     if (lt_carinfo_indicator.walk_assist)
     {
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_06, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_06, 4);
     }
     else if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_3_LEVEL)
     {
@@ -503,24 +503,24 @@ void uart_send_protocol_cmd_lamp(void)
     // if (theIndicatorFlag.lamp)
     if (lt_carinfo_indicator.highBeam > 0)
     {
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_lamp_on, 3);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_lamp_on, 3);
     }
     else
     {
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_lamp_off, 3);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_lamp_off, 3);
     }
 }
 
 // 发送读取电池命令
 void uart_send_protocol_cmd_battery_info(void)
 {
-    ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_battery_info, 3);
+    ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_battery_info, 3);
 }
 
 // 发送读取电芯命令
 void uart_send_protocol_cmd_cell_info(void)
 {
-    ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_cell_info, 3);
+    ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_cell_info, 3);
 }
 
 // 0x11 x?
@@ -530,7 +530,7 @@ void bike_Uart_Send(unsigned char data)
 
     send_data[0] = 0x11;
     send_data[1] = data;
-    ptl_2_send_buffer(SETTING_PTL_BAFANG,send_data, 2);
+    ptl_2_send_buffer(PTL2_MODULE_BAFANG, send_data, 2);
 }
 
 void Bike_pas_level_send_depend_max_9_level(void)
@@ -538,37 +538,37 @@ void Bike_pas_level_send_depend_max_9_level(void)
     switch (lt_carinfo_meter.gear)
     {
     case 0:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_00, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_00, 4);
         return;
     case 1:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_01, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_01, 4);
         return;
     case 2:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_11, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_11, 4);
         return;
     case 3:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_12, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_12, 4);
         return;
     case 4:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_13, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_13, 4);
         return;
     case 5:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_02, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_02, 4);
         return;
     case 6:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_21, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_21, 4);
         return;
     case 7:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_22, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_22, 4);
         return;
     case 8:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_23, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_23, 4);
         return;
     case 9:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_03, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_03, 4);
         return;
     default:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_01, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_01, 4);
         return;
     }
 }
@@ -578,25 +578,25 @@ void Bike_pas_level_send_depend_max_5_level(void)
     switch (lt_carinfo_meter.gear)
     {
     case 0:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_00, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_00, 4);
         return;
     case 1:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_11, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_11, 4);
         return;
     case 2:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_13, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_13, 4);
         return;
     case 3:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_21, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_21, 4);
         return;
     case 4:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_23, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_23, 4);
         return;
     case 5:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_03, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_03, 4);
         return;
     default:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_11, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_11, 4);
         return;
     }
 }
@@ -606,19 +606,19 @@ void Bike_pas_level_send_depend_max_3_level(void)
     switch (lt_carinfo_meter.gear)
     {
     case 0:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_00, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_00, 4);
         return;
     case 1:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_12, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_12, 4);
         return;
     case 2:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_02, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_02, 4);
         return;
     case 3:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_03, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_03, 4);
         return;
     default:
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_12, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_12, 4);
         return;
     }
 }
@@ -898,12 +898,12 @@ void bafang_lamp_on_off(bool on_off)
     if (on_off)
     {
         lt_carinfo_indicator.highBeam = 1;
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_lamp_on, sizeof(protocol_cmd_lamp_on));
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_lamp_on, sizeof(protocol_cmd_lamp_on));
     }
     else
     {
         lt_carinfo_indicator.highBeam = 0;
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_lamp_off, sizeof(protocol_cmd_lamp_off));
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_lamp_off, sizeof(protocol_cmd_lamp_off));
     }
 }
 
@@ -913,7 +913,7 @@ void bafang_set_gear(uint8_t level)
     if (lt_carinfo_indicator.walk_assist)
     {
         LOG_LEVEL("lt_indicator.walk_assist=%d\r\n", lt_carinfo_indicator.walk_assist);
-        ptl_2_send_buffer(SETTING_PTL_BAFANG,protocol_cmd_pas_gear_06, 4);
+        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_06, 4);
     }
     else if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_3_LEVEL)
     {

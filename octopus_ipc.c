@@ -126,14 +126,14 @@ void task_ipc_running(void)
     StartTickCounter(&l_t_msg_wait_10_timer);
 
     Msg_t *msg = get_message(TASK_MODULE_IPC);
-		
-    #ifdef TASK_MANAGER_STATE_MACHINE_SOC
+
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
     if (update_is_mcu_updating() && (msg->msg_id != MSG_OTSM_DEVICE_MCU_EVENT))
     {
         return;
     }
-    #endif
-		
+#endif
+
     if (msg->msg_id == NO_MSG)
     {
         if ((GetTickCounter(&l_t_msg_wait_500_timer) >= l_t_callback_delay) && (l_t_callback_delay > 0))
@@ -184,7 +184,7 @@ void task_ipc_running(void)
     case MSG_OTSM_DEVICE_MCU_EVENT:
         switch (msg->param1)
         {
-		#ifdef TASK_MANAGER_STATE_MACHINE_SOC
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
         case MSG_OTSM_CMD_MCU_REQUEST_UPGRADING:
             if (flash_is_meta_infor_valid())
             {
@@ -206,7 +206,7 @@ void task_ipc_running(void)
                 send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
             }
             break;
-		#endif
+#endif
         case MSG_OTSM_CMD_MCU_UPDATING:
             ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_UPDATING);
             break;
@@ -324,15 +324,18 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
             flash_save_carinfor_meter();
             return true;
         case FRAME_CMD_CAR_SET_LIGHT:
+#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
             if (payload->data[0] == 1)
                 bafang_lamp_on_off(true);
             else
                 bafang_lamp_on_off(false);
-
             return true;
+#endif
         case FRAME_CMD_CAR_SET_GEAR_LEVEL:
+#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
             bafang_set_gear(payload->data[0]);
             return true;
+#endif
         default:
             break;
         }

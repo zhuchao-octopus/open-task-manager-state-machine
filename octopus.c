@@ -146,7 +146,7 @@ void TaskManagerStateMachineInit(void)
 #if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
     system_handshake_with_app();
 #endif
-#ifdef TASK_MANAGER_STATE_MACHINE_SOC
+#if defined(TASK_MANAGER_STATE_MACHINE_SOC) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
     system_handshake_with_mcu();
 #endif
     ptl_help();
@@ -163,9 +163,9 @@ void TaskManagerStateMachineInit(void)
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
     LOG_NONE("-----------------------------------------------------------------------------\r\n");
-#if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)		
+#if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
     system_set_mb_state(MB_POWER_ST_ON);
-#endif		
+#endif
 }
 
 #if defined(PLATFORM_ITE_OPEN_RTOS) || defined(PLATFORM_LINUX_RISC)

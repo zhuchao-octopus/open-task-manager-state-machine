@@ -28,44 +28,49 @@
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_log.h"      // Include logging functions for debugging
 
-#define OTSM_DEBUG_USART1 
+#define LOG_DEFAULT_MAX_WIDTH 28
 
-#ifdef OTSM_RELEASE_VERSION
-DBG_LOG_LEVEL current_log_level = LOG_LEVEL_NONE;
-#else
+#ifdef OTSM_DEBUG_MODE
 DBG_LOG_LEVEL current_log_level = LOG_LEVEL_DEBUG;
+#else
+DBG_LOG_LEVEL current_log_level = LOG_LEVEL_NONE;
 #endif
 
-#define LOG_DEFAULT_MAX_WIDTH 28
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
 #define USE_MY_PRINTF
+#define OTSM_DEBUG_USART2
+#endif
 
 #ifdef USE_MY_PRINTF
-
-#define FMT_FLAG_LEFT     (1 << 0)  // Left justify (for '-')
-#define FMT_FLAG_PLUS     (1 << 1)  // Show positive sign '+' (for signed numbers)
-#define FMT_FLAG_SPACE    (1 << 2)  // Show space for positive numbers (for signed numbers)
-#define FMT_FLAG_ZERO     (1 << 3)  // Pad with zeros (for numbers)
-#define FMT_FLAG_SPECIAL  (1 << 4)  // Prefix for octal (0) or hexadecimal (0x)
-#define FMT_FLAG_SIGN     (1 << 5)  // Flag for signed numbers (e.g. positive or negative integers)
-#define FMT_FLAG_LARGE    (1 << 6)  // Use uppercase letters for hexadecimal (e.g., 'A'-'F')
+#define FMT_FLAG_LEFT (1 << 0)    // Left justify (for '-')
+#define FMT_FLAG_PLUS (1 << 1)    // Show positive sign '+' (for signed numbers)
+#define FMT_FLAG_SPACE (1 << 2)   // Show space for positive numbers (for signed numbers)
+#define FMT_FLAG_ZERO (1 << 3)    // Pad with zeros (for numbers)
+#define FMT_FLAG_SPECIAL (1 << 4) // Prefix for octal (0) or hexadecimal (0x)
+#define FMT_FLAG_SIGN (1 << 5)    // Flag for signed numbers (e.g. positive or negative integers)
+#define FMT_FLAG_LARGE (1 << 6)   // Use uppercase letters for hexadecimal (e.g., 'A'-'F')
 
 static const char *digits = "0123456789abcdefghijklmnopqrstuvwxyz";
 static const char *upper_digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 // Check if a character is a digit
-static inline int is_digital(char c) {
+static inline int is_digital(char c)
+{
     return c >= '0' && c <= '9';
 }
 
 // Calculate string length with max limit
-static size_t strnlen__(const char *s, size_t count) {
+static size_t strnlen__(const char *s, size_t count)
+{
     const char *sc = s;
-    while (*sc != '\0' && count--) ++sc;
+    while (*sc != '\0' && count--)
+        ++sc;
     return sc - s;
 }
 
 // Convert string to int (used for width/precision parsing)
-static int skip_atoi__(const char **s) {
+static int skip_atoi__(const char **s)
+{
     int i = 0;
     while (is_digital(**s))
         i = i * 10 + *((*s)++) - '0';
@@ -87,7 +92,7 @@ static void number__(std_putc putc, long num, int base, int size, int precision,
     if (base < 2 || base > 36)
         return;
 
-    //c = (type & FMT_FLAG_ZERO) ? '0' : ' ';
+    // c = (type & FMT_FLAG_ZERO) ? '0' : ' ';
     sign = 0;
     if (type & FMT_FLAG_SIGN)
     {
@@ -177,7 +182,7 @@ static void number__(std_putc putc, long num, int base, int size, int precision,
 
     while (i < precision--)
     {
-        tmpch = '0';  // Fill with zeroes if the number is shorter than precision
+        tmpch = '0'; // Fill with zeroes if the number is shorter than precision
         putc(&tmpch, 1);
     }
 
@@ -200,7 +205,7 @@ static void vsprintf__(std_putc putc, const char *fmt, va_list args)
     unsigned long num;
     int base;
     char *s;
-    int flags = 0;       // Flags for number formatting
+    int flags = 0;        // Flags for number formatting
     int field_width = -1; // Width of output field
     int precision = -1;   // Min. # of digits for integers; max for strings
     int qualifier = -1;   // 'h', 'l', or 'L' for integer fields
@@ -407,11 +412,11 @@ static void vsprintf__(std_putc putc, const char *fmt, va_list args)
 
 static void native_uart_putc(char *data, uint16_t size)
 {
-	#ifdef OTSM_DEBUG_USART2
-	UART2_Send_Buffer((uint8_t *)data, size);
-	#else
-	UART1_Send_Buffer((uint8_t *)data, size);
-	#endif
+#ifdef OTSM_DEBUG_USART2
+    UART2_Send_Buffer((uint8_t *)data, size);
+#else
+    UART1_Send_Buffer((uint8_t *)data, size);
+#endif
 }
 
 #endif
@@ -423,6 +428,11 @@ static void native_uart_putc(char *data, uint16_t size)
  */
 void dbg_log_printf(const char *format, ...)
 {
+    // Skip logging if log level is set to NONE or format is NULL
+    if (current_log_level == LOG_LEVEL_NONE || !format)
+    {
+        return;
+    }
     va_list args;
     va_start(args, format); // Initialize the va_list to process the variable arguments
 #ifdef USE_MY_PRINTF

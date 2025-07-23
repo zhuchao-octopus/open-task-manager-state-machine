@@ -55,7 +55,7 @@ void PollingGPIOKeyEventDispatcher(GPIO_KEY_STATUS *key_status);
 // GPIO_STATUS zzd_status = {false, true, 0, 0};
 // GPIO_STATUS yzd_status = {false, true, 0, 0};
 
-GPIO_STATUS power_pin_status = {false, true, 0, 0};
+GPIO_STATUS power_pin_status = {false, false, 0, 0};
 
 GPIO_KEY_STATUS key_status_power = {OCTOPUS_KEY_POWER, 0};
 GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_power};
@@ -71,6 +71,7 @@ void task_gpio_init_running(void)
     LOG_LEVEL("task_gpio_init_running\r\n");
     // com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
     OTMS(TASK_MODULE_GPIO, OTMS_S_INVALID);
+    power_pin_status.offon = hal_gpio_read(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN);
 }
 
 void task_gpio_start_running(void)
@@ -91,11 +92,11 @@ void task_gpio_running(void)
     // PollingGPIOStatus(GPIO_DDD_PIN,&ddd_status);
     // PollingGPIOStatus(GPIO_ZZD_PIN,&zzd_status);
     // PollingGPIOStatus(GPIO_YZD_PIN,&yzd_status);
-#if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)	
+#if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
     if (system_get_mb_state() != MB_POWER_ST_ON)
         return;
 #endif
-    PollingGPIOStatus(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, &power_pin_status);
+    // PollingGPIOStatus(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, &power_pin_status);
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     PollingGPIOKeyEventStatus(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, &key_status_power);
@@ -105,13 +106,13 @@ void task_gpio_running(void)
 
     if (power_pin_status.changed)
     {
-		if(power_pin_status.offon)
-		LOG_LEVEL("Power pin transitioned from LOW to HIGH %d\r\n", power_pin_status.offon);
-		else
-		LOG_LEVEL("Power pin transitioned from HIGH to LOW %d\r\n", power_pin_status.offon);
-				
-		send_message(TASK_MODULE_KEY, MSG_OTSM_DEVICE_GPIO_EVENT, GPIO_POWER_KEY_PIN, power_pin_status.offon);
-		power_pin_status.changed = false;
+        if (power_pin_status.offon)
+            LOG_LEVEL("Power switch pin transitioned from LOW to HIGH %d\r\n", power_pin_status.offon);
+        else
+            LOG_LEVEL("Power switch pin transitioned from HIGH to LOW %d\r\n", power_pin_status.offon);
+
+        send_message(TASK_MODULE_KEY, MSG_OTSM_DEVICE_GPIO_EVENT, GPIO_POWER_KEY_PIN, power_pin_status.offon);
+        power_pin_status.changed = false;
     }
 
 #if 0
@@ -187,15 +188,21 @@ void gpio_init(void)
  */
 void PollingGPIOStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_STATUS *gpio_status)
 {
+    // static uint32_t g_start_gpio_tickcounter = 0;
     // Check the current state of the GPIO pin
     if (hal_gpio_read(gpiox, pin))
     {
+        // Increment the press counter with redundancy protection
+        if (!IsTickCounterStart(&gpio_status->count1))
+        {
+            StartTickCounter(&gpio_status->count1);
+        }
         // If the pin is high, increment the high state counter and reset the low counter
-        gpio_status->count1++;
+        // gpio_status->count1 = GetTickCounter(&gpio_status->count1);
         gpio_status->count2 = 0;
 
         // If the high state is consistent for more than the redundancy threshold
-        if (gpio_status->count1 > GPIO_STATUS_REDUNDANCY)
+        if (GetTickCounter(&gpio_status->count1) > GPIO_STATUS_REDUNDANCY)
         {
             // If the state has changed from low to high, mark it as changed
             if (!gpio_status->offon)
@@ -205,17 +212,22 @@ void PollingGPIOStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_STATUS *gpio_status
 
             // Update the status
             gpio_status->offon = true;
+            StopTickCounter(&gpio_status->count1);
             gpio_status->count1 = 0;
         }
     }
     else
     {
+        if (!IsTickCounterStart(&gpio_status->count2))
+        {
+            StartTickCounter(&gpio_status->count2);
+        }
         // If the pin is low, reset the high counter and increment the low counter
         gpio_status->count1 = 0;
-        gpio_status->count2++;
+        // gpio_status->count2++;
 
         // If the low state is consistent for more than the redundancy threshold
-        if (gpio_status->count2 > GPIO_STATUS_REDUNDANCY)
+        if (GetTickCounter(&gpio_status->count2) > GPIO_STATUS_REDUNDANCY)
         {
             // If the state has changed from high to low, mark it as changed
             if (gpio_status->offon)
@@ -225,6 +237,8 @@ void PollingGPIOStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_STATUS *gpio_status
 
             // Update the status
             gpio_status->offon = false;
+
+            StopTickCounter(&gpio_status->count2);
             gpio_status->count2 = 0;
         }
     }

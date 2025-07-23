@@ -47,7 +47,7 @@
 #define OTMS_VERSION_CODE (001)
 #define OTMS_VERSION_NAME ("0.0.1")
 
-#define OTSM_RELEASE_VERSION OTMS_VERSION_CODE
+//#define OTSM_DEBUG_MODE
 ///////////////////////////////////////////////////////////////////////////////////
 /*******************************************************************************
  * PROJECT SWITCH MACROS
@@ -58,7 +58,6 @@
 // #define PLATFORM_X86_WIND_RTOS   // Uncomment to use XB6 platform with WIND RTOS
 #define PLATFORM_STM32_RTOS
 // #define PLATFORM_LINUX_RISC         // X86 ARM linux
-
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
@@ -174,10 +173,9 @@
 #include "../HAL/octopus_serialport_c.h"
 
 #elif defined(PLATFORM_STM32_RTOS)
-#include "../src/native_devices.h"
-
+#include "octopus_bsp.h"
 #else
-
+#include "octopus_bsp.h"
 #endif
 
 #ifdef __cplusplus

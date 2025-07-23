@@ -104,7 +104,7 @@ extern "C"
         /* MOD_SYSTEM commands */
         FRAME_CMD_SYSTEM_HANDSHAKE = 0x00, ///< System handshake
         FRAME_CMD_SYSTEM_ACC_STATE = 0x01, ///< ACC state
-        FRAME_CMD_SYSTEM_MCU_META = 0x02, ///< Application state
+        FRAME_CMD_SYSTEM_MCU_META = 0x02,  ///< Application state
         FRAME_CMD_SYSTEM_POWER_ON = 0x03,  ///< Power on
         FRAME_CMD_SYSTEM_POWER_OFF = 0x04, ///< Power off
         FRAME_CMD_SYSTEM_SAVE_DATA = 0x05, ///< Power off

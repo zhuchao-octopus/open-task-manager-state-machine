@@ -84,7 +84,7 @@ mcu_update_progress_status_t mcu_upgrade_status;
  */
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
 static FILE *file_handle_oupg = NULL;
-char file_path_name_upgrade[40] = {0};
+char file_path_name_upgrade[64] = {0};
 #endif
 /*******************************************************************************
  * STATIC VARIABLES
@@ -104,6 +104,7 @@ static bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t
 static void update_state_process(void);
 
 bool update_and_verify_dest_bank(uint32_t slot_addr);
+uint32_t update_get_model_number(void);
 
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
 static file_read_status_t read_next_record(FILE *fp, long *file_offset, file_type_t type, hex_record_t *record);
@@ -228,14 +229,14 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 			mcu_upgrade_status.file_offset = flash_get_bank_offset_address(update_get_target_bank());
 
 			uint32_t model_number = update_get_model_number();
-			
+
 			mcu_upgrade_status.file_info = parse_firmware_file(model_number, mcu_upgrade_status.file_offset, file_path_name_upgrade);
 			uint32_t bank_address = mcu_upgrade_status.file_info.reset_handler & FLASH_BANK_MASK;
 			mcu_upgrade_status.s_length = 0;
 			mcu_upgrade_status.f_counter = 0;
 
 			LOG_LEVEL("Target Bank   : %s\n", flash_get_bank_name(update_get_target_bank()));
-      LOG_LEVEL("Model Number  : %08x\n", model_number);
+			LOG_LEVEL("Model Number  : %08x\n", model_number);
 			LOG_LEVEL("File Type     : %d\n", mcu_upgrade_status.file_info.file_type);
 			LOG_LEVEL("File Size     : %zu bytes\n", mcu_upgrade_status.file_info.file_size);
 			LOG_LEVEL("File Version  : 0x%08X\n", mcu_upgrade_status.file_info.file_version);
