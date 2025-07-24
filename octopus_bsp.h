@@ -18,6 +18,8 @@
 #ifndef __OCTOPUS_TASK_MANAGER_BSP_H__
 #define __OCTOPUS_TASK_MANAGER_BSP_H__
 
+#include "octopus_platform.h" // Include platform-specific header for hardware platform details
+
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
 #include <stddef.h>  // Standard definitions for NULL and size_t
 #include <stdint.h>  // Standard integer type definitions

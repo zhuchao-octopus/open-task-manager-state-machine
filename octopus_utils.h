@@ -63,7 +63,7 @@ extern "C"
 	typedef struct
 	{
 		uint32_t address;
-		uint8_t data[64];
+		uint8_t data[64+10];
 		uint8_t length;
 		uint16_t f_count;
 	} hex_record_t;

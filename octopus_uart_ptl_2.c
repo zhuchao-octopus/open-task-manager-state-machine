@@ -320,9 +320,11 @@ void ptl_2_send_buffer(ptl_2_module_t ptl_2_module, const uint8_t *buffer, size_
     case PTL2_MODULE_BAFANG:
         LPUART_Send_Buffer(buffer, size);
         break;
+		#ifdef TASK_MANAGER_STATE_MACHINE_4G
     case PTL2_MODULE_LOT4G:
         UART4_Send_Buffer(buffer, size);
         break;
+		#endif
     case PTL2_MODULE_BT:
         UART1_Send_Buffer(buffer, size);
         break;

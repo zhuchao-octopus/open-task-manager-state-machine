@@ -1,8 +1,12 @@
+
 /* Includes ------------------------------------------------------------------*/
+#include "../OTSM/octopus_platform.h"
+
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-#include "hk32l0xx.h" // Include the HK32L0xx library for MCU-specific definitions and functions
 #include <string.h>	  // Include string functions for string manipulation
+#include "hk32l0xx.h" // Include the HK32L0xx library for MCU-specific definitions and functions
 #include "octopus_bsp.h"
+
 #include "../OTSM/octopus_uart_hal.h"
 #include "../OTSM/octopus_can.h"
 #include "../OTSM/octopus_log.h"
@@ -208,7 +212,7 @@ __weak void UART3_RX_Callback(uint8_t *buffer, uint16_t length)
 
 __weak void UART4_RX_Callback(uint8_t *buffer, uint16_t length)
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
+#ifdef TASK_MANAGER_STATE_MACHINE_4G
 	ptl_2_receive_callback(PTL2_MODULE_LOT4G, buffer, length);
 #endif
 }
@@ -216,7 +220,7 @@ __weak void UART4_RX_Callback(uint8_t *buffer, uint16_t length)
 // Weak callback function for LPUART RX ///////Main-MCU
 __weak void LPUART_RX_Callback(uint8_t *buffer, uint16_t length)
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
+#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
 	// LPUART_Send_Buffer(buffer,length);
 	ptl_2_receive_callback(PTL2_MODULE_BAFANG, buffer, length);
 #endif

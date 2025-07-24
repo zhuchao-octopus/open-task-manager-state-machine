@@ -32,6 +32,7 @@
  * MACROS
  */
 #define BT_PAIRED_DISTANCE -35
+#define BT_SCAN_TIME_INTERVAL 15
 
 #ifdef TASK_MANAGER_STATE_MACHINE_BT
 
@@ -60,10 +61,10 @@ bool bt_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff);
  * GLOBAL VARIABLES
  */
 
-static uint32_t l_t_msg_wait_10_timer = 0;
-static uint32_t l_t_bt_state_polling_timer_10s = 0;
-// static uint32_t l_t_msg_ble_pair_wait_timer = 0;
-// static uint32_t l_t_msg_ble_lock_wait_timer = 0;
+static uint32_t l_t_bt_auto_link_wait_timer = 0;
+static uint32_t l_t_bt_state_polling_timer_8s = 0;
+static uint32_t l_t_bt_scan_polling_timer_15s = 0;
+
 bool bt_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff);
 // static bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff);
 // static bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
@@ -87,21 +88,22 @@ void task_bt_start_running(void)
 	ptl_2_register_module(PTL2_MODULE_BT, bt_receive_handler);
 #endif
 	OTMS(TASK_MODULE_BT, OTMS_S_ASSERT_RUN);
+	StartTickCounter(&l_t_bt_auto_link_wait_timer);
+	StartTickCounter(&l_t_bt_state_polling_timer_8s);
+	StartTickCounter(&l_t_bt_scan_polling_timer_15s);
 	bt_module_init();
 }
 
 void task_bt_assert_running(void)
 {
-	StartTickCounter(&l_t_msg_wait_10_timer);
-	StartTickCounter(&l_t_bt_state_polling_timer_10s);
 	OTMS(TASK_MODULE_BT, OTMS_S_RUNNING);
 }
 
 void task_bt_running(void)
 {
-	if (GetTickCounter(&l_t_msg_wait_10_timer) < 10)
-		return;
-	StartTickCounter(&l_t_msg_wait_10_timer);
+	//if (GetTickCounter(&l_t_msg_wait_10_timer) < 10)
+	//	return;
+	//StartTickCounter(&l_t_msg_wait_10_timer);
 
 	bt_state_manager();
 
@@ -129,6 +131,8 @@ void bt_module_init(void)
 	// Optional: wait for module to power up and stabilize
 	// delay_ms(800);
 	LOG_LEVEL("bt module init...\r\n");
+	//bt_send_at_command(AT_DEL_ALL_PAIR);
+	//bt_send_at_command("AT+LINKCFG=1\r\n");
 	// 1. Check if the Bluetooth module is alive
 	// bt_send_at_command("AT\r\n");  // Expect "OK"
 
@@ -182,7 +186,7 @@ void bt_start_scan(void)
 	bt_clear_device_list();
 
 	// Send AT command to initiate scan
-	bt_send_at_command("AT+SCAN=1,10\r\n"); // Scan for ~12.8 seconds
+	bt_send_at_command("AT+SCAN=1,%d\r\n",BT_SCAN_TIME_INTERVAL); // Scan for ~12.8 seconds
 }
 
 /**
@@ -198,33 +202,28 @@ void bt_state_manager(void)
 {
 	// Check if 10 seconds have passed since the last state check
 
-	if (GetTickCounter(&l_t_bt_state_polling_timer_10s) < 10000)
-		return;
-
-	// Restart the 10-second timer
-	StartTickCounter(&l_t_bt_state_polling_timer_10s);
-
-	// Log and send an AT command to check A2DP playback status
-	LOG_LEVEL("bt a2dp status... bt_current_state=%d\r\n", bt_current_state);
-	bt_send_at_command("AT+A2DPSTAT\r\n");
+	if (GetTickCounter(&l_t_bt_state_polling_timer_8s) >= 8000)
+	{
+		// Restart the 10-second timer
+		bt_send_at_command("AT+A2DPSTAT\r\n");
+		StartTickCounter(&l_t_bt_state_polling_timer_8s);
+	}
 
 	// Handle actions based on the current Bluetooth connection state
 	switch (bt_current_state)
 	{
 	case BT_STATE_DISCONNECTED:
-		// If a previously connected device is available, try to reconnect
-		if (last_best_dev.address[0] != '\0')
-		{
-			bt_connect_last_device();
-		}
-		// If a "best scanned device" was selected, attempt to connect (disabled for now)
-		else if (selected_best_dev.address[0] != '\0')
-		{
-			// bt_connect_selected_device(); // Optional reconnect logic
-		}
-
 		// Always start scanning when not connected
-		bt_start_scan();
+	  if (GetTickCounter(&l_t_bt_scan_polling_timer_15s) >= 10 * 1000)
+		{
+		  bt_start_scan();
+			StartTickCounter(&l_t_bt_scan_polling_timer_15s);
+		}
+		else if (GetTickCounter(&l_t_bt_auto_link_wait_timer) >= 3 * 1000)
+		{
+		  bt_start_scan();
+			StopTickCounter(&l_t_bt_scan_polling_timer_15s);
+		}
 		break;
 	case BT_STATE_CONNECTING:
 	case BT_STATE_CONNECTED:
@@ -317,6 +316,7 @@ bool bt_parse_scanning_line(const char *line)
 			{
 				last_best_dev = dev;
 				LOG_LEVEL("got a new bt device %s %d\r\n", dev.name, dev.rssi);
+				bt_connect_last_device();
 			}
 		}
 
@@ -406,6 +406,7 @@ void bt_send_at_command(const char *format, ...)
 #ifdef TASK_MANAGER_STATE_MACHINE_PTL2
 	if (length > 0 && length < sizeof(cmd_buf))
 	{
+		LOG_LEVEL("Send at command: %s\r\n", cmd_buf);
 		// UART1_Send_Buffer((uint8_t *)cmd_buf, length);
 		ptl_2_send_buffer(PTL2_MODULE_BT, (uint8_t *)cmd_buf, length);
 	}

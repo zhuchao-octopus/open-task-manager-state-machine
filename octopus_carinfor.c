@@ -184,14 +184,10 @@ carinfo_battery_t *task_carinfo_get_battery_info(void)
 {
     return &lt_carinfo_battery;
 }
+
 carinfo_error_t *task_carinfo_get_error_info(void)
 {
     return &lt_carinfo_error;
-}
-
-carinfo_drivinfo_t *task_carinfo_get_drivinfo_info(void)
-{
-    return NULL; //&lt_drivinfo;
 }
 
 /*******************************************************************************
@@ -472,6 +468,11 @@ void task_carinfo_add_error_code(ERROR_CODE error_code)
     default:
         break;
     }
+}
+
+bool task_carinfo_has_error_code(void)
+{
+  return (lt_carinfo_error.error[0] > ERROR_CODE_NORMAL);	
 }
 
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF

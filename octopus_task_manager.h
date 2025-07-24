@@ -90,7 +90,7 @@ typedef enum
   TASK_MODULE_BT,
   TASK_MODULE_CAN,
   TASK_MODULE_BAFANG,
-
+  TASK_MODULE_LING_HUI_LIION2,
   TASK_MODULE_UPDATE_MCU, /**< MCU firmware update. */
   TASK_MODULE_MAX_NUM     /**< Total number of tasks. */
 } TaskModule_t;

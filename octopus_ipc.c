@@ -320,7 +320,7 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
         switch (payload->frame_cmd)
         {
         case FRAME_CMD_SYSTEM_SAVE_DATA:
-            lt_carinfo_meter.unit_type = payload->data[0];
+            //lt_carinfo_meter.unit_type = payload->data[0];
             flash_save_carinfor_meter();
             return true;
         case FRAME_CMD_CAR_SET_LIGHT:

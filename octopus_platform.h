@@ -45,7 +45,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////
 #define OTMS_VERSION_CODE (001)
-#define OTMS_VERSION_NAME ("0.0.1")
+#define OTMS_VERSION_NAME "0.0.1"
 
 //#define OTSM_DEBUG_MODE
 ///////////////////////////////////////////////////////////////////////////////////
@@ -72,8 +72,8 @@
  /* @brief Task Manager state machine modules.
  */
 #define TASK_MANAGER_STATE_MACHINE_GPIO 1  
-#define TASK_MANAGER_STATE_MACHINE_SYSTEM 1  
 #define TASK_MANAGER_STATE_MACHINE_FLASH 1 
+#define TASK_MANAGER_STATE_MACHINE_SYSTEM 1  
 #define TASK_MANAGER_STATE_MACHINE_KEY 1 
 
 #define TASK_MANAGER_STATE_MACHINE_IPC 1 
@@ -83,6 +83,7 @@
 //#define TASK_MANAGER_STATE_MACHINE_CAN 1 
 
 #define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
+//#define TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2 1
 //#define TASK_MANAGER_STATE_MACHINE_SIF 1 
 //#define TASK_MANAGER_STATE_MACHINE_BLE 1 
 //#define TASK_MANAGER_STATE_MACHINE_BMS 1 
@@ -192,6 +193,7 @@ extern "C"
  * GENERAL MACROS
  * Define common bit manipulation macros and constants.
  ******************************************************************************/
+ 
 #ifdef PLATFORM_CST_OSAL_RTOS
 
 #define GET_SYSTEM_TICK_COUNT (hal_systick() * 625 / 1000) // Convert system ticks to milliseconds
@@ -235,6 +237,7 @@ extern volatile uint32_t system_tick_ms;
  * BIT MANIPULATION MACROS
  * Define macros for setting, clearing, toggling, and extracting bit values.
  ******************************************************************************/
+ 
 #define BIT_0 0x01 // Bit mask for bit 0
 #define BIT_1 0x02 // Bit mask for bit 1
 #define BIT_2 0x04 // Bit mask for bit 2

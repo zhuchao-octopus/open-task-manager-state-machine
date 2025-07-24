@@ -35,17 +35,45 @@ extern "C"
  *******************************************************************************/
 #define PTL2_FIFO_MAX_SIZE 255
 #define PTL2_FRAME_MAX_SIZE 255 ///< Maximum frame size
-								// #define PTL_TX_TIMEOUT 50
-	// #define PTL2_MODULE_SUPPORT_CNT 3
+
+	typedef enum
+	{
+		SETTING_WHEEL_16_Inch,  
+		SETTING_WHEEL_18_Inch, 
+		SETTING_WHEEL_20_Inch,  
+		SETTING_WHEEL_22_Inch, 
+		SETTING_WHEEL_24_Inch,  
+		SETTING_WHEEL_26_Inch, 
+		SETTING_WHEEL_27_Inch,   
+		SETTING_WHEEL_27_5_Inch, 
+		SETTING_WHEEL_28_Inch,   
+		SETTING_WHEEL_29_Inch,  
+	} SETTING_WHEEL;
+	
+	typedef enum
+	{
+		SETTING_MAX_PAS_3_LEVEL = 3, 
+		SETTING_MAX_PAS_5_LEVEL = 5, 
+		SETTING_MAX_PAS_9_LEVEL = 9, 
+	} SETTING_MAX_PAS;
 
 	/*******************************************************************************
 	 * ENUMERATIONS
 	 *******************************************************************************/
 	typedef enum
 	{
-		PTL2_MODULE_BAFANG = 0x00, ///< Protocol for Bafang
+		#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
+		PTL2_MODULE_BAFANG, ///< Protocol for Bafang
+		#endif
+		#ifdef TASK_MANAGER_STATE_MACHINE_4G
 		PTL2_MODULE_LOT4G,
+		#endif
+		#ifdef TASK_MANAGER_STATE_MACHINE_BT
 		PTL2_MODULE_BT,
+		#endif
+		#ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
+		PTL2_MODULE_LING_HUI_LIION2,
+		#endif
 		PTL2_MODULE_MAX,
 	} PTL2_MODEL;
 

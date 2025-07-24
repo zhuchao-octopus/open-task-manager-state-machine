@@ -408,6 +408,7 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 				mcu_upgrade_status.error_code = MCU_ERROR_CODE_FRAME;
 				return false;
 			}
+	
 			if (!file_handle_oupg)
 			{
 				LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA error file_handle_oupg=NULL\r\n");
