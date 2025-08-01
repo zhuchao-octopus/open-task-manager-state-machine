@@ -414,8 +414,8 @@ void flash_save_carinfor_meter(void)
 {
 #if defined(FLASH_USE_EEROM_FOR_DATA_SAVING) && defined(TASK_MANAGER_STATE_MACHINE_CARINFOR)
 	LOG_BUFF_LEVEL((uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-	LOG_LEVEL("lt_carinfo_meter.odo:%d\r\n", lt_carinfo_meter.odo);
-	if (lt_carinfo_meter.odo == 0)
+	LOG_LEVEL("lt_carinfo_meter.trip_odo:%d\r\n", lt_carinfo_meter.trip_odo);
+	if (lt_carinfo_meter.trip_odo == 0)
 	{
 		return;
 	}

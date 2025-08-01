@@ -28,7 +28,9 @@
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_log.h"      // Include logging functions for debugging
 
-#define LOG_DEFAULT_MAX_WIDTH 28
+#define OTSM_DEBUG_MODE
+#define OTSM_DEBUG_USART1
+//#define USE_MY_PRINTF
 
 #ifdef OTSM_DEBUG_MODE
 DBG_LOG_LEVEL current_log_level = LOG_LEVEL_DEBUG;
@@ -36,11 +38,37 @@ DBG_LOG_LEVEL current_log_level = LOG_LEVEL_DEBUG;
 DBG_LOG_LEVEL current_log_level = LOG_LEVEL_NONE;
 #endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
-#define USE_MY_PRINTF
-#define OTSM_DEBUG_USART2
+#ifndef USE_MY_PRINTF
+#ifdef OTSM_DEBUG_USART1
+#define DEBUG_UART USART1 
+#elif defined(OTSM_DEBUG_USART2)
+#define DEBUG_UART USART2
+#elif defined(OTSM_DEBUG_USART3)
+#define DEBUG_UART USART2
+#elif defined(OTSM_DEBUG_USART4)
+#define DEBUG_UART USART4
+#endif
+/**
+  * @brief  Retargets the C library printf function to the USART.
+  * @param  None
+  * @retval None
+  */
+PUTCHAR_PROTOTYPE
+{
+    uint32_t Timeout = 0;
+    FlagStatus Status;
+    USART_SendData(DEBUG_UART, (uint8_t) ch);
+    do
+    {
+        Status = USART_GetFlagStatus(DEBUG_UART, USART_FLAG_TXE);
+        Timeout++;
+    } while ((Status == RESET) && (Timeout != 0xFFFF));
+
+    return (ch);
+}
 #endif
 
+#define LOG_DEFAULT_MAX_WIDTH 28
 #ifdef USE_MY_PRINTF
 #define FMT_FLAG_LEFT (1 << 0)    // Left justify (for '-')
 #define FMT_FLAG_PLUS (1 << 1)    // Show positive sign '+' (for signed numbers)
@@ -412,10 +440,13 @@ static void vsprintf__(std_putc putc, const char *fmt, va_list args)
 
 static void native_uart_putc(char *data, uint16_t size)
 {
-#ifdef OTSM_DEBUG_USART2
-    UART2_Send_Buffer((uint8_t *)data, size);
-#else
-    UART1_Send_Buffer((uint8_t *)data, size);
+#ifdef OTSM_DEBUG_USART1
+	  UART1_Send_Buffer((uint8_t *)data, size);
+#elif defined(OTSM_DEBUG_USART2)	
+	  UART2_Send_Buffer((uint8_t *)data, size);	
+#elif defined(OTSM_DEBUG_USART4)
+	  UART4_Send_Buffer((uint8_t *)data, size);
+#else  
 #endif
 }
 

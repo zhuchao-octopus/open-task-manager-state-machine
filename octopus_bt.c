@@ -32,7 +32,8 @@
  * MACROS
  */
 #define BT_PAIRED_DISTANCE -35
-#define BT_SCAN_TIME_INTERVAL 15
+#define BT_SELECT_DISTANCE -45
+#define BT_SCAN_TIME_INTERVAL 20
 
 #ifdef TASK_MANAGER_STATE_MACHINE_BT
 
@@ -62,8 +63,9 @@ bool bt_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff);
  */
 
 static uint32_t l_t_bt_auto_link_wait_timer = 0;
-static uint32_t l_t_bt_state_polling_timer_8s = 0;
+static uint32_t l_t_bt_stat_polling_timer_8s = 0;
 static uint32_t l_t_bt_scan_polling_timer_15s = 0;
+static uint32_t l_t_bt_conn_polling_timer_20s = 0;
 
 bool bt_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff);
 // static bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff);
@@ -89,7 +91,7 @@ void task_bt_start_running(void)
 #endif
 	OTMS(TASK_MODULE_BT, OTMS_S_ASSERT_RUN);
 	StartTickCounter(&l_t_bt_auto_link_wait_timer);
-	StartTickCounter(&l_t_bt_state_polling_timer_8s);
+	StartTickCounter(&l_t_bt_stat_polling_timer_8s);
 	StartTickCounter(&l_t_bt_scan_polling_timer_15s);
 	bt_module_init();
 }
@@ -202,11 +204,12 @@ void bt_state_manager(void)
 {
 	// Check if 10 seconds have passed since the last state check
 
-	if (GetTickCounter(&l_t_bt_state_polling_timer_8s) >= 8000)
+	if (GetTickCounter(&l_t_bt_stat_polling_timer_8s) >= 8000)
 	{
 		// Restart the 10-second timer
-		bt_send_at_command("AT+A2DPSTAT\r\n");
-		StartTickCounter(&l_t_bt_state_polling_timer_8s);
+		if(bt_current_state != BT_STATE_SCANNING)
+		   bt_send_at_command("AT+A2DPSTAT\r\n");
+		StartTickCounter(&l_t_bt_stat_polling_timer_8s);
 	}
 
 	// Handle actions based on the current Bluetooth connection state
@@ -214,23 +217,37 @@ void bt_state_manager(void)
 	{
 	case BT_STATE_DISCONNECTED:
 		// Always start scanning when not connected
-	  if (GetTickCounter(&l_t_bt_scan_polling_timer_15s) >= 10 * 1000)
+	  if (GetTickCounter(&l_t_bt_conn_polling_timer_20s) >= 20000)
 		{
-		  bt_start_scan();
+			if (selected_best_dev.address[0] != '\0')
+			{
+				if(selected_best_dev.rssi > BT_SELECT_DISTANCE)
+				{
+					StopTickCounter(&l_t_bt_conn_polling_timer_20s);
+					bt_connect_selected_device();
+				}
+			}
+	  }
+		
+	  if (GetTickCounter(&l_t_bt_scan_polling_timer_15s) >= 15 * 1000)
+		{
+			bt_start_scan();
 			StartTickCounter(&l_t_bt_scan_polling_timer_15s);
 		}
 		else if (GetTickCounter(&l_t_bt_auto_link_wait_timer) >= 3 * 1000)
 		{
-		  bt_start_scan();
-			StopTickCounter(&l_t_bt_scan_polling_timer_15s);
+			bt_start_scan();
+			StopTickCounter(&l_t_bt_auto_link_wait_timer);
 		}
+		
 		break;
 	case BT_STATE_CONNECTING:
 	case BT_STATE_CONNECTED:
 	case BT_STATE_PLAYING:
 		// Do nothing; connected or actively playing audio
 		break;
-
+	
+    case BT_STATE_SCANNING:
 	default:
 		// Unknown state, ignore
 		break;
@@ -244,30 +261,45 @@ bool bt_parse_state_response(const char *resp)
 		int stat = atoi(&resp[10]);
 		switch (stat)
 		{
-		case 0:
-		case 1:
+		case BT_STATE_UNINIT:
+		case BT_STATE_DISCONNECTED:
 			bt_current_state = BT_STATE_DISCONNECTED;
 			LOG_LEVEL("bt_current_state=BT_STATE_DISCONNECTED\r\n");
 			return true;
 
-		case 2:
+		case BT_STATE_CONNECTING:
 			bt_current_state = BT_STATE_CONNECTING;
 			LOG_LEVEL("bt_current_state=BT_STATE_CONNECTING\r\n");
 			return true;
 
-		case 3:
+		case BT_STATE_CONNECTED:
 			bt_current_state = BT_STATE_CONNECTED;
 			LOG_LEVEL("bt_current_state=BT_STATE_CONNECTED\r\n");
 			// connect_start_time = 0;
 			return true;
 
-		case 4:
+		case BT_STATE_PLAYING:
 			bt_current_state = BT_STATE_PLAYING;
 			// connect_start_time = 0;
 			LOG_LEVEL("bt_current_state=BT_STATE_PLAYING\r\n");
 			return true;
 		}
 	}
+	#if 0
+	if (strncmp(resp, "+SCAN=S", 7) == 0)
+	{
+		bt_current_state = BT_STATE_SCANNING;
+		//return true;
+	}
+	
+	if (strncmp(resp, "+SCAN=E", 7) == 0)
+	{
+		bt_current_state = BT_STATE_DISCONNECTED;
+		bt_send_at_command("AT+A2DPSTAT\r\n");
+		StartTickCounter(&l_t_bt_scan_polling_timer_15s);
+		//return true;
+	}
+	#endif
 	return false;
 }
 
@@ -309,8 +341,12 @@ bool bt_parse_scanning_line(const char *line)
 			{
 				selected_best_dev = dev;
 				LOG_LEVEL("got a best bt device %s %d\r\n", dev.name, dev.rssi);
+				if(dev.rssi > BT_SELECT_DISTANCE)
+				{
+					StartTickCounter(&l_t_bt_conn_polling_timer_20s);
+				}
 			}
-
+			 
 			// Update last_best_dev only if RSSI is above a threshold and stronger
 			if (dev.rssi > BT_PAIRED_DISTANCE && dev.rssi > last_best_dev.rssi)
 			{
@@ -344,18 +380,18 @@ void bt_connect_by_name(const char *target_name)
 
 void bt_connect_last_device(void)
 {
-	LOG_LEVEL("bt connecte to %s %s\r\n", last_best_dev.name, last_best_dev.address);
 	if (last_best_dev.address[0] != '\0')
 	{
+		LOG_LEVEL("bt connecte to %s %s\r\n", last_best_dev.name, last_best_dev.address);
 		bt_send_at_command("AT+A2DPCONN=%s\r\n", last_best_dev.address);
 	}
 }
 
 void bt_connect_selected_device(void)
 {
-	LOG_LEVEL("bt connecte to %s\r\n", selected_best_dev.name);
 	if (selected_best_dev.address[0] != '\0')
 	{
+		LOG_LEVEL("bt connecte to %s\r\n", selected_best_dev.name);
 		bt_send_at_command("AT+A2DPCONN=%s\r\n", selected_best_dev.address);
 	}
 }
@@ -406,7 +442,7 @@ void bt_send_at_command(const char *format, ...)
 #ifdef TASK_MANAGER_STATE_MACHINE_PTL2
 	if (length > 0 && length < sizeof(cmd_buf))
 	{
-		LOG_LEVEL("Send at command: %s\r\n", cmd_buf);
+		LOG_LEVEL("bt send at cmd: %s\r\n", cmd_buf);
 		// UART1_Send_Buffer((uint8_t *)cmd_buf, length);
 		ptl_2_send_buffer(PTL2_MODULE_BT, (uint8_t *)cmd_buf, length);
 	}

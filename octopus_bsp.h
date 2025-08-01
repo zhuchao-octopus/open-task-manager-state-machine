@@ -26,12 +26,12 @@
 #include "hk32l0xx.h"
 #include "hk32l0xx_eeprom.h"
 
+//#define UART2_DMA_MODE
+//#define UART3_DMA_MODE
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-//#define UART2_DMA_MODE
-//#define UART3_DMA_MODE
 
 void SYS_Config(void);
 void GPIO_Config(void);

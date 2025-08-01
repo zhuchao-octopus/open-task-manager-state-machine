@@ -38,7 +38,7 @@
 // #define MAX_LINE_LEN 1024
 // #define MAX_RECORDS  65536
 #define CRC32_POLYNOMIAL (0x04C11DB7) // Standard CRC32 polynomial
-#define DEFAULT_OUPG_FILENAME_MAX_LENGTH 40
+#define DEFAULT_OUPG_FILENAME_MAX_LENGTH 50
 #define DEFAULT_OUPG_BINFILE_READ_MAX_SIZE 48
 /*******************************************************************************
  * TYPEDEFS
@@ -806,20 +806,27 @@ int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_
 #ifdef PLATFORM_LINUX_RISC
     DIR *dir = opendir(dir_path);
     if (!dir)
+    {
+        LOG_LEVEL("dir not exitst:%s\r\n", dir_path);
         return 0;
+    }
 
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL)
     {
         if (entry->d_type != DT_REG)
+        {
             continue;
+        }
 
-        if (strlen(entry->d_name) > DEFAULT_OUPG_FILENAME_MAX_LENGTH)
-            continue;
+        // if (strlen(entry->d_name) > out_path_size -10)
+        //{
+        //     continue;
+        // }
 
         if (fnmatch("*.oupg", entry->d_name, 0) == 0)
         {
-            char full_path[50];
+            char full_path[64];
             snprintf(full_path, sizeof(full_path), "%s/%s", dir_path, entry->d_name);
             if (copy_file_to_tmp(full_path, entry->d_name, out_path, out_path_size) >= 0)
             {

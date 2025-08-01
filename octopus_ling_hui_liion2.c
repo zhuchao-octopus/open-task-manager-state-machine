@@ -33,7 +33,10 @@
 uint8_t lhl2_ptl_checksum(uint8_t* data, uint8_t len);
 bool lhl2_ptl_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff);
 void lhl2_ptl_tx_process(void);   
-void lhl2_ptl_proc_valid_frame(uint8_t* data, uint16_t len);
+void lhl2_ptl_proc_valid_frame(uint8_t* data, uint16_t length);
+
+uint16_t get_wheel_radius_inch(void);
+uint16_t get_geer_level(void);
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
@@ -67,17 +70,26 @@ void task_lhl2_ptl_start_running(void)
 void task_lhl2_ptl_assert_running(void)
 {
   OTMS(TASK_MODULE_LING_HUI_LIION2, OTMS_S_RUNNING);
+	StartTickCounter(&lhl2_task_interval_ms);
+	StartTickCounter(&lhl2_task_tx_interval_ms);
+	
+	lt_carinfo_meter.wheel_diameter = SETTING_WHEEL_27_Inch;
+	lt_carinfo_meter.gear_level_max = SETTING_MAX_PAS_3_LEVEL;
+	lt_carinfo_meter.speed_limit = 255;
+	lt_carinfo_meter.gear = 2;
+	
+	lt_carinfo_battery.voltage = 48;
+	lt_carinfo_battery.range_max = UINT16_MAX;
+	lt_carinfo_indicator.cruise_control = true;
 }
 
 void task_lhl2_ptl_running(void)
 {
-	if (GetTickCounter(&lhl2_task_interval_ms) < 10)
+	if (GetTickCounter(&lhl2_task_interval_ms) < 20)
 	{
 			return;
 	}
-	StartTickCounter(&lhl2_task_interval_ms);
-
-	OTMS(TASK_MODULE_LING_HUI_LIION2, OTMS_S_POST_RUN);
+	//StartTickCounter(&lhl2_task_interval_ms);
 
 	lhl2_ptl_tx_process();
 }
@@ -101,7 +113,7 @@ void lhl2_ptl_tx_process(void)
 {
   uint8_t lu_tx_buff[32];
 	
-	if (GetTickCounter(&lhl2_task_tx_interval_ms) < 80)
+	if (GetTickCounter(&lhl2_task_tx_interval_ms) < 50)
 			return;
 	StartTickCounter(&lhl2_task_tx_interval_ms);
 
@@ -109,55 +121,9 @@ void lhl2_ptl_tx_process(void)
 	lu_tx_buff[1] = 20;
 	lu_tx_buff[2] = 0x01;
 	//驱动方式
-	
 	lu_tx_buff[3] = lt_carinfo_indicator.drive_mode;
-
-	//助力档位
-	uint8_t pas = 0;
-	if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_3_LEVEL)
-	{
-
-			switch (lt_carinfo_meter.gear)
-			{
-			case 0:  pas = 0; break;
-			case 1:  pas = 5; break;
-			case 2:  pas = 10; break;
-			case 3:  pas = 15; break;
-			default: pas = 5; break;
-			}
-	}
-	else if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_5_LEVEL)
-	{
-			switch (lt_carinfo_meter.gear)
-			{
-			case 0:  pas = 0; break;
-			case 1:  pas = 3; break;
-			case 2:  pas = 6; break;
-			case 3:  pas = 9; break;
-			case 4:  pas = 12; break;
-			case 5:  pas = 15; break;
-			default: pas = 3; break;
-			}
-	}
-	else if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_9_LEVEL)
-	{
-			switch (lt_carinfo_meter.gear)
-			{
-			case 0:  pas = 0; break;
-			case 1:  pas = 1; break;
-			case 2:  pas = 3; break;
-			case 3:  pas = 5; break;
-			case 4:  pas = 7; break;
-			case 5:  pas = 9; break;
-			case 6:  pas = 11; break;
-			case 7:  pas = 13; break;
-			case 8:  pas = 14; break;
-			case 9:  pas = 15; break;
-			default: pas = 1; break;
-			}
-	}
-	lu_tx_buff[4] = pas;
-
+	//助力档位	
+	lu_tx_buff[4] = get_geer_level();
 
 	//控制器控制设定1
 	uint8_t flag = 0x00;
@@ -169,20 +135,22 @@ void lhl2_ptl_tx_process(void)
 	if (task_carinfo_has_error_code()) { flag |= BIT_4; }    //--发送通讯故障
 
   if (lt_carinfo_indicator.horn) { flag |= BIT_3; }    //--长按鸣笛键，鸣笛，，瑞碌
-
+	
+    //if (theIndicatorFlag.speed_limit) { flag |= BIT_02; }  
 	if (lt_carinfo_indicator.rightTurn) { flag |= BIT_2; }      //--改右转向，瑞碌
 
+	 //if (theMeterInfo.walk_assist) {flag |= BIT_01; }  
 	if (lt_carinfo_indicator.leftTurn) { flag |= BIT_1; }  	 //--改左转向，瑞碌
 	
-
 	if (lt_carinfo_indicator.cruise_control) {flag |= BIT_0; }  //定速巡航模式 true:启动定速巡航
+	
 	lu_tx_buff[5] = flag;
 									
 	//测速磁钢数：（单位：磁钢片数）
 	lu_tx_buff[6] = lt_carinfo_indicator.motor_poles;
 
 	//轮径:（单位:0.1英寸）
-	uint16_t radius = lt_carinfo_meter.wheel_diameter;
+	uint16_t radius = get_wheel_radius_inch();
 	lu_tx_buff[7] = MK_MSB(radius);
 	lu_tx_buff[8] = MK_LSB(radius);
 
@@ -199,7 +167,7 @@ void lhl2_ptl_tx_process(void)
 	lu_tx_buff[12] = lt_carinfo_meter.speed_limit;
 
 	//控制器限流值
-	lu_tx_buff[13] = lt_carinfo_battery.max_range;
+	lu_tx_buff[13] = lt_carinfo_battery.range_max;
 
 	//控制器欠压值:(单位：0.1V)
 	uint16_t vol = lt_carinfo_battery.voltage;
@@ -250,48 +218,64 @@ void lhl2_ptl_remove_none_header_data(ptl_2_proc_buff_t *ptl_2_proc_buff)
     ptl_2_proc_buff->size = 0;
 }
 
+/**
+ * @brief Search for a valid protocol frame in the processing buffer.
+ *
+ * @param ptl_2_proc_buff Pointer to the protocol processing buffer.
+ * @return true if a valid frame is found and processed, false otherwise.
+ */
 bool lhl2_ptl_find_valid_frame(ptl_2_proc_buff_t *ptl_2_proc_buff)
 {
-    uint16_t offset = 0; // hdr offset
-    //uint8_t datalen = 0;
-    uint8_t framelen = 0;        // frame len
-    uint8_t crc;
-    uint8_t crc_read = 0;
-    bool frame_crc_ok = false;
-    bool find = false;
-    uint16_t next_valid_offset = 0;
-    bool header_invalid = false;
+    uint16_t offset = 0;             // Offset to current header candidate
+    uint8_t framelen = 0;            // Length of the potential frame
+    uint8_t crc;                     // Calculated CRC
+    uint8_t crc_read = 0;            // CRC value read from the buffer
+    bool frame_crc_ok = false;       // Flag indicating CRC validity
+    bool find = false;               // Whether a valid frame is found
+    uint16_t next_valid_offset = 0;  // Offset to next search position
+    bool header_invalid = false;     // Flag for invalid header
 
     for (uint16_t i = 0; i < ptl_2_proc_buff->size; i++)
     {
+        // Check for frame header
         if (ptl_2_proc_buff->buffer[i] == PTL_LHLL_C2I_HEADER)
         {
             offset = i;
+
+            // Ensure there is at least one more byte to read frame length
+            if ((i + 1) >= ptl_2_proc_buff->size)
+                break;
+
             framelen = ptl_2_proc_buff->buffer[i + 1];
-            //datalen = framelen - PTL_LHLL_FRAME_HEADER_SIZE;
-            // min size is PTL_FRAME_MIN_SIZE
-            if ((framelen < PTL_LHLL_FRAME_MIN_SIZE) && (ptl_2_proc_buff->size >= PTL_LHLL_FRAME_MIN_SIZE) && (offset == 0))
+
+            // If frame length is invalid and we're at the start, skip the minimum frame size
+            if ((framelen < PTL_LHLL_FRAME_MIN_SIZE) &&
+                (ptl_2_proc_buff->size >= PTL_LHLL_FRAME_MIN_SIZE) &&
+                (offset == 0))
             {
                 next_valid_offset = PTL_LHLL_FRAME_MIN_SIZE;
             }
-            else if ((framelen >= PTL_LHLL_FRAME_MIN_SIZE) && (framelen <= (ptl_2_proc_buff->size - offset)))
+            // Frame length seems valid, and enough data remains in buffer
+            else if ((framelen >= PTL_LHLL_FRAME_MIN_SIZE) &&
+                     (framelen <= (ptl_2_proc_buff->size - offset)))
             {
-                //head checksum
+                // Calculate CRC over the frame excluding last byte (CRC byte)
                 crc = lhl2_ptl_checksum(&ptl_2_proc_buff->buffer[offset], framelen - 1);
-               
                 crc_read = ptl_2_proc_buff->buffer[offset + framelen - 1];
+
                 frame_crc_ok = (crc == crc_read);
 
                 if (frame_crc_ok)
                 {
+                    // Valid frame found
                     next_valid_offset = offset + framelen;
                     find = true;
                     break;
                 }
                 else
                 {
-                    // the first header is invalid
-                    if ((offset == 0) || (header_invalid == true))
+                    // Header is invalid; try skipping it
+                    if ((offset == 0) || header_invalid)
                     {
                         header_invalid = true;
                         next_valid_offset = framelen + offset;
@@ -300,18 +284,24 @@ bool lhl2_ptl_find_valid_frame(ptl_2_proc_buff_t *ptl_2_proc_buff)
             }
             else
             {
-                // no enough length, search next
+                // Not enough data remaining, continue search
             }
         }
     }
 
-    if (find == true)
+    // If valid frame found, process it
+    if (find)
     {
+			  if(framelen < 13) 
+				{
+				  LOG_LEVEL("Not enough data framelen=%d\r\n", framelen);	
+				}
         lhl2_ptl_proc_valid_frame(ptl_2_proc_buff->buffer + offset, framelen);
     }
 
-    // todo, get timeout, if timeout, clear all data
+    // TODO: implement timeout check, clear data if timeout
 
+    // Remove processed or invalid data from the buffer
     if (next_valid_offset != 0)
     {
         for (uint16_t i = next_valid_offset; i < ptl_2_proc_buff->size; i++)
@@ -319,19 +309,17 @@ bool lhl2_ptl_find_valid_frame(ptl_2_proc_buff_t *ptl_2_proc_buff)
             ptl_2_proc_buff->buffer[i - next_valid_offset] = ptl_2_proc_buff->buffer[i];
         }
 
-        ptl_2_proc_buff->size = ptl_2_proc_buff->size - next_valid_offset;
+        ptl_2_proc_buff->size -= next_valid_offset;
     }
+
     return find;
 }
 
-
 //#define  YONGJIU_WHEEL_Inch   284    //284  ,  700C50C,700C的车圈直径为622毫米,理论直径?：622mm+(50mm×2)=722mm（约28.4英寸）
-
-// data is payload, len is payload length
-void lhl2_ptl_proc_valid_frame(uint8_t* data, uint16_t len)   //RX
+//data is payload, len is payload length
+void lhl2_ptl_proc_valid_frame(uint8_t* data, uint16_t length)   //RX
 {
-    uint8_t state1 = data[3];
-    
+    uint8_t state1 = data[3];    
     uint8_t state2 = data[4];
     uint16_t cur = MK_WORD(data[5], data[6]);
     //uint8_t cur_pre = data[7];
@@ -339,18 +327,19 @@ void lhl2_ptl_proc_valid_frame(uint8_t* data, uint16_t len)   //RX
     uint8_t soc = data[10];
     uint8_t range = MK_WORD(data[11], data[12]);
    
+	  LOG_LEVEL("data[]= ");
+	  LOG_BUFF(data, length);
     //实际电流数据
     uint32_t cur_tmp = cur & 0x3FFF;
 
     //判断是否为1A单位
-    if (0 == (cur & 0x4000))
+    if (1 == (cur & 0x4000))
     {
         cur_tmp = cur_tmp * 10;
     }
    
-    
     lt_carinfo_battery.current = cur_tmp;
-    lt_carinfo_battery.power = lt_carinfo_battery.voltage * lt_carinfo_battery.current / 100;
+    lt_carinfo_battery.power = lt_carinfo_battery.voltage * lt_carinfo_battery.current;/// 100;
     lt_carinfo_battery.soc = soc;
 
 		if (range)
@@ -359,31 +348,32 @@ void lhl2_ptl_proc_valid_frame(uint8_t* data, uint16_t len)   //RX
 		}
 		else
 		{
-		  lt_carinfo_battery.range = (lt_carinfo_battery.max_range * soc) / 100;
+		  lt_carinfo_battery.range = (lt_carinfo_battery.range_max * soc) / 100;
 		}
 		
     if (round <= 10 || round >= 3500) //如果一圈的时间大于等于30S，认为车辆已经停止
     {
         lt_carinfo_meter.rpm = 0;
-        lt_carinfo_meter.speed = 0;
+        lt_carinfo_meter.speed_average = 0;
     }
     else
     {		
-        uint16_t rpm = 60.0 * 1000 / round;   //245
-        double radius = lt_carinfo_meter.wheel_diameter; //轮毂半径，单位：米  //0.33
-        double w = rpm * (2.0 * PI_FLOAT / 60.0);//转换角速度，单位：弧度/秒  //25
-        double v = w * radius; //线速度,单位：米/秒   //8.25
-        double kph = (v * 3600.0 / 1000.0) * 10;   //297
-        if (kph > 990)   //theSettingInfo.speed_limit
-        {
-            kph = 990;
-        }
-		
-        lt_carinfo_meter.rpm = (uint32_t)rpm;
+			uint16_t rpm = 60.0 * 1000 / round;   //245
+			double radius = get_wheel_radius_inch(); //轮毂半径，单位：米  //0.33
+			double w = rpm * (2.0 * PI_FLOAT / 60.0);//转换角速度，单位：弧度/秒  //25
+			double v = w * radius; //线速度,单位：米/秒   //8.25
+			double kph = (v * 3600.0 / 1000.0) * 10;   //297
+			if (kph > 990)   //theSettingInfo.speed_limit
+			{
+			    kph = 990;
+			}
 
-		double speed = kph * 1.618;  //实物调试修正
-		
-		lt_carinfo_meter.speed = (uint32_t)speed;  
+			lt_carinfo_meter.rpm = (uint32_t)rpm;
+
+			double speed = kph * 1.618;  //实物调试修正
+
+			lt_carinfo_meter.speed_actual = (uint32_t)speed;  
+			//lt_carinfo_meter.speed_average = lt_carinfo_meter.speed_actual;
     }
     
     //6KM巡航状态
@@ -458,6 +448,82 @@ uint8_t lhl2_ptl_checksum(uint8_t* data, uint8_t len)
         sum ^= data[i];
     }
     return sum;
+}
+
+uint16_t get_wheel_radius_inch(void)
+{
+    switch (lt_carinfo_meter.wheel_diameter)
+    {
+    case SETTING_WHEEL_16_Inch:
+        return 160;
+    case SETTING_WHEEL_18_Inch:
+        return 180;
+    case SETTING_WHEEL_20_Inch:
+        return 200;
+    case SETTING_WHEEL_22_Inch:
+        return 220;
+    case SETTING_WHEEL_24_Inch:
+        return 240;
+    case SETTING_WHEEL_26_Inch:
+        return 260;
+    case SETTING_WHEEL_27_Inch:
+        return 270;
+    case SETTING_WHEEL_27_5_Inch:
+        return 275;
+    case SETTING_WHEEL_28_Inch:
+        return 280;
+    case SETTING_WHEEL_29_Inch:
+        return 290;
+    }
+    return 260;
+}
+
+uint16_t get_geer_level(void)
+{
+	uint16_t pas = 0;
+	if (lt_carinfo_meter.gear_level_max == SETTING_MAX_PAS_3_LEVEL)
+	{
+
+			switch (lt_carinfo_meter.gear)
+			{
+			case 0:  pas = 0; break;
+			case 1:  pas = 5; break;
+			case 2:  pas = 10; break;
+			case 3:  pas = 15; break;
+			default: pas = 5; break;
+			}
+	}
+	else if (lt_carinfo_meter.gear_level_max == SETTING_MAX_PAS_5_LEVEL)
+	{
+			switch (lt_carinfo_meter.gear)
+			{
+			case 0:  pas = 0; break;
+			case 1:  pas = 3; break;
+			case 2:  pas = 6; break;
+			case 3:  pas = 9; break;
+			case 4:  pas = 12; break;
+			case 5:  pas = 15; break;
+			default: pas = 3; break;
+			}
+	}
+	else if (lt_carinfo_meter.gear_level_max == SETTING_MAX_PAS_9_LEVEL)
+	{
+			switch (lt_carinfo_meter.gear)
+			{
+			case 0:  pas = 0; break;
+			case 1:  pas = 1; break;
+			case 2:  pas = 3; break;
+			case 3:  pas = 5; break;
+			case 4:  pas = 7; break;
+			case 5:  pas = 9; break;
+			case 6:  pas = 11; break;
+			case 7:  pas = 13; break;
+			case 8:  pas = 14; break;
+			case 9:  pas = 15; break;
+			default: pas = 1; break;
+			}
+	}
+	return pas;
 }
 
 bool lhl2_ptl_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff)

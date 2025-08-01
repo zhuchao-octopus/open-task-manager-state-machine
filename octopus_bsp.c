@@ -17,30 +17,6 @@
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-#if 0
-#define DEBUG_UART USART1 // USART2
-
-/**
-  * @brief  Retargets the C library printf function to the USART.
-  * @param  None
-  * @retval None
-  */
-PUTCHAR_PROTOTYPE
-{
-    uint32_t Timeout = 0;
-    FlagStatus Status;
-
-    USART_SendData(DEBUG_UART, (uint8_t) ch);
-
-    do
-    {
-        Status = USART_GetFlagStatus(DEBUG_UART, USART_FLAG_TXE);
-        Timeout++;
-    } while ((Status == RESET) && (Timeout != 0xFFFF));
-
-    return (ch);
-}
-#endif
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -177,53 +153,58 @@ extern void hal_timer_interrupt_callback(uint8_t event);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-__weak void UART1_RX_Callback(uint8_t *buffer, uint16_t length)
+///////BT/debug
+__weak void UART1_RX_Callback(uint8_t *buffer, uint16_t length)///////BT
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
-	// UART2_Send_Buffer(buffer,length);
+#ifdef TASK_MANAGER_STATE_MACHINE_BT
 	ptl_2_receive_callback(PTL2_MODULE_BT, buffer, length);
 #endif
 }
 
-// Weak callback function for USART2 RX  ///////BT-MCU
+// Weak callback function for USART2 RX  ///////BLE-MCU
 __weak void UART2_RX_Callback(uint8_t *buffer, uint16_t length)
 {
-	// UART2_Send_Buffer_DMA(data,len);
 	// UART2_Send_Buffer(buffer,length);
 	hal_com_uart_receive_callback_ptl_1(buffer, length);
 }
 
 // Weak callback function for half buffer RX in USART2
+ ///////BLE-MCU
 __weak void UART2_RX_Half_Callback(uint8_t *buffer, uint16_t length)
 {
-
 	// UART2_DMA_Send_Buffer(data,len);
 }
 
-// Weak callback function for UART3 RX ///////SOC
+// Weak callback function for UART3 RX 
+///////SOC
 __weak void UART3_RX_Callback(uint8_t *buffer, uint16_t length)
 {
 	// LOG_LEVEL("UART3_RX_Callback bytes:%d ",length);
-	// UART1_Send_Buffer(buffer,length);
-	// UART3_Send_Buffer_DMA(data,len);
-	// UART3_Send_Buffer(data,len);
+	//UART3_Send_Buffer(buffer,length);
 	hal_com_uart_receive_callback_ptl_1(buffer, length); ////SOC
 }
 
+///////4G/GPS
 __weak void UART4_RX_Callback(uint8_t *buffer, uint16_t length)
 {
+	
 #ifdef TASK_MANAGER_STATE_MACHINE_4G
 	ptl_2_receive_callback(PTL2_MODULE_LOT4G, buffer, length);
 #endif
 }
 
-// Weak callback function for LPUART RX ///////Main-MCU
+// Weak callback function for LPUART RX 
+///////bafang/the third protocol
 __weak void LPUART_RX_Callback(uint8_t *buffer, uint16_t length)
 {
+	//LPUART_Send_Buffer(buffer,length);	
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
-	// LPUART_Send_Buffer(buffer,length);
 	ptl_2_receive_callback(PTL2_MODULE_BAFANG, buffer, length);
 #endif
+	
+#ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
+	ptl_2_receive_callback(PTL2_MODULE_LING_HUI_LIION2, buffer, length);
+#endif	
 }
 
 void IWDG_Init(uint8_t prer, uint16_t reload)
@@ -328,7 +309,8 @@ void GPIO_Config(void)
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_9); // AF4 for UART4 RX
-#if 0
+	
+	#if 0
 	/////////////////////////////////////////////////////////////////////////////
 	// LPUART Configuration: PB6 (TX), PB7 (RX)
 	// Used for communication via LPUART4
@@ -342,7 +324,8 @@ void GPIO_Config(void)
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;             // PB7 - LPUART4 RX
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_3);  // Set PB7 to LPUART4_RX
-#endif
+	#endif
+
 	///////////////////////////////////////////////////////////////////////////
 	// CAN Bus Configuration: PA6 (CAN_RX), PA7 (CAN_TX)
 	///////////////////////////////////////////////////////////////////////////
@@ -696,7 +679,7 @@ void UART3_Config_IRQ(void)
 {
 	USART_InitTypeDef USART_InitStructure;
 	// Configure UART3
-	USART_InitStructure.USART_BaudRate = 115200; // BLE
+	USART_InitStructure.USART_BaudRate = 115200; // SOC
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
 	USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -787,8 +770,8 @@ void UART4_Config_IRQ(void)
 	// Enable UART4 peripheral
 	USART_Cmd(UART4, ENABLE);
 	USART_ITConfig(UART4, USART_IT_RXNE, ENABLE); // Enable RX interrupt
-												  // NVIC_SetPriority(UART3_4_IRQn, 2);
-												  // NVIC_EnableIRQ(UART3_4_IRQn);
+	// NVIC_SetPriority(UART3_4_IRQn, 2);
+	// NVIC_EnableIRQ(UART3_4_IRQn);
 }
 
 void LPUART_WakeStop_Config(void)
@@ -835,7 +818,14 @@ void LPUART_WakeStop_Config(void)
 	GPIO_PinAFConfig(LPUARTx_RXIO_PORT, LPUARTx_AF_RX_PIN, LPUARTx_AF_SELECT);
 
 	/* LPUARTx configured */
-	LPUART_InitStructure.LPUART_BaudRate = 1200;
+	#if defined(TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2)
+	  LPUART_InitStructure.LPUART_BaudRate = 9600;
+	#elif defined(TASK_MANAGER_STATE_MACHINE_BAFANG)
+		LPUART_InitStructure.LPUART_BaudRate = 1200;
+	#else
+		LPUART_InitStructure.LPUART_BaudRate = 115200;
+	#endif
+	
 	LPUART_InitStructure.LPUART_HardwareFlowControl = LPUART_HardwareFlowControl_None; /* Hardware flow control disabled (RTS and CTS signals) */
 	LPUART_InitStructure.LPUART_Mode = LPUART_Mode_Rx | LPUART_Mode_Tx;				   /* Receive and transmit enabled */
 

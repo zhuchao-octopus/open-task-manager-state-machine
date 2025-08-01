@@ -204,20 +204,20 @@ extern "C"
 
     typedef struct
     {
-			uint32_t odo;            // Total distance traveled (unit: 0.1 km), also known as trip odometer
-			uint16_t rpm;            // Motor RPM (raw value, offset by -20000)
-			uint16_t speed;          // Displayed vehicle speed (unit: 0.1 km/h)
-			uint16_t speed_actual;   // Actual wheel speed (unit: 0.1 km/h)
+			uint32_t trip_odo;       // Total distance traveled (unit: 1 meters), also known as trip odometer
+			uint32_t trip_time;      // Total ride time (unit: seconds)
+			uint32_t trip_distance;  // Trip distance   (unit: 1 meters), resettable
+			
+			uint16_t speed_average;  // Displayed vehicle speed (unit: 1 km/h)
+			uint16_t speed_actual;   // Actual wheel speed (unit: 1 km/h)
+			uint16_t speed_max;
 			uint16_t speed_limit;    // Speed limit setting; 0 = OFF, range: 10–90 km/h
 
-			uint16_t ride_time;      // Total ride time (unit: seconds)
-			uint16_t trip_distance;  // Trip distance (unit: 0.1 km), resettable
-
+			uint16_t rpm;            // Motor RPM (raw value, offset by -20000)
 			uint8_t gear;            // Current gear level (0 = Neutral, 1–N)
-			uint8_t max_gear_level;  // Maximum selectable gear level
-
+			uint8_t gear_level_max;  // Maximum selectable gear level
 			uint8_t wheel_diameter;  // Wheel diameter (unit: inch)
-
+			uint8_t reserve;
     } carinfo_meter_t;
 
     typedef struct
@@ -227,7 +227,7 @@ extern "C"
 			uint16_t power;              // Instantaneous power output (unit: watts)
 			uint16_t soc;                // State of Charge, 0–100% (based on voltage/SOC curve)
 			uint16_t range;              // Estimated remaining range (unit: 100 meters)
-			uint16_t max_range;          // Estimated maximum range (unit: 100 meters)
+			uint16_t range_max;          // Estimated maximum range (unit: 100 meters)
 			uint16_t throttle_pwm;       // Throttle signal PWM duty (0–1000 for 0–100%)
 
 			uint8_t rel_charge_state;    // Relative charge state (e.g., fast/slow charging, enum value)

@@ -223,10 +223,9 @@ void ptl_2_rx_event_message_handler(void)
             continue;
         }
 #endif
-
+#ifdef TASK_MANAGER_STATE_MACHINE_BT
         if (module_info->module == PTL2_MODULE_BT)
         {
-#if 1
             // For AT command module: Read until we get a '\n' or fill the buffer
             while (cFifo_HasLine(module_info->ptl_2_usart_rx_fifo))
             {
@@ -245,11 +244,11 @@ void ptl_2_rx_event_message_handler(void)
                     }
                 }
             }
-#endif
+
         }
         else
+#endif
         {
-#if 1
             count = ptl_2_get_fifo_data(
                 module_info->ptl_2_usart_rx_fifo,
                 &module_info->ptl_2_proc_buff.buffer[module_info->ptl_2_proc_buff.size],
@@ -257,7 +256,6 @@ void ptl_2_rx_event_message_handler(void)
 
             if (count > 0)
                 module_info->ptl_2_proc_buff.size = module_info->ptl_2_proc_buff.size + count;
-#endif
         }
 
     } // for
@@ -269,13 +267,13 @@ void ptl_2_rx_event_message_handler(void)
  */
 void ptl_2_proc_valid_frame(void)
 {
-#ifdef TEST_LOG_DEBUG_PTL_RX_FRAME
-    if (length > 0)
-    {
-        LOG_LEVEL("ptl_2_proc_valid_frame data[]= ");
-        LOG_BUFF(ptl_2_proc_buff->buffer, length);
-    }
-#endif
+		#ifdef TEST_LOG_DEBUG_PTL_RX_FRAME
+		if (length > 0)
+		{
+				LOG_LEVEL("ptl_2_proc_valid_frame data[]= ");
+				LOG_BUFF(ptl_2_proc_buff->buffer, length);
+		}
+		#endif
 
     for (uint8_t i = 0; i < ptl_2_next_empty_module; i++) // handle all modules
     {
@@ -298,11 +296,15 @@ void ptl_2_proc_valid_frame(void)
 
     for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
     {
-        ptl_2_module_info_t *module_info = &ptl_2_module_info[i];
-        if (ptl_2_module_info[i].module == PTL2_MODULE_BAFANG)
+		ptl_2_module_info_t *module_info = &ptl_2_module_info[i];
+		#if defined(TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2)
+		if (ptl_2_module_info[i].module == PTL2_MODULE_LING_HUI_LIION2)
+		#elif defined(TASK_MANAGER_STATE_MACHINE_BAFANG) 
+		if (ptl_2_module_info[i].module == PTL2_MODULE_BAFANG)
+		#endif		
         {
 
-            if (module_info->ptl_2_proc_buff.size > 10)
+            if (module_info->ptl_2_proc_buff.size > 25)
                 module_info->ptl_2_proc_buff.size = 0;
         }
     }
@@ -317,17 +319,29 @@ void ptl_2_send_buffer(ptl_2_module_t ptl_2_module, const uint8_t *buffer, size_
 
     switch (ptl_2_module)
     {
+			
+		#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG	
     case PTL2_MODULE_BAFANG:
         LPUART_Send_Buffer(buffer, size);
         break;
+		#endif
+			
+		#ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
+    case PTL2_MODULE_LING_HUI_LIION2:
+        LPUART_Send_Buffer(buffer, size);
+        break;
+		#endif	
+			
 		#ifdef TASK_MANAGER_STATE_MACHINE_4G
     case PTL2_MODULE_LOT4G:
         UART4_Send_Buffer(buffer, size);
         break;
 		#endif
+		#ifdef TASK_MANAGER_STATE_MACHINE_BT			
     case PTL2_MODULE_BT:
         UART1_Send_Buffer(buffer, size);
         break;
+		#endif		
     default:
         break;
     }

@@ -172,6 +172,18 @@ void task_ipc_running(void)
             LOG_LEVEL("MSG_IPC_CMD_CAR_SET_GEAR_LEVEL param1=%d,param2=%d \r\n", msg->param1, msg->param2);
             send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_GEAR_LEVEL, msg->param1);
             break;
+        case MSG_IPC_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
+            LOG_LEVEL("MSG_IPC_CMD_CAR_METER_TRIP_DISTANCE_CLEAR param1=%d,param2=%d \r\n", msg->param1, msg->param2);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR, msg->param1);
+            break;
+        case MSG_IPC_CMD_CAR_METER_TIME_CLEAR:
+            LOG_LEVEL("MSG_IPC_CMD_CAR_METER_TIME_CLEAR param1=%d,param2=%d \r\n", msg->param1, msg->param2);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_METER_TIME_CLEAR, msg->param1);
+            break;
+        case MSG_IPC_CMD_CAR_METER_ODO_CLEAR:
+            LOG_LEVEL("MSG_IPC_CMD_CAR_METER_ODO_CLEAR param1=%d,param2=%d \r\n", msg->param1, msg->param2);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_METER_ODO_CLEAR, msg->param1);
+            break;
         case MSG_IPC_CMD_CAR_GET_INDICATOR_INFO:
         case MSG_IPC_CMD_CAR_GET_METER_INFO:
         default:
@@ -276,6 +288,13 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
 
+        case FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
+        case FRAME_CMD_CAR_METER_TIME_CLEAR:
+        case FRAME_CMD_CAR_METER_ODO_CLEAR:
+			tmp[0] = param2;
+			ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, tmp, 2, buff);
+			LOG_BUFF_LEVEL(buff->buff, buff->size);
+			return true;
         default:
             break;
         }
@@ -320,22 +339,34 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
         switch (payload->frame_cmd)
         {
         case FRAME_CMD_SYSTEM_SAVE_DATA:
-            //lt_carinfo_meter.unit_type = payload->data[0];
+            // lt_carinfo_meter.unit_type = payload->data[0];
             flash_save_carinfor_meter();
-            return true;
+            return false;
         case FRAME_CMD_CAR_SET_LIGHT:
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
             if (payload->data[0] == 1)
                 bafang_lamp_on_off(true);
             else
                 bafang_lamp_on_off(false);
-            return true;
+            return false;
 #endif
         case FRAME_CMD_CAR_SET_GEAR_LEVEL:
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
             bafang_set_gear(payload->data[0]);
-            return true;
+            return false;
 #endif
+				
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR				
+		case FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
+			   lt_carinfo_meter.trip_distance = 0;
+			   return false;  
+		case FRAME_CMD_CAR_METER_TIME_CLEAR:
+			   lt_carinfo_meter.trip_time = 0;
+			   return false;
+		case FRAME_CMD_CAR_METER_ODO_CLEAR:
+			   lt_carinfo_meter.trip_odo = 0; 
+			   return false;
+#endif				
         default:
             break;
         }

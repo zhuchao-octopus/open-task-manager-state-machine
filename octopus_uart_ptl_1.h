@@ -147,7 +147,11 @@ extern "C"
 
         FRAME_CMD_CAR_SET_LIGHT = 0x1E,
         FRAME_CMD_CAR_SET_GEAR_LEVEL = 0x1F,
-
+				
+        FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR = 0x20,
+        FRAME_CMD_CAR_METER_TIME_CLEAR = 0x21,
+        FRAME_CMD_CAR_METER_ODO_CLEAR = 0x22,
+				
         FRAME_CMD_CARINFOR_MAX = 0x64
     } ptl_frame_cmd_t;
 

@@ -124,7 +124,7 @@ void task_carinfo_start_running(void)
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     lt_carinfo_indicator.ready = 1; // ready flag
     lt_carinfo_meter.trip_distance = 0;
-    lt_carinfo_meter.ride_time = 0;
+    lt_carinfo_meter.trip_time = 0;
 #endif
 }
 
@@ -313,20 +313,23 @@ uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec)
 
 void task_car_controller_msg_handler(void)
 {
+	  //static uint32_t calculate_count = 0;
     uint32_t trip_timer = 0;
-    uint32_t trip_distances = 0;
+    uint32_t delta_distance = 0;
+	
     Msg_t *msg = get_message(TASK_MODULE_CAR_INFOR);
     if (msg->msg_id == NO_MSG)
     {
         trip_timer = GetTickCounter(&l_t_msg_car_trip_timer);
         if (trip_timer > 2000)
-        {
-            trip_timer = trip_timer / 1000;
-            trip_distances = calculateTotalDistance(lt_carinfo_meter.speed, trip_timer);
+        {					  
+			lt_carinfo_meter.speed_average = (lt_carinfo_meter.speed_average + lt_carinfo_meter.speed_actual) / 2;
+			trip_timer = trip_timer / 1000;
+			delta_distance = calculateTotalDistance(lt_carinfo_meter.speed_average, trip_timer);
 
-            lt_carinfo_meter.ride_time = lt_carinfo_meter.ride_time + trip_timer;
-            lt_carinfo_meter.trip_distance = lt_carinfo_meter.trip_distance + trip_distances;
-            lt_carinfo_meter.odo = lt_carinfo_meter.odo + trip_distances;
+            lt_carinfo_meter.trip_time = lt_carinfo_meter.trip_time + trip_timer;
+            lt_carinfo_meter.trip_distance = lt_carinfo_meter.trip_distance + delta_distance;
+            lt_carinfo_meter.trip_odo = lt_carinfo_meter.trip_odo + delta_distance;
             RestartTickCounter(&l_t_msg_car_trip_timer);
         }
         return;

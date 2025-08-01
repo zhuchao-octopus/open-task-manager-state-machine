@@ -479,15 +479,15 @@ void uart_send_protocol_cmd_gear(void)
     {
         ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_06, 4);
     }
-    else if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_3_LEVEL)
+    else if (lt_carinfo_meter.gear_level_max == SETTING_MAX_PAS_3_LEVEL)
     {
         Bike_pas_level_send_depend_max_3_level();
     }
-    else if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_5_LEVEL)
+    else if (lt_carinfo_meter.gear_level_max == SETTING_MAX_PAS_5_LEVEL)
     {
         Bike_pas_level_send_depend_max_5_level();
     }
-    else if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_9_LEVEL)
+    else if (lt_carinfo_meter.gear_level_max == SETTING_MAX_PAS_9_LEVEL)
     {
         Bike_pas_level_send_depend_max_9_level();
     }
@@ -682,11 +682,8 @@ bool proc_protocol_frame_speed(uint8_t *buff, int count)
                 double v = w * radius;                          // 线速度,单位：米/秒
                 double kph = v * 3600.0 / 1000.0 * 10;
 
-                // theMeterInfo.rpm = (uint32_t)rpm;
-                // theMeterInfo.speed = (uint32_t)kph;
                 lt_carinfo_meter.rpm = (uint16_t)rpm;
                 lt_carinfo_meter.speed_actual = (uint16_t)kph;
-                lt_carinfo_meter.speed = (uint16_t)kph;
                 // LOG_LEVEL("lt_meter.speed=%d\r\n",lt_meter.speed);
                 send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);
             }
@@ -708,7 +705,7 @@ bool proc_protocol_frame_soc(uint8_t *buff, int count)
                 uint8_t soc = buff[0];
 
                 lt_carinfo_battery.soc = soc;
-                lt_carinfo_battery.range = (lt_carinfo_battery.max_range * soc) / 100;
+                lt_carinfo_battery.range = (lt_carinfo_battery.range_max * soc) / 100;
                 send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
             }
             return true;
@@ -915,17 +912,17 @@ void bafang_set_gear(uint8_t level)
         LOG_LEVEL("lt_indicator.walk_assist=%d\r\n", lt_carinfo_indicator.walk_assist);
         ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_06, 4);
     }
-    else if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_3_LEVEL)
+    else if (lt_carinfo_meter.gear_level_max == SETTING_MAX_PAS_3_LEVEL)
     {
         LOG_LEVEL("SETTING_MAX_PAS_3_LEVEL:%d\r\n", lt_carinfo_meter.gear);
         Bike_pas_level_send_depend_max_3_level();
     }
-    else if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_5_LEVEL)
+    else if (lt_carinfo_meter.gear_level_max == SETTING_MAX_PAS_5_LEVEL)
     {
         LOG_LEVEL("SETTING_MAX_PAS_5_LEVEL:%d\r\n", lt_carinfo_meter.gear);
         Bike_pas_level_send_depend_max_5_level();
     }
-    else if (lt_carinfo_meter.max_gear_level == SETTING_MAX_PAS_9_LEVEL)
+    else if (lt_carinfo_meter.gear_level_max == SETTING_MAX_PAS_9_LEVEL)
     {
         LOG_LEVEL("SETTING_MAX_PAS_9_LEVEL:%d\r\n", lt_carinfo_meter.gear);
         Bike_pas_level_send_depend_max_9_level();
