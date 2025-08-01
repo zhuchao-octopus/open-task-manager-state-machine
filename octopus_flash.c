@@ -439,7 +439,7 @@ bool flash_verify_bank_slot_crc(uint32_t slot_addr, uint32_t slot_size, uint32_t
 
 	if (slot_addr == 0 || slot_size == 0 || expected_crc == 0)
 	{
-		LOG_LEVEL("Bank crc verify at: 0x%08X, size:0x%08X, expected crc:0x%08X \r\n", slot_addr, slot_size, expected_crc);
+		LOG_LEVEL("Bank crc verify at: 0x%08X, size:0x%08X, expected crc:08X%08X \r\n", slot_addr, slot_size, expected_crc);
 		return false;
 	}
 	if (slot_size > MAIN_APP_SIZE)
@@ -453,7 +453,7 @@ bool flash_verify_bank_slot_crc(uint32_t slot_addr, uint32_t slot_size, uint32_t
 	DISABLE_IRQ;
 	uint32_t calculated_crc = calculate_crc_32((uint8_t *)slot_addr, slot_size);
 	ENABLE_IRQ;
-	LOG_LEVEL("Bank crc verify at: 0x%08X, size:0x%08X, expected crc:0x%08X, calculate crc:%08x\r\n", slot_addr, slot_size, expected_crc, calculated_crc);
+	LOG_LEVEL("Bank crc verify at: 0x%08X, size:0x%08X, expected crc:0x%08X, calculate crc:%08X\r\n", slot_addr, slot_size, expected_crc, calculated_crc);
 
 	return (calculated_crc == expected_crc);
 }

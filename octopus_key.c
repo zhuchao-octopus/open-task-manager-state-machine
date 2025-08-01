@@ -161,6 +161,7 @@ void task_key_power_event_process(GPIO_KEY_STATUS *key_status)
             StopTickCounter(&power_key_wait_timer);
         }
         break;
+				
     case KEY_STATE_LONG_PRESSED:
         if (!key_status->ignore)
         {

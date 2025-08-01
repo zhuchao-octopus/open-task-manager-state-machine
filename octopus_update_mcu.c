@@ -776,15 +776,15 @@ static void update_state_process(void)
 
 		if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
 		{
-			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_a_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
+			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_a_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
 			LOG_LEVEL("It took %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
 
 			flash_save_app_meter_infor();
-			JumpToApplication(flash_meta_infor.slot_a_addr);
+			/////JumpToApplication(flash_meta_infor.slot_a_addr);
 		}
 		else if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 		{
-			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_b_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
+			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_b_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
 			LOG_LEVEL("It took %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
 			flash_save_app_meter_infor();
 			JumpToApplication(flash_meta_infor.slot_b_addr);
@@ -801,10 +801,10 @@ static void update_state_process(void)
 
 	case MCU_UPDATE_STATE_ERROR:
 		if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
-			LOG_LEVEL("MCU_UPDATE_STATE_ERROR flash_meta_infor.slot_a_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
+			LOG_LEVEL("MCU_UPDATE_STATE_ERROR flash_meta_infor.slot_a_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
 
 		else if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
-			LOG_LEVEL("MCU_UPDATE_STATE_ERROR flash_meta_infor.slot_b_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
+			LOG_LEVEL("MCU_UPDATE_STATE_ERROR flash_meta_infor.slot_b_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
 
 		else
 			LOG_LEVEL("lt_mcu_program_buf.bank_slot error! bank_slot=%d\n", lt_mcu_program_buf.bank_slot);
