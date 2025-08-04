@@ -223,7 +223,7 @@ void ptl_2_rx_event_message_handler(void)
             continue;
         }
 #endif
-#ifdef TASK_MANAGER_STATE_MACHINE_BT
+#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
         if (module_info->module == PTL2_MODULE_BT)
         {
             // For AT command module: Read until we get a '\n' or fill the buffer
@@ -267,14 +267,6 @@ void ptl_2_rx_event_message_handler(void)
  */
 void ptl_2_proc_valid_frame(void)
 {
-		#ifdef TEST_LOG_DEBUG_PTL_RX_FRAME
-		if (length > 0)
-		{
-				LOG_LEVEL("ptl_2_proc_valid_frame data[]= ");
-				LOG_BUFF(ptl_2_proc_buff->buffer, length);
-		}
-		#endif
-
     for (uint8_t i = 0; i < ptl_2_next_empty_module; i++) // handle all modules
     {
         ptl_2_module_info_t *module_info = &ptl_2_module_info[i];
@@ -287,6 +279,15 @@ void ptl_2_proc_valid_frame(void)
         if (module_info->ptl_2_proc_buff.size == 0)
             continue;
 
+			
+				#ifdef TEST_LOG_DEBUG_PTL_RX_FRAME
+				if (module_info->ptl_2_proc_buff.size > 0)
+				{
+					LOG_LEVEL("ptl_2_proc_valid_frame data[]= ");
+					LOG_BUFF(module_info->ptl_2_proc_buff.buffer, module_info->ptl_2_proc_buff.size);
+				}
+				#endif
+		
         bool res = module_info->receive_handler(&(module_info->ptl_2_proc_buff));
         if (res)
         {
@@ -303,7 +304,6 @@ void ptl_2_proc_valid_frame(void)
 		if (ptl_2_module_info[i].module == PTL2_MODULE_BAFANG)
 		#endif		
         {
-
             if (module_info->ptl_2_proc_buff.size > 25)
                 module_info->ptl_2_proc_buff.size = 0;
         }
@@ -337,7 +337,7 @@ void ptl_2_send_buffer(ptl_2_module_t ptl_2_module, const uint8_t *buffer, size_
         UART4_Send_Buffer(buffer, size);
         break;
 		#endif
-		#ifdef TASK_MANAGER_STATE_MACHINE_BT			
+		#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC			
     case PTL2_MODULE_BT:
         UART1_Send_Buffer(buffer, size);
         break;

@@ -66,6 +66,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
+		
 #ifdef TASK_MANAGER_STATE_MACHINE_IPC
     [TASK_MODULE_IPC] = {
         .func = {
@@ -78,6 +79,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
+
 #ifdef TASK_MANAGER_STATE_MACHINE_SYSTEM
     [TASK_MODULE_SYSTEM] = {
         .func = {
@@ -90,6 +92,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
+
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     [TASK_MODULE_GPIO] = {
         .func = {
@@ -156,7 +159,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
     },
 #endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_BT
+#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
     [TASK_MODULE_BT] = {
         .func = {
             [OTMS_S_INIT] = task_bt_init_running,

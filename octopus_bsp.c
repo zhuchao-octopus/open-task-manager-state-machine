@@ -156,7 +156,7 @@ extern void hal_timer_interrupt_callback(uint8_t event);
 ///////BT/debug
 __weak void UART1_RX_Callback(uint8_t *buffer, uint16_t length)///////BT
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_BT
+#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
 	ptl_2_receive_callback(PTL2_MODULE_BT, buffer, length);
 #endif
 }

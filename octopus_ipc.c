@@ -291,10 +291,10 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
         case FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
         case FRAME_CMD_CAR_METER_TIME_CLEAR:
         case FRAME_CMD_CAR_METER_ODO_CLEAR:
-			tmp[0] = param2;
-			ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, tmp, 2, buff);
-			LOG_BUFF_LEVEL(buff->buff, buff->size);
-			return true;
+						tmp[0] = param2;
+						ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, tmp, 2, buff);
+						LOG_BUFF_LEVEL(buff->buff, buff->size);
+						return true;
         default:
             break;
         }
@@ -357,15 +357,15 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
 #endif
 				
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR				
-		case FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
-			   lt_carinfo_meter.trip_distance = 0;
-			   return false;  
-		case FRAME_CMD_CAR_METER_TIME_CLEAR:
-			   lt_carinfo_meter.trip_time = 0;
-			   return false;
-		case FRAME_CMD_CAR_METER_ODO_CLEAR:
-			   lt_carinfo_meter.trip_odo = 0; 
-			   return false;
+			case FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
+					 lt_carinfo_meter.trip_distance = 0;
+					 return false;  
+			case FRAME_CMD_CAR_METER_TIME_CLEAR:
+					 lt_carinfo_meter.trip_time = 0;
+					 return false;
+			case FRAME_CMD_CAR_METER_ODO_CLEAR:
+					 lt_carinfo_meter.trip_odo = 0; 
+					 return false;
 #endif				
         default:
             break;

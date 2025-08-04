@@ -135,9 +135,11 @@ void task_ble_running(void)
 				break;
 
 			case MSG_OTSM_CMD_BLE_DISCONNECTED:
+				if(ble_status.connected)
+				{
 				ble_status.connected = false;
 				CheckBLeConnectionStatus(ble_status.mac, msg->param1);
-
+				}
 				break;
 
 			default:
@@ -160,7 +162,8 @@ void task_ble_running(void)
 
 	if (GetTickCounter(&l_t_msg_ble_polling_timer_1s) >= 1000)
 	{
-		// LOG_LEVEL("ble_status.rssi:%d\r\n",ble_status.rssi);
+		//LOG_LEVEL("ble_status.rssi:%d\r\n",ble_status.rssi);
+		ble_status.rssi = hal_get_ble_rssi(0);
 		StartToLockRssi();
 		StartToUnlockRssi();
 		StartTickCounter(&l_t_msg_ble_polling_timer_1s);
@@ -269,11 +272,11 @@ void StartToUnlockRssi(void)
 		return;
 	if (!ble_status.connected)
 		return;
-	if (!ble_status.rssi_unlock)
-		return;
+
 	if (IsTickCounterStart(&l_t_msg_ble_lock_wait_timer))
 		StopTickCounter(&l_t_msg_ble_lock_wait_timer);
-
+	if (!ble_status.rssi_unlock)
+		return;
 	ble_status.to_lock = false;
 	// ble_status.locked = false;
 	ble_status.rssi_unlock = false;

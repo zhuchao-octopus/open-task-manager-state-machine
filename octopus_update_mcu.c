@@ -651,7 +651,7 @@ static void update_state_process(void)
 			break;
 		}
 
-		erase_count = flash_erase_user_app_arear();
+		erase_count = flash_erase_user_app_bank();
 		LOG_LEVEL("MCU_UPDATE_STATE_ERASE... %d / %d\n", erase_count, MAIN_APP_BLOCK_COUNT);
 		if (erase_count == MAIN_APP_BLOCK_COUNT)
 		{

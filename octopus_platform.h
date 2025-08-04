@@ -56,7 +56,7 @@
 // #define PLATFORM_CST_OSAL_RTOS   // Uncomment to use CST platform with OSAL RTOS
 // #define PLATFORM_X86_WIND_RTOS   // Uncomment to use XB6 platform with WIND RTOS
 #define PLATFORM_STM32_RTOS
-// #define PLATFORM_LINUX_RISC         // X86 ARM linux
+// #define PLATFORM_LINUX_RISC      // X86 ARM linux
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
@@ -81,13 +81,13 @@
 #define TASK_MANAGER_STATE_MACHINE_CARINFOR 1
 //#define TASK_MANAGER_STATE_MACHINE_CAN 1 
 
-#define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
-//#define TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2 1
+//#define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
+#define TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2 1
 //#define TASK_MANAGER_STATE_MACHINE_SIF 1 
 //#define TASK_MANAGER_STATE_MACHINE_BLE 1 
 //#define TASK_MANAGER_STATE_MACHINE_BMS 1 
 //#define TASK_MANAGER_STATE_MACHINE_4G 1 
-#define TASK_MANAGER_STATE_MACHINE_BT 1
+//#define TASK_MANAGER_STATE_MACHINE_BT_MUSIC_MUSIC 1
 
 #define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -197,6 +197,8 @@ extern "C"
 
 #define GET_SYSTEM_TICK_COUNT (hal_systick() * 625 / 1000) // Convert system ticks to milliseconds
 #define DELAY_US(us) (WaitUs(us))                          // Introduce delay in microseconds
+#define DISABLE_IRQ (__disable_irq())
+#define ENABLE_IRQ (__enable_irq())
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
 
@@ -224,12 +226,14 @@ extern "C"
 
 #define DISABLE_IRQ
 #define ENABLE_IRQ
+
 #else
+
+extern volatile uint32_t system_tick_ms;
 #define DISABLE_IRQ (__disable_irq())
 #define ENABLE_IRQ (__enable_irq())
-extern volatile uint32_t system_tick_ms;
-
 #define GET_SYSTEM_TICK_COUNT system_tick_ms // Return zero for unsupported platforms
+
 #endif
 
 /*******************************************************************************

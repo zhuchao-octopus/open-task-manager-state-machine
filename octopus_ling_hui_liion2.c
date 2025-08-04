@@ -81,6 +81,11 @@ void task_lhl2_ptl_assert_running(void)
 	lt_carinfo_battery.voltage = 48;
 	lt_carinfo_battery.range_max = UINT16_MAX;
 	lt_carinfo_indicator.cruise_control = true;
+	
+
+	lt_carinfo_indicator.highBeam = 1; //--发送大灯
+	
+  lt_carinfo_indicator.horn = 1; //--长按鸣笛键，鸣笛
 }
 
 void task_lhl2_ptl_running(void)

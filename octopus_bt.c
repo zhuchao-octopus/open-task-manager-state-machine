@@ -35,7 +35,7 @@
 #define BT_SELECT_DISTANCE -45
 #define BT_SCAN_TIME_INTERVAL 20
 
-#ifdef TASK_MANAGER_STATE_MACHINE_BT
+#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
 
 static bt_device_t bt_device_list[MAX_BT_DEVICES];
 static uint8_t bt_device_count = 0;

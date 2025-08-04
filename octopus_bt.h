@@ -111,7 +111,7 @@ extern "C"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
-#ifdef TASK_MANAGER_STATE_MACHINE_BT
+#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
 	/*******************************************************************************
 	 * MACROS
 	 * Define commonly used macros for this module.

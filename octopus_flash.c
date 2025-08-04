@@ -106,7 +106,6 @@ void Print_VectorTable(void)
 		LOG_LEVEL("Vector_Table[%02d] = 0x%08X\r\n", i, Vector_Table[i]);
 	}
 }
-#endif
 
 void Print_Flash_VectorTable(void)
 {
@@ -143,6 +142,7 @@ void Print_SRAM_VectorTable(void)
 		LOG_LEVEL("SRAM_Vector[%02d] = 0x%08X\r\n", i, entry);
 	}
 }
+#endif
 
 void flash_print_mcu_meta_infor(void)
 {
@@ -376,9 +376,9 @@ uint32_t flash_get_bank_offset_address(uint8_t bank_type)
 	}
 }
 
-uint32_t flash_erase_user_app_arear(void)
+uint32_t flash_erase_user_app_bank(void)
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_FLASH
+#if defined(TASK_MANAGER_STATE_MACHINE_FLASH) && defined(FLASH_BANK_CONFIG_MODE_SLOT)
 	uint32_t ret = 0;
 	if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_A)
 	{
@@ -655,7 +655,8 @@ void flash_decode_active_version(char *out_str, size_t max_len)
 	uint32_t version = 0;
 	uint16_t y1;
 	uint8_t m1, d1, h1, min1, code1;
-
+	
+#ifdef FLASH_BANK_CONFIG_MODE_SLOT
 	if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_A)
 		version = flash_meta_infor.slot_a_version;
 	else if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_B)
@@ -663,6 +664,7 @@ void flash_decode_active_version(char *out_str, size_t max_len)
 	else if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_LOADER)
 		version = flash_meta_infor.loader_version;
 	else
+#endif
 		version = build_version_code();
 
 	decode_datetime_version(version, &y1, &m1, &d1, &h1, &min1, &code1);

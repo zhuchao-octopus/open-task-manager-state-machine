@@ -247,7 +247,7 @@ extern "C"
         uint8_t battery_fault;    // Battery fault status
         uint8_t brake_fault;      // Brake fault status
         uint8_t throttle_fault;   // Throttle fault status
-        uint8_t error[ERROR_CODE_COUNT];
+        //uint8_t error[ERROR_CODE_COUNT];
     } __attribute__((packed)) carinfo_error_t;
 #pragma pack(pop)
     ///////////////////////////////////////////////////////////////////////////////////////////////
