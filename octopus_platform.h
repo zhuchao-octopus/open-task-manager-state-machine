@@ -45,9 +45,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////////
 #define OTMS_VERSION_CODE (001)
-#define OTMS_VERSION_NAME ("0.0.1")
+#define OTMS_VERSION_NAME "0.0.1"
 
-#define OTSM_DEBUG_MODE
 ///////////////////////////////////////////////////////////////////////////////////
 /*******************************************************************************
  * PROJECT SWITCH MACROS
@@ -72,8 +71,8 @@
  /* @brief Task Manager state machine modules.
  */
 //#define TASK_MANAGER_STATE_MACHINE_GPIO 1  
-#define TASK_MANAGER_STATE_MACHINE_SYSTEM 1  
 //#define TASK_MANAGER_STATE_MACHINE_FLASH 1 
+#define TASK_MANAGER_STATE_MACHINE_SYSTEM 1  
 //#define TASK_MANAGER_STATE_MACHINE_KEY 1 
 
 #define TASK_MANAGER_STATE_MACHINE_IPC 1 
@@ -95,7 +94,7 @@
 //#define FLASH_USE_EEROM_FOR_DATA_SAVING
 //#define FLASH_MAPPING_VECT_TABLE_TO_SRAM
 
-#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_AUTO
+#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A
 /***********************************************************************************
  * BASE INCLUDE FILES
  * Include necessary standard libraries and platform-specific headers.
@@ -192,10 +191,13 @@ extern "C"
  * GENERAL MACROS
  * Define common bit manipulation macros and constants.
  ******************************************************************************/
+ 
 #ifdef PLATFORM_CST_OSAL_RTOS
 
 #define GET_SYSTEM_TICK_COUNT (hal_systick() * 625 / 1000) // Convert system ticks to milliseconds
 #define DELAY_US(us) (WaitUs(us))                          // Introduce delay in microseconds
+#define DISABLE_IRQ (__disable_irq())
+#define ENABLE_IRQ (__enable_irq())
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
 
@@ -223,18 +225,21 @@ extern "C"
 
 #define DISABLE_IRQ
 #define ENABLE_IRQ
+
 #else
+
+extern volatile uint32_t system_tick_ms;
 #define DISABLE_IRQ (__disable_irq())
 #define ENABLE_IRQ (__enable_irq())
-extern volatile uint32_t system_tick_ms;
-
 #define GET_SYSTEM_TICK_COUNT system_tick_ms // Return zero for unsupported platforms
+
 #endif
 
 /*******************************************************************************
  * BIT MANIPULATION MACROS
  * Define macros for setting, clearing, toggling, and extracting bit values.
  ******************************************************************************/
+ 
 #define BIT_0 0x01 // Bit mask for bit 0
 #define BIT_1 0x02 // Bit mask for bit 1
 #define BIT_2 0x04 // Bit mask for bit 2

@@ -74,17 +74,17 @@ extern "C"
     uint16_t TaskManagerStateEventLoop(uint8_t task_id, uint16_t events);
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
-    void TaskManagerStateMachineInit(void);
-    void TaskManagerStateEventLoop(void *arg);
-    void *TaskManagerStateEventLoop(void *arg);
+void TaskManagerStateMachineInit(void);
+void TaskManagerStateEventLoop(void *arg);
+void *TaskManagerStateEventLoop(void *arg);
 
 #elif defined(PLATFORM_LINUX_RISC)
-    void TaskManagerStateMachineInit(void);
-    void TaskManagerStateStopRunning(void);
-    void *TaskManagerStateEventLoop(void *arg);
+void TaskManagerStateMachineInit(void);
+void TaskManagerStateStopRunning(void);
+void *TaskManagerStateEventLoop(void *arg);
 #else
-    void TaskManagerStateMachineInit(void);
-    void TaskManagerStateEventLoop(void *arg);
+void TaskManagerStateMachineInit(void);
+void TaskManagerStateEventLoop(void *arg);
 #endif
 
 #ifdef __cplusplus

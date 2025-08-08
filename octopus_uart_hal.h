@@ -69,8 +69,8 @@ extern "C"
     // Sends a buffer of data via UART, returning the number of bytes sent
     uint8_t hal_com_uart_send_buffer(const uint8_t *buffer, uint16_t length);
     uint8_t hal_com_uartl_send_buffer(const uint8_t *buffer, uint16_t length);
-		uint8_t hal_com_uart2_send_buffer(const uint8_t *buffer, uint16_t length);
-			
+    uint8_t hal_com_uart2_send_buffer(const uint8_t *buffer, uint16_t length);
+
     // Reads data from the UART FIFO and stores it in the provided buffer
     uint8_t hal_com_uart_get_fifo_data_1(uint8_t *buffer, uint16_t length);
     void hal_com_uart_receive_callback_ptl_1(const uint8_t *buffer, uint16_t length);

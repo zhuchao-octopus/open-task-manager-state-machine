@@ -29,6 +29,7 @@
 #include "octopus_ble.h"
 #include "octopus_4g.h"
 #include "octopus_bt.h"
+#include "octopus_ling_hui_liion2.h"
 
 #include "octopus_update_mcu.h"
 #include "octopus_ipc.h"
@@ -65,6 +66,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
+		
 #ifdef TASK_MANAGER_STATE_MACHINE_IPC
     [TASK_MODULE_IPC] = {
         .func = {
@@ -77,7 +79,8 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-#ifdef TASK_MANAGER_STATE_MACHINE_SYSTEM		
+
+#ifdef TASK_MANAGER_STATE_MACHINE_SYSTEM
     [TASK_MODULE_SYSTEM] = {
         .func = {
             [OTMS_S_INIT] = task_system_init_running,
@@ -88,7 +91,8 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
             [OTMS_S_STOP] = task_system_stop_running,
         },
     },
-#endif		
+#endif
+
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     [TASK_MODULE_GPIO] = {
         .func = {
@@ -101,7 +105,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-		
+
 #ifdef TASK_MANAGER_STATE_MACHINE_KEY
     [TASK_MODULE_KEY] = {
         .func = {
@@ -114,7 +118,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-		
+
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
     [TASK_MODULE_CAR_INFOR] = {
         .func = {
@@ -155,7 +159,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
     },
 #endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_BT
+#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
     [TASK_MODULE_BT] = {
         .func = {
             [OTMS_S_INIT] = task_bt_init_running,
@@ -167,7 +171,7 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-		
+
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
     [TASK_MODULE_CAN] = {
         .func = {
@@ -193,7 +197,20 @@ const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-
+		
+#ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
+    [TASK_MODULE_LING_HUI_LIION2] = {
+        .func = {
+            [OTMS_S_INIT] = task_lhl2_ptl_init_running,
+            [OTMS_S_START] = task_lhl2_ptl_start_running,
+            [OTMS_S_ASSERT_RUN] = task_lhl2_ptl_assert_running,
+            [OTMS_S_RUNNING] = task_lhl2_ptl_running,
+            [OTMS_S_POST_RUN] = task_lhl2_ptl_post_running,
+            [OTMS_S_STOP] = task_lhl2_ptl_stop_running,
+        },
+    },
+#endif
+		
 #ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
     [TASK_MODULE_UPDATE_MCU] = {
         .func = {

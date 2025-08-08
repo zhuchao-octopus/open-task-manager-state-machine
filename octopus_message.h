@@ -101,7 +101,10 @@ typedef enum
     MSG_IPC_CMD_CAR_SET_LIGHT,      /**< Control Headlights (turn ON/OFF) */
     MSG_IPC_CMD_CAR_SET_LOW_BEAM,   /**< Control Low Beam Headlights (turn ON/OFF) */
     MSG_IPC_CMD_CAR_SET_HIGH_BEAM,  /**< Control High Beam Headlights (turn ON/OFF) */
-    MSG_IPC_CMD_CAR_SETTING_SAVE    /**< Save Car Settings */
+    MSG_IPC_CMD_CAR_SET_INDICATOR,
+    MSG_IPC_CMD_CAR_SET_METER,
+    MSG_IPC_CMD_CAR_SET_BATTERY,
+    MSG_IPC_CMD_CAR_SETTING_SAVE /**< Save Car Settings */
 } Message_Group_11_Cmd_Id;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////

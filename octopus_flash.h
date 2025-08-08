@@ -90,6 +90,7 @@
 #define CLEAR_FLAG(flags, flag) ((flags) &= ~(flag))
 // Toggle a specific flag
 #define TOGGLE_FLAG(flags, flag) ((flags) ^= (flag))
+
 /////////////////////////////////////////////////////////////////////////////////////////
 typedef enum
 {
@@ -223,7 +224,7 @@ extern "C"
     uint32_t flash_get_current_bank(void);
     uint32_t flash_get_bank_address(uint8_t bank_type);
     uint32_t flash_get_bank_offset_address(uint8_t bank_type);
-    uint32_t flash_erase_user_app_arear(void);
+    uint32_t flash_erase_user_app_bank(void);
 
     void flash_decode_active_version(char *out_str, size_t max_len);
     bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);

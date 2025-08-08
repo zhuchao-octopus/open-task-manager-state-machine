@@ -148,7 +148,9 @@ void task_update_assert_running(void)
  */
 void task_update_running(void)
 {
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
 	update_state_process(); // Call the reboot state machine processing function
+#endif
 }
 
 /**
@@ -333,22 +335,22 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 			lt_mcu_program_buf.bank_slot = BANK_SLOT_INVALID;
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
 
+			LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPDATE bank_address=%08x total_length=%d\r\n", lt_mcu_program_buf.bank_address, lt_mcu_program_buf.total_length);
+			LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPDATE bank_address=%08x bank_slot=%d\r\n", lt_mcu_program_buf.bank_address, lt_mcu_program_buf.bank_slot);
+
 			if (lt_mcu_program_buf.total_length == 0)
 			{
-				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPDATE faild update bank:%d address:%08x total_length=%d\r\n", lt_mcu_program_buf.bank_slot, lt_mcu_program_buf.bank_address, lt_mcu_program_buf.total_length);
+				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPDATE failed total_length=%d\r\n", lt_mcu_program_buf.total_length);
 				return false;
 			}
-			if (update_and_verify_dest_bank(lt_mcu_program_buf.bank_address))
+
+			if (!update_and_verify_dest_bank(lt_mcu_program_buf.bank_address))
 			{
-				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPDATE update bank:%d address:%08x\r\n", lt_mcu_program_buf.bank_slot, lt_mcu_program_buf.bank_address);
-				lt_mcu_program_buf.state = MCU_UPDATE_STATE_INIT;
-			}
-			else
-			{
-				lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
-				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPDATE failed update bank:%d address:%08x\r\n", lt_mcu_program_buf.bank_slot, lt_mcu_program_buf.bank_address);
+				LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPDATE failed bank_address=%08x bank_slot=%d\r\n", lt_mcu_program_buf.bank_address, lt_mcu_program_buf.bank_slot);
+				return false;
 			}
 
+			lt_mcu_program_buf.state = MCU_UPDATE_STATE_INIT;
 			return false;
 		}
 		case FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE:
@@ -361,8 +363,7 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 			else
 				lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;
 
-			LOG_LEVEL("FRAME_CMD_UPDATE_EXIT_FW_UPDATE lt_mcu_program_buf.total_length=%d received_length=%d\r\n", lt_mcu_program_buf.total_length, received_length);
-			LOG_LEVEL("FRAME_CMD_UPDATE_EXIT_FW_UPDATE received_crc_32=%08x received_length=%d\r\n", lt_mcu_program_buf.total_crc_32, received_length);
+			LOG_LEVEL("FRAME_CMD_UPDATE_EXIT_FW_UPDATE lt_mcu_program_buf.total_length=%d received_length=%d received_crc_32=%08x\r\n", lt_mcu_program_buf.total_length, received_length, lt_mcu_program_buf.total_crc_32);
 			return false;
 		}
 		case FRAME_CMD_UPDATE_SEND_FW_DATA:
@@ -408,6 +409,7 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 				mcu_upgrade_status.error_code = MCU_ERROR_CODE_FRAME;
 				return false;
 			}
+
 			if (!file_handle_oupg)
 			{
 				LOG_LEVEL("FRAME_CMD_UPDATE_REQUEST_FW_DATA error file_handle_oupg=NULL\r\n");
@@ -504,16 +506,23 @@ void update_print_receive_data(uint32_t address, uint8_t *buff, uint8_t length)
 
 bool update_and_verify_dest_bank(uint32_t slot_addr)
 {
+	uint32_t bank_address = slot_addr & FLASH_BANK_MASK;
 	lt_mcu_program_buf.bank_slot = update_get_target_bank();
 	switch (lt_mcu_program_buf.bank_slot)
 	{
 	case BANK_SLOT_A:
-		if (slot_addr != flash_meta_infor.slot_a_addr)
+		if (bank_address != flash_meta_infor.slot_a_addr)
+		{
+			LOG_LEVEL("band address mismatched target bank:%d02x %08x %08x", lt_mcu_program_buf.bank_slot, bank_address, flash_meta_infor.slot_a_addr);
 			return false;
+		}
 		break;
 	case BANK_SLOT_B:
-		if (slot_addr != flash_meta_infor.slot_b_addr)
+		if (bank_address != flash_meta_infor.slot_b_addr)
+		{
+			LOG_LEVEL("band address mismatched target bank:%d02x %08x %08x", lt_mcu_program_buf.bank_slot, bank_address, flash_meta_infor.slot_b_addr);
 			return false;
+		}
 		break;
 	default:
 		return false;
@@ -548,8 +557,9 @@ bool update_is_mcu_updating(void)
 
 bool update_check_oupg_file_exists(void)
 {
-	const char *usb_dirs[] = {"/mnt/usbotg", "/mnt/usb1", "/mnt/usb2", "/mnt/usb3", "/tmp"};
-	for (int i = 0; i <= 4; i++)
+	const char *usb_dirs[] = {"/mnt/extsd", "/mnt/usbotg", "/mnt/usb1", "/mnt/usb2", "/mnt/usb3", "/tmp"};
+	size_t usb_dirs_len = sizeof(usb_dirs) / sizeof(usb_dirs[0]);
+	for (int i = 0; i <= usb_dirs_len; i++)
 	{
 		if (search_and_copy_oupg_files(usb_dirs[i], file_path_name_upgrade, sizeof(file_path_name_upgrade)))
 		{
@@ -557,7 +567,7 @@ bool update_check_oupg_file_exists(void)
 			return true;
 		}
 	}
-	LOG_LEVEL("Not Found and copied file: %s\r\n", file_path_name_upgrade);
+	LOG_LEVEL("Not found and copied file: %s\r\n", file_path_name_upgrade);
 	return false;
 }
 
@@ -583,6 +593,7 @@ file_read_status_t read_next_record(FILE *fp, long *file_offset, file_type_t typ
 	return FILE_READ_INVALID;
 }
 #endif
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -640,7 +651,7 @@ static void update_state_process(void)
 			break;
 		}
 
-		erase_count = flash_erase_user_app_arear();
+		erase_count = flash_erase_user_app_bank();
 		LOG_LEVEL("MCU_UPDATE_STATE_ERASE... %d / %d\n", erase_count, MAIN_APP_BLOCK_COUNT);
 		if (erase_count == MAIN_APP_BLOCK_COUNT)
 		{
@@ -765,15 +776,15 @@ static void update_state_process(void)
 
 		if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
 		{
-			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_a_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
+			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_a_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
 			LOG_LEVEL("It took %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
 
 			flash_save_app_meter_infor();
-			JumpToApplication(flash_meta_infor.slot_a_addr);
+			/////JumpToApplication(flash_meta_infor.slot_a_addr);
 		}
 		else if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 		{
-			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_b_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
+			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_b_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
 			LOG_LEVEL("It took %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
 			flash_save_app_meter_infor();
 			JumpToApplication(flash_meta_infor.slot_b_addr);
@@ -790,10 +801,10 @@ static void update_state_process(void)
 
 	case MCU_UPDATE_STATE_ERROR:
 		if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
-			LOG_LEVEL("MCU_UPDATE_STATE_ERROR flash_meta_infor.slot_a_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
+			LOG_LEVEL("MCU_UPDATE_STATE_ERROR flash_meta_infor.slot_a_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
 
 		else if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
-			LOG_LEVEL("MCU_UPDATE_STATE_ERROR flash_meta_infor.slot_b_crc=%08x, Received crc_32=%08x\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
+			LOG_LEVEL("MCU_UPDATE_STATE_ERROR flash_meta_infor.slot_b_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
 
 		else
 			LOG_LEVEL("lt_mcu_program_buf.bank_slot error! bank_slot=%d\n", lt_mcu_program_buf.bank_slot);
@@ -804,11 +815,10 @@ static void update_state_process(void)
 		StopTickCounter(&mcu_upgrade_status.start_time);
 		StopTickCounter(&l_t_msg_wait_2000_timer);
 		lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
 		// NVIC_SystemReset();//user reboot
-#endif
 		break;
 	}
 }
+#endif
 
 #endif

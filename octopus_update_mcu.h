@@ -64,18 +64,18 @@ extern "C"
   typedef struct
   {
     uint32_t s_length;
-    uint32_t s_total_length; 
+    uint32_t s_total_length;
     uint8_t error_code;
   } mcu_update_progress_t;
 
   typedef struct
   {
-	file_info_t file_info;
-	long file_offset;
-	uint32_t s_length;
-	uint16_t f_counter; // frame counter
-	uint8_t error_code;
-	uint32_t start_time;
+    file_info_t file_info;
+    long file_offset;
+    uint32_t s_length;
+    uint16_t f_counter; // frame counter
+    uint8_t error_code;
+    uint32_t start_time;
   } mcu_update_progress_status_t;
 
   /*******************************************************************************
@@ -91,7 +91,7 @@ extern "C"
    * Declare any global variables that are required for the MCU update
    * task manager. These variables will be defined in the implementation file.
    */
-  //extern mcu_update_progress_status_t mcu_update_status;
+  // extern mcu_update_progress_status_t mcu_update_status;
   /*******************************************************************************
    * GLOBAL FUNCTIONS DECLARATION
    *

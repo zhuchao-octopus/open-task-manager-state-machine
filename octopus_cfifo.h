@@ -31,10 +31,10 @@
 #pragma pack(1) // Ensure structure is packed for memory alignment
 typedef struct
 {
-	volatile uint32_t head;     /**< Input index (read pointer). */
-	volatile uint32_t tail;     /**< Output index (write pointer). */
+	volatile uint32_t head;		/**< Input index (read pointer). */
+	volatile uint32_t tail;		/**< Output index (write pointer). */
 	volatile uint32_t capacity; /**< FIFO capacity (size of the buffer). */
-	//uint8_t aucArr[];           /**< FIFO data array. */
+	// uint8_t aucArr[];           /**< FIFO data array. */
 	uint8_t *buffer;
 } cFifo_t;
 #pragma pack(pop)
@@ -60,7 +60,7 @@ typedef struct
  * @param ptFifo Pointer to the circular FIFO structure.
  */
 #define cFifo_isFull(ptFifo) \
-    ((ptFifo)->head == (((ptFifo)->tail + 1) % (ptFifo)->capacity) ? true : false)
+	((ptFifo)->head == (((ptFifo)->tail + 1) % (ptFifo)->capacity) ? true : false)
 
 /**
  * @brief Clear the FIFO by resetting its head and tail pointers.
@@ -79,15 +79,15 @@ typedef struct
  * @param ptFifo Pointer to the circular FIFO structure.
  */
 #define cFifo_DataSize(ptFifo) \
-    (((ptFifo)->tail >= (ptFifo)->head) ? (ptFifo)->tail - (ptFifo)->head : (ptFifo)->capacity - (ptFifo)->head + (ptFifo)->tail)
+	(((ptFifo)->tail >= (ptFifo)->head) ? (ptFifo)->tail - (ptFifo)->head : (ptFifo)->capacity - (ptFifo)->head + (ptFifo)->tail)
 
 /**
  * @brief Get the number of free bytes available in the FIFO.
  * @param ptFifo Pointer to the circular FIFO structure.
  */
 #define cFifo_FreeSize(ptFifo) \
-    (((ptFifo)->capacity) -    \
-     (((ptFifo)->tail >= (ptFifo)->head) ? (ptFifo)->tail - (ptFifo)->head : (ptFifo)->capacity - (ptFifo)->head + (ptFifo)->tail))
+	(((ptFifo)->capacity) -    \
+	 (((ptFifo)->tail >= (ptFifo)->head) ? (ptFifo)->tail - (ptFifo)->head : (ptFifo)->capacity - (ptFifo)->head + (ptFifo)->tail))
 
 /*******************************************************************************
  * FUNCTION DECLARATIONS

@@ -75,6 +75,7 @@ extern "C"
 #define ERROR_CODE_BEGIN ERROR_CODE_THROTTLE_NOT_ZERO       // 故障码开始
 #define ERROR_CODE_END ERROR_CODE_COMMUNICATION_ABNORMALITY // 故障码结束
 
+#if 0
     typedef struct
     {
         uint8_t sideStand;                // Side stand status        0: off     1: on
@@ -172,73 +173,88 @@ extern "C"
         uint16_t range; //< Estimated range in 100m
         uint16_t max_range;
     } battery_t;
-
+#endif
 #pragma pack(push, 1)
     typedef struct
     {
-        uint8_t highBeam;  // High beam status
-        uint8_t lowBeam;   // Low beam status
-        uint8_t position;  // Position light status
+        uint8_t ready;     // Ready status (1 = system ready to operate)
+        uint8_t highBeam;  // High beam light status (1 = ON)
+        uint8_t lowBeam;   // Low beam light status (1 = ON)
+        uint8_t position;  // Position/marker light status
         uint8_t frontFog;  // Front fog light status
         uint8_t rearFog;   // Rear fog light status
-        uint8_t leftTurn;  // Left turn indicator status
-        uint8_t rightTurn; // Right turn indicator status
-        uint8_t ready;     // Ready status
-        uint8_t parking;   // Parking status
-        uint8_t brake;     // Brake status
+        uint8_t leftTurn;  // Left turn signal indicator status
+        uint8_t rightTurn; // Right turn signal indicator status
 
-        uint8_t bt;   // Bluetooth indicator status
-        uint8_t wifi; // Wi-Fi indicator status
-        uint8_t walk_assist;
+        uint8_t parking;             // Parking status (1 = in parking mode)
+        uint8_t brake;               // Brake status (1 = braking)
+        uint8_t horn;                // Horn status (1 = horn active)
+        uint8_t cruise_control;      // Cruise control status (1 = active)
+        uint8_t start_poles;         // Start behavior after motor poles setup
+        uint8_t motor_poles;         // Number of poles in motor (raw value)
+        uint8_t horizontal_position; // Horizontal orientation/position sensor value
+
+        uint8_t walk_assist; // Walk assist status (1 = enabled)
+        uint8_t drive_mode;  // Drive mode selection (0 = eco, 1 = normal, etc.)
+        uint8_t start_mode;  // Start mode setting (e.g., throttle/pedal)
+
+        uint8_t bt;   // Bluetooth indicator status (1 = connected)
+        uint8_t wifi; // Wi-Fi indicator status (1 = connected)
     } carinfo_indicator_t;
 
     typedef struct
     {
-        uint32_t odo;           // Total distance traveled (unit: 0.1 km) Trip Odometer
-        uint16_t rpm;           // Motor RPM (raw value, offset by -20000)
-        uint16_t speed;         // Displayed speed (unit: 0.1 km/h)
+        uint32_t trip_odo;      // Total distance traveled (unit: 1 meters), also known as trip odometer
+        uint32_t trip_time;     // Total ride time (unit: seconds)
+        uint32_t trip_distance; // Trip distance   (unit: 1 meters), resettable
+
+        uint16_t speed_average; // Displayed vehicle speed (unit: 0.1 km/h)
         uint16_t speed_actual;  // Actual wheel speed (unit: 0.1 km/h)
-        uint16_t speed_limit;   // 0 = OFF, 10~90 km/h
-        uint16_t ride_time;     // Total ride time (unit: seconds)
-        uint16_t trip_distance; // Trip meter (unit: 0.1 km)
+        uint16_t speed_max;
+        uint16_t speed_limit; // Speed limit setting; 0 = OFF, range: 10–90 km/h
 
-        uint8_t gear; // Current gear level (0–N)
-        uint8_t max_gear_level;
-
-        uint8_t unit_type; // Unit system: 0 = Metric (km/km/h), 1 = Imperial (mi/mph)
-        uint8_t wheel_diameter;
+        uint16_t rpm;           // Motor RPM (raw value, offset by -20000)
+        uint8_t gear;           // Current gear level (0 = Neutral, 1–N)
+        uint8_t gear_level_max; // Maximum selectable gear level
+        uint8_t wheel_diameter; // Wheel diameter (unit: inch)
+        uint8_t reserve;
     } carinfo_meter_t;
 
     typedef struct
     {
-        uint16_t voltage;
-        uint16_t current;
-        uint16_t power; //< Power in W
-        uint16_t soc;   // State of Charge: 0–100% (based on voltage curve)
-        uint16_t range; //< Estimated range in 100m
-        uint16_t max_range;
-        uint8_t rel_charge_state;
-        uint8_t abs_charge_state;
+        uint16_t voltage;      // Battery voltage (unit: millivolts or volts depending on context)
+        uint16_t current;      // Battery or motor current (unit: milliamps or amps)
+        uint16_t power;        // Instantaneous power output (unit: watts)
+        uint16_t soc;          // State of Charge, 0–100% (based on voltage/SOC curve)
+        uint16_t range;        // Estimated remaining range (unit: 100 meters)
+        uint16_t range_max;    // Estimated maximum range (unit: 100 meters)
+        uint16_t throttle_pwm; // Throttle signal PWM duty (0–1000 for 0–100%)
+
+        uint8_t current_limit;    // Current limit, range: 6~50A, default: 12A, unit: 1A
+        uint8_t rel_charge_state; // Relative charge state (e.g., fast/slow charging, enum value)
+        uint8_t abs_charge_state; // Absolute charge state (e.g., charging, full, fault, enum value)
+        uint8_t reserve;
     } carinfo_battery_t;
 
     // 故障信息
     typedef struct
     {
-        uint8_t ecuFault;    // ECU fault status
-        uint8_t sensorFault; // Sensor fault status
-        uint8_t motorFault;  // Motor fault status
+        uint8_t fault_ecu;    // ECU fault status
+        uint8_t fault_sensor; // Sensor fault status//assist_power_sensor_switch
+        uint8_t fault_motor;  // Motor fault status
 
-        uint8_t fuse_fault;     // Fuse fault status (0: OK, 1: Fault, others: reserved)
-        uint8_t plug_fault;     // Charging plug fault status
-        uint8_t battery_fault;  // Battery fault status
-        uint8_t brake_fault;    // Brake fault status
-        uint8_t throttle_fault; // Throttle fault status
-        uint8_t error[ERROR_CODE_COUNT];
+        uint8_t fault_fuse;     // Fuse fault status (0: OK, 1: Fault, others: reserved)
+        uint8_t fault_plug;     // Charging plug fault status
+        uint8_t fault_battery;  // Battery fault status
+        uint8_t fault_brake;    // Brake fault status
+        uint8_t fault_throttle; // Throttle fault status
+        // uint8_t error[ERROR_CODE_COUNT];
     } __attribute__((packed)) carinfo_error_t;
 #pragma pack(pop)
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////
+#if 0		
     typedef struct
     {
         uint16_t avgEnergyConsumption; // Average energy consumption
@@ -292,7 +308,7 @@ extern "C"
         carinfo_drivinfo_gear_t gear;           // Gear information
         carinfo_drivinfo_drivemode_t driveMode; // Driving mode
     } carinfo_drivinfo_t;
-
+#endif
     /*******************************************************************************
      * CONSTANTS
      */
@@ -334,7 +350,7 @@ extern "C"
      * @brief Retrieve drive information.
      * @return Pointer to current carinfo_drivinfo_t.
      */
-    carinfo_drivinfo_t *task_carinfo_get_drivinfo_info(void);
+    // carinfo_drivinfo_t *task_carinfo_get_drivinfo_info(void);
 
     /**
      * @brief Initializes the car indicator module.
@@ -428,7 +444,9 @@ extern "C"
 
     // void car_indicator_proc_turn_signal(void);
     // void car_meter_proc_speed_rpm(void);
-    void task_carinfo_add_error_code(ERROR_CODE error_code);
+
+    void task_carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately);
+    bool task_carinfo_has_error_code(void);
 
     extern carinfo_meter_t lt_carinfo_meter;         // Local meter data structure
     extern carinfo_indicator_t lt_carinfo_indicator; // Local indicator data structure

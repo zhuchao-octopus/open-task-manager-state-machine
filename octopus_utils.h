@@ -63,7 +63,7 @@ extern "C"
 	typedef struct
 	{
 		uint32_t address;
-		uint8_t data[64];
+		uint8_t data[64+10];
 		uint8_t length;
 		uint16_t f_count;
 	} hex_record_t;
@@ -86,7 +86,7 @@ extern "C"
 
 	typedef struct
 	{
-		uint32_t magic;			// Magic constant for validation
+		uint32_t magic; // Magic constant for validation
 		uint32_t model;
 		uint32_t start_address; // Start address (e.g. 0x00000000 or 0x00010000)
 		uint32_t size;			// Actual app size in bytes
