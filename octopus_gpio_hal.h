@@ -175,6 +175,7 @@ typedef uint8_t GPIO_GROUP;
     bool hal_gpio_read(GPIO_GROUP *gpiox, uint16_t pin);
     bool hal_gpio_write(GPIO_GROUP *gpiox, uint16_t pin, uint8_t value);
 
+    void hal_gpio_power_on(void);
 #ifdef __cplusplus
 }
 #endif

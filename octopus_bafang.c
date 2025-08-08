@@ -208,12 +208,9 @@ void task_bfang_ptl_init_running(void)
 void task_bfang_ptl_start_running(void)
 {
     LOG_LEVEL("task_bafang_ptl_start_running\r\n");
-    // if (SETTING_PTL_BAFANG == theEnvInfo.ptl)
-    {
-        /// ptl_register_module(SETTING_PTL_BAFANG, bafang_send_handler,bafang_receive_handler);
-        ptl_2_register_module(PTL2_MODULE_BAFANG, bafang_receive_handler);
-        OTMS(TASK_MODULE_BAFANG, OTMS_S_ASSERT_RUN);
-    }
+
+    ptl_2_register_module(PTL2_MODULE_BAFANG, bafang_receive_handler);
+    OTMS(TASK_MODULE_BAFANG, OTMS_S_ASSERT_RUN);
 }
 
 void task_bfang_ptl_assert_running(void)
@@ -229,13 +226,7 @@ void task_bfang_ptl_running(void)
         return;
     }
     StartTickCounter(&lt_timer);
-
-    // if(true == system_get_power_off_req())
-    {
-        OTMS(TASK_MODULE_BAFANG, OTMS_S_POST_RUN);
-    }
-
-    // lt_indicator.walk_assist = theMeterInfo.walk_assist;
+    // lt_carinfo_indicator.walk_assist = theMeterInfo.walk_assist;
     com_uart_ptl_bafang_tx_process();
 }
 
@@ -640,7 +631,7 @@ bool proc_protocol_frame_system_state(uint8_t *buff, int count)
             else
             {
                 send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR); // FRAME_CMD__CARINFOR_INDICATOR
-                task_carinfo_add_error_code(code);
+                task_carinfo_add_error_code(code, true, true);
             }
 
             return true;

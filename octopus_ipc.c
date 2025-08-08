@@ -53,11 +53,13 @@ static CarInforCallback_t CarInforCallback = NULL;
  * Local Variables
  * Define static variables used only within this file.
  ******************************************************************************/
-
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
+static uint16_t l_t_callback_delay = 0;
 static uint8_t l_u8_idle_swich = 0;
+#endif
 static uint32_t l_t_msg_wait_10_timer; // Timer for 10 ms message waiting period
 static uint32_t l_t_msg_wait_500_timer;
-static uint16_t l_t_callback_delay = 0; // 1000;
+
 /*******************************************************************************
  * Global Function Implementations
  ******************************************************************************/
@@ -132,20 +134,23 @@ void task_ipc_running(void)
     {
         return;
     }
-#endif
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
     if (msg->msg_id == NO_MSG)
     {
+        if (!IsTickCounterStart(&l_t_msg_wait_500_timer))
+            StartTickCounter(&l_t_msg_wait_500_timer);
+
         if ((GetTickCounter(&l_t_msg_wait_500_timer) >= l_t_callback_delay) && (l_t_callback_delay > 0))
         {
             if (l_u8_idle_swich > 0)
             {
-                ipc_notify_message_to_client(0, FRAME_CMD_CARINFOR_INDICATOR);
+                ipc_notify_message_to_client(MSG_GROUP_CAR, FRAME_CMD_CARINFOR_INDICATOR);
                 l_u8_idle_swich = 0;
             }
             else
             {
-                ipc_notify_message_to_client(0, FRAME_CMD_CARINFOR_METER);
+                ipc_notify_message_to_client(MSG_GROUP_CAR, FRAME_CMD_CARINFOR_METER);
                 l_u8_idle_swich = 1;
             }
 
@@ -153,6 +158,9 @@ void task_ipc_running(void)
         }
         return;
     }
+    StopTickCounter(&l_t_msg_wait_500_timer);
+#endif
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
 
     switch (msg->msg_id)
     {
@@ -162,30 +170,38 @@ void task_ipc_running(void)
         {
         case MSG_IPC_CMD_CAR_SETTING_SAVE:
             LOG_LEVEL("MSG_IPC_CMD_CAR_SETTING_SAVE param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_SYSTEM_SAVE_DATA, msg->param1);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_SYSTEM_SAVE_DATA, msg->param2);
             break;
+
         case MSG_IPC_CMD_CAR_SET_LIGHT:
             LOG_LEVEL("MSG_IPC_CMD_CAR_SET_LIGHT param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_LIGHT, msg->param1);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_LIGHT, msg->param2);
             break;
+
         case MSG_IPC_CMD_CAR_SET_GEAR_LEVEL:
             LOG_LEVEL("MSG_IPC_CMD_CAR_SET_GEAR_LEVEL param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_GEAR_LEVEL, msg->param1);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_GEAR_LEVEL, msg->param2);
             break;
+
         case MSG_IPC_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
             LOG_LEVEL("MSG_IPC_CMD_CAR_METER_TRIP_DISTANCE_CLEAR param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR, msg->param1);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR, msg->param2);
             break;
+
         case MSG_IPC_CMD_CAR_METER_TIME_CLEAR:
             LOG_LEVEL("MSG_IPC_CMD_CAR_METER_TIME_CLEAR param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_METER_TIME_CLEAR, msg->param1);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_METER_TIME_CLEAR, msg->param2);
             break;
+
         case MSG_IPC_CMD_CAR_METER_ODO_CLEAR:
             LOG_LEVEL("MSG_IPC_CMD_CAR_METER_ODO_CLEAR param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_METER_ODO_CLEAR, msg->param1);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_METER_ODO_CLEAR, msg->param2);
             break;
+
         case MSG_IPC_CMD_CAR_GET_INDICATOR_INFO:
         case MSG_IPC_CMD_CAR_GET_METER_INFO:
+        case MSG_IPC_CMD_CAR_GET_ERROR_INFO:
+        case MSG_IPC_CMD_CAR_GET_BATTERY_INFO:
         default:
             // LOG_LEVEL("msg->id=%d param1=%d,param2=%d\r\n", msg->id, msg->param1,msg->param2);
             ipc_notify_message_to_client(MSG_GROUP_CAR, msg->param1);
@@ -284,6 +300,7 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
 
         case FRAME_CMD_CAR_SET_GEAR_LEVEL:
             tmp[0] = param2;
+            tmp[1] = param2;
             ptl_build_frame(SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_GEAR_LEVEL, tmp, 2, buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
@@ -291,10 +308,26 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
         case FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
         case FRAME_CMD_CAR_METER_TIME_CLEAR:
         case FRAME_CMD_CAR_METER_ODO_CLEAR:
-			tmp[0] = param2;
-			ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, tmp, 2, buff);
-			LOG_BUFF_LEVEL(buff->buff, buff->size);
-			return true;
+            tmp[0] = param2;
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, tmp, 2, buff);
+            LOG_BUFF_LEVEL(buff->buff, buff->size);
+            return true;
+
+        case FRAME_CMD_CAR_SET_INDICATOR:
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, (uint8_t *)&lt_carinfo_indicator, sizeof(carinfo_indicator_t), buff);
+            LOG_BUFF_LEVEL(buff->buff, buff->size);
+            return true;
+
+        case FRAME_CMD_CAR_SET_METER:
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t), buff);
+            LOG_BUFF_LEVEL(buff->buff, buff->size);
+            return true;
+
+        case FRAME_CMD_CAR_SET_BATTERY:
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, (uint8_t *)&lt_carinfo_battery, sizeof(carinfo_battery_t), buff);
+            LOG_BUFF_LEVEL(buff->buff, buff->size);
+            return true;
+
         default:
             break;
         }
@@ -333,7 +366,7 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
     // assert(payload);    // Ensure payload is valid
     // assert(ackbuffer);  // Ensure acknowledgment buffer is valid
     // uint8_t tmp[1];     // Temporary variable for holding command data
-    LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d\r\n", payload->frame_type, payload->frame_cmd, payload->data_len);
+    LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d data[0]=%d\r\n", payload->frame_type, payload->frame_cmd, payload->data_len, payload->data[0]);
     if (SOC_TO_MCU_MOD_IPC == payload->frame_type)
     {
         switch (payload->frame_cmd)
@@ -351,22 +384,47 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
             return false;
 #endif
         case FRAME_CMD_CAR_SET_GEAR_LEVEL:
+            if (payload->data_len >= 1)
+                lt_carinfo_meter.gear = payload->data[0];
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
             bafang_set_gear(payload->data[0]);
+#endif
+            return false;
+
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
+        case FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
+            lt_carinfo_meter.trip_distance = 0;
+            return false;
+
+        case FRAME_CMD_CAR_METER_TIME_CLEAR:
+            lt_carinfo_meter.trip_time = 0;
+            return false;
+
+        case FRAME_CMD_CAR_METER_ODO_CLEAR:
+            lt_carinfo_meter.trip_odo = 0;
+            return false;
+
+        case FRAME_CMD_CAR_SET_INDICATOR:
+            if (payload->data_len >= sizeof(carinfo_indicator_t))
+            {
+                memcpy(&lt_carinfo_indicator, payload->data, sizeof(carinfo_indicator_t));
+            }
+            return false;
+
+        case FRAME_CMD_CAR_SET_METER:
+            if (payload->data_len >= sizeof(carinfo_meter_t))
+            {
+                memcpy(&lt_carinfo_meter, payload->data, sizeof(carinfo_meter_t));
+            }
+            return false;
+
+        case FRAME_CMD_CAR_SET_BATTERY:
+            if (payload->data_len >= sizeof(carinfo_battery_t))
+            {
+                memcpy(&lt_carinfo_battery, payload->data, sizeof(carinfo_battery_t));
+            }
             return false;
 #endif
-				
-#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR				
-		case FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
-			   lt_carinfo_meter.trip_distance = 0;
-			   return false;  
-		case FRAME_CMD_CAR_METER_TIME_CLEAR:
-			   lt_carinfo_meter.trip_time = 0;
-			   return false;
-		case FRAME_CMD_CAR_METER_ODO_CLEAR:
-			   lt_carinfo_meter.trip_odo = 0; 
-			   return false;
-#endif				
         default:
             break;
         }
@@ -386,6 +444,8 @@ void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id)
 
 void update_push_interval_ms(uint16_t delay_ms)
 {
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
     l_t_callback_delay = delay_ms;
+#endif
 }
 #endif

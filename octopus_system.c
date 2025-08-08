@@ -57,6 +57,9 @@ static uint8_t l_u8_power_off_req = 0; // Tracks if a power-off request is pendi
 static uint32_t l_t_msg_wait_10_timer; // Timer for 10 ms message waiting period
 static uint32_t l_t_msg_lowpower_wait_timer;
 static uint32_t l_t_msg_booting_wait_timer;
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
+static uint32_t l_t_msg_mcu_meta_wait_timer;
+#endif
 /*******************************************************************************
  * Global Function Implementations
  ******************************************************************************/
@@ -107,6 +110,7 @@ void task_system_assert_running(void)
     ptl_reqest_running(MCU_TO_SOC_MOD_SYSTEM);
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
     ptl_reqest_running(SOC_TO_MCU_MOD_SYSTEM);
+    StartTickCounter(&l_t_msg_mcu_meta_wait_timer);
 #endif
 
     OTMS(TASK_MODULE_SYSTEM, OTMS_S_RUNNING);
@@ -149,7 +153,19 @@ void task_system_running(void)
 
     Msg_t *msg = get_message(TASK_MODULE_SYSTEM);
     if (msg->msg_id == NO_MSG)
+    {
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
+        if (GetTickCounter(&l_t_msg_mcu_meta_wait_timer) > 60000)
+        {
+            if (!flash_is_meta_infor_valid())
+            {
+                send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
+                StartTickCounter(&l_t_msg_mcu_meta_wait_timer);
+            }
+        }
+#endif
         return;
+    }
 
     switch (msg->msg_id)
     {
@@ -165,8 +181,8 @@ void task_system_running(void)
             system_gpio_power_onoff(true);
         else if (msg->param1 == FRAME_CMD_SYSTEM_POWER_OFF)
             system_gpio_power_onoff(false);
-        else
-            system_power_onoff_auto();
+        // else
+        //     system_power_onoff_auto();
         break;
 
     case MSG_OTSM_DEVICE_BLE_EVENT:
@@ -227,6 +243,11 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, buff);
             return true;
 
+        case FRAME_CMD_SYSTEM_MCU_META:
+            LOG_LEVEL("Request mcu meta information.");
+            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, tmp, 2, buff);
+            return true;
+
         case FRAME_CMD_SYSTEM_POWER_ON:
             // Acknowledgement, no additional action needed
             tmp[0] = 0;
@@ -268,6 +289,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         case FRAME_CMD_SYSTEM_MCU_META:
             tmp[0] = 0;
             tmp[1] = 0;
+            LOG_LEVEL("system request mcu meta information.\r\n");
             ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, tmp, 2, buff);
             return true;
 
@@ -316,6 +338,8 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             return true;
 
         case FRAME_CMD_SYSTEM_MCU_META:
+            LOG_LEVEL("send mcu meta information.\r\n");
+            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ackbuff);
             return true;
 
@@ -339,12 +363,12 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             {
                 system_gpio_power_onoff(false);
             }
-            /// if (!is_power_on())
-            ///{
-            ///     //tmp = 0x01;
-            ///     //ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, &tmp, 1, ackbuff);
-            ///     //return true;
-            /// }
+            /////if(!is_power_on())
+            /////{
+            /////tmp = 0x01;
+            /////ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, &tmp, 1, ackbuff);
+            /////return true;
+            /////}
             break;
         default:
             break;
@@ -412,6 +436,7 @@ void system_handshake_with_mcu(void)
 {
     LOG_LEVEL("system send handshake data to xxx\r\n");
     send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, 0);
+    send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
 }
 
 /*******************************************************************************
@@ -521,28 +546,31 @@ void system_power_on_off(bool onoff)
 
 void system_gpio_power_onoff(bool onoff)
 {
-    if (!onoff)
+    if (onoff)
     {
-        LOG_LEVEL("power down f133 soc\r\n");
-        send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, 0);
+        lt_mb_state = MB_POWER_ST_ON;
+        // send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_ON, 0);
+        power_on_off(true);
+        LOG_LEVEL("power on f133 soc\r\n");
+        // system_delay_ms(5);
+        power_on_off(true);
+        if (is_power_on())
+        {
+            LOG_LEVEL("power on f133 soc succesfully\r\n");
+        }
+    }
+    else
+    {
+
+        // send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, 0);
         flash_save_carinfor_meter();
+        LOG_LEVEL("power down f133 soc\r\n");
         power_on_off(false);
         if (!is_power_on())
         {
             LOG_LEVEL("power down f133 soc succesfully\r\n");
             lt_mb_state = MB_POWER_ST_LOWPOWER;
             StartTickCounter(&l_t_msg_lowpower_wait_timer);
-        }
-    }
-    else
-    {
-        LOG_LEVEL("power on f133 soc\r\n");
-        lt_mb_state = MB_POWER_ST_ON;
-        send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_ON, 0);
-        power_on_off(true);
-        if (is_power_on())
-        {
-            LOG_LEVEL("power on f133 soc succesfully\r\n");
         }
     }
 }

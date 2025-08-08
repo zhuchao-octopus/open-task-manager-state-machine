@@ -42,7 +42,8 @@ typedef enum
 	BT_STATE_CONNECTING,
 	BT_STATE_CONNECTED,
 	BT_STATE_PLAYING,
-	BT_STATE_SCANNING
+	BT_STATE_SCANNING,
+	BT_STATE_SCANNING_END
 } bt_state_t;
 
 #define AT_TEST_CMD "AT\r\n"
@@ -111,7 +112,7 @@ extern "C"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
-#ifdef TASK_MANAGER_STATE_MACHINE_BT
+#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
 	/*******************************************************************************
 	 * MACROS
 	 * Define commonly used macros for this module.

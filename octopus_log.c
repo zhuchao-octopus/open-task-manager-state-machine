@@ -30,8 +30,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
-//#define OTSM_DEBUG_MODE
-//#define OTSM_DEBUG_USART1
+#define OTSM_DEBUG_MODE
+#define OTSM_DEBUG_USART4
 //#define USE_MY_PRINTF
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -51,9 +51,9 @@ DBG_LOG_LEVEL current_log_level = LOG_LEVEL_NONE;
 #elif defined(OTSM_DEBUG_USART2)
 #define DEBUG_UART USART2
 #elif defined(OTSM_DEBUG_USART3)
-#define DEBUG_UART USART2
+#define DEBUG_UART UART3
 #elif defined(OTSM_DEBUG_USART4)
-#define DEBUG_UART USART4
+#define DEBUG_UART UART4
 #else
 #endif
 
@@ -461,6 +461,8 @@ static void native_uart_putc(char *data, uint16_t size)
 	  UART2_Send_Buffer((uint8_t *)data, size);	
 #elif defined(OTSM_DEBUG_USART4)
 	  UART4_Send_Buffer((uint8_t *)data, size);
+#elif defined(PLATFORM_CST_OSAL_RTOS)
+	  HalUartSendBuf(UART0, (uint8_t *)data, size);
 #else  
 #endif
 }
@@ -556,6 +558,10 @@ void dbg_log_printf_level(const char *function_name, const char *format, ...)
  */
 void dbg_log_printf_buffer(uint8_t *buff, uint16_t length)
 {
+	 if (current_log_level == LOG_LEVEL_NONE)
+    {
+        return;
+    }
     for (int i = 0; i < length; i++)
     {
 #ifdef USE_MY_PRINTF
@@ -579,7 +585,7 @@ void dbg_log_printf_buffer(uint8_t *buff, uint16_t length)
  */
 void dbg_log_printf_buffer_level(const char *function_name, const uint8_t *buff, uint16_t length)
 {
-    if (buff == NULL || length == 0)
+    if (buff == NULL || length == 0 || current_log_level == LOG_LEVEL_NONE)
     {
         return;
     }

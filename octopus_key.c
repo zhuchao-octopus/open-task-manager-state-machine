@@ -112,7 +112,7 @@ static void task_key_action_hanlder(void)
         switch (key)
         {
         case OCTOPUS_KEY_POWER:
-            task_key_power_event_process(key_status);
+            // task_key_power_event_process(key_status);
             break;
         default:
             break;
@@ -146,14 +146,14 @@ void task_key_power_event_process(GPIO_KEY_STATUS *key_status)
 
     case KEY_STATE_PRESSED:
         LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d key_status=%02x\r\n", key_status->key, key_status->state);
-
+        hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
         if (GetTickCounter(&power_key_wait_timer) >= 300)
         {
             power_key_password_index = 0;
         }
 
         power_key_password_index++;
-        hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
+
         if (power_key_password_index == sizeof(power_key_password))
         {
             send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_PAIR_ON, 0);
@@ -161,7 +161,7 @@ void task_key_power_event_process(GPIO_KEY_STATUS *key_status)
             StopTickCounter(&power_key_wait_timer);
         }
         break;
-				
+
     case KEY_STATE_LONG_PRESSED:
         if (!key_status->ignore)
         {
@@ -178,9 +178,16 @@ void task_key_power_event_process(GPIO_KEY_STATUS *key_status)
         if (!key_status->ignore)
         {
             LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d 3long duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
-            // if(is_power_on())
-            //	hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
-            send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, 0, 0);
+            if (is_power_on())
+            {
+                send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_OFF, 0);
+            }
+            else
+            {
+                // hal_gpio_power_on();
+                send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_ON, 0);
+            }
+
             key_status->ignore = true;
         }
         break;

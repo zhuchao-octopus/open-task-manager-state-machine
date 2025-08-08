@@ -44,6 +44,7 @@ void PollingGPIOStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_STATUS *gpio_status
 void PollingGPIOKeyEventStatus(GPIO_GROUP *gpiox, uint16_t pin, GPIO_KEY_STATUS *key_status);
 void PollingGPIOKeyEventDispatcher(GPIO_KEY_STATUS *key_status);
 
+void task_gpio_event_polling(void);
 // static uint32_t l_t_msg_gpio_wait_timer;
 
 /*******************************************************************************
@@ -55,7 +56,8 @@ void PollingGPIOKeyEventDispatcher(GPIO_KEY_STATUS *key_status);
 // GPIO_STATUS zzd_status = {false, true, 0, 0};
 // GPIO_STATUS yzd_status = {false, true, 0, 0};
 
-GPIO_STATUS power_pin_status = {false, false, 0, 0};
+GPIO_STATUS power_enable_pin_status = {false, false, 0, 0};
+GPIO_STATUS power_switch_pin_status = {false, false, 0, 0};
 
 GPIO_KEY_STATUS key_status_power = {OCTOPUS_KEY_POWER, 0};
 GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_power};
@@ -71,7 +73,8 @@ void task_gpio_init_running(void)
     LOG_LEVEL("task_gpio_init_running\r\n");
     // com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
     OTMS(TASK_MODULE_GPIO, OTMS_S_INVALID);
-    power_pin_status.offon = hal_gpio_read(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN);
+    power_enable_pin_status.offon = hal_gpio_read(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN);
+	  power_switch_pin_status.offon = hal_gpio_read(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN);
 }
 
 void task_gpio_start_running(void)
@@ -88,62 +91,11 @@ void task_gpio_assert_running(void)
 
 void task_gpio_running(void)
 {
-    // PollingGPIOStatus(GPIO_ACC_PIN,&acc_status);
-    // PollingGPIOStatus(GPIO_DDD_PIN,&ddd_status);
-    // PollingGPIOStatus(GPIO_ZZD_PIN,&zzd_status);
-    // PollingGPIOStatus(GPIO_YZD_PIN,&yzd_status);
 #if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
     if (system_get_mb_state() != MB_POWER_ST_ON)
         return;
 #endif
-    // PollingGPIOStatus(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, &power_pin_status);
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////
-    PollingGPIOKeyEventStatus(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, &key_status_power);
-    //////////////////////////////////////////////////////////////////////////////////////////////////////
-    PollingGPIOKeyEventDispatcher(&key_status_power);
-    //////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    if (power_pin_status.changed)
-    {
-        if (power_pin_status.offon)
-            LOG_LEVEL("Power switch pin transitioned from LOW to HIGH %d\r\n", power_pin_status.offon);
-        else
-            LOG_LEVEL("Power switch pin transitioned from HIGH to LOW %d\r\n", power_pin_status.offon);
-
-        send_message(TASK_MODULE_KEY, MSG_OTSM_DEVICE_GPIO_EVENT, GPIO_POWER_KEY_PIN, power_pin_status.offon);
-        power_pin_status.changed = false;
-    }
-
-#if 0
-		if(ddd_status.changed)
-		{
-		LOG_LEVEL("get ddd status=%d\r\n",ddd_status.offon);
-		send_message(TASK_MODULE_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_DDD_PIN, ddd_status.offon);
-		ddd_status.changed=false;
-		}	
-
-		if(zzd_status.changed)
-		{
-		LOG_LEVEL("get zzd status=%d\r\n",zzd_status.offon);
-		send_message(TASK_MODULE_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_ZZD_PIN, zzd_status.offon);
-		zzd_status.changed=false;
-		}	
-
-		if(yzd_status.changed)
-		{
-		LOG_LEVEL("get yzd status=%d\r\n",yzd_status.offon);
-		send_message(TASK_MODULE_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_YZD_PIN, yzd_status.offon);
-		yzd_status.changed=false;
-		}	
-
-		if(skd_status.changed)
-		{
-		LOG_LEVEL("get skd status=%d\r\n",skd_status.offon);
-		send_message(TASK_MODULE_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_SKD_PIN, skd_status.offon);
-		skd_status.changed=false;
-		}
-#endif
+  task_gpio_event_polling();
 }
 
 void task_gpio_post_running(void)
@@ -426,6 +378,78 @@ void power_on_off(bool onoff)
 bool is_gpio_high(GPIO_GROUP *gpiox, uint16_t pin)
 {
     return hal_gpio_read(gpiox, pin);
+}
+
+
+void task_gpio_event_polling(void)
+{
+    // PollingGPIOStatus(GPIO_ACC_PIN,&acc_status);
+    // PollingGPIOStatus(GPIO_DDD_PIN,&ddd_status);
+    // PollingGPIOStatus(GPIO_ZZD_PIN,&zzd_status);
+    // PollingGPIOStatus(GPIO_YZD_PIN,&yzd_status);
+#if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
+    if (system_get_mb_state() != MB_POWER_ST_ON)
+        return;
+#endif
+     PollingGPIOStatus(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, &power_switch_pin_status);
+     PollingGPIOStatus(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, &power_enable_pin_status);
+		
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    PollingGPIOKeyEventStatus(GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, &key_status_power);
+    PollingGPIOKeyEventDispatcher(&key_status_power);
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    if (power_switch_pin_status.changed)
+    {
+        if (power_switch_pin_status.offon)
+            LOG_LEVEL("Power switch pin transitioned from LOW to HIGH %d\r\n", power_switch_pin_status.offon);
+        else
+            LOG_LEVEL("Power switch pin transitioned from HIGH to LOW %d\r\n", power_switch_pin_status.offon);
+
+        //send_message(TASK_MODULE_KEY, MSG_OTSM_DEVICE_GPIO_EVENT, GPIO_POWER_KEY_PIN, power_switch_pin_status.offon);
+        power_switch_pin_status.changed = false;
+    }
+		
+    if (power_switch_pin_status.changed)
+    {
+        if (power_switch_pin_status.offon)
+            LOG_LEVEL("Power enable pin transitioned from LOW to HIGH %d\r\n", power_switch_pin_status.offon);
+        else
+            LOG_LEVEL("Power enable pin transitioned from HIGH to LOW %d\r\n", power_switch_pin_status.offon);
+
+        //send_message(TASK_MODULE_KEY, MSG_OTSM_DEVICE_GPIO_EVENT, GPIO_POWER_KEY_PIN, power_switch_pin_status.offon);
+        power_switch_pin_status.changed = false;
+    }
+#if 0
+		if(ddd_status.changed)
+		{
+		LOG_LEVEL("get ddd status=%d\r\n",ddd_status.offon);
+		send_message(TASK_MODULE_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_DDD_PIN, ddd_status.offon);
+		ddd_status.changed=false;
+		}	
+
+		if(zzd_status.changed)
+		{
+		LOG_LEVEL("get zzd status=%d\r\n",zzd_status.offon);
+		send_message(TASK_MODULE_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_ZZD_PIN, zzd_status.offon);
+		zzd_status.changed=false;
+		}	
+
+		if(yzd_status.changed)
+		{
+		LOG_LEVEL("get yzd status=%d\r\n",yzd_status.offon);
+		send_message(TASK_MODULE_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_YZD_PIN, yzd_status.offon);
+		yzd_status.changed=false;
+		}	
+
+		if(skd_status.changed)
+		{
+		LOG_LEVEL("get skd status=%d\r\n",skd_status.offon);
+		send_message(TASK_MODULE_CAR_INFOR, MSG_DEVICE_GPIO_EVENT, GPIO_SKD_PIN, skd_status.offon);
+		skd_status.changed=false;
+		}
+#endif
 }
 
 /*

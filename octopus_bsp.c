@@ -154,9 +154,9 @@ extern void hal_timer_interrupt_callback(uint8_t event);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////BT/debug
-__weak void UART1_RX_Callback(uint8_t *buffer, uint16_t length)///////BT
+__weak void UART1_RX_Callback(uint8_t *buffer, uint16_t length) ///////BT
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_BT
+#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
 	ptl_2_receive_callback(PTL2_MODULE_BT, buffer, length);
 #endif
 }
@@ -169,42 +169,43 @@ __weak void UART2_RX_Callback(uint8_t *buffer, uint16_t length)
 }
 
 // Weak callback function for half buffer RX in USART2
- ///////BLE-MCU
+///////BLE-MCU
 __weak void UART2_RX_Half_Callback(uint8_t *buffer, uint16_t length)
 {
 	// UART2_DMA_Send_Buffer(data,len);
 }
 
-// Weak callback function for UART3 RX 
+// Weak callback function for UART3 RX
 ///////SOC
 __weak void UART3_RX_Callback(uint8_t *buffer, uint16_t length)
 {
 	// LOG_LEVEL("UART3_RX_Callback bytes:%d ",length);
-	//UART3_Send_Buffer(buffer,length);
+	// UART3_Send_Buffer(buffer,length);
 	hal_com_uart_receive_callback_ptl_1(buffer, length); ////SOC
 }
 
 ///////4G/GPS
 __weak void UART4_RX_Callback(uint8_t *buffer, uint16_t length)
 {
-	
+
 #ifdef TASK_MANAGER_STATE_MACHINE_4G
 	ptl_2_receive_callback(PTL2_MODULE_LOT4G, buffer, length);
 #endif
 }
 
-// Weak callback function for LPUART RX 
+// Weak callback function for LPUART RX
 ///////bafang/the third protocol
 __weak void LPUART_RX_Callback(uint8_t *buffer, uint16_t length)
 {
-	//LPUART_Send_Buffer(buffer,length);	
+	/// LPUART_Send_Buffer(buffer,length);
+	/// UART1_Send_Buffer(buffer,length);
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
 	ptl_2_receive_callback(PTL2_MODULE_BAFANG, buffer, length);
 #endif
-	
+
 #ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
 	ptl_2_receive_callback(PTL2_MODULE_LING_HUI_LIION2, buffer, length);
-#endif	
+#endif
 }
 
 void IWDG_Init(uint8_t prer, uint16_t reload)
@@ -303,28 +304,32 @@ void GPIO_Config(void)
 	// PA0 - UART4 TX
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource0, GPIO_AF_9); // AF4 for UART4 TX
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource0, GPIO_AF_9); // AF9 for UART4 TX
 
 	// PA1 - UART4 RX
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_9); // AF4 for UART4 RX
-	
-	#if 0
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_9); // AF9 for UART4 RX
+
+#if 0
 	/////////////////////////////////////////////////////////////////////////////
 	// LPUART Configuration: PB6 (TX), PB7 (RX)
 	// Used for communication via LPUART4
-	/////////////////////////////////////////////////////////////////////////////
-	// Initialize PB6 as LPUART4 TX pin
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;             // PB6 - LPUART4 TX
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_3);  // Set PB6 to LPUART4_TX
+	/////////////////////////////////////////////////////////////////////////////	
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD; // Open-drain output;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Pin = LPUARTx_TX_PIN;
+	GPIO_Init(LPUARTx_TXIO_PORT, &GPIO_InitStructure);
 
-	//Initialize PB7 as LPUART4 RX pin
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;             // PB7 - LPUART4 RX
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_3);  // Set PB7 to LPUART4_RX
-	#endif
+	GPIO_InitStructure.GPIO_Pin = LPUARTx_RX_PIN;
+	GPIO_Init(LPUARTx_RXIO_PORT, &GPIO_InitStructure);
+
+	/* Connect PXx to LPUART1 Tx Rx */
+	GPIO_PinAFConfig(LPUARTx_TXIO_PORT, LPUARTx_AF_TX_PIN, LPUARTx_AF_SELECT);
+	GPIO_PinAFConfig(LPUARTx_RXIO_PORT, LPUARTx_AF_RX_PIN, LPUARTx_AF_SELECT);
+#endif
 
 	///////////////////////////////////////////////////////////////////////////
 	// CAN Bus Configuration: PA6 (CAN_RX), PA7 (CAN_TX)
@@ -341,31 +346,42 @@ void GPIO_Config(void)
 	// Output Pins: Power enable/control GPIOs
 	///////////////////////////////////////////////////////////////////////////
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;		// Output mode
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;		// Push-pull output
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;//GPIO_OType_OD;		// Push-pull output
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;	// No pull-up/down
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_2; // Medium speed
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_3; // Medium speed
 
-	// PA11 - LED power enable (LEDPW_EN)
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	// GPIO_PIN_WRITE(GPIOA,GPIO_Pin_11,Bit_SET);
+	//PA11 - LED power enable (LEDPW_EN)
+	//GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	//GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
+	//GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	// PA15 - 3.3V power enable for MCU (MCU_3V3_EN)
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	//PA15 - 3.3V power enable for MCU (MCU_3V3_EN)
+	//GPIO_PinAFConfig(GPIOA, GPIO_PinSource15, GPIO_AF_0); 
+	//GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	// hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
-
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	// PB4 - SWB+ power enable (SWB+_EN)
+	//hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
+	//PB4 - SWB+ power enable (SWB+_EN)
+	//GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
+  //hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
 
-	// PB5 - CAN standby control (MCU_CTL_CAN_STBY)
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+	///////////////////////////////////////////////////////////////////////////
+	// BL_EN_PWM1 (PB1): Backlight enable or PWM control
+	// NOTE: If using PWM, reconfigure as alternate function and assign TIMx
+	///////////////////////////////////////////////////////////////////////////
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT; // Output mode (default on/off control)
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_2;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
-
+	
+	// PB5 - CAN standby control (MCU_CTL_CAN_STBY)
+	//GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+	//GPIO_Init(GPIOB, &GPIO_InitStructure);
+	///////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////
 	// BAT_DET (PA8): Battery voltage detect input (ADC channel)
 	///////////////////////////////////////////////////////////////////////////
@@ -381,17 +397,6 @@ void GPIO_Config(void)
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;	 // Input mode
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL; //
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	///////////////////////////////////////////////////////////////////////////
-	// BL_EN_PWM1 (PB1): Backlight enable or PWM control
-	// NOTE: If using PWM, reconfigure as alternate function and assign TIMx
-	///////////////////////////////////////////////////////////////////////////
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT; // Output mode (default on/off control)
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_2;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
 }
 /**
  * @brief  Configures the RCC (clock) for peripherals.
@@ -770,8 +775,8 @@ void UART4_Config_IRQ(void)
 	// Enable UART4 peripheral
 	USART_Cmd(UART4, ENABLE);
 	USART_ITConfig(UART4, USART_IT_RXNE, ENABLE); // Enable RX interrupt
-	// NVIC_SetPriority(UART3_4_IRQn, 2);
-	// NVIC_EnableIRQ(UART3_4_IRQn);
+												  // NVIC_SetPriority(UART3_4_IRQn, 2);
+												  // NVIC_EnableIRQ(UART3_4_IRQn);
 }
 
 void LPUART_WakeStop_Config(void)
@@ -817,15 +822,15 @@ void LPUART_WakeStop_Config(void)
 	GPIO_PinAFConfig(LPUARTx_TXIO_PORT, LPUARTx_AF_TX_PIN, LPUARTx_AF_SELECT);
 	GPIO_PinAFConfig(LPUARTx_RXIO_PORT, LPUARTx_AF_RX_PIN, LPUARTx_AF_SELECT);
 
-	/* LPUARTx configured */
-	#if defined(TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2)
-	  LPUART_InitStructure.LPUART_BaudRate = 9600;
-	#elif defined(TASK_MANAGER_STATE_MACHINE_BAFANG)
-		LPUART_InitStructure.LPUART_BaudRate = 1200;
-	#else
-		LPUART_InitStructure.LPUART_BaudRate = 115200;
-	#endif
-	
+/* LPUARTx configured */
+#if defined(TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2)
+	LPUART_InitStructure.LPUART_BaudRate = 9600;
+#elif defined(TASK_MANAGER_STATE_MACHINE_BAFANG)
+	LPUART_InitStructure.LPUART_BaudRate = 1200;
+#else
+	LPUART_InitStructure.LPUART_BaudRate = 115200;
+#endif
+
 	LPUART_InitStructure.LPUART_HardwareFlowControl = LPUART_HardwareFlowControl_None; /* Hardware flow control disabled (RTS and CTS signals) */
 	LPUART_InitStructure.LPUART_Mode = LPUART_Mode_Rx | LPUART_Mode_Tx;				   /* Receive and transmit enabled */
 
