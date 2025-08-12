@@ -78,7 +78,6 @@ uint8_t hal_get_ble_rssi(uint8_t connecttion_id)
 #else
 uint8_t hal_set_pairing_mode_onoff(bool ono_ff, uint8_t current_pairing_mode)
 {
-
 	return current_pairing_mode;
 }
 

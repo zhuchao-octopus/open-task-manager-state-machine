@@ -119,7 +119,7 @@ void TaskManagerStateMachineInit(void)
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Initialize hardware abstraction layers (HAL)
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
-    gpio_init(); // Initialize GPIO
+    task_gpio_init(); // Initialize GPIO
 #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_FLASH
     flash_init();

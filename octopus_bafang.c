@@ -189,7 +189,6 @@ static const UartSendPtlBafangCmdCtrl_t protocolProcessCmdTable[] =
 
         {PTL_BAFANG_CMD_SYMBOL_BATTERY, uart_send_protocol_cmd_battery_info, 100}, // 11 60 71
         {PTL_BAFANG_CMD_SYMBOL_CELL, uart_send_protocol_cmd_cell_info, 100},       // 11 60 72
-
 };
 
 /*******************************************************************************
@@ -208,12 +207,9 @@ void task_bfang_ptl_init_running(void)
 void task_bfang_ptl_start_running(void)
 {
     LOG_LEVEL("task_bafang_ptl_start_running\r\n");
-    // if (SETTING_PTL_BAFANG == theEnvInfo.ptl)
-    {
-        /// ptl_register_module(SETTING_PTL_BAFANG, bafang_send_handler,bafang_receive_handler);
-        ptl_2_register_module(PTL2_MODULE_BAFANG, bafang_receive_handler);
-        OTMS(TASK_MODULE_BAFANG, OTMS_S_ASSERT_RUN);
-    }
+
+    ptl_2_register_module(PTL2_MODULE_BAFANG, bafang_receive_handler);
+    OTMS(TASK_MODULE_BAFANG, OTMS_S_ASSERT_RUN);
 }
 
 void task_bfang_ptl_assert_running(void)
@@ -229,13 +225,7 @@ void task_bfang_ptl_running(void)
         return;
     }
     StartTickCounter(&lt_timer);
-
-    // if(true == system_get_power_off_req())
-    {
-        OTMS(TASK_MODULE_BAFANG, OTMS_S_POST_RUN);
-    }
-
-    // lt_indicator.walk_assist = theMeterInfo.walk_assist;
+    // lt_carinfo_indicator.walk_assist = theMeterInfo.walk_assist;
     com_uart_ptl_bafang_tx_process();
 }
 
@@ -501,7 +491,7 @@ void uart_send_protocol_cmd_gear(void)
 void uart_send_protocol_cmd_lamp(void)
 {
     // if (theIndicatorFlag.lamp)
-    if (lt_carinfo_indicator.highBeam > 0)
+    if (lt_carinfo_indicator.high_beam > 0)
     {
         ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_lamp_on, 3);
     }
@@ -640,7 +630,7 @@ bool proc_protocol_frame_system_state(uint8_t *buff, int count)
             else
             {
                 send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR); // FRAME_CMD__CARINFOR_INDICATOR
-                task_carinfo_add_error_code(code);
+                task_carinfo_add_error_code(code, true, true);
             }
 
             return true;
@@ -894,12 +884,12 @@ void bafang_lamp_on_off(bool on_off)
 {
     if (on_off)
     {
-        lt_carinfo_indicator.highBeam = 1;
+        lt_carinfo_indicator.high_beam = 1;
         ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_lamp_on, sizeof(protocol_cmd_lamp_on));
     }
     else
     {
-        lt_carinfo_indicator.highBeam = 0;
+        lt_carinfo_indicator.high_beam = 0;
         ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_lamp_off, sizeof(protocol_cmd_lamp_off));
     }
 }

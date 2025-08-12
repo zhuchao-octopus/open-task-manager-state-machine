@@ -7,7 +7,6 @@
  * DEBUG SWITCH MACROS
  */
 
-
 /*******************************************************************************
  * MACROS
  */
@@ -15,11 +14,12 @@
 /*******************************************************************************
  * TYPEDEFS
  */
-typedef enum {
-    DRIVE_MOD_REAR = 0,                 //ºóÇý
-    DRIVE_MOD_DOUBLE,                   //Ë«Çý  
-    DRIVE_MOD_FRONT,                    //Ç°Çý 
-}drive_mode_;
+typedef enum
+{
+    DRIVE_MOD_REAR = 0, // ºóÇý
+    DRIVE_MOD_DOUBLE,   // Ë«Çý
+    DRIVE_MOD_FRONT,    // Ç°Çý
+} drive_mode_;
 /*******************************************************************************
  * CONSTANTS
  */
@@ -31,7 +31,6 @@ typedef enum {
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-
 
 /*******************************************************************************
  * STATIC VARIABLES
@@ -47,4 +46,3 @@ void task_lhl2_ptl_assert_running(void);
 void task_lhl2_ptl_running(void);
 void task_lhl2_ptl_post_running(void);
 void task_lhl2_ptl_stop_running(void);
-

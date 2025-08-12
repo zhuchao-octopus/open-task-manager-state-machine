@@ -148,9 +148,9 @@ void task_update_assert_running(void)
  */
 void task_update_running(void)
 {
-	#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
 	update_state_process(); // Call the reboot state machine processing function
-	#endif
+#endif
 }
 
 /**
@@ -513,14 +513,14 @@ bool update_and_verify_dest_bank(uint32_t slot_addr)
 	case BANK_SLOT_A:
 		if (bank_address != flash_meta_infor.slot_a_addr)
 		{
-			LOG_LEVEL("band address mismatched target bank:%d02x %08x %08x",lt_mcu_program_buf.bank_slot,bank_address,flash_meta_infor.slot_a_addr);
+			LOG_LEVEL("band address mismatched target bank:%d02x %08x %08x", lt_mcu_program_buf.bank_slot, bank_address, flash_meta_infor.slot_a_addr);
 			return false;
 		}
 		break;
 	case BANK_SLOT_B:
 		if (bank_address != flash_meta_infor.slot_b_addr)
 		{
-			LOG_LEVEL("band address mismatched target bank:%d02x %08x %08x",lt_mcu_program_buf.bank_slot,bank_address,flash_meta_infor.slot_b_addr);
+			LOG_LEVEL("band address mismatched target bank:%d02x %08x %08x", lt_mcu_program_buf.bank_slot, bank_address, flash_meta_infor.slot_b_addr);
 			return false;
 		}
 		break;

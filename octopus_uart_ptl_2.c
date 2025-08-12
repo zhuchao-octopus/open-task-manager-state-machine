@@ -133,7 +133,7 @@ void ptl_2_running(void)
 {
     // if(GetTickCounter(&l_t_ptl_rx_main_timer) < 10)
     //	return;
-    StartTickCounter(&l_t_ptl_rx_main_timer);
+    // StartTickCounter(&l_t_ptl_rx_main_timer);
     ptl_2_rx_event_message_handler();
     ptl_2_proc_valid_frame();
 }
@@ -244,7 +244,6 @@ void ptl_2_rx_event_message_handler(void)
                     }
                 }
             }
-
         }
         else
 #endif
@@ -279,33 +278,33 @@ void ptl_2_proc_valid_frame(void)
         if (module_info->ptl_2_proc_buff.size == 0)
             continue;
 
-			
-				#ifdef TEST_LOG_DEBUG_PTL_RX_FRAME
-				if (module_info->ptl_2_proc_buff.size > 0)
-				{
-					LOG_LEVEL("ptl_2_proc_valid_frame data[]= ");
-					LOG_BUFF(module_info->ptl_2_proc_buff.buffer, module_info->ptl_2_proc_buff.size);
-				}
-				#endif
-		
         bool res = module_info->receive_handler(&(module_info->ptl_2_proc_buff));
         if (res)
         {
+#ifdef TEST_LOG_DEBUG_PTL_RX_FRAME
+            if (module_info->module == PTL2_MODULE_BAFANG)
+            {
+                LOG_LEVEL("ptl_2_proc_valid_frame data[]=");
+                LOG_BUFF(module_info->ptl_2_proc_buff.buffer, module_info->ptl_2_proc_buff.size);
+            }
+#endif
             module_info->ptl_2_proc_buff.size = 0;
         }
-    }
-
-    for (uint8_t i = 0; i < ptl_2_next_empty_module; i++)
-    {
-		ptl_2_module_info_t *module_info = &ptl_2_module_info[i];
-		#if defined(TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2)
-		if (ptl_2_module_info[i].module == PTL2_MODULE_LING_HUI_LIION2)
-		#elif defined(TASK_MANAGER_STATE_MACHINE_BAFANG) 
-		if (ptl_2_module_info[i].module == PTL2_MODULE_BAFANG)
-		#endif		
+        else
         {
-            if (module_info->ptl_2_proc_buff.size > 25)
-                module_info->ptl_2_proc_buff.size = 0;
+#if defined(TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2)
+            if (module_info->module == PTL2_MODULE_LING_HUI_LIION2)
+            {
+                if (module_info->ptl_2_proc_buff.size > 25)
+                    module_info->ptl_2_proc_buff.size = 0;
+            }
+#elif defined(TASK_MANAGER_STATE_MACHINE_BAFANG)
+            if (module_info->module == PTL2_MODULE_BAFANG)
+            {
+                if (module_info->ptl_2_proc_buff.size > 10)
+                    module_info->ptl_2_proc_buff.size = 0;
+            }
+#endif
         }
     }
 }
@@ -319,29 +318,30 @@ void ptl_2_send_buffer(ptl_2_module_t ptl_2_module, const uint8_t *buffer, size_
 
     switch (ptl_2_module)
     {
-			
-		#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG	
+
+#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
     case PTL2_MODULE_BAFANG:
         LPUART_Send_Buffer(buffer, size);
         break;
-		#endif
-			
-		#ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
+#endif
+
+#ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
     case PTL2_MODULE_LING_HUI_LIION2:
         LPUART_Send_Buffer(buffer, size);
         break;
-		#endif	
-			
-		#ifdef TASK_MANAGER_STATE_MACHINE_4G
+#endif
+
+#ifdef TASK_MANAGER_STATE_MACHINE_4G
     case PTL2_MODULE_LOT4G:
         UART4_Send_Buffer(buffer, size);
         break;
-		#endif
-		#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC			
+#endif
+
+#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
     case PTL2_MODULE_BT:
         UART1_Send_Buffer(buffer, size);
         break;
-		#endif		
+#endif
     default:
         break;
     }

@@ -21,12 +21,12 @@ typedef enum {
     BCM5_Reserve_4,                  //预留4
     BCM5_Reserve_5,                  //预留5
     BCM5_PositionLamp,               //位置灯
-    BCM5_LowBeam,                    //近光灯
-    BCM5_HighBeam,                   //远光灯
+    BCM5_low_beam,                    //近光灯
+    BCM5_high_beam,                   //远光灯
     BCM5_FourWD_FourWheelDrive,      //四驱
     BCM5_FrontAxle_DifferentialLock, //前桥差速锁
-    BCM5_LeftTurnLamp,               //左转向灯
-    BCM5_RightTurnLamp,              //右转向灯
+    BCM5_left_turnLamp,               //左转向灯
+    BCM5_right_turnLamp,              //右转向灯
     BCM5_RearAxle_DifferentialLock,  //后桥差速锁
     BCM5_Coolant_temp,               //冷却液温度
     BCM5_Cool_pumpsd,                //冷却水泵转速

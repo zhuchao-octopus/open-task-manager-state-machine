@@ -265,10 +265,10 @@ void flash_load_sync_data_infor(void)
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
 		LOG_LEVEL("load meter data[%02d] ", sizeof(carinfo_meter_t));
 		E2ROMReadToBuff(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+		lt_carinfo_meter.speed_actual = 0;
 		LOG_BUFF((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
 #endif
 	}
-
 #endif
 
 #ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
@@ -286,6 +286,8 @@ bool flash_is_meta_infor_valid(void)
 	if ((flash_meta_infor.active_slot == BANK_SLOT_INVALID) || (flash_meta_infor.bank_slot_mode == BOOT_MODE_SINGLE_BANK_NONE))
 		return false;
 	else if ((flash_meta_infor.slot_a_addr == 0) || (flash_meta_infor.slot_b_addr == 0))
+		return false;
+	else if ((flash_meta_infor.active_slot != BANK_SLOT_A) && (flash_meta_infor.active_slot != BANK_SLOT_A))
 		return false;
 	else
 		return true;
@@ -405,7 +407,6 @@ void flash_save_app_meter_infor(void)
 #ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
 	// LOG_LEVEL("flash_save_app_meter\r\n");
 	E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
-	// E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
 #endif
 }
 
@@ -415,12 +416,12 @@ void flash_save_carinfor_meter(void)
 #if defined(FLASH_USE_EEROM_FOR_DATA_SAVING) && defined(TASK_MANAGER_STATE_MACHINE_CARINFOR)
 	LOG_BUFF_LEVEL((uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 	LOG_LEVEL("lt_carinfo_meter.trip_odo:%d\r\n", lt_carinfo_meter.trip_odo);
-	if (lt_carinfo_meter.trip_odo == 0)
-	{
-		return;
-	}
+	// if (lt_carinfo_meter.trip_odo == 0)
+	//{
+	//	return;
+	// }
 	flash_meta_infor.mete_data_flags = EEROM_DATAS_VALID_FLAG;
-	// E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 	E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
 #endif
 }
@@ -655,7 +656,7 @@ void flash_decode_active_version(char *out_str, size_t max_len)
 	uint32_t version = 0;
 	uint16_t y1;
 	uint8_t m1, d1, h1, min1, code1;
-	
+
 #ifdef FLASH_BANK_CONFIG_MODE_SLOT
 	if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_A)
 		version = flash_meta_infor.slot_a_version;

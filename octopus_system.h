@@ -42,7 +42,6 @@ extern "C"
  * @brief Version information.
  */
 
-
 /**
  * @brief System MPU (Microprocessor Unit) state definitions.
  */

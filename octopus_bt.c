@@ -103,9 +103,9 @@ void task_bt_assert_running(void)
 
 void task_bt_running(void)
 {
-	//if (GetTickCounter(&l_t_msg_wait_10_timer) < 10)
+	// if (GetTickCounter(&l_t_msg_wait_10_timer) < 10)
 	//	return;
-	//StartTickCounter(&l_t_msg_wait_10_timer);
+	// StartTickCounter(&l_t_msg_wait_10_timer);
 
 	bt_state_manager();
 
@@ -133,10 +133,10 @@ void bt_module_init(void)
 	// Optional: wait for module to power up and stabilize
 	// delay_ms(800);
 	LOG_LEVEL("bt module init...\r\n");
-	//bt_send_at_command(AT_DEL_ALL_PAIR);
-	//bt_send_at_command("AT+LINKCFG=1\r\n");
-	// 1. Check if the Bluetooth module is alive
-	// bt_send_at_command("AT\r\n");  // Expect "OK"
+	// bt_send_at_command(AT_DEL_ALL_PAIR);
+	// bt_send_at_command("AT+LINKCFG=1\r\n");
+	//  1. Check if the Bluetooth module is alive
+	//  bt_send_at_command("AT\r\n");  // Expect "OK"
 
 	// 2. Enable Bluetooth (in case it's disabled after reboot)
 	// bt_send_at_command("AT+BTEN=1\r\n");
@@ -145,7 +145,7 @@ void bt_module_init(void)
 	// bt_send_at_command("AT+PAIR=0\r\n");
 
 	// 4. Set a recognizable Bluetooth name (can skip if already set in module)
-	// bt_send_at_command("AT+NAME=KLD-BT-MUSIC\r\n");
+	 bt_send_at_command("AT+NAME=KLD-BT-MUSIC\r\n");
 
 	// 5. Set audio input type
 	// Use "0" for analog (e.g., line-in/mic), "3" for I2S depending on your hardware
@@ -188,7 +188,7 @@ void bt_start_scan(void)
 	bt_clear_device_list();
 
 	// Send AT command to initiate scan
-	bt_send_at_command("AT+SCAN=1,%d\r\n",BT_SCAN_TIME_INTERVAL); // Scan for ~12.8 seconds
+	bt_send_at_command("AT+SCAN=1,%d\r\n", BT_SCAN_TIME_INTERVAL); // Scan for ~12.8 seconds
 }
 
 /**
@@ -207,8 +207,8 @@ void bt_state_manager(void)
 	if (GetTickCounter(&l_t_bt_stat_polling_timer_8s) >= 8000)
 	{
 		// Restart the 10-second timer
-		if(bt_current_state != BT_STATE_SCANNING)
-		   bt_send_at_command("AT+A2DPSTAT\r\n");
+		if (bt_current_state != BT_STATE_SCANNING)
+			bt_send_at_command("AT+A2DPSTAT\r\n");
 		StartTickCounter(&l_t_bt_stat_polling_timer_8s);
 	}
 
@@ -217,37 +217,43 @@ void bt_state_manager(void)
 	{
 	case BT_STATE_DISCONNECTED:
 		// Always start scanning when not connected
-	  if (GetTickCounter(&l_t_bt_conn_polling_timer_20s) >= 20000)
+		if (GetTickCounter(&l_t_bt_conn_polling_timer_20s) >= 20 * 1000)
 		{
 			if (selected_best_dev.address[0] != '\0')
 			{
-				if(selected_best_dev.rssi > BT_SELECT_DISTANCE)
+				if (selected_best_dev.rssi > BT_SELECT_DISTANCE)
 				{
 					StopTickCounter(&l_t_bt_conn_polling_timer_20s);
-					bt_connect_selected_device();
+					//bt_connect_selected_device();
 				}
 			}
-	  }
-		
-	  if (GetTickCounter(&l_t_bt_scan_polling_timer_15s) >= 15 * 1000)
+		}
+
+		if (GetTickCounter(&l_t_bt_scan_polling_timer_15s) >= 15 * 1000)
 		{
 			bt_start_scan();
 			StartTickCounter(&l_t_bt_scan_polling_timer_15s);
 		}
-		else if (GetTickCounter(&l_t_bt_auto_link_wait_timer) >= 3 * 1000)
+		else if (GetTickCounter(&l_t_bt_auto_link_wait_timer) >= 5 * 1000)
 		{
 			bt_start_scan();
 			StopTickCounter(&l_t_bt_auto_link_wait_timer);
 		}
-		
+
 		break;
+		
 	case BT_STATE_CONNECTING:
 	case BT_STATE_CONNECTED:
 	case BT_STATE_PLAYING:
 		// Do nothing; connected or actively playing audio
 		break;
+
+	case BT_STATE_SCANNING:
+		break;
 	
-    case BT_STATE_SCANNING:
+	case BT_STATE_SCANNING_END:
+		
+		break;    
 	default:
 		// Unknown state, ignore
 		break;
@@ -285,7 +291,8 @@ bool bt_parse_state_response(const char *resp)
 			return true;
 		}
 	}
-	#if 0
+	
+#if 0
 	if (strncmp(resp, "+SCAN=S", 7) == 0)
 	{
 		bt_current_state = BT_STATE_SCANNING;
@@ -294,12 +301,12 @@ bool bt_parse_state_response(const char *resp)
 	
 	if (strncmp(resp, "+SCAN=E", 7) == 0)
 	{
-		bt_current_state = BT_STATE_DISCONNECTED;
+		bt_current_state = BT_STATE_SCANNING_END;
 		bt_send_at_command("AT+A2DPSTAT\r\n");
 		StartTickCounter(&l_t_bt_scan_polling_timer_15s);
 		//return true;
 	}
-	#endif
+#endif
 	return false;
 }
 
@@ -341,12 +348,12 @@ bool bt_parse_scanning_line(const char *line)
 			{
 				selected_best_dev = dev;
 				LOG_LEVEL("got a best bt device %s %d\r\n", dev.name, dev.rssi);
-				if(dev.rssi > BT_SELECT_DISTANCE)
+				if (dev.rssi > BT_SELECT_DISTANCE)
 				{
 					StartTickCounter(&l_t_bt_conn_polling_timer_20s);
 				}
 			}
-			 
+
 			// Update last_best_dev only if RSSI is above a threshold and stronger
 			if (dev.rssi > BT_PAIRED_DISTANCE && dev.rssi > last_best_dev.rssi)
 			{

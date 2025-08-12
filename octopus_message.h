@@ -78,6 +78,10 @@ enum Message_Group_2_Cmd_Id
     MSG_IPC_CMD_MCU_VERSION,
     MSG_IPC_CMD_MCU_UPDATING,
     MSG_IPC_CMD_MCU_REQUEST_UPGRADING,
+
+    MSG_IPC_DEVICE_KEY_EVENT,      // Key event message
+    MSG_IPC_DEVICE_KEY_DOWN_EVENT, // Key event message
+    MSG_IPC_DEVICE_KEY_UP_EVENT,   // Key event message
 };
 
 /**
@@ -101,7 +105,10 @@ typedef enum
     MSG_IPC_CMD_CAR_SET_LIGHT,      /**< Control Headlights (turn ON/OFF) */
     MSG_IPC_CMD_CAR_SET_LOW_BEAM,   /**< Control Low Beam Headlights (turn ON/OFF) */
     MSG_IPC_CMD_CAR_SET_HIGH_BEAM,  /**< Control High Beam Headlights (turn ON/OFF) */
-    MSG_IPC_CMD_CAR_SETTING_SAVE    /**< Save Car Settings */
+    MSG_IPC_CMD_CAR_SET_INDICATOR,
+    MSG_IPC_CMD_CAR_SET_METER,
+    MSG_IPC_CMD_CAR_SET_BATTERY,
+    MSG_IPC_CMD_CAR_SETTING_SAVE /**< Save Car Settings */
 } Message_Group_11_Cmd_Id;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////

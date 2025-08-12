@@ -51,7 +51,25 @@ extern "C"
 #define OCTOPUS_KEY_12 12
 #define OCTOPUS_KEY_13 13
 #define OCTOPUS_KEY_14 14
-#define OCTOPUS_KEY_POWER 20
+
+#define OCTOPUS_KEY_POWER 50
+#define OCTOPUS_KEY_ZZD 51
+#define OCTOPUS_KEY_YZD 52
+#define OCTOPUS_KEY_SKD 53
+#define OCTOPUS_KEY_DDD 54
+#define OCTOPUS_KEY_PLUS 55
+#define OCTOPUS_KEY_SUBT 56
+#define OCTOPUS_KEY_PAGE 57
+
+#define OCTOPUS_NORMAL_KEY_MAX 100
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+//#define OCTOPUS_KEY_PLUS_LONG (OCTOPUS_KEY_PLUS + OCTOPUS_NORMAL_KEY_MAX)
+//#define OCTOPUS_KEY_SUBT_LONG (OCTOPUS_KEY_SUBT + OCTOPUS_NORMAL_KEY_MAX)
+
+//#define OCTOPUS_KEY_CUSTOMER_BASE 200
+
+#define OCTOPUS_KEY_NONE 255
     /*******************************************************************************
      * TYPEDEFS
      * The following defines key codes representing different actions or states of the keys.

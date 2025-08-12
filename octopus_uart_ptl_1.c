@@ -554,11 +554,11 @@ void ptl_find_valid_frame(ptl_proc_buff_t *proc_buff)
         if (proc_buff->buff[i] == MCU_TO_SOC_PTL_HEADER)
         {
 #endif
-			offset = i;
-			// Ensure there is at least one more byte to read frame length
-			if ((i + 3) >= proc_buff->size)
-			break;
-						
+            offset = i;
+            // Ensure there is at least one more byte to read frame length
+            if ((i + 3) >= proc_buff->size)
+                break;
+
             datalen = proc_buff->buff[i + 3];
             framelen = datalen + PTL_FRAME_HEADER_SIZE + 1;
 
@@ -696,6 +696,7 @@ void ptl_1_hal_tx(uint8_t *data, uint16_t length)
     LOG_LEVEL("data[%02d] ", length);
     LOG_BUFF(data, length);
 #endif
-	if(length <= 0) return;
-	hal_com_uart_send_buffer(data, length);
+    if (length <= 0)
+        return;
+    hal_com_uart_send_buffer(data, length);
 }
