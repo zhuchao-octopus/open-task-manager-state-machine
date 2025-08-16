@@ -45,7 +45,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////////
 #define OTMS_VERSION_CODE (001)
-#define OTMS_VERSION_NAME ("0.0.1")
+#define OTMS_VERSION_NAME "0.0.1"
+
 ///////////////////////////////////////////////////////////////////////////////////
 /*******************************************************************************
  * PROJECT SWITCH MACROS
@@ -68,30 +69,48 @@
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
- /* @brief Task Manager state machine modules.
- */
- 
+//#define TASK_MANAGER_STATE_MACHINE_GPIO 1  
 //#define TASK_MANAGER_STATE_MACHINE_FLASH 1 
-#define TASK_MANAGER_STATE_MACHINE_KEY 1 
-#define TASK_MANAGER_STATE_MACHINE_GPIO 1 
-//#define TASK_MANAGER_STATE_MACHINE_SIF 1 /**< Secondary interface mode. */
-//#define TASK_MANAGER_STATE_MACHINE_BLE 1 
-//#define TASK_MANAGER_STATE_MACHINE_BMS 1 
-#define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
+//#define TASK_MANAGER_STATE_MACHINE_SYSTEM 1  
+//#define TASK_MANAGER_STATE_MACHINE_KEY 1 
+
+//#define TASK_MANAGER_STATE_MACHINE_AUDIO 1 
+
+#define TASK_MANAGER_STATE_MACHINE_IPC 1 
+#define TASK_MANAGER_STATE_MACHINE_PTL2 1 
+//#define TASK_MANAGER_STATE_MACHINE_I2C 1 
 
 #define TASK_MANAGER_STATE_MACHINE_CARINFOR 1
-
 //#define TASK_MANAGER_STATE_MACHINE_CAN 1 
-#define TASK_MANAGER_STATE_MACHINE_PTL2 1 
-//#define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
-#define TASK_MANAGER_STATE_MACHINE_IPC_SOCKET 1 
 
+//#define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
+//#define TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2 1
+//#define TASK_MANAGER_STATE_MACHINE_SIF 1 
+//#define TASK_MANAGER_STATE_MACHINE_BLE 1 
+//#define TASK_MANAGER_STATE_MACHINE_BMS 1 
+//#define TASK_MANAGER_STATE_MACHINE_4G 1 
+//#define TASK_MANAGER_STATE_MACHINE_BT_MUSIC 1
+
+#define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 //#define FLASH_USE_EEROM_FOR_DATA_SAVING
-#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A
 //#define FLASH_MAPPING_VECT_TABLE_TO_SRAM
 
+#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A
+
+//Optional DWT Delay
+#define DWT_DELAY_FUNCTION
+
+#ifndef TRUE
+  #define TRUE true
+#endif
+#ifndef FALSE
+  #define FALSE false
+#endif
+	
+	
+	
 /***********************************************************************************
  * BASE INCLUDE FILES
  * Include necessary standard libraries and platform-specific headers.
@@ -106,7 +125,7 @@
 #include <assert.h>  // Debugging support for assertions
 #include <time.h>    // Time manipulation functions
 #include <ctype.h>
-
+	
 /****************************************************************************************
  * OCTOPUS INCLUDES
  ****************************************************************************************/
@@ -117,6 +136,7 @@
 #include "octopus_msgqueue.h"     // Include message queue header for task communication
 #include "octopus_message.h"      // Include message id for inter-task communication
 #include "octopus_utils.h"
+#include "octopus_config.h"
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
 #include <sys/ioctl.h>         // System I/O control definitions
@@ -169,11 +189,13 @@
 #include "../HAL/octopus_serialport_c.h"
 
 #elif defined(PLATFORM_STM32_RTOS)
+#include "octopus_bsp.h"
 
 #elif defined(PLATFORM_NATION_RTOS)
-#include "../native_devices.h"
-#else
+#include "octopus_nation_bsp.h"
 
+#else
+#include "octopus_bsp.h"
 #endif
 
 #ifdef __cplusplus
@@ -190,10 +212,13 @@ extern "C"
  * GENERAL MACROS
  * Define common bit manipulation macros and constants.
  ******************************************************************************/
+ 
 #ifdef PLATFORM_CST_OSAL_RTOS
 
 #define GET_SYSTEM_TICK_COUNT (hal_systick() * 625 / 1000) // Convert system ticks to milliseconds
 #define DELAY_US(us) (WaitUs(us))                          // Introduce delay in microseconds
+#define DISABLE_IRQ (__disable_irq())
+#define ENABLE_IRQ (__enable_irq())
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
 
@@ -221,27 +246,24 @@ extern "C"
 
 #define DISABLE_IRQ
 #define ENABLE_IRQ
+
 #else
+
+extern volatile uint32_t system_tick_ms;
 #define DISABLE_IRQ (__disable_irq())
 #define ENABLE_IRQ (__enable_irq())
-extern volatile uint32_t system_tick_ms;
-extern volatile uint32_t system_timer_tick_50us;
 #define GET_SYSTEM_TICK_COUNT system_tick_ms // Return zero for unsupported platforms
+
 #endif
 
-/*******************************************************************************
- * BIT MANIPULATION MACROS
- * Define macros for setting, clearing, toggling, and extracting bit values.
- ******************************************************************************/
-#define BIT_0 0x01 // Bit mask for bit 0
-#define BIT_1 0x02 // Bit mask for bit 1
-#define BIT_2 0x04 // Bit mask for bit 2
-#define BIT_3 0x08 // Bit mask for bit 3
-#define BIT_4 0x10 // Bit mask for bit 4
-#define BIT_5 0x20 // Bit mask for bit 5
-#define BIT_6 0x40 // Bit mask for bit 6
-#define BIT_7 0x80 // Bit mask for bit 7
-
+uint32_t platform_dwt_get_us(void);
+void platform_dwt_init(void);
+void delay_us(uint32_t us);
+void delay_ms(uint32_t ms);
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Macros for setting, clearing, toggling, and checking bits
 #define SetBit(VAR, Place) ((VAR) |= (1 << (Place)))          // Set specified bit
 #define ClrBit(VAR, Place) ((VAR) &= ~(1 << (Place)))         // Clear specified bit
@@ -289,7 +311,7 @@ extern volatile uint32_t system_timer_tick_50us;
  * CONSTANTS
  * Define mathematical constants and other useful values.
  ******************************************************************************/
-#define PI_FLOAT (3.141592653589793) // Value of as a double/floating-point constant
+#define PI_FLOAT (3.14159f) // Value of as a double/floating-point constant
 
 /*******************************************************************************
  * FUNCTION DECLARATIONS

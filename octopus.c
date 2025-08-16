@@ -99,10 +99,12 @@ void TaskManagerStateMachineInit(void)
 
     LOG_NONE(" Firmware  : v%s\r\n", OTMS_VERSION_NAME);
     LOG_NONE(" Compiled  : %s %s\r\n", __DATE__, __TIME__);
-    LOG_NONE(" Module    : %s\r\n",flash_get_current_bank_name());
-	  LOG_NONE(" Author    : Octopus Dev Team\r\n");
+    LOG_NONE(" Module    : %s\r\n", flash_get_current_bank_name());
+    LOG_NONE(" Author    : Octopus Dev Team\r\n");
     LOG_NONE("-----------------------------------------------------------------------------\r\n");
-
+	
+		platform_dwt_init();
+		//system_power_manager_init();
 #ifdef PLATFORM_CST_OSAL_RTOS
     TaskManagerStateMachine_Id_ = task_id; // Store the task ID in the global variable
 #endif
@@ -118,9 +120,6 @@ void TaskManagerStateMachineInit(void)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Initialize hardware abstraction layers (HAL)
-#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
-    gpio_init(); // Initialize GPIO
-#endif
 #ifdef TASK_MANAGER_STATE_MACHINE_FLASH
     flash_init();
 #endif
@@ -143,10 +142,10 @@ void TaskManagerStateMachineInit(void)
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Nofify Initialize complete
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+#if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
     system_handshake_with_app();
 #endif
-#ifdef TASK_MANAGER_STATE_MACHINE_SOC
+#if defined(TASK_MANAGER_STATE_MACHINE_SOC) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
     system_handshake_with_mcu();
 #endif
     ptl_help();
@@ -163,7 +162,9 @@ void TaskManagerStateMachineInit(void)
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
     LOG_NONE("-----------------------------------------------------------------------------\r\n");
-    system_set_mb_state(MB_POWER_ST_ON);
+#if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
+    system_set_mb_state(POWER_STATE_NORMAL_RUNNING);
+#endif
 }
 
 #if defined(PLATFORM_ITE_OPEN_RTOS) || defined(PLATFORM_LINUX_RISC)

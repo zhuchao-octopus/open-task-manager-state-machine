@@ -18,6 +18,20 @@
 
 #include "octopus_platform.h" // Include platform-specific configurations
 
+typedef enum
+{
+    FLASH_STATUS_BUSY = 1,
+    FLASH_STATUS_RESERVED,
+    FLASH_STATUS_ERR_PAGE,
+    FLASH_STATUS_ERR_PV,
+    FLASH_STATUS_ERR_WRP,
+    FLASH_STATUS_COMPLETE,
+    FLASH_STATUS_ERR_EV,
+    FLASH_STATUS_ERR_RDP2,
+    FLASH_STATUS_ERR_ADD,
+    FLASH_STATUS_TIMEOUT
+} FLASH_STATUS_T;
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -25,7 +39,6 @@ extern "C"
 
 // Macro for user flash testing.
 // This could be used for testing purposes or debugging flash operations.
-#define USR_FLASH_TEST 0x0001
 
     /******************************************************************************/
     /**

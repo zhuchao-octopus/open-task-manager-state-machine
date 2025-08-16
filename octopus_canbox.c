@@ -7,13 +7,7 @@
 #include "octopus_gpio.h"
 #include "octopus_system.h"
 
-#include "octopus_can.h"
-#include "can/can_queue.h"
-#include "can/can_message_rx.h"
-#include "can/can_message_tx.h"
-#include "can/can_message_l.h"
-
-#include "can/can_function.h"
+#include "octopus_canbox.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -40,10 +34,6 @@ void task_can_init_running(void)
    OTMS(TASK_MODULE_CAN, OTMS_S_INVALID);
    ptl_register_module(MCU_TO_SOC_MOD_CAN, can_send_handler, can_receive_handler);
 	
-	 Can_Queue_Init(&CAN_rx_msg_queue);
-	
-	 can_function_init();
-	 can_message_case_init();
 }
 
 void task_can_start_running(void)
@@ -60,8 +50,7 @@ void task_can_assert_running(void)
 
 void task_can_running(void)
 {
-		can_function_loop_rt();
-		//can_ptl_loop_10ms();
+
 }
 
 void task_can_post_running(void)
@@ -92,8 +81,6 @@ void parse_can_message(const CAN_Message_t* message)
 {
     // Example: Check message ID and parse accordingly
 	  LOG_BUFF_LEVEL((const uint8_t *)&message,sizeof(CAN_Message_t));
-	  //LOG_BUFF_LEVEL((const uint8_t *)&message->Data,message->DLC);
-	  CanQueue_Push(&CAN_rx_msg_queue, 0, message->StdId, message->Data, message->DLC);
    
     switch (message->StdId)
     {

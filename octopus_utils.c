@@ -38,7 +38,7 @@
 // #define MAX_LINE_LEN 1024
 // #define MAX_RECORDS  65536
 #define CRC32_POLYNOMIAL (0x04C11DB7) // Standard CRC32 polynomial
-#define DEFAULT_OUPG_FILENAME_MAX_LENGTH 30
+#define DEFAULT_OUPG_FILENAME_MAX_LENGTH 50
 #define DEFAULT_OUPG_BINFILE_READ_MAX_SIZE 48
 /*******************************************************************************
  * TYPEDEFS
@@ -551,7 +551,7 @@ file_read_status_t read_next_hex_record(FILE *hex_file, long *file_offset, hex_r
 }
 
 // Check if file is valid BIN with vector table
-file_info_t is_valid_bin_file(uint32_t target_bank_offset, const char *path_filename)
+file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset, const char *path_filename)
 {
     file_info_t info = {
         .file_type = FILE_TYPE_UNKNOWN,
@@ -583,6 +583,19 @@ file_info_t is_valid_bin_file(uint32_t target_bank_offset, const char *path_file
         if (meta.bank1.magic == APP_MATA_INFO_MAGIC && meta.bank2.magic == APP_MATA_INFO_MAGIC)
         {
             has_valid_meta = 1;
+        }
+        else
+        {
+            fclose(f);
+            return info;
+        }
+
+        LOG_LEVEL("bank1.model: %08x bank2.model: %08x model_number:%08x\n ", meta.bank1.model, meta.bank2.model, model_number);
+
+        if (meta.bank1.model != model_number || meta.bank2.model != model_number)
+        {
+            fclose(f);
+            return info;
         }
     }
 
@@ -660,7 +673,7 @@ file_info_t is_valid_bin_file(uint32_t target_bank_offset, const char *path_file
     info.file_type = FILE_TYPE_BIN;
     info.file_size = valid_size;
     info.file_version = decode_version_from_filename(path_filename);
-
+    LOG_LEVEL("bank1.crc: %08x bank2.crc: %08x re-crc:%08x\r\n ", meta.bank1.crc32, meta.bank2.crc32, info.file_crc_32);
     return info;
 }
 
@@ -694,22 +707,22 @@ file_read_status_t read_next_bin_record(FILE *bin_file, long *file_offset, hex_r
         }
     }
 
-	// Step 2: Determine which app region current offset is in
-	//long region_start = 0;
-	uint32_t region_end = file_total_size;
+    // Step 2: Determine which app region current offset is in
+    // long region_start = 0;
+    uint32_t region_end = file_total_size;
 
     if (meta_valid)
     {
         if (*file_offset >= (long)meta.bank2.start_address)
         {
             // Reading bank2
-            //region_start = meta.bank2.start_address;
+            // region_start = meta.bank2.start_address;
             region_end = meta.bank2.start_address + meta.bank2.size;
         }
         else
         {
             // Reading bank1
-            //region_start = meta.bank1.start_address;
+            // region_start = meta.bank1.start_address;
             region_end = meta.bank1.start_address + meta.bank1.size;
         }
     }
@@ -738,7 +751,7 @@ file_read_status_t read_next_bin_record(FILE *bin_file, long *file_offset, hex_r
 }
 
 // Main parsing function
-file_info_t parse_firmware_file(uint32_t target_bank_offset, const char *filename)
+file_info_t parse_firmware_file(uint32_t model_number, uint32_t target_bank_offset, const char *filename)
 {
     file_info_t info = {.file_type = FILE_TYPE_UNKNOWN};
     LOG_LEVEL("parse firmware file:%s\r\n", filename);
@@ -748,7 +761,7 @@ file_info_t parse_firmware_file(uint32_t target_bank_offset, const char *filenam
     if (info.file_type == FILE_TYPE_HEX)
         return info;
 
-    info = is_valid_bin_file(target_bank_offset, filename);
+    info = is_valid_bin_file(model_number, target_bank_offset, filename);
     if (info.file_type == FILE_TYPE_BIN)
         return info;
 
@@ -793,20 +806,27 @@ int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_
 #ifdef PLATFORM_LINUX_RISC
     DIR *dir = opendir(dir_path);
     if (!dir)
+    {
+        LOG_LEVEL("dir not exitst:%s\r\n", dir_path);
         return 0;
+    }
 
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL)
     {
         if (entry->d_type != DT_REG)
+        {
             continue;
+        }
 
-        if (strlen(entry->d_name) > DEFAULT_OUPG_FILENAME_MAX_LENGTH)
-            continue;
+        // if (strlen(entry->d_name) > out_path_size -10)
+        //{
+        //     continue;
+        // }
 
         if (fnmatch("*.oupg", entry->d_name, 0) == 0)
         {
-            char full_path[50];
+            char full_path[64];
             snprintf(full_path, sizeof(full_path), "%s/%s", dir_path, entry->d_name);
             if (copy_file_to_tmp(full_path, entry->d_name, out_path, out_path_size) >= 0)
             {

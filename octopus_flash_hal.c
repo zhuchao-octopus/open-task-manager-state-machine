@@ -29,10 +29,12 @@ uint32_t hal_flash_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
     HalFlashRead(startaddr, buffer, length);
     return 0;
 }
+
 uint32_t hal_flash_erase_page_(uint32_t startaddr, uint8_t page_count)
 {
     return 0;
 }
+
 uint32_t hal_flash_erase_area_(uint32_t startaddr, uint32_t endaddr)
 {
     return 0;
@@ -109,11 +111,12 @@ uint32_t hal_flash_erase_area_(uint32_t startaddr, uint32_t endaddr)
     FLASH_Lock();
     return i;
 }
+
 /**
  * @brief  Read a data buffer from Flash.
  * @param  addr: Start address in Flash memory
- * @param  buf: Destination buffer to read into
- * @param  len: Length in bytes
+ * @param  buff: Destination buffer to read into
+ * @param  leng: Length in bytes
  */
 uint32_t hal_flash_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {
@@ -165,7 +168,9 @@ uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
     FLASH_Lock();
     return written_bytes; // Return the number of bytes written
 }
+
 #endif
+
 #endif // TASK_MANAGER_STATE_MACHINE_FLASH
 
 void hal_eeprom_write_(uint32_t startaddr, uint8_t *buffer, uint8_t length)

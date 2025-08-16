@@ -29,7 +29,7 @@
  * Debug Switch Macros
  * Define debug levels or other switches as required.
  ******************************************************************************/
-
+#ifdef TASK_MANAGER_STATE_MACHINE_IPC
 /*******************************************************************************
  * MACROS
  * The following macros define key IDs and their respective actions.
@@ -42,28 +42,30 @@
  ******************************************************************************/
 static bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer);
-static void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id);
+static void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
 /*******************************************************************************
  * Global Variables
  * Define variables accessible across multiple files if needed.
  ******************************************************************************/
-static CarInforCallback_t CarInforCallback = NULL;
+static MessageDataInforCallback_t message_data_infor_callback = NULL;
 
 /*******************************************************************************
  * Local Variables
  * Define static variables used only within this file.
  ******************************************************************************/
-
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
+static uint16_t l_t_callback_delay = 0;
 static uint8_t l_u8_idle_swich = 0;
+#endif
 static uint32_t l_t_msg_wait_10_timer; // Timer for 10 ms message waiting period
 static uint32_t l_t_msg_wait_500_timer;
-static uint16_t l_t_callback_delay = 0; // 1000;
+
 /*******************************************************************************
  * Global Function Implementations
  ******************************************************************************/
-void register_car_infor_callback(CarInforCallback_t callback)
+void register_message_data_callback(MessageDataInforCallback_t callback)
 {
-    CarInforCallback = callback;
+    message_data_infor_callback = callback;
 }
 /**
  * @brief Initializes the system for running.
@@ -74,7 +76,7 @@ void register_car_infor_callback(CarInforCallback_t callback)
 void task_ipc_init_running(void)
 {
     LOG_LEVEL("task_ipc_init_running\r\n");
-    OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_IPC, OTMS_S_INVALID);
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_register_module(MCU_TO_SOC_MOD_IPC, ipc_send_handler, ipc_receive_handler);
@@ -91,7 +93,7 @@ void task_ipc_init_running(void)
 void task_ipc_start_running(void)
 {
     LOG_LEVEL("task_ipc_start_running\r\n");
-    OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_ASSERT_RUN);
+    OTMS(TASK_MODULE_IPC, OTMS_S_ASSERT_RUN);
 }
 
 /**
@@ -110,7 +112,7 @@ void task_ipc_assert_running(void)
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
     ptl_reqest_running(SOC_TO_MCU_MOD_IPC);
 #endif
-    OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_RUNNING);
+    OTMS(TASK_MODULE_IPC, OTMS_S_RUNNING);
 }
 
 /**
@@ -120,30 +122,36 @@ void task_ipc_assert_running(void)
  */
 void task_ipc_running(void)
 {
+    uint8_t tmp[2] = {0};
     if (GetTickCounter(&l_t_msg_wait_10_timer) < 10)
         return;
 
     StartTickCounter(&l_t_msg_wait_10_timer);
 
-    Msg_t *msg = get_message(TASK_MODULE_IPC_SOCKET);
+    Msg_t *msg = get_message(TASK_MODULE_IPC);
 
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
     if (update_is_mcu_updating() && (msg->msg_id != MSG_OTSM_DEVICE_MCU_EVENT))
     {
         return;
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
     if (msg->msg_id == NO_MSG)
     {
+        if (!IsTickCounterStart(&l_t_msg_wait_500_timer))
+            StartTickCounter(&l_t_msg_wait_500_timer);
+
         if ((GetTickCounter(&l_t_msg_wait_500_timer) >= l_t_callback_delay) && (l_t_callback_delay > 0))
         {
             if (l_u8_idle_swich > 0)
             {
-                ipc_notify_message_to_client(0, FRAME_CMD_CARINFOR_INDICATOR);
+                ipc_notify_message_to_client(MSG_GROUP_CAR, FRAME_CMD_CARINFOR_INDICATOR, NULL, 0);
                 l_u8_idle_swich = 0;
             }
             else
             {
-                ipc_notify_message_to_client(0, FRAME_CMD_CARINFOR_METER);
+                ipc_notify_message_to_client(MSG_GROUP_CAR, FRAME_CMD_CARINFOR_METER, NULL, 0);
                 l_u8_idle_swich = 1;
             }
 
@@ -151,6 +159,9 @@ void task_ipc_running(void)
         }
         return;
     }
+    StopTickCounter(&l_t_msg_wait_500_timer);
+#endif
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
 
     switch (msg->msg_id)
     {
@@ -160,21 +171,41 @@ void task_ipc_running(void)
         {
         case MSG_IPC_CMD_CAR_SETTING_SAVE:
             LOG_LEVEL("MSG_IPC_CMD_CAR_SETTING_SAVE param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_SYSTEM_SAVE_DATA, msg->param1);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_SYSTEM_SAVE_DATA, msg->param2);
             break;
+
         case MSG_IPC_CMD_CAR_SET_LIGHT:
             LOG_LEVEL("MSG_IPC_CMD_CAR_SET_LIGHT param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_LIGHT, msg->param1);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_LIGHT, msg->param2);
             break;
+
         case MSG_IPC_CMD_CAR_SET_GEAR_LEVEL:
             LOG_LEVEL("MSG_IPC_CMD_CAR_SET_GEAR_LEVEL param1=%d,param2=%d \r\n", msg->param1, msg->param2);
-            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_GEAR_LEVEL, msg->param1);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_GEAR_LEVEL, msg->param2);
             break;
+
+        case MSG_IPC_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
+            LOG_LEVEL("MSG_IPC_CMD_CAR_METER_TRIP_DISTANCE_CLEAR param1=%d,param2=%d \r\n", msg->param1, msg->param2);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR, msg->param2);
+            break;
+
+        case MSG_IPC_CMD_CAR_METER_TIME_CLEAR:
+            LOG_LEVEL("MSG_IPC_CMD_CAR_METER_TIME_CLEAR param1=%d,param2=%d \r\n", msg->param1, msg->param2);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_METER_TIME_CLEAR, msg->param2);
+            break;
+
+        case MSG_IPC_CMD_CAR_METER_ODO_CLEAR:
+            LOG_LEVEL("MSG_IPC_CMD_CAR_METER_ODO_CLEAR param1=%d,param2=%d \r\n", msg->param1, msg->param2);
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_METER_ODO_CLEAR, msg->param2);
+            break;
+
         case MSG_IPC_CMD_CAR_GET_INDICATOR_INFO:
         case MSG_IPC_CMD_CAR_GET_METER_INFO:
+        case MSG_IPC_CMD_CAR_GET_ERROR_INFO:
+        case MSG_IPC_CMD_CAR_GET_BATTERY_INFO:
         default:
             // LOG_LEVEL("msg->id=%d param1=%d,param2=%d\r\n", msg->id, msg->param1,msg->param2);
-            ipc_notify_message_to_client(MSG_GROUP_CAR, msg->param1);
+            ipc_notify_message_to_client(MSG_GROUP_CAR, msg->param1, NULL, 0);
             break;
         }
         break;
@@ -182,6 +213,7 @@ void task_ipc_running(void)
     case MSG_OTSM_DEVICE_MCU_EVENT:
         switch (msg->param1)
         {
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
         case MSG_OTSM_CMD_MCU_REQUEST_UPGRADING:
             if (flash_is_meta_infor_valid())
             {
@@ -193,7 +225,7 @@ void task_ipc_running(void)
                     }
                     else
                     {
-                        LOG_LEVEL("start to enter upgrading mode\r\n");
+                        LOG_LEVEL("start to enter upgrading mode.\r\n");
                         send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE, msg->param2);
                     }
                 }
@@ -203,13 +235,22 @@ void task_ipc_running(void)
                 send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
             }
             break;
+#endif
         case MSG_OTSM_CMD_MCU_UPDATING:
-            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_UPDATING);
+            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_UPDATING, NULL, 0);
             break;
         case MSG_OTSM_CMD_MCU_VERSION:
-            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_VERSION);
+            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_VERSION, NULL, 0);
             break;
         }
+
+        break;
+    case MSG_OTSM_DEVICE_KEY_EVENT:
+    case MSG_OTSM_DEVICE_KEY_DOWN_EVENT:
+    case MSG_OTSM_DEVICE_KEY_UP_EVENT:
+        tmp[0] = msg->param1;
+        tmp[1] = msg->param2;
+        ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_KEY_EVENT, tmp, 2);
         break;
     }
 
@@ -218,13 +259,13 @@ void task_ipc_running(void)
 
 void task_ipc_post_running(void)
 {
-    OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_ASSERT_RUN);
+    OTMS(TASK_MODULE_IPC, OTMS_S_ASSERT_RUN);
 }
 
 void task_ipc_stop_running(void)
 {
     LOG_LEVEL("_stop_running\r\n");
-    OTMS(TASK_MODULE_IPC_SOCKET, OTMS_S_INVALID);
+    OTMS(TASK_MODULE_IPC, OTMS_S_INVALID);
 }
 
 /*******************************************************************************
@@ -268,7 +309,31 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
 
         case FRAME_CMD_CAR_SET_GEAR_LEVEL:
             tmp[0] = param2;
+            tmp[1] = param2;
             ptl_build_frame(SOC_TO_MCU_MOD_IPC, FRAME_CMD_CAR_SET_GEAR_LEVEL, tmp, 2, buff);
+            LOG_BUFF_LEVEL(buff->buff, buff->size);
+            return true;
+
+        case FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
+        case FRAME_CMD_CAR_METER_TIME_CLEAR:
+        case FRAME_CMD_CAR_METER_ODO_CLEAR:
+            tmp[0] = param2;
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, tmp, 2, buff);
+            LOG_BUFF_LEVEL(buff->buff, buff->size);
+            return true;
+
+        case FRAME_CMD_CAR_SET_INDICATOR:
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, (uint8_t *)&lt_carinfo_indicator, sizeof(carinfo_indicator_t), buff);
+            LOG_BUFF_LEVEL(buff->buff, buff->size);
+            return true;
+
+        case FRAME_CMD_CAR_SET_METER:
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t), buff);
+            LOG_BUFF_LEVEL(buff->buff, buff->size);
+            return true;
+
+        case FRAME_CMD_CAR_SET_BATTERY:
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, (uint8_t *)&lt_carinfo_battery, sizeof(carinfo_battery_t), buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
 
@@ -301,7 +366,6 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
  * RETURNS:
  * - true if the command was processed successfully, false otherwise.
  ******************************************************************************/
-// ´óµÆÖ¸Ê¾µÆ
 // static const uint8_t protocol_cmd_lamp_on[3] = { 0x16, 0x1A, 0xF1 };   //¿ªµÆ
 // static const uint8_t protocol_cmd_lamp_off[3] = { 0x16, 0x1A, 0xF0 };  //¹ØµÆ
 extern void bafang_lamp_on_off(bool on_off);
@@ -311,19 +375,65 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
     // assert(payload);    // Ensure payload is valid
     // assert(ackbuffer);  // Ensure acknowledgment buffer is valid
     // uint8_t tmp[1];     // Temporary variable for holding command data
-    LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d\r\n", payload->frame_type, payload->frame_cmd, payload->data_len);
+    LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d data[0]=%d\r\n", payload->frame_type, payload->frame_cmd, payload->data_len, payload->data[0]);
     if (SOC_TO_MCU_MOD_IPC == payload->frame_type)
     {
         switch (payload->frame_cmd)
         {
         case FRAME_CMD_SYSTEM_SAVE_DATA:
-            lt_carinfo_meter.unit_type = payload->data[0];
+            // lt_carinfo_meter.unit_type = payload->data[0];
             flash_save_carinfor_meter();
             return false;
         case FRAME_CMD_CAR_SET_LIGHT:
+#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
+            if (payload->data[0] == 1)
+                bafang_lamp_on_off(true);
+            else
+                bafang_lamp_on_off(false);
             return false;
+#endif
         case FRAME_CMD_CAR_SET_GEAR_LEVEL:
+            if (payload->data_len >= 1)
+                lt_carinfo_meter.gear = payload->data[0];
+#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
+            bafang_set_gear(payload->data[0]);
+#endif
             return false;
+
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
+        case FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
+            lt_carinfo_meter.trip_distance = 0;
+            return false;
+
+        case FRAME_CMD_CAR_METER_TIME_CLEAR:
+            lt_carinfo_meter.trip_time = 0;
+            return false;
+
+        case FRAME_CMD_CAR_METER_ODO_CLEAR:
+            lt_carinfo_meter.trip_odo = 0;
+            return false;
+
+        case FRAME_CMD_CAR_SET_INDICATOR:
+            if (payload->data_len >= sizeof(carinfo_indicator_t))
+            {
+                memcpy(&lt_carinfo_indicator, payload->data, sizeof(carinfo_indicator_t));
+            }
+            return false;
+
+        case FRAME_CMD_CAR_SET_METER:
+            if (payload->data_len >= sizeof(carinfo_meter_t))
+            {
+                memcpy(&lt_carinfo_meter, payload->data, sizeof(carinfo_meter_t));
+            }
+            return false;
+
+        case FRAME_CMD_CAR_SET_BATTERY:
+            if (payload->data_len >= sizeof(carinfo_battery_t))
+            {
+                memcpy(&lt_carinfo_battery, payload->data, sizeof(carinfo_battery_t));
+            }
+            return false;
+#endif
         default:
             break;
         }
@@ -332,16 +442,19 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
     return false; // Command not processed
 }
 
-void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id)
+void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length)
 {
-    if (CarInforCallback)
+    if (message_data_infor_callback)
     {
         LOG_LEVEL("msg_grp=%d,msg_id=%d \r\n", msg_grp, msg_id);
-        CarInforCallback(msg_grp, msg_id);
+        message_data_infor_callback(msg_grp, msg_id, data, length);
     }
 }
 
 void update_push_interval_ms(uint16_t delay_ms)
 {
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
     l_t_callback_delay = delay_ms;
+#endif
 }
+#endif

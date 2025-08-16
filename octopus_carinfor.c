@@ -33,6 +33,7 @@
 #include "octopus_carinfor.h"
 #include "octopus_sif.h"
 #include "octopus_ipc.h"
+#include "octopus_flash.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -75,7 +76,7 @@ static void log_sif_data(uint8_t *data, uint8_t maxlen); // Log SIF data for deb
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-
+static uint8_t car_error_code[ERROR_CODE_COUNT];
 /*******************************************************************************
  * STATIC VARIABLES
  */
@@ -95,7 +96,7 @@ carinfo_error_t lt_carinfo_error;
 static uint32_t l_t_msg_wait_50_timer;  // Timer for 50 ms message wait
 static uint32_t l_t_msg_car_trip_timer; // Timer for 100 ms message wait
 
-static uint32_t l_t_soc_timer; // Timer for state of charge monitoring
+static uint32_t l_t_trip_saving_timer; // Timer for state of charge monitoring
 
 // static bool l_t_speed_changed = false;
 // static bool l_t_gear_changed = false;
@@ -108,13 +109,15 @@ static uint32_t l_t_soc_timer; // Timer for state of charge monitoring
  */
 void task_carinfo_init_running(void)
 {
-    LOG_LEVEL("task_carinfo_init_running\r\n");
-    ptl_register_module(MCU_TO_SOC_MOD_CARINFOR, meter_module_send_handler, meter_module_receive_handler);
-    // ptl_register_module(MCU_TO_SOC_MOD_INDICATOR, indicator_module_send_handler, indicator_module_receive_handler);
-    // ptl_register_module(MCU_TO_SOC_MOD_DRIV_INFO, drivinfo_module_send_handler, drivinfo_module_receive_handler);
+	LOG_LEVEL("task_carinfo_init_running\r\n");
+	ptl_register_module(MCU_TO_SOC_MOD_CARINFOR, meter_module_send_handler, meter_module_receive_handler);
+	// ptl_register_module(MCU_TO_SOC_MOD_INDICATOR, indicator_module_send_handler, indicator_module_receive_handler);
+	// ptl_register_module(MCU_TO_SOC_MOD_DRIV_INFO, drivinfo_module_send_handler, drivinfo_module_receive_handler);
 
-    // srand(1234); // Seed the random number generator
-    OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_INVALID);
+	OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_INVALID);
+	lt_carinfo_meter.speed_actual = 0;
+	lt_carinfo_meter.speed_max = 0;  
+	lt_carinfo_meter.speed_average = 0;	
 }
 
 void task_carinfo_start_running(void)
@@ -124,7 +127,7 @@ void task_carinfo_start_running(void)
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     lt_carinfo_indicator.ready = 1; // ready flag
     lt_carinfo_meter.trip_distance = 0;
-    lt_carinfo_meter.ride_time = 0;
+    lt_carinfo_meter.trip_time = 0;
 #endif
 }
 
@@ -135,7 +138,7 @@ void task_carinfo_assert_running(void)
     // ptl_reqest_running(MCU_TO_SOC_MOD_DRIV_INFO);
     StartTickCounter(&l_t_msg_wait_50_timer);
     // StartTickCounter(&l_t_msg_wait_100_timer);
-    StartTickCounter(&l_t_soc_timer);
+    StartTickCounter(&l_t_trip_saving_timer);
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_RUNNING);
 }
 
@@ -146,9 +149,9 @@ void task_carinfo_running(void)
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    if (GetTickCounter(&l_t_msg_wait_50_timer) < 10)
-        return;
-    StartTickCounter(&l_t_msg_wait_50_timer);
+    // if (GetTickCounter(&l_t_msg_wait_50_timer) < 10)
+    //     return;
+    // StartTickCounter(&l_t_msg_wait_50_timer);
     task_car_controller_msg_handler();
 #endif
 }
@@ -184,14 +187,10 @@ carinfo_battery_t *task_carinfo_get_battery_info(void)
 {
     return &lt_carinfo_battery;
 }
+
 carinfo_error_t *task_carinfo_get_error_info(void)
 {
     return &lt_carinfo_error;
-}
-
-carinfo_drivinfo_t *task_carinfo_get_drivinfo_info(void)
-{
-    return NULL; //&lt_drivinfo;
 }
 
 /*******************************************************************************
@@ -202,7 +201,8 @@ carinfo_drivinfo_t *task_carinfo_get_drivinfo_info(void)
 bool meter_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
 {
     MY_ASSERT(buff);
-    // uint8_t tmp[16] = {0};
+    // uint8_t tmp[128] = {0};
+
     if (MCU_TO_SOC_MOD_CARINFOR == frame_type)
     {
         switch (param1)
@@ -210,14 +210,19 @@ bool meter_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uin
         case FRAME_CMD_CARINFOR_INDICATOR:
             ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, (uint8_t *)&lt_carinfo_indicator, sizeof(carinfo_indicator_t), buff);
             return true;
+
         case FRAME_CMD_CARINFOR_METER:
             // LOG_LEVEL("lt_meter.speed=%d\r\n",lt_carinfo_meter.speed);
             ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t), buff);
             return true;
+
         case FRAME_CMD_CARINFOR_BATTERY:
             ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, (uint8_t *)&lt_carinfo_battery, sizeof(carinfo_battery_t), buff);
             return true;
+
         case FRAME_CMD_CARINFOR_ERROR:
+            // memcpy(tmp, &lt_carinfo_error, sizeof(carinfo_error_t));
+            // LOG_LEVEL("(uint8_t *)&lt_carinfo_error size=%d\r\n", sizeof(carinfo_error_t));
             ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, (uint8_t *)&lt_carinfo_error, sizeof(carinfo_error_t), buff);
             return true;
         default:
@@ -243,7 +248,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_indicator_t))
             {
                 memcpy(&lt_carinfo_indicator, payload->data, payload->data_len);
-                send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_INDICATOR_INFO, 0);
+                send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_INDICATOR_INFO, 0);
             }
             else
             {
@@ -255,7 +260,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_meter_t))
             {
                 memcpy(&lt_carinfo_meter, payload->data, payload->data_len);
-                send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_METER_INFO, 0);
+                send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_METER_INFO, 0);
             }
             else
             {
@@ -267,7 +272,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_battery_t))
             {
                 memcpy(&lt_carinfo_battery, payload->data, payload->data_len);
-                send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_BATTERY_INFO, 0);
+                send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_BATTERY_INFO, 0);
             }
             else
             {
@@ -278,7 +283,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             if (payload->data_len == sizeof(carinfo_error_t))
             {
                 memcpy(&lt_carinfo_error, payload->data, payload->data_len);
-                send_message(TASK_MODULE_IPC_SOCKET, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_ERROR_INFO, 0);
+                send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_ERROR_INFO, 0);
             }
             else
             {
@@ -317,24 +322,39 @@ uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec)
 
 void task_car_controller_msg_handler(void)
 {
+    // static uint32_t calculate_count = 0;
     uint32_t trip_timer = 0;
-    uint32_t trip_distances = 0;
+    uint32_t trip_saving_timer = 0;
+    uint32_t delta_distance = 0;
+
     Msg_t *msg = get_message(TASK_MODULE_CAR_INFOR);
     if (msg->msg_id == NO_MSG)
     {
         trip_timer = GetTickCounter(&l_t_msg_car_trip_timer);
+        trip_saving_timer = GetTickCounter(&l_t_trip_saving_timer);
         if (trip_timer > 2000)
         {
+			if(lt_carinfo_meter.speed_actual > lt_carinfo_meter.speed_max)
+			lt_carinfo_meter.speed_max = lt_carinfo_meter.speed_actual;
+			lt_carinfo_meter.speed_average = (lt_carinfo_meter.speed_average + lt_carinfo_meter.speed_actual) / 2;
+						
             trip_timer = trip_timer / 1000;
-            trip_distances = calculateTotalDistance(lt_carinfo_meter.speed, trip_timer);
+            delta_distance = calculateTotalDistance(lt_carinfo_meter.speed_actual, trip_timer);
 
-            lt_carinfo_meter.ride_time = lt_carinfo_meter.ride_time + trip_timer;
-            lt_carinfo_meter.trip_distance = lt_carinfo_meter.trip_distance + trip_distances;
-            lt_carinfo_meter.odo = lt_carinfo_meter.odo + trip_distances;
+            lt_carinfo_meter.trip_time = lt_carinfo_meter.trip_time + trip_timer;
+            lt_carinfo_meter.trip_distance = lt_carinfo_meter.trip_distance + delta_distance;
+            lt_carinfo_meter.trip_odo = lt_carinfo_meter.trip_odo + delta_distance;
             RestartTickCounter(&l_t_msg_car_trip_timer);
+        }
+
+        if (trip_saving_timer > 60000 * 5 && delta_distance > 0)
+        {
+            flash_save_carinfor_meter();
+            RestartTickCounter(&l_t_trip_saving_timer);
         }
         return;
     }
+
     if (MCU_TO_SOC_MOD_CARINFOR == msg->msg_id)
     {
         switch (msg->param1)
@@ -365,8 +385,9 @@ void task_car_controller_msg_handler(void)
         }
     }
 
-    else if (MSG_OTSM_DEVICE_CAR_EVENT == msg->msg_id)
+    else if (MSG_OTSM_DEVICE_GPIO_EVENT == msg->msg_id)
     {
+
     }
 }
 // ERROR_CODE_IDLE = 0X00,                                      // 无动作
@@ -391,34 +412,55 @@ void task_car_controller_msg_handler(void)
 // ERROR_CODE_LAMP_SENSOR_ABNORMALITY = 0X24,                   // 大灯传感器故障
 // ERROR_CODE_COMMUNICATION_ABNORMALITY = 0X30,                 // 通讯故障
 //  添加错误代码
-void task_carinfo_add_error_code(ERROR_CODE error_code)
+
+void task_carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately)
 {
-    if (error_code != lt_carinfo_error.error[0])
+    if (code_append)
     {
-        if (error_code >= ERROR_CODE_BEGIN && error_code <= ERROR_CODE_END)
+        if (error_code != car_error_code[0])
         {
-            // 历史故障信息顺位下移
-            for (int i = 0; i < ERROR_CODE_COUNT - 1; i++)
+            if (error_code >= ERROR_CODE_BEGIN && error_code <= ERROR_CODE_END)
             {
-                lt_carinfo_error.error[i + 1] = lt_carinfo_error.error[i];
+                // 历史故障信息顺位下移
+                for (int i = 0; i < ERROR_CODE_COUNT - 1; i++)
+                {
+                    car_error_code[i + 1] = car_error_code[i];
+                }
+                // 插入置顶的最新故障信息
+                car_error_code[0] = error_code;
             }
-            // 插入置顶的最新故障信息
-            lt_carinfo_error.error[0] = error_code;
         }
     }
-    /// theIndicatorFlag.error = true;
+    else
+    {
+        if (error_code == car_error_code[0])
+        {
+            if (error_code >= ERROR_CODE_BEGIN && error_code <= ERROR_CODE_END)
+            {
+                // 历史故障信息顺位下移
+                for (int i = 0; i < ERROR_CODE_COUNT - 1; i++)
+                {
+                    car_error_code[i] = car_error_code[i + 1];
+                }
+                // 插入置顶的最新故障信息
+                car_error_code[0] = error_code;
+            }
+        }
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// notify send error status
     if (error_code < ERROR_CODE_BEGIN)
     {
-        lt_carinfo_error.ecuFault = 0;
-        lt_carinfo_error.sensorFault = 0;
-        lt_carinfo_error.motorFault = 0;
-        lt_carinfo_error.fuse_fault = 0;
-        lt_carinfo_error.plug_fault = 0;
-        lt_carinfo_error.battery_fault = 0;
-        lt_carinfo_error.brake_fault = 0;
-        lt_carinfo_error.throttle_fault = 0;
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR);
+        lt_carinfo_error.fault_ecu = 0;
+        lt_carinfo_error.fault_sensor = 0;
+        lt_carinfo_error.fault_motor = 0;
+        lt_carinfo_error.fault_fuse = 0;
+        lt_carinfo_error.fault_plug = 0;
+        lt_carinfo_error.fault_battery = 0;
+        lt_carinfo_error.fault_brake = 0;
+        lt_carinfo_error.fault_throttle = 0;
+        // send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR);
     }
     switch (error_code)
     {
@@ -428,27 +470,53 @@ void task_carinfo_add_error_code(ERROR_CODE error_code)
 
     case ERROR_CODE_THROTTLE_NOT_ZERO:
     case ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY:
-        lt_carinfo_error.throttle_fault = lt_carinfo_error.error[0];
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
+        if (code_append)
+            lt_carinfo_error.fault_throttle = error_code;
+        else
+            lt_carinfo_error.fault_throttle = 0;
+        // send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
         break;
 
-    case ERROR_CODE_HALLSENSOR_ABNORMALITY:
     case ERROR_CODE_MOTOR_ABNORMALITY:
     case ERROR_CODE_CONTROLLER_ABNORMALITY:
-        lt_carinfo_error.motorFault = lt_carinfo_error.error[0];
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
+        if (code_append)
+        {
+            lt_carinfo_error.fault_motor = error_code;
+        }
+        else
+        {
+            lt_carinfo_error.fault_motor = 0;
+        }
+        // send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
         break;
 
     case ERROR_CODE_BATTERY_OVERHEAT:
-        lt_carinfo_error.battery_fault = lt_carinfo_error.error[0];
-        lt_carinfo_error.fuse_fault = lt_carinfo_error.error[0];
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
+        if (code_append)
+        {
+            lt_carinfo_error.fault_battery = error_code;
+            lt_carinfo_error.fault_fuse = error_code;
+        }
+        else
+        {
+            lt_carinfo_error.fault_battery = 0;
+            lt_carinfo_error.fault_fuse = 0;
+        }
+        // send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
         break;
 
     case ERROR_CODE_LOW_VOLTAGE_PROTECTION:
     case ERROR_CODE_OVER_VOLTAGE_PROTECTION:
-        lt_carinfo_error.plug_fault = lt_carinfo_error.error[0];
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
+        if (code_append)
+        {
+            lt_carinfo_error.fault_plug = error_code;
+            lt_carinfo_error.fault_battery = error_code;
+        }
+        else
+        {
+            lt_carinfo_error.fault_plug = 0;
+            lt_carinfo_error.fault_battery = 0;
+        }
+        // send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
         break;
 
     case ERROR_CODE_CONTROLLER_OVERHEAT:
@@ -458,20 +526,125 @@ void task_carinfo_add_error_code(ERROR_CODE error_code)
     case ERROR_CODE_ASSIST_POWER_SENSOR_ABNORMALITY:
     case ERROR_CODE_SPEED_SENSOR_ABNORMALITY:
     case ERROR_CODE_LAMP_SENSOR_ABNORMALITY:
-        lt_carinfo_error.sensorFault = lt_carinfo_error.error[0];
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
+        if (code_append)
+        {
+            lt_carinfo_error.fault_sensor = error_code;
+            lt_carinfo_error.fault_ecu = error_code;
+        }
+        else
+        {
+            lt_carinfo_error.fault_sensor = 0;
+            lt_carinfo_error.fault_ecu = 0;
+        }
+        // send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
         break;
 
+    case ERROR_CODE_HALLSENSOR_ABNORMALITY:
     case ERROR_CODE_LAMP_ABNORMALITY:
     case ERROR_CODE_COMMUNICATION_ABNORMALITY:
     case ERROR_CODE_BMS_ABNORMALITY:
-        lt_carinfo_error.ecuFault = lt_carinfo_error.error[0];
-        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
+        if (code_append)
+        {
+            lt_carinfo_error.fault_ecu = error_code;
+        }
+        else
+            lt_carinfo_error.fault_ecu = 0;
+        // send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR); // FRAME_CMD__CARINFOR_ERROR
         break;
-
     default:
         break;
     }
+    if (update_immediately)
+        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, FRAME_CMD_CARINFOR_ERROR);
 }
 
+bool task_carinfo_has_error_code(void)
+{
+    return (car_error_code[0] > ERROR_CODE_NORMAL);
+}
+
+#ifdef TASK_MANAGER_STATE_MACHINE_SIF
+void task_car_controller_sif_updating(void)
+{
+    uint8_t res = SIF_ReadData(sif_buff, sizeof(sif_buff));
+    // uint8_t lt_meter_current_gear = 0;
+    uint16_t lt_meter_current_speed = 0;
+
+#ifdef TEST_LOG_DEBUG_SIF
+    if (res)
+        log_sif_data(sif_buff, sizeof(sif_buff));
+#endif
+    if (res && sif_buff[0] == 0x08 && sif_buff[1] == 0x61)
+    {
+        lt_sif.sideStand = ((sif_buff[2] & 0x08) ? 1 : 0);                // ���Ŷϵ���  0:��������     1:���ŷ���
+        lt_sif.bootGuard = ((sif_buff[2] & 0x02) ? 1 : 0);                // ��������            0:�Ǳ���          1:������
+        lt_sif.hallFault = ((sif_buff[3] & 0x40) ? 1 : 0);                // ��������(���)0:����            1:����
+        lt_sif.throttleFault = ((sif_buff[3] & 0x20) ? 1 : 0);            // ת�ѹ���
+        lt_sif.controllerFault = ((sif_buff[3] & 0x10) ? 1 : 0);          // ����������
+        lt_sif.lowVoltageProtection = ((sif_buff[3] & 0x08) ? 1 : 0);     // Ƿѹ����
+        lt_sif.cruise = ((sif_buff[3] & 0x04) ? 1 : 0);                   // Ѳ��ָʾ��
+        lt_sif.assist = ((sif_buff[3] & 0x02) ? 1 : 0);                   // ����ָʾ��
+        lt_sif.motorFault = ((sif_buff[3] & 0x01) ? 1 : 0);               // �������
+        lt_sif.gear = ((sif_buff[4] & 0x80) >> 5) | (sif_buff[4] & 0x03); // ��λ//0~7
+        lt_sif.motorRunning = ((sif_buff[4] & 0x40) ? 1 : 0);             // ������� 1����
+        lt_sif.brake = ((sif_buff[4] & 0x20) ? 1 : 0);                    // ɲ��
+        lt_sif.controllerProtection = ((sif_buff[4] & 0x10) ? 1 : 0);     // ����������
+        lt_sif.coastCharging = ((sif_buff[4] & 0x08) ? 1 : 0);            // ���г��
+        lt_sif.antiSpeedProtection = ((sif_buff[4] & 0x04) ? 1 : 0);      // ���ɳ�����
+        lt_sif.seventyPercentCurrent = ((sif_buff[5] & 0x80) ? 1 : 0);    // 70%����
+        lt_sif.pushToTalk = ((sif_buff[5] & 0x40) ? 1 : 0);               // ����һ��ͨ
+        lt_sif.ekkBackupPower = ((sif_buff[5] & 0x20) ? 1 : 0);           // ����EKK���õ�Դ
+        lt_sif.overCurrentProtection = ((sif_buff[5] & 0x10) ? 1 : 0);    // ��������
+        lt_sif.motorShaftLockProtection = ((sif_buff[5] & 0x08) ? 1 : 0); // ��ת����
+        lt_sif.reverse = ((sif_buff[5] & 0x04) ? 1 : 0);                  // ����
+        lt_sif.electronicBrake = ((sif_buff[5] & 0x02) ? 1 : 0);          // ����ɲ��
+        lt_sif.speedLimit = ((sif_buff[5] & 0x01) ? 1 : 0);               // ����
+        lt_sif.current = ((sif_buff[6] & 0xFF));                          // ���� ��λ��1A
+        lt_sif.hallCounter = MK_WORD(sif_buff[7], sif_buff[8]);           // 0.5s�����������仯�ĸ���
+        lt_sif.soc = ((sif_buff[9] & 0xFF));                              // ����/���� 0-100% 5��ָʾΪ 90,70,50,30,20���ٷֱȣ������Ӧ�ĵ�ѹ����Ϊ 47V��46V,44.5V,43V,41V)��4 ��ָʾΪ 90,70,50,30
+        lt_sif.voltage_system = ((sif_buff[10] & 0xFF));                  // ��ѹϵͳ  0x01:36V  0x02:48V  0x04:60V  0x08:64V  0x10:72V  0x20:80V  0x40:84V   0x80:96V
+
+        double rpm = lt_sif.hallCounter * (2.0 * 60 / 100.0);
+        double radius = 0.254 / 2.0;                      // ��̥�뾶
+        double w = rpm * (2.0 * 3.14159265358979 / 60.0); // ת�����ٶȣ���λ������/��
+        double v = w * radius;                            // ���ٶȣ���λ:��/��
+
+        lt_meter.rpm = rpm + 20000; // offset:-20000
+        lt_meter.speed = v * (10.0 * 3600.0 / 1000.0) * 1.1;
+
+        lt_meter_current_speed = v * (10.0 * 3600.0 / 1000.0);
+
+        lt_meter.voltage_system = lt_sif.voltage_system;
+        // lt_meter.soc = lt_sif.soc;
+        lt_meter.current = lt_sif.current * 10; // test
+
+        if (lt_sif.gear != lt_drivinfo.gear)
+        {
+            // l_t_gear_changed = true;
+            LOG_LEVEL("SIF DATA:lt_drivinfo.gear changed\r\n");
+            send_message(TASK_MODULE_PTL, MCU_TO_SOC_MOD_DRIV_INFO, FRAME_CMD_DRIVINFO_GEAR, 0);
+        }
+        lt_drivinfo.gear = (carinfo_drivinfo_gear_t)lt_sif.gear;
+        if (lt_meter.actual_speed != lt_meter_current_speed)
+        {
+            // l_t_speed_changed=true;
+            LOG_LEVEL("SIF DATA:lt_drivinfo.actual_speed changed\r\n");
+            send_message(TASK_MODULE_PTL, MCU_TO_SOC_MOD_METER, FRAME_CMD_METER_RPM_SPEED, 0);
+        }
+        lt_meter.actual_speed = lt_meter_current_speed;
+    }
+}
+#endif
+
+#ifdef TEST_LOG_DEBUG_SIF
+void log_sif_data(uint8_t *data, uint8_t maxlen)
+{
+    LOG_LEVEL("SIF DATA:");
+    for (int i = 0; i < maxlen; i++)
+    {
+        LOG_("0x%02x ", data[i]);
+    }
+    LOG_("\r\n");
+}
+#endif
 #endif

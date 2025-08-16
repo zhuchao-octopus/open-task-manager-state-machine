@@ -22,13 +22,14 @@
  */
 #include "octopus_platform.h"   // Include platform-specific header for hardware platform details
 #include "octopus_uart_ptl_1.h" // Include UART protocol header
+#include "octopus_uart_ptl_2.h" // Include UART protocol header
 #include "octopus_uart_hal.h"   // Include UART hardware abstraction layer header
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
 #define TEST_LOG_DEBUG_PTL_RX_FRAME // Enable debugging for receiving frames
-#define TEST_LOG_DEBUG_PTL_TX_FRAME // Enable debugging for transmitting frames
+// #define TEST_LOG_DEBUG_PTL_TX_FRAME // Enable debugging for transmitting frames
 
 /*******************************************************************************
  * MACROS
@@ -68,7 +69,7 @@ typedef struct
  */
 
 // Declare function prototypes for various tasks and processing functions
-void ptl_init(void);                                         // Initialize the Octopus protocol
+
 void ptl_remove_none_header_data(ptl_proc_buff_t *buffer);   // Remove data that is not part of the header
 void ptl_find_valid_frame(ptl_proc_buff_t *buffer);          // Find a valid frame from the received data
 void ptl_proc_valid_frame(uint8_t *buffer, uint16_t length); // Process the valid frame
@@ -119,29 +120,29 @@ void ptl_help(void)
     ///  ptl_build_frame(P2M_MOD_DEBUG, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
     ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
     print_all_registered_module();
+
+#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
+    print_ptl2_registered_module();
+#endif
 }
 
-void ptl_init(void)
-{
-    // No initialization needed
-}
 // Initialize UART communication for the task
-void ptl_init_running(void)
+void task_ptl_init_running(void)
 {
     LOG_LEVEL("ptl_init_running\r\n");
-    ptl_init();
+
     OTMS(TASK_MODULE_PTL_1, OTMS_S_INVALID);
 }
 
 // Start the UART communication for the task
-void ptl_start_running(void)
+void task_ptl_start_running(void)
 {
     LOG_LEVEL("ptl_start_running\r\n");
     OTMS(TASK_MODULE_PTL_1, OTMS_S_ASSERT_RUN);
 }
 
 // Assert that UART communication is running
-void ptl_assert_running(void)
+void task_ptl_assert_running(void)
 {
     StartTickCounter(&l_t_ptl_rx_main_timer);
     StartTickCounter(&l_t_ptl_tx_main_timer);
@@ -152,25 +153,18 @@ void ptl_assert_running(void)
 }
 
 // Main running function for UART communication
-void ptl_running(void)
+void task_ptl_running(void)
 {
-    if (true == ptl_is_sleep_enable())
-    {
-        OTMS(TASK_MODULE_PTL_1, OTMS_S_STOP);
-    }
-    else
-    {
-        ptl_1_tx_event_handler();
+    ptl_1_tx_event_handler();
 
-        ptl_1_rx_event_handler();
-        ptl_frame_analysis_handler();
+    ptl_1_rx_event_handler();
+    ptl_frame_analysis_handler();
 
-        ptl_error_detect();
-    }
+    ptl_error_detect();
 }
 
 // Post-running function for UART communication
-void ptl_post_running(void)
+void task_ptl_post_running(void)
 {
     if (true == ptl_is_sleep_enable())
     {
@@ -183,7 +177,7 @@ void ptl_post_running(void)
 }
 
 // Stop the UART communication task
-void ptl_stop_running(void)
+void task_ptl_stop_running(void)
 {
     LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_PTL_1, OTMS_S_INVALID);
@@ -273,7 +267,6 @@ module_info_t *ptl_get_module(ptl_frame_type_t frame_type)
 
 void print_all_registered_module(void)
 {
-    // module_info_t *module_info = NULL;
     for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
     {
         LOG_LEVEL("registered l_t_module_info[%d]=%02x \r\n", i, l_t_module_info[i].frame_type);
@@ -558,6 +551,10 @@ void ptl_find_valid_frame(ptl_proc_buff_t *proc_buff)
         {
 #endif
             offset = i;
+            // Ensure there is at least one more byte to read frame length
+            if ((i + 3) >= proc_buff->size)
+                break;
+
             datalen = proc_buff->buff[i + 3];
             framelen = datalen + PTL_FRAME_HEADER_SIZE + 1;
 
@@ -695,5 +692,7 @@ void ptl_1_hal_tx(uint8_t *data, uint16_t length)
     LOG_LEVEL("data[%02d] ", length);
     LOG_BUFF(data, length);
 #endif
-    hal_com_uart_send_buffer_1(data, length);
+    if (length <= 0)
+        return;
+    hal_com_uart_send_buffer(data, length);
 }
