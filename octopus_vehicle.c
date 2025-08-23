@@ -30,7 +30,7 @@
  * INCLUDES
  */
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_carinfor.h"
+#include "octopus_vehicle.h"
 #include "octopus_sif.h"
 #include "octopus_ipc.h"
 #include "octopus_flash.h"
@@ -107,20 +107,22 @@ static uint32_t l_t_trip_saving_timer; // Timer for state of charge monitoring
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
-void task_carinfo_init_running(void)
+void task_vehicle_init_running(void)
 {
-    LOG_LEVEL("task_carinfo_init_running\r\n");
+    LOG_LEVEL("task_vehicle_init_running\r\n");
     ptl_register_module(MCU_TO_SOC_MOD_CARINFOR, meter_module_send_handler, meter_module_receive_handler);
     // ptl_register_module(MCU_TO_SOC_MOD_INDICATOR, indicator_module_send_handler, indicator_module_receive_handler);
     // ptl_register_module(MCU_TO_SOC_MOD_DRIV_INFO, drivinfo_module_send_handler, drivinfo_module_receive_handler);
 
-    // srand(1234); // Seed the random number generator
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_INVALID);
+    lt_carinfo_meter.speed_actual = 0;
+    lt_carinfo_meter.speed_max = 0;
+    lt_carinfo_meter.speed_average = 0;
 }
 
-void task_carinfo_start_running(void)
+void task_vehicle_start_running(void)
 {
-    LOG_LEVEL("task_carinfo_start_running\r\n");
+    LOG_LEVEL("task_vehicle_start_running\r\n");
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_ASSERT_RUN);
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     lt_carinfo_indicator.ready = 1; // ready flag
@@ -129,7 +131,7 @@ void task_carinfo_start_running(void)
 #endif
 }
 
-void task_carinfo_assert_running(void)
+void task_vehicle_assert_running(void)
 {
     ptl_reqest_running(MCU_TO_SOC_MOD_CARINFOR);
     // ptl_reqest_running(MCU_TO_SOC_MOD_INDICATOR);
@@ -140,7 +142,7 @@ void task_carinfo_assert_running(void)
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_RUNNING);
 }
 
-void task_carinfo_running(void)
+void task_vehicle_running(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     task_car_controller_sif_updating();
@@ -154,13 +156,13 @@ void task_carinfo_running(void)
 #endif
 }
 
-void task_carinfo_post_running(void)
+void task_vehicle_post_running(void)
 {
     ptl_release_running(MCU_TO_SOC_MOD_CARINFOR);
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_ASSERT_RUN);
 }
 
-void task_carinfo_stop_running(void)
+void task_vehicle_stop_running(void)
 {
     LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_INVALID);
@@ -332,10 +334,10 @@ void task_car_controller_msg_handler(void)
         trip_saving_timer = GetTickCounter(&l_t_trip_saving_timer);
         if (trip_timer > 2000)
         {
-			if(lt_carinfo_meter.speed_actual > lt_carinfo_meter.speed_max)
-			lt_carinfo_meter.speed_max = lt_carinfo_meter.speed_actual;
-			lt_carinfo_meter.speed_average = (lt_carinfo_meter.speed_average + lt_carinfo_meter.speed_actual) / 2;
-						
+            if (lt_carinfo_meter.speed_actual > lt_carinfo_meter.speed_max)
+                lt_carinfo_meter.speed_max = lt_carinfo_meter.speed_actual;
+            lt_carinfo_meter.speed_average = (lt_carinfo_meter.speed_average + lt_carinfo_meter.speed_actual) / 2;
+
             trip_timer = trip_timer / 1000;
             delta_distance = calculateTotalDistance(lt_carinfo_meter.speed_actual, trip_timer);
 
@@ -385,7 +387,6 @@ void task_car_controller_msg_handler(void)
 
     else if (MSG_OTSM_DEVICE_GPIO_EVENT == msg->msg_id)
     {
-
     }
 }
 // ERROR_CODE_IDLE = 0X00,                                      // 无动作

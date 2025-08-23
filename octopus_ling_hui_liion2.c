@@ -5,8 +5,8 @@
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_ling_hui_liion2.h"
 #include "octopus_uart_hal.h"
-#include "octopus_uart_ptl_2.h" // Include UART protocol header
-#include "octopus_carinfor.h"
+#include "octopus_uart_upf.h" // Include UART protocol header
+#include "octopus_vehicle.h"
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
@@ -31,7 +31,7 @@
  * LOCAL FUNCTIONS DECLEAR
  */
 uint8_t lhl2_ptl_checksum(uint8_t *data, uint8_t len);
-bool lhl2_ptl_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff);
+bool lhl2_ptl_receive_handler(upf_proc_buff_t *upf_proc_buff);
 void lhl2_ptl_tx_process(void);
 void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length);
 
@@ -65,7 +65,7 @@ void task_lhl2_ptl_init_running(void)
 void task_lhl2_ptl_start_running(void)
 {
     LOG_LEVEL("task_bafang_ptl_start_running\r\n");
-    ptl_2_register_module(PTL2_MODULE_LING_HUI_LIION2, lhl2_ptl_receive_handler);
+    upf_register_module(UPF_MODULE_LING_HUI_LIION2, lhl2_ptl_receive_handler);
     OTMS(TASK_MODULE_LING_HUI_LIION2, OTMS_S_ASSERT_RUN);
 }
 
@@ -82,7 +82,8 @@ void task_lhl2_ptl_assert_running(void)
 
     lt_carinfo_battery.voltage = 480;
     lt_carinfo_battery.range_max = 60; // UINT16_MAX;
-
+    lt_carinfo_battery.range = 60;
+	
     lt_carinfo_indicator.cruise_control = true;
     lt_carinfo_indicator.start_poles = 1;
     lt_carinfo_indicator.motor_poles = 2;
@@ -280,41 +281,41 @@ void lhl2_ptl_tx_process(void)
 
     lu_tx_buff[19] = lhl2_ptl_checksum(lu_tx_buff, 19);
 
-    ptl_2_send_buffer(PTL2_MODULE_LING_HUI_LIION2, lu_tx_buff, 20);
+    upf_send_buffer(UPF_MODULE_LING_HUI_LIION2, lu_tx_buff, 20);
 }
 
-void lhl2_ptl_remove_none_header_data(ptl_2_proc_buff_t *ptl_2_proc_buff)
+void lhl2_ptl_remove_none_header_data(upf_proc_buff_t *upf_proc_buff)
 {
-    if (ptl_2_proc_buff->buffer[0] == PTL_LHLL_C2I_HEADER)
+    if (upf_proc_buff->buffer[0] == PTL_LHLL_C2I_HEADER)
     {
         return;
     }
 
-    for (uint16_t i = 0; i < ptl_2_proc_buff->size; i++)
+    for (uint16_t i = 0; i < upf_proc_buff->size; i++)
     {
-        if (ptl_2_proc_buff->buffer[i] == PTL_LHLL_C2I_HEADER)
+        if (upf_proc_buff->buffer[i] == PTL_LHLL_C2I_HEADER)
         {
             // remove data before header
-            for (uint16_t j = i; j < ptl_2_proc_buff->size; j++)
+            for (uint16_t j = i; j < upf_proc_buff->size; j++)
             {
-                ptl_2_proc_buff->buffer[j - i] = ptl_2_proc_buff->buffer[j];
+                upf_proc_buff->buffer[j - i] = upf_proc_buff->buffer[j];
             }
-            ptl_2_proc_buff->size -= i;
+            upf_proc_buff->size -= i;
             break;
         }
     }
 
     // no find A2M_PTL_HEADER,clear all;
-    ptl_2_proc_buff->size = 0;
+    upf_proc_buff->size = 0;
 }
 
 /**
  * @brief Search for a valid protocol frame in the processing buffer.
  *
- * @param ptl_2_proc_buff Pointer to the protocol processing buffer.
+ * @param upf_proc_buff Pointer to the protocol processing buffer.
  * @return true if a valid frame is found and processed, false otherwise.
  */
-bool lhl2_ptl_find_valid_frame(ptl_2_proc_buff_t *ptl_2_proc_buff)
+bool lhl2_ptl_find_valid_frame(upf_proc_buff_t *upf_proc_buff)
 {
     uint16_t offset = 0;            // Offset to current header candidate
     uint8_t framelen = 0;           // Length of the potential frame
@@ -325,33 +326,33 @@ bool lhl2_ptl_find_valid_frame(ptl_2_proc_buff_t *ptl_2_proc_buff)
     uint16_t next_valid_offset = 0; // Offset to next search position
     bool header_invalid = false;    // Flag for invalid header
 
-    for (uint16_t i = 0; i < ptl_2_proc_buff->size; i++)
+    for (uint16_t i = 0; i < upf_proc_buff->size; i++)
     {
         // Check for frame header
-        if (ptl_2_proc_buff->buffer[i] == PTL_LHLL_C2I_HEADER)
+        if (upf_proc_buff->buffer[i] == PTL_LHLL_C2I_HEADER)
         {
             offset = i;
 
             // Ensure there is at least one more byte to read frame length
-            if ((i + 1) >= ptl_2_proc_buff->size)
+            if ((i + 1) >= upf_proc_buff->size)
                 break;
 
-            framelen = ptl_2_proc_buff->buffer[i + 1];
+            framelen = upf_proc_buff->buffer[i + 1];
 
             // If frame length is invalid and we're at the start, skip the minimum frame size
             if ((framelen < PTL_LHLL_FRAME_MIN_SIZE) &&
-                (ptl_2_proc_buff->size >= PTL_LHLL_FRAME_MIN_SIZE) &&
+                (upf_proc_buff->size >= PTL_LHLL_FRAME_MIN_SIZE) &&
                 (offset == 0))
             {
                 next_valid_offset = PTL_LHLL_FRAME_MIN_SIZE;
             }
             // Frame length seems valid, and enough data remains in buffer
             else if ((framelen >= PTL_LHLL_FRAME_MIN_SIZE) &&
-                     (framelen <= (ptl_2_proc_buff->size - offset)))
+                     (framelen <= (upf_proc_buff->size - offset)))
             {
                 // Calculate CRC over the frame excluding last byte (CRC byte)
-                crc = lhl2_ptl_checksum(&ptl_2_proc_buff->buffer[offset], framelen - 1);
-                crc_read = ptl_2_proc_buff->buffer[offset + framelen - 1];
+                crc = lhl2_ptl_checksum(&upf_proc_buff->buffer[offset], framelen - 1);
+                crc_read = upf_proc_buff->buffer[offset + framelen - 1];
 
                 frame_crc_ok = (crc == crc_read);
 
@@ -386,7 +387,7 @@ bool lhl2_ptl_find_valid_frame(ptl_2_proc_buff_t *ptl_2_proc_buff)
         {
             LOG_LEVEL("Not enough data framelen=%d\r\n", framelen);
         }
-        lhl2_ptl_proc_valid_frame(ptl_2_proc_buff->buffer + offset, framelen);
+        lhl2_ptl_proc_valid_frame(upf_proc_buff->buffer + offset, framelen);
     }
 
     // TODO: implement timeout check, clear data if timeout
@@ -394,12 +395,12 @@ bool lhl2_ptl_find_valid_frame(ptl_2_proc_buff_t *ptl_2_proc_buff)
     // Remove processed or invalid data from the buffer
     if (next_valid_offset != 0)
     {
-        for (uint16_t i = next_valid_offset; i < ptl_2_proc_buff->size; i++)
+        for (uint16_t i = next_valid_offset; i < upf_proc_buff->size; i++)
         {
-            ptl_2_proc_buff->buffer[i - next_valid_offset] = ptl_2_proc_buff->buffer[i];
+            upf_proc_buff->buffer[i - next_valid_offset] = upf_proc_buff->buffer[i];
         }
 
-        ptl_2_proc_buff->size -= next_valid_offset;
+        upf_proc_buff->size -= next_valid_offset;
     }
 
     return find;
@@ -673,9 +674,9 @@ uint16_t get_geer_level(void)
 #endif
 }
 
-bool lhl2_ptl_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff)
+bool lhl2_ptl_receive_handler(upf_proc_buff_t *upf_proc_buff)
 {
-    lhl2_ptl_remove_none_header_data(ptl_2_proc_buff);
-    return lhl2_ptl_find_valid_frame(ptl_2_proc_buff);
+    lhl2_ptl_remove_none_header_data(upf_proc_buff);
+    return lhl2_ptl_find_valid_frame(upf_proc_buff);
 }
 #endif

@@ -142,7 +142,6 @@ void hal_gpio_set_wifi_onoff(bool onoff)
 #else
 void hal_gpio_init(uint8_t task_id)
 {
-    // LOG_LEVEL("GPIO init\r\n");  // Optional log for GPIO initialization (disabled here)
     LOG_LEVEL("hal gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
 }
 

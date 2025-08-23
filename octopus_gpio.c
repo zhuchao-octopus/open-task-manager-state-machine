@@ -39,7 +39,6 @@
  * LOCAL FUNCTIONS DECLEAR
  */
 
-void GPIOInit(void);
 void task_gpio_polling_status(GPIO_STATUS *gpio_status);
 void task_gpio_event_dispatcher(GPIO_STATUS *gpio_status);
 
@@ -54,19 +53,19 @@ void task_gpio_event_polling(void);
  * GLOBAL VARIABLES
  */
 
-//GPIO_STATUS gpio_zzd_pin_status = {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP, GPIO_ZZD_KEY_PIN, false, false, OCTOPUS_KEY_ZZD,0, 0};
-//GPIO_STATUS gpio_yzd_pin_status = {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP, GPIO_YZD_KEY_PIN, false, false, OCTOPUS_KEY_YZD,0, 0};
-//GPIO_STATUS gpio_skd_pin_status = {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP, GPIO_SKD_KEY_PIN, false, false, OCTOPUS_KEY_SKD,0, 0};
-//GPIO_STATUS gpio_plus_pin_status = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, false, false, OCTOPUS_KEY_PLUS,0, 0};
-//GPIO_STATUS gpio_subt_pin_status = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, false, false, OCTOPUS_KEY_SUBT,0, 0};
+// GPIO_STATUS gpio_zzd_pin_status = {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP, GPIO_ZZD_KEY_PIN, false, false, OCTOPUS_KEY_ZZD,0, 0};
+// GPIO_STATUS gpio_yzd_pin_status = {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP, GPIO_YZD_KEY_PIN, false, false, OCTOPUS_KEY_YZD,0, 0};
+// GPIO_STATUS gpio_skd_pin_status = {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP, GPIO_SKD_KEY_PIN, false, false, OCTOPUS_KEY_SKD,0, 0};
+// GPIO_STATUS gpio_plus_pin_status = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, false, false, OCTOPUS_KEY_PLUS,0, 0};
+// GPIO_STATUS gpio_subt_pin_status = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, false, false, OCTOPUS_KEY_SUBT,0, 0};
 
-GPIO_KEY_STATUS key_status_power = {(GPIO_GROUP *)GPIO_POWER_KEY_GROUP,GPIO_POWER_KEY_PIN,OCTOPUS_KEY_POWER, 0, 0, 0, 0, 0, 0, 0};
-//GPIO_KEY_STATUS key_status_zzd =   {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP,GPIO_ZZD_KEY_PIN,OCTOPUS_KEY_ZZD, 0, 0, 0, 0, 0, 0, 0};
-//GPIO_KEY_STATUS key_status_yzd =   {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP,GPIO_YZD_KEY_PIN,OCTOPUS_KEY_YZD, 0, 0, 0, 0, 0, 0, 0};
-//GPIO_KEY_STATUS key_status_skd =   {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP,GPIO_SKD_KEY_PIN,OCTOPUS_KEY_SKD, 0, 0, 0, 0, 0, 0, 0};
-//GPIO_KEY_STATUS key_status_ddd =   {(GPIO_GROUP *)GPIO_DDD_KEY_GROUP,GPIO_DDD_KEY_PIN,OCTOPUS_KEY_DDD, 0, 0, 0, 0, 0, 0, 0};
-//GPIO_KEY_STATUS key_status_plus = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, OCTOPUS_KEY_PLUS, 0, 0, 0, 0, 0, 0, 0};
-//GPIO_KEY_STATUS key_status_subt = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, OCTOPUS_KEY_SUBT, 0, 0, 0, 0, 0, 0, 0};
+GPIO_KEY_STATUS key_status_power = {(GPIO_GROUP *)GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, OCTOPUS_KEY_POWER, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_zzd =   {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP,GPIO_ZZD_KEY_PIN,OCTOPUS_KEY_ZZD, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_yzd =   {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP,GPIO_YZD_KEY_PIN,OCTOPUS_KEY_YZD, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_skd =   {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP,GPIO_SKD_KEY_PIN,OCTOPUS_KEY_SKD, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_ddd =   {(GPIO_GROUP *)GPIO_DDD_KEY_GROUP,GPIO_DDD_KEY_PIN,OCTOPUS_KEY_DDD, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_plus = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, OCTOPUS_KEY_PLUS, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_subt = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, OCTOPUS_KEY_SUBT, 0, 0, 0, 0, 0, 0, 0};
 GPIO_KEY_STATUS key_status_page = {(GPIO_GROUP *)GPIO_PAGE_KEY_GROUP, GPIO_PAGE_KEY_PIN, OCTOPUS_KEY_PAGE, 0, 0, 0, 0, 0, 0, 0};
 
 GPIO_STATUS *gpio_array[] = {NULL};
@@ -133,7 +132,7 @@ void task_gpio_stop_running(void)
  * and any pull-up or pull-down configurations. This function is currently empty
  * and should be implemented based on specific hardware requirements.
  */
-void task_gpio_init(void)
+void otsm_gpio_init(void)
 {
     // TODO: Implement GPIO initialization here
     // LOG_LEVEL("gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
@@ -299,8 +298,9 @@ void task_gpio_key_polling_event_status(GPIO_KEY_STATUS *key_status)
         // If the key is released (GPIO pin is high)
         if (key_status->pressed)
         {
-            key_status->release = true;
+            key_status->pressed = false;
             key_status->dispatched = false;
+            key_status->release = true;
             key_status->state = KEY_STATE_RELEASED;
         }
 
@@ -325,10 +325,10 @@ void task_gpio_key_polling_event_dispatcher(GPIO_KEY_STATUS *key_status)
     if (key_status->gpiox == 0)
         return; //|| key_status->pin == 0
     // Check if the event has not been dispatched already or is ignored by user
-    if (!key_status->dispatched && !key_status->ignore)
+    if (!key_status->dispatched) //&& !key_status->ignore
     {
         // If the key is in the "pressed" state, send a "key down" event
-        if (key_status->pressed)
+        if (key_status->pressed && !key_status->ignore)
         {
             /**
              * TASK_MODULE_KEY            - Identifier for the task handling key events.

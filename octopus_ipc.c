@@ -22,7 +22,7 @@
 #include "octopus_system.h"
 #include "octopus_ipc.h"
 #include "octopus_uart_hal.h"
-#include "octopus_carinfor.h"
+#include "octopus_vehicle.h"
 #include "octopus_flash.h"
 #include "octopus_update_mcu.h"
 /*******************************************************************************
@@ -250,9 +250,10 @@ void task_ipc_running(void)
     case MSG_OTSM_DEVICE_KEY_UP_EVENT:
         tmp[0] = msg->param1;
         tmp[1] = msg->param2;
-        ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_DEVICE_KEY_EVENT, tmp, 2);
+        ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_KEY_EVENT, tmp, 2);
         break;
     }
+
     StartTickCounter(&l_t_msg_wait_500_timer);
 }
 

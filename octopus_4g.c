@@ -22,7 +22,7 @@
 #include "octopus_platform.h"
 #include "octopus_4g.h"
 #include "octopus_flash.h"
-#include "octopus_uart_ptl_2.h" // Include UART protocol header
+#include "octopus_uart_upf.h" // Include UART protocol header
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -44,7 +44,7 @@ static uint32_t l_t_msg_wait_10_timer = 0;
 // static uint32_t l_t_msg_ble_pair_wait_timer = 0;
 // static uint32_t l_t_msg_ble_lock_wait_timer = 0;
 
-static bool LOT4G_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff);
+static bool LOT4G_receive_handler(upf_proc_buff_t *upf_proc_buff);
 // static bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff);
 // static bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
@@ -62,7 +62,7 @@ void task_4g_init_running(void)
 void task_4g_start_running(void)
 {
     LOG_LEVEL("task_4g_start_running\r\n");
-    ptl_2_register_module(SETTING_PTL_LOT4G, LOT4G_receive_handler);
+    upf_register_module(SETTING_PTL_LOT4G, LOT4G_receive_handler);
     OTMS(TASK_MODULE_4G, OTMS_S_ASSERT_RUN);
 }
 
@@ -185,7 +185,7 @@ void iot_parse_frame(uint8_t *frame, uint16_t length)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static bool LOT4G_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff)
+static bool LOT4G_receive_handler(upf_proc_buff_t *upf_proc_buff)
 {
     return false;
 }

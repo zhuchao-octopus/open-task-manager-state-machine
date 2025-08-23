@@ -192,32 +192,32 @@ extern "C"
     /**
      * Initializes the protocol in the running state.
      */
-    void ptl_init_running(void);
+    void task_ptl_init_running(void);
 
     /**
      * Starts the protocol in the running state.
      */
-    void ptl_start_running(void);
+    void task_ptl_start_running(void);
 
     /**
      * Asserts that the protocol is running.
      */
-    void ptl_assert_running(void);
+    void task_ptl_assert_running(void);
 
     /**
      * Performs the actions for the protocol in the running state.
      */
-    void ptl_running(void);
+    void task_ptl_running(void);
 
     /**
      * Handles post-running actions for the protocol.
      */
-    void ptl_post_running(void);
+    void task_ptl_post_running(void);
 
     /**
      * Stops the protocol from running.
      */
-    void ptl_stop_running(void);
+    void task_ptl_stop_running(void);
 
     /* Protocol control functions */
     /**
@@ -293,8 +293,7 @@ extern "C"
      */
     uint8_t ptl_get_checksum(uint8_t *data, uint8_t length);
 
-    void ptl_help(void);
-    void print_all_registered_module(void);
+    void otsm_ptl_help(void);
 #ifdef __cplusplus
 }
 #endif

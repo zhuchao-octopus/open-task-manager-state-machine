@@ -173,12 +173,12 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         case FRAME_CMD_SYSTEM_HANDSHAKE:
             tmp[0] = 0;
             tmp[1] = 0;
-            LOG_LEVEL("system handshake frame_type=%02x param1=%02x param2=%02x\n", frame_type, tmp[0], tmp[1]);
+            LOG_LEVEL("Send handshake frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, buff);
             return true;
 
         case FRAME_CMD_SYSTEM_MCU_META:
-            LOG_LEVEL("Request mcu meta information.");
+            LOG_LEVEL("Request mcu meta infor frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, tmp, 2, buff);
             return true;
 
@@ -216,14 +216,14 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         case FRAME_CMD_SYSTEM_HANDSHAKE:
             tmp[0] = 0;
             tmp[1] = 0;
-            LOG_LEVEL("system handshake param1=%02x param2=%02x\n", tmp[0], tmp[1]);
+            LOG_LEVEL("Send handshake frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
             ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, buff);
             return true;
 
         case FRAME_CMD_SYSTEM_MCU_META:
             tmp[0] = 0;
             tmp[1] = 0;
-            LOG_LEVEL("system request mcu meta information.\r\n");
+            LOG_LEVEL("Request mcu meta infor frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
             ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, tmp, 2, buff);
             return true;
 
@@ -264,7 +264,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         switch (payload->frame_cmd)
         {
         case FRAME_CMD_SYSTEM_HANDSHAKE:
-            LOG_LEVEL("system handshake from soc payload->frame_type=%02x\r\n", payload->frame_type);
+            LOG_LEVEL("Handshake from soc payload->frame_type=%02x\r\n", payload->frame_type);
             // after got handshake then send indicate respond by message
             send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, 0);
             // return mcu mata infor directly
@@ -272,7 +272,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             return true;
 
         case FRAME_CMD_SYSTEM_MCU_META:
-            LOG_LEVEL("send mcu meta information.\r\n");
+            LOG_LEVEL("Send mcu meta information.\r\n");
             send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ackbuff);
             return true;
@@ -280,13 +280,13 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         case MSG_OTSM_CMD_BLE_CONNECTED:
             if (!gpio_is_power_on())
             {
-                LOG_LEVEL("system got MSG_OTSM_CMD_BLE_CONNECTED prameter=%02x\r\n", payload->data[0]);
+                LOG_LEVEL("Got MSG_OTSM_CMD_BLE_CONNECTED prameter=%02x\r\n", payload->data[0]);
                 system_gpio_power_onoff(true);
             }
             break;
         case MSG_OTSM_CMD_BLE_DISCONNECTED:
 
-            LOG_LEVEL("system got MSG_OTSM_CMD_BLE_DISCONNECTED prameter=%02x\r\n", payload->data[1]);
+            LOG_LEVEL("Got MSG_OTSM_CMD_BLE_DISCONNECTED prameter=%02x\r\n", payload->data[1]);
             if (payload->data[1] == FRAME_CMD_SYSTEM_POWER_OFF)
             {
                 system_gpio_power_onoff(false);
@@ -303,7 +303,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         switch (payload->frame_cmd)
         {
         case FRAME_CMD_SYSTEM_HANDSHAKE:
-            LOG_LEVEL("system handshake from mcu payload->frame_type=%02x\r\n", payload->frame_type);
+            LOG_LEVEL("Handshake from mcu payload->frame_type=%02x\r\n", payload->frame_type);
             return false;
         case FRAME_CMD_SYSTEM_ACC_STATE:
             LOG_LEVEL("FRAME_CMD_SYSTEM_ACC_STATE\r\n");
@@ -323,11 +323,11 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             return false;
 
         case FRAME_CMD_SYSTEM_POWER_ON:
-            LOG_LEVEL("got FRAME_CMD_SYSTEM_POWER_ON from mcu\r\n");
+            LOG_LEVEL("Got FRAME_CMD_SYSTEM_POWER_ON from mcu\r\n");
             system_power_on_off(true);
             return false;
         case FRAME_CMD_SYSTEM_POWER_OFF:
-            LOG_LEVEL("got FRAME_CMD_SYSTEM_POWER_OFF from mcu\r\n");
+            LOG_LEVEL("Got FRAME_CMD_SYSTEM_POWER_OFF from mcu\r\n");
             system_power_on_off(false);
             return false;
 
@@ -409,7 +409,7 @@ void system_event_handler(void)
 
     case MSG_OTSM_DEVICE_BLE_EVENT:
         LOG_LEVEL("MSG_OTSM_DEVICE_BLE_EVENT notify ble to ON/OFF pair mode\r\n");
-        send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, msg->param1, msg->param2);
+        send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, msg->param1, msg->param2);
         break;
     }
 }
@@ -421,7 +421,7 @@ void system_event_handler(void)
  ******************************************************************************/
 void system_handshake_with_mcu(void)
 {
-    LOG_LEVEL("system send handshake data to xxx\r\n");
+    // LOG_LEVEL("send handshake data to xxx\r\n");
     send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, 0);
     send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
 }
@@ -434,7 +434,7 @@ void system_handshake_with_mcu(void)
  ******************************************************************************/
 void system_handshake_with_app(void)
 {
-    LOG_LEVEL("system send handshake data to xxx\r\n");
+    // LOG_LEVEL("send handshake message to xxx\r\n");
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, 0);
 }
 
@@ -449,7 +449,7 @@ void system_handshake_with_app(void)
  ******************************************************************************/
 void system_set_mpu_status(uint8_t status)
 {
-    LOG_LEVEL("system set mpu status=%d \r\n", status);
+    LOG_LEVEL("Send mpu status=%d \r\n", status);
     l_u8_mpu_status = status;
 }
 
@@ -543,18 +543,18 @@ void system_gpio_power_onoff(bool onoff)
         gpio_power_on_off(true);
         if (gpio_is_power_on())
         {
-            LOG_LEVEL("power on SOC succesfully\r\n");
+            LOG_LEVEL("Power on SOC succesfully\r\n");
         }
     }
     else
     {
         // send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, 0);
         flash_save_carinfor_meter();
-        LOG_LEVEL("power down SOC... \r\n");
+        LOG_LEVEL("Power down SOC... \r\n");
         gpio_power_on_off(false);
         if (!gpio_is_power_on())
         {
-            LOG_LEVEL("power down SOC succesfully\r\n");
+            LOG_LEVEL("Power down SOC succesfully\r\n");
             lt_mb_state = MB_POWER_ST_LOWPOWER;
             StartTickCounter(&l_t_msg_lowpower_wait_timer); // time out goto sleep
         }

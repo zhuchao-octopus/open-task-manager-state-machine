@@ -79,7 +79,7 @@ extern "C"
    * @details  These functions are used to initialize, start, and manage GPIO-related
    *           tasks during runtime.
    */
-  void task_gpio_init(void);
+  void otsm_gpio_init(void);
 
   void task_gpio_init_running(void);   ///< Initializes GPIO tasks at runtime.
   void task_gpio_start_running(void);  ///< Starts GPIO tasks.

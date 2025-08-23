@@ -79,9 +79,9 @@ enum Message_Group_2_Cmd_Id
     MSG_IPC_CMD_MCU_UPDATING,
     MSG_IPC_CMD_MCU_REQUEST_UPGRADING,
 
-    MSG_IPC_DEVICE_KEY_EVENT,      // Key event message
-    MSG_IPC_DEVICE_KEY_DOWN_EVENT, // Key event message
-    MSG_IPC_DEVICE_KEY_UP_EVENT,   // Key event message
+    MSG_IPC_CMD_KEY_EVENT,      // Key event message
+    MSG_IPC_CMD_KEY_DOWN_EVENT, // Key event message
+    MSG_IPC_CMD_KEY_UP_EVENT,   // Key event message
 };
 
 /**

@@ -75,18 +75,7 @@ uint8_t GetTaskManagerStateMachineId(void)
     return TaskManagerStateMachine_Id_;
 }
 
-/**
- * @brief Initializes the Task Manager State Machine.
- * @param task_id The task ID to initialize.
- * @return 0 on success, non-zero on failure.
- */
-#if defined(PLATFORM_LINUX_RISC)
-__attribute__((constructor)) void TaskManagerStateMachineInit(void)
-#elif defined(PLATFORM_CST_OSAL_RTOS)
-void TaskManagerStateMachineInit(uint8_t task_id)
-#else
-void TaskManagerStateMachineInit(void)
-#endif
+void otsm_print_logo(void)
 {
     LOG_NONE("-----------------------------------------------------------------------------\r\n");
     LOG_NONE("               _____                                 \r\n");
@@ -102,13 +91,28 @@ void TaskManagerStateMachineInit(void)
     LOG_NONE(" Module    : %s\r\n", flash_get_current_bank_name());
     LOG_NONE(" Author    : Octopus Dev Team\r\n");
     LOG_NONE("-----------------------------------------------------------------------------\r\n");
+}
 
+/**
+ * @brief Initializes the Task Manager State Machine.
+ * @param task_id The task ID to initialize.
+ * @return 0 on success, non-zero on failure.
+ */
+#if defined(PLATFORM_LINUX_RISC)
+__attribute__((constructor)) void TaskManagerStateMachineInit(void)
+#elif defined(PLATFORM_CST_OSAL_RTOS)
+void TaskManagerStateMachineInit(uint8_t task_id)
+#else
+void TaskManagerStateMachineInit(void)
+#endif
+{
+    otsm_print_logo();
 #ifdef PLATFORM_CST_OSAL_RTOS
     TaskManagerStateMachine_Id_ = task_id; // Store the task ID in the global variable
 #endif
     /// LOG_NONE("\r\n\r\n");//[1B blob data]
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
-    // LOG_NONE("\r\n######################################BOOT  START######################################\r\n");
+    /// LOG_NONE("\r\n######################################BOOT  START######################################\r\n");
     TaskManagerStateStopRunning();
 #endif
     char version_str[32];
@@ -119,19 +123,19 @@ void TaskManagerStateMachineInit(void)
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Initialize hardware abstraction layers (HAL)
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
-    task_gpio_init(); // Initialize GPIO
+    otsm_gpio_init(); // Initialize GPIO
 #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_FLASH
-    flash_init();
+    otsm_flash_init();
 #endif
-    uart_init(); // Initialize UART communication protocol
+    otsm_uart_init(); // Initialize UART communication protocol
 
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
-    hal_timer_init(5); // Initialize timer with interval of 5 (could be milliseconds)
-    sif_init();
+    otsm_timer_init(); // Initialize timer with interval of 5 (could be milliseconds)
+    otsm_sif_init();
 #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_BMS
-    bms_init();
+    otsm_bms_init();
 #endif
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize the necessary modules
@@ -149,7 +153,7 @@ void TaskManagerStateMachineInit(void)
 #if defined(TASK_MANAGER_STATE_MACHINE_SOC) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
     system_handshake_with_mcu();
 #endif
-    ptl_help();
+    otsm_ptl_help();
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Enable task manager state matching main loop

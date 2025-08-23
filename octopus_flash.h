@@ -131,10 +131,10 @@ typedef struct
     uint32_t mete_data_flags; // Flags related to runtime/user/meter data validity
     uint32_t user_data_flags; // Flags related to configuration data state (e.g., checksum pass/fail)
 
-    uint8_t active_slot;    // Indicates the current active slot (1 = A, 2 = B)
-    uint8_t bank_slot_mode; // Current boot mode, corresponds to boot_mode_t
-    uint8_t reserved1;      // Reserved for future use or 4-byte alignment
-    uint8_t reserved2;
+    uint8_t bank_slot_activated; // Indicates the current active slot (1 = A, 2 = B)
+    uint8_t bank_slot_mode;      // Current boot mode, corresponds to boot_mode_t
+    uint32_t reserved1;          // Reserved for future use or 4-byte alignment
+    uint32_t reserved2;          // Reserved for future use or 4-byte alignment
 } flash_meta_infor_t;
 
 // Global instance holding metadata for application and bootloader
@@ -214,7 +214,7 @@ extern "C"
     void JumpToApplication(uint32_t app_address);
     void boot_loader_active_user_app(void);
 
-    void flash_init(void);
+    void otsm_flash_init(void);
 
     void flash_vector_table_config(uint8_t active_slot);
     void flash_save_app_meter_infor(void);

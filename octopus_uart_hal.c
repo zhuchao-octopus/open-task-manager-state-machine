@@ -111,15 +111,6 @@ static void ptl_uart_init(void)
  * @return  None.
  */
 
-void uart_init(void)
-{
-    // Configure UART settings.
-    ////////////////////////////////////////////////////////////////////////////////
-    ptl_uart_init();
-    // LOG_("\r\n");
-    ////////////////////////////////////////////////////////////////////////////////
-}
-
 void hal_uart_init(uint8 task_id)
 {
     Hal_TaskID = task_id;
@@ -127,6 +118,7 @@ void hal_uart_init(uint8 task_id)
     {
         LOG_LEVEL("hal uart1 init for protocol\r\n");
     }
+    ptl_uart_init();
 }
 /**
  * @brief   Callback function triggered when UART events occur.
@@ -186,7 +178,7 @@ uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events)
  * @brief   Configures the USART peripheral for ITE OPEN RTOS platform.
  * @return  None.
  */
-void uart_init(void)
+void hal_uart_init(uint8_t task_id)
 {
     UART_OBJ *pUartInfo = (UART_OBJ *)malloc(sizeof(UART_OBJ));
     pUartInfo->port = PROTOCOL_UART_ITH_PORT;
@@ -205,14 +197,10 @@ void uart_init(void)
     sem_init(&UartSemIntr, 0, 0);
     cFifo_Init(&ptl_1_usart_rx_fifo, ptl_1_usart_rx_fifo_buff, sizeof(ptl_1_usart_rx_fifo_buff));
     UartIsInit = true;
-}
 
-void hal_uart_init(uint8_t task_id)
-{
     pthread_t task_receive;
     pthread_attr_t attr_receive;
     pthread_attr_init(&attr_receive);
-    uart_init();
     LOG_LEVEL("hal uart2 init for protocol\r\n");
     pthread_create(&task_receive, &attr_receive, hal_com_uart_event_handler, NULL);
 }
@@ -263,7 +251,7 @@ void *hal_com_uart_event_handler(void *arg)
 
 #elif defined(PLATFORM_LINUX_RISC)
 
-void uart_init(void)
+void hal_uart_init(uint8_t task_id)
 {
     cFifo_Init(&ptl_1_usart_rx_fifo, ptl_1_usart_rx_fifo_buff, sizeof(ptl_1_usart_rx_fifo_buff));
     linux_uart_serial_handle = serialport_create("/dev/ttyS3", 115200);
@@ -280,12 +268,6 @@ void uart_init(void)
 
     // uint8_t test_help[] = {0xaa, 0xf0, 0x00, 0x02, 0x64, 0x00, 0x00, 0x9c};
     // hal_com_uart_send_buffer(test_help, sizeof(test_help)); // for test
-}
-
-void hal_uart_init(uint8_t task_id)
-{
-    // LOG_LEVEL("hal uart2 init for protocol\r\n");
-    uart_init();
 }
 
 void *hal_com_uart_event_handler(void *arg)
@@ -305,14 +287,10 @@ static void hal_com_uart_receive_callback(const uint8_t *data, int length)
 }
 
 #else
-void uart_init(void)
-{
-    hal_uart_init(0);
-}
 
 void hal_uart_init(uint8_t task_id)
 {
-    LOG_LEVEL("hal init uart & protocol\r\n");
+    LOG_LEVEL("hal uart init for ptl\r\n");
     cFifo_Init(&ptl_1_usart_rx_fifo, ptl_1_usart_rx_fifo_buff, sizeof(ptl_1_usart_rx_fifo_buff));
 }
 
@@ -336,8 +314,15 @@ void *hal_com_uart_event_handler(void *arg)
 }
 
 #endif // PLATFORM_ITE_OPEN_RTOS
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void otsm_uart_init(void)
+{
+    hal_uart_init(0);
+}
+
 /**
  * Reads data from the UART RX FIFO buffer into the provided buffer.
  * It will attempt to read up to `length` bytes from the FIFO.

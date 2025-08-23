@@ -177,10 +177,10 @@ extern "C"
 #pragma pack(push, 1)
     typedef struct
     {
-        uint8_t ready;     // Ready status (1 = system ready to operate)
+        uint8_t ready;      // Ready status (1 = system ready to operate)
         uint8_t high_beam;  // High beam light status (1 = ON)
         uint8_t low_beam;   // Low beam light status (1 = ON)
-        uint8_t width_lamp ;  // Position/marker light status
+        uint8_t width_lamp; // Position/marker light status
         uint8_t front_fog;  // Front fog light status
         uint8_t rear_fog;   // Rear fog light status
         uint8_t left_turn;  // Left turn signal indicator status
@@ -321,12 +321,12 @@ extern "C"
      * GLOBAL FUNCTIONS DECLEAR
      */
 
-    void task_carinfo_init_running(void);
-    void task_carinfo_start_running(void);
-    void task_carinfo_assert_running(void);
-    void task_carinfo_running(void);
-    void task_carinfo_post_running(void);
-    void task_carinfo_stop_running(void);
+    void task_vehicle_init_running(void);
+    void task_vehicle_start_running(void);
+    void task_vehicle_assert_running(void);
+    void task_vehicle_running(void);
+    void task_vehicle_post_running(void);
+    void task_vehicle_stop_running(void);
 
     /**
      * @brief Retrieve current vehicle speed (0.1 km/h).

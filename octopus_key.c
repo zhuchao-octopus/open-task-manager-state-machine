@@ -7,7 +7,7 @@
 #include "octopus_key.h"
 #include "octopus_gpio.h" // Include GPIO HAL for hardware-specific functionality
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
-#include "octopus_carinfor.h"
+#include "octopus_vehicle.h"
 #endif
 /*******************************************************************************
  * DEBUG SWITCH MACROS
@@ -19,12 +19,13 @@
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLEAR
  */
-uint8_t get_dummy_key(uint8_t key);
+
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
 uint8_t power_key_password[] = {OCTOPUS_KEY_POWER, OCTOPUS_KEY_POWER, OCTOPUS_KEY_POWER};
 uint8_t power_key_password_index = 0;
+GPIO_KEY_STATUS key_status_received_temp;
 
 static uint32_t l_t_msg_wait_timer;
 // static uint32_t l_t_msg_boot_wait_timer;
@@ -36,7 +37,7 @@ static void task_key_action_handler(void);
 void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status);
 void task_key_power_handler(GPIO_KEY_STATUS *key_status);
 void task_key_received_dispatcher(uint8_t key, uint8_t state);
-
+void task_key_local_dispatcher(uint8_t key, uint8_t state);
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
@@ -88,7 +89,7 @@ static void task_key_action_handler(void)
     if (msg->msg_id == NO_MSG)
         return;
 
-    uint8_t key = msg->param1;
+    uint16_t key = msg->param1;
     GPIO_KEY_STATUS *key_status = NULL;
     GPIO_STATUS *gpio_status = NULL;
 
@@ -96,8 +97,13 @@ static void task_key_action_handler(void)
     {
     case MSG_OTSM_DEVICE_GPIO_EVENT:
         gpio_status = gpio_get_gpio_status_by_pin(msg->param1);
-        if (gpio_status != NULL && !gpio_status->offon)
+        if (gpio_status == NULL)
+            break;
+
+        if (!gpio_status->offon)
             send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_KEY, gpio_status->key, KEY_STATE_PRESSED);
+        else
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_KEY, gpio_status->key, KEY_STATE_RELEASED);
 
         break;
 
@@ -117,6 +123,7 @@ static void task_key_action_handler(void)
             task_key_event_dispatcher(key_status);
             break;
         }
+
         break;
 
     case MSG_OTSM_DEVICE_KEY_UP_EVENT:
@@ -152,6 +159,7 @@ void task_key_power_handler(GPIO_KEY_STATUS *key_status)
     {
     case KEY_STATE_RELEASED:
         LOG_LEVEL("OCTOPUS_KEY_POWER release key=%d key_status=%02x\r\n", key_status->key, key_status->state);
+        key_status->state = KEY_STATE_NONE;
         StartTickCounter(&power_key_wait_timer);
         break;
 
@@ -214,6 +222,7 @@ void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status)
     static uint8_t _key_password_index;
     if (key_status == NULL)
         return;
+
     if (key_status->key == OCTOPUS_KEY_POWER)
         return;
 
@@ -221,7 +230,10 @@ void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status)
     {
     case KEY_STATE_RELEASED:
         LOG_LEVEL("key %02d release key_status=%02x\r\n", key_status->key, key_status->state);
+        key_status->state = KEY_STATE_NONE;
         StartTickCounter(&_key_wait_timer);
+        task_key_local_dispatcher(key_status->key, key_status->state);
+
         break;
 
     case KEY_STATE_PRESSED:
@@ -229,7 +241,8 @@ void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status)
         if (GetTickCounter(&_key_wait_timer) >= 300)
             _key_password_index = 0;
         _key_password_index++;
-        task_key_received_dispatcher(key_status->key, key_status->state);
+
+        task_key_local_dispatcher(key_status->key, key_status->state);
         break;
 
     case KEY_STATE_LONG_PRESSED:
@@ -327,51 +340,100 @@ bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
 
     if (SOC_TO_MCU_MOD_KEY == payload->frame_type)
     {
+        if (payload->data[0] == KEY_STATE_RELEASED)
+            key_status_received_temp.ignore = false;
+
+        if (key_status_received_temp.key != payload->data[1])
+        {
+            key_status_received_temp.key = payload->data[0];
+            key_status_received_temp.state = payload->data[1];
+            if (key_status_received_temp.state == KEY_STATE_PRESSED)
+            {
+                key_status_received_temp.ignore = false;
+            }
+        }
+
         if (payload->data_len >= 2)
+        {
             task_key_received_dispatcher(payload->data[0], payload->data[1]);
+        }
         else
+        {
             task_key_received_dispatcher(payload->frame_cmd, payload->data[0]);
+        }
     }
+
     return false;
 }
 
+void task_key_local_dispatcher(uint8_t key, uint8_t state)
+{
+    LOG_LEVEL("key local key=%02d state=%02d\r\n", key, state);
+    switch (key)
+    {
+    case OCTOPUS_KEY_PAGE:
+        send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_KEY, key, state);
+        break;
+    }
+}
 void task_key_received_dispatcher(uint8_t key, uint8_t state)
 {
     LOG_LEVEL("key received key=%02d state=%02d\r\n", key, state);
     switch (key)
     {
     case OCTOPUS_KEY_ZZD:
-        lt_carinfo_indicator.left_turn = !lt_carinfo_indicator.left_turn;
-		    lt_carinfo_indicator.right_turn = 0;
+        if (state == KEY_STATE_PRESSED)
+        {
+            lt_carinfo_indicator.left_turn = !lt_carinfo_indicator.left_turn;
+            lt_carinfo_indicator.right_turn = 0;
+        }
         break;
+
     case OCTOPUS_KEY_YZD:
-        lt_carinfo_indicator.right_turn = !lt_carinfo_indicator.right_turn;
-		    lt_carinfo_indicator.left_turn = 0;
+        if (state == KEY_STATE_PRESSED)
+        {
+            lt_carinfo_indicator.right_turn = !lt_carinfo_indicator.right_turn;
+            lt_carinfo_indicator.left_turn = 0;
+        }
         break;
+
     case OCTOPUS_KEY_SKD:
-        lt_carinfo_indicator.width_lamp = !lt_carinfo_indicator.width_lamp;
-		    if(state == KEY_STATE_PRESSED)
-		    lt_carinfo_indicator.horn = 1;
-				else
-				lt_carinfo_indicator.horn = 0;	
+        // lt_carinfo_indicator.width_lamp = !lt_carinfo_indicator.width_lamp;
+        if (state == KEY_STATE_PRESSED)
+            lt_carinfo_indicator.horn = 1;
+        else
+            lt_carinfo_indicator.horn = 0;
+
         break;
+
     case OCTOPUS_KEY_DDD:
         lt_carinfo_indicator.high_beam = !lt_carinfo_indicator.high_beam;
         break;
+
     case OCTOPUS_KEY_PLUS:
         if (state == KEY_STATE_LONG_PRESSED)
         {
             lt_carinfo_indicator.high_beam = !lt_carinfo_indicator.high_beam;
+            key_status_received_temp.ignore = true;
             break;
         }
-				//lt_carinfo_meter.gear++;
+        else if (key_status_received_temp.ignore)
+        {
+            break;
+        }
+
     case OCTOPUS_KEY_SUBT:
         if (state == KEY_STATE_LONG_PRESSED)
         {
             lt_carinfo_indicator.walk_assist = !lt_carinfo_indicator.walk_assist;
+            key_status_received_temp.ignore = true;
             break;
         }
-				//lt_carinfo_meter.gear--;
+        else if (key_status_received_temp.ignore)
+        {
+            break;
+        }
+
     case OCTOPUS_KEY_PAGE:
         send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_KEY, key, state);
         break;
