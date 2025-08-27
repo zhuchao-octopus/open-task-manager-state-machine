@@ -1,19 +1,19 @@
 
 /* Includes ------------------------------------------------------------------*/
-#include "../OTSM/octopus_platform.h"
+#include "octopus_platform.h"
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
 #include <string.h>	  // Include string functions for string manipulation
 #include "hk32l0xx.h" // Include the HK32L0xx library for MCU-specific definitions and functions
+
 #include "octopus_bsp.h"
 
-#include "../OTSM/octopus_uart_hal.h"
-#include "../OTSM/octopus_can.h"
-#include "../OTSM/octopus_log.h"
-#include "../OTSM/octopus_gpio_hal.h"
-#include "../OTSM/octopus_system.h"
-#include "../OTSM/octopus_flash.h"
-#include "../OTSM/octopus_uart_ptl_2.h"
+#include "octopus_uart_hal.h"
+#include "octopus_log.h"
+#include "octopus_gpio_hal.h"
+#include "octopus_system.h"
+#include "octopus_flash.h"
+#include "octopus_uart_upf.h"
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -98,7 +98,7 @@ uint8_t UART3_RxDoubleBuffer[2][UART3_RX_BUF_SIZE] = {0}; // Double buffer for U
 // This structure contains all necessary fields to describe a CAN frame to be transmitted,
 // including ID, data length, identifier type, remote frame flag, and the actual data payload.
 CanTxMsg CanTxMessage = {0};
-CanTxMsg TxMessage = {0};
+// CanTxMsg TxMessage = {0};
 /*
  * CanTxMsg structure members:
  * - StdId: Standard Identifier (11-bit) used when sending standard frames.
@@ -157,7 +157,7 @@ extern void hal_timer_interrupt_callback(uint8_t event);
 __weak void UART1_RX_Callback(uint8_t *buffer, uint16_t length) ///////BT
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
-	ptl_2_receive_callback(PTL2_MODULE_BT, buffer, length);
+	upf_receive_callback(UPF_MODULE_BT, buffer, length);
 #endif
 }
 
@@ -166,13 +166,6 @@ __weak void UART2_RX_Callback(uint8_t *buffer, uint16_t length)
 {
 	// UART2_Send_Buffer(buffer,length);
 	hal_com_uart_receive_callback_ptl_1(buffer, length);
-}
-
-// Weak callback function for half buffer RX in USART2
-///////BLE-MCU
-__weak void UART2_RX_Half_Callback(uint8_t *buffer, uint16_t length)
-{
-	// UART2_DMA_Send_Buffer(data,len);
 }
 
 // Weak callback function for UART3 RX
@@ -187,9 +180,9 @@ __weak void UART3_RX_Callback(uint8_t *buffer, uint16_t length)
 ///////4G/GPS
 __weak void UART4_RX_Callback(uint8_t *buffer, uint16_t length)
 {
-
+	// UART4_Send_Buffer(buffer,length);
 #ifdef TASK_MANAGER_STATE_MACHINE_4G
-	ptl_2_receive_callback(PTL2_MODULE_LOT4G, buffer, length);
+	upf_receive_callback(UPF_MODULE_LOT4G, buffer, length);
 #endif
 }
 
@@ -200,11 +193,11 @@ __weak void LPUART_RX_Callback(uint8_t *buffer, uint16_t length)
 	/// LPUART_Send_Buffer(buffer,length);
 	/// UART1_Send_Buffer(buffer,length);
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
-	ptl_2_receive_callback(PTL2_MODULE_BAFANG, buffer, length);
+	upf_receive_callback(UPF_MODULE_BAFANG, buffer, length);
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
-	ptl_2_receive_callback(PTL2_MODULE_LING_HUI_LIION2, buffer, length);
+	upf_receive_callback(UPF_MODULE_LING_HUI_LIION2, buffer, length);
 #endif
 }
 
@@ -329,7 +322,7 @@ void GPIO_Config(void)
 	/* Connect PXx to LPUART1 Tx Rx */
 	GPIO_PinAFConfig(LPUARTx_TXIO_PORT, LPUARTx_AF_TX_PIN, LPUARTx_AF_SELECT);
 	GPIO_PinAFConfig(LPUARTx_RXIO_PORT, LPUARTx_AF_RX_PIN, LPUARTx_AF_SELECT);
-#endif
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// CAN Bus Configuration: PA6 (CAN_RX), PA7 (CAN_TX)
@@ -341,31 +334,31 @@ void GPIO_Config(void)
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7; // PA7 - CAN TX
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_4); // AF4 for CAN TX
-
+#endif
 	///////////////////////////////////////////////////////////////////////////
 	// Output Pins: Power enable/control GPIOs
 	///////////////////////////////////////////////////////////////////////////
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;		// Output mode
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;//GPIO_OType_OD;		// Push-pull output
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;		// GPIO_OType_OD;		// Push-pull output
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;	// No pull-up/down
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_3; // Medium speed
 
-	//PA11 - LED power enable (LEDPW_EN)
-	//GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	//GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
-	//GPIO_Init(GPIOA, &GPIO_InitStructure);
+	// PA11 - LED power enable (LEDPW_EN)
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	//PA15 - 3.3V power enable for MCU (MCU_3V3_EN)
-	//GPIO_PinAFConfig(GPIOA, GPIO_PinSource15, GPIO_AF_0); 
-	//GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	// PA15 - 3.3V power enable for MCU (MCU_3V3_EN)
+	// GPIO_PinAFConfig(GPIOA, GPIO_PinSource15, GPIO_AF_0);
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	//hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
-	//PB4 - SWB+ power enable (SWB+_EN)
-	//GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+
+	// PB4 - SWB+ power enable (SWB+_EN)
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
-  //hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
+	// hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
 
 	///////////////////////////////////////////////////////////////////////////
 	// BL_EN_PWM1 (PB1): Backlight enable or PWM control
@@ -377,18 +370,18 @@ void GPIO_Config(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_2;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
-	
+
 	// PB5 - CAN standby control (MCU_CTL_CAN_STBY)
-	//GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
-	//GPIO_Init(GPIOB, &GPIO_InitStructure);
+	// GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+	// GPIO_Init(GPIOB, &GPIO_InitStructure);
 	///////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////
 	// BAT_DET (PA8): Battery voltage detect input (ADC channel)
 	///////////////////////////////////////////////////////////////////////////
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;	 // Analog mode for ADC
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL; // No pull-up/down
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	///////////////////////////////////////////////////////////////////////////
 	// KEY_POW_DET (PA12): Power key status input
@@ -397,6 +390,11 @@ void GPIO_Config(void)
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;	 // Input mode
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL; //
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;	 // Input mode
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL; //
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 }
 /**
  * @brief  Configures the RCC (clock) for peripherals.
@@ -756,27 +754,25 @@ void UART3_Config_DMA(void)
 	NVIC_EnableIRQ(DMA_CH2_3_IRQn);
 }
 #endif
+
 void UART4_Config_IRQ(void)
 {
 	USART_InitTypeDef USART_InitStructure;
 
-	// Reset UART4 to default state (optional but recommended)
-	// USART_DeInit(UART4);
-	// Configure UART parameters
-	USART_InitStructure.USART_BaudRate = 57600;										// Set baud rate
-	USART_InitStructure.USART_WordLength = USART_WordLength_8b;						// 8-bit data
-	USART_InitStructure.USART_StopBits = USART_StopBits_1;							// 1 stop bit
-	USART_InitStructure.USART_Parity = USART_Parity_No;								// No parity
-	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None; // No flow control
-	USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;					// Enable both transmit and receive
-	// Apply configuration to UART4
-	USART_Init(UART4, &USART_InitStructure);
+	USART_InitStructure.USART_BaudRate = 57600;
+	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+	USART_InitStructure.USART_StopBits = USART_StopBits_1;
+	USART_InitStructure.USART_Parity = USART_Parity_No;
+	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+	USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
 
-	// Enable UART4 peripheral
+	USART_Init(UART4, &USART_InitStructure);
 	USART_Cmd(UART4, ENABLE);
-	USART_ITConfig(UART4, USART_IT_RXNE, ENABLE); // Enable RX interrupt
-												  // NVIC_SetPriority(UART3_4_IRQn, 2);
-												  // NVIC_EnableIRQ(UART3_4_IRQn);
+
+	USART_ITConfig(UART4, USART_IT_RXNE, ENABLE);
+
+	NVIC_SetPriority(UART3_4_IRQn, 2);
+	NVIC_EnableIRQ(UART3_4_IRQn);
 }
 
 void LPUART_WakeStop_Config(void)
@@ -879,20 +875,20 @@ void USART1_IRQHandler(void)
 	}
 
 	// Check for and clear overrun error (ORE)
-	if (USART_GetITStatus(USART1, USART_IT_ORE) != RESET)
+	// if (USART_GetITStatus(USART1, USART_IT_ORE) != RESET)
 	{
 		USART_ClearITPendingBit(USART1, USART_IT_ORE);
 		// Optional: log or handle overrun error if needed
 	}
 
 	// Check for and clear framing error (FE)
-	if (USART_GetITStatus(USART1, USART_IT_FE) != RESET)
+	// if (USART_GetITStatus(USART1, USART_IT_FE) != RESET)
 	{
 		USART_ClearITPendingBit(USART1, USART_IT_FE);
 		// Optional: log or handle framing error if needed
 	}
 
-	if (USART_GetITStatus(USART1, USART_IT_WU) == SET)
+	// if (USART_GetITStatus(USART1, USART_IT_WU) == SET)
 	{
 		/* Clear The USART WU flag */
 		USART_ClearITPendingBit(USART1, USART_IT_WU);
@@ -947,20 +943,20 @@ void USART2_IRQHandler(void)
 	}
 
 	// Check for and clear overrun error (ORE)
-	if (USART_GetITStatus(USART2, USART_IT_ORE) != RESET)
+	// if (USART_GetITStatus(USART2, USART_IT_ORE) != RESET)
 	{
 		USART_ClearITPendingBit(USART2, USART_IT_ORE);
 		// Optional: log or handle overrun error if needed
 	}
 
 	// Check for and clear framing error (FE)
-	if (USART_GetITStatus(USART2, USART_IT_FE) != RESET)
+	// if (USART_GetITStatus(USART2, USART_IT_FE) != RESET)
 	{
 		USART_ClearITPendingBit(USART2, USART_IT_FE);
 		// Optional: log or handle framing error if needed
 	}
 
-	if (USART_GetITStatus(USART2, USART_IT_WU) == SET)
+	// if (USART_GetITStatus(USART2, USART_IT_WU) == SET)
 	{
 		/* Clear The USART WU flag */
 		USART_ClearITPendingBit(USART2, USART_IT_WU);
@@ -1077,12 +1073,12 @@ void UART3_4_IRQHandler(void)
 	}
 
 	// Optional: Clear overrun and framing error flags
-	if (USART_GetITStatus(UART3, USART_IT_ORE) != RESET)
+	// if (USART_GetITStatus(UART3, USART_IT_ORE) != RESET)
 	{
 		USART_ClearITPendingBit(UART3, USART_IT_ORE);
 	}
 
-	if (USART_GetITStatus(UART3, USART_IT_FE) != RESET)
+	// if (USART_GetITStatus(UART3, USART_IT_FE) != RESET)
 	{
 		USART_ClearITPendingBit(UART3, USART_IT_FE);
 	}
@@ -1095,12 +1091,12 @@ void UART3_4_IRQHandler(void)
 		UART4_RX_Callback(&data, 1);					  // Pass it to callback
 	}
 	// Optional: Clear overrun and framing error flags
-	if (USART_GetITStatus(UART4, USART_IT_ORE) != RESET)
+	// if (USART_GetITStatus(UART4, USART_IT_ORE) != RESET)
 	{
 		USART_ClearITPendingBit(UART4, USART_IT_ORE);
 	}
 
-	if (USART_GetITStatus(UART4, USART_IT_FE) != RESET)
+	// if (USART_GetITStatus(UART4, USART_IT_FE) != RESET)
 	{
 		USART_ClearITPendingBit(UART4, USART_IT_FE);
 	}
@@ -1169,6 +1165,7 @@ void LPUART_IRQHandler(void)
 		/* Clear The LPUART WU flag */
 		LPUART_ClearITPendingBit(LPUART, LPUART_IT_WU);
 	}
+
 	/* Check if Receive Data Register Not Empty (RXNE) interrupt is set */
 	if (LPUART_GetITStatus(LPUART, LPUART_IT_RXNE) == SET)
 	{
@@ -1602,13 +1599,21 @@ void CAN_Config(void)
 
 	/* Enable GPIO clock */
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-
+#if 1
 	/* Connect CAN pins to AF4 */
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource11, GPIO_AF_4);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource12, GPIO_AF_4);
 
 	/* Configure CAN RX and TX pins */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 | GPIO_Pin_12;
+#else
+	/* Connect CAN pins to AF4 */
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_4);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_4);
+
+	/* Configure CAN RX and TX pins */
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+#endif
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
@@ -1640,10 +1645,18 @@ void CAN_Config(void)
 	CAN_InitStructure.CAN_Mode = CAN_Mode_Normal;
 	CAN_InitStructure.CAN_SJW = CAN_SJW_1tq;
 
+#if 0
 	/* CAN Baudrate = 1MBps (CAN clocked at 48 MHz) */
 	CAN_InitStructure.CAN_BS1 = CAN_BS1_10tq;
 	CAN_InitStructure.CAN_BS2 = CAN_BS2_5tq;
 	CAN_InitStructure.CAN_Prescaler = 3;
+#else
+	/* CAN Baudrate = 500bps (CAN clocked at 48 MHz) */
+	CAN_InitStructure.CAN_BS1 = CAN_BS1_10tq;
+	CAN_InitStructure.CAN_BS2 = CAN_BS2_5tq;
+	//CAN_InitStructure.CAN_Prescaler = 6;//500bps
+	CAN_InitStructure.CAN_Prescaler = 12;//250bps
+#endif
 	CAN_Init(&CAN_InitStructure);
 
 	/* CAN filter init */
@@ -1658,13 +1671,6 @@ void CAN_Config(void)
 	CAN_FilterInitStructure.CAN_FilterActivation = ENABLE;
 	CAN_FilterInit(&CAN_FilterInitStructure);
 
-	/* Transmit Structure preparation */
-	TxMessage.StdId = 0x321;
-	TxMessage.ExtId = 0x01;
-	TxMessage.RTR = CAN_RTR_DATA;
-	TxMessage.IDE = CAN_ID_STD;
-	TxMessage.DLC = 1;
-
 	/* Enable FIFO 0 message pending Interrupt */
 	CAN_ITConfig(CAN_IT_FMP0, ENABLE);
 }
@@ -1677,52 +1683,74 @@ void LCD_CAN_IRQHandler(void)
 {
 	CAN_Receive(CAN_FIFO0, &CanRxMessage);
 
-	// LOG_BUFF_LEVEL((const uint8_t *)&CanRxMessage,sizeof(CanRxMsg));
+	LOG_BUFF_LEVEL((const uint8_t *)&CanRxMessage, sizeof(CanRxMsg));
 
 	// if ((CanRxMessage.StdId == 0x321) && (CanRxMessage.IDE == CAN_ID_STD) && (CanRxMessage.DLC == CAN_DATA_LENGTH))
 	{
 		// LED_Display(CanRxMessage.Data[0]);
 		// KeyNumber = CanRxMessage.Data[0];
 		CAN_Message_t parsed_msg = *(CAN_Message_t *)&CanRxMessage;
-		parse_can_message(&parsed_msg);
+		can_message_receiver(&parsed_msg);
 	}
 }
 
 /**
  * @brief  Send a CAN standard data frame
- * @param  std_id: Standard Identifier (11-bit, 0x000 ~ 0x7FF)
+ * @param  std_id: Standard Identifier (11-bit, 0x000 ~ 0x7FF)// CAN ID (标准 11bit 或扩展 29bit)
+ * @param  uint8_t ide,		// 0 = 标准ID, 1 = 扩展ID
  * @param  data: Pointer to the data buffer (max 8 bytes)
  * @param  length: Length of the data (0~8)
  * @retval 1 if success, 0 if failed (e.g., no mailbox available)
  */
-uint8_t CAN_SendData(uint16_t std_id, const uint8_t *buffer, uint8_t length)
+CAN_Status_t CAN_Send_Data(uint32_t id, uint8_t ide, const uint8_t *buffer, uint8_t length)
 {
-	// Check data length validity
-	if (length > 8)
-		return 0;
+	if (!buffer || length == 0 || length > CAN_DATA_MAX_LENGTH)
+	{
+		return CAN_ERR_PARAM;
+	}
 
-	// Set up CAN message
-	CanTxMessage.StdId = std_id;	 // Standard identifier
-	CanTxMessage.ExtId = 0x00;		 // Not used for standard frame
-	CanTxMessage.IDE = CAN_ID_STD;	 // Standard ID
-	CanTxMessage.RTR = CAN_RTR_DATA; // Data frame
-	CanTxMessage.DLC = length;		 // Data length
+	// CanTxMsg_t CanTxMessage;
+	//  根据 IDE 设置标准/扩展 ID
+	if (ide == CAN_ID_STD)
+	{
+		CanTxMessage.StdId = id & 0x7FF; // 标准ID 11bit
+		CanTxMessage.ExtId = 0;
+		CanTxMessage.IDE = CAN_ID_STD; // 标准帧
+	}
+	else
+	{
+		CanTxMessage.StdId = 0;
+		CanTxMessage.ExtId = id & 0x1FFFFFFF; // 扩展ID 29bit
+		CanTxMessage.IDE = CAN_ID_EXT;		  // 扩展帧
+	}
 
-	// Copy data
+	CanTxMessage.RTR = CAN_RTR_DATA; // 数据帧
+	CanTxMessage.DLC = length;
+
+	// 拷贝数据
 	for (uint8_t i = 0; i < length; ++i)
 	{
 		CanTxMessage.Data[i] = buffer[i];
 	}
 
-	// Transmit the CAN message
+	// 发送
 	uint8_t mailbox = CAN_Transmit(&CanTxMessage);
+	if (mailbox > 2)
+	{ // 假设只有三个邮箱 0~2
+		return CAN_ERR_TRANSMIT;
+	}
 
-	// Wait until the transmission is complete or timeout
+	// 等待发送完成
 	uint32_t timeout = 0xFFFF;
-	while ((CAN_TransmitStatus(mailbox) != CAN_TxStatus_Ok) && (timeout--))
+	while ((CAN_TransmitStatus(mailbox) != 1) && (timeout--)) // 1 = OK
 		;
 
-	return (timeout > 0) ? 1 : 0;
+	if (timeout == 0)
+		return CAN_ERR_TIMEOUT;
+
+	LOG_LEVEL("CAN TX ID:%04X IDE:%04X DATA:", id, ide);
+	LOG_BUFF(buffer, length);
+	return CAN_OK;
 }
 /////////////////////////////////////////////////////////////////////////////
 // TIM3 PWM Backlight Initialization

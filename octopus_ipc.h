@@ -42,7 +42,7 @@ extern "C"
      * Define a function pointer type for the callback that takes an integer.
      ******************************************************************************/
     // Define a type for the callback that accepts an integer
-    typedef void (*CarInforCallback_t)(uint16_t msg_grp, uint16_t msg_id);
+    typedef void (*MessageDataInforCallback_t)(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
 
     /*******************************************************************************
      * GLOBAL FUNCTIONS DECLARATION
@@ -75,7 +75,7 @@ extern "C"
 
     void task_ipc_stop_running(void);
 
-    void register_car_infor_callback(CarInforCallback_t callback);
+    void register_message_data_callback(MessageDataInforCallback_t callback);
 
     void update_push_interval_ms(uint16_t delay_ms);
 

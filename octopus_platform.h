@@ -73,10 +73,10 @@
 //#define TASK_MANAGER_STATE_MACHINE_GPIO 1  
 //#define TASK_MANAGER_STATE_MACHINE_FLASH 1 
 #define TASK_MANAGER_STATE_MACHINE_SYSTEM 1  
-//#define TASK_MANAGER_STATE_MACHINE_KEY 1 
+#define TASK_MANAGER_STATE_MACHINE_KEY 1 
 
 #define TASK_MANAGER_STATE_MACHINE_IPC 1 
-//#define TASK_MANAGER_STATE_MACHINE_PTL2 1 
+#define TASK_MANAGER_STATE_MACHINE_PTL 1 
 
 #define TASK_MANAGER_STATE_MACHINE_CARINFOR 1
 //#define TASK_MANAGER_STATE_MACHINE_CAN 1 
@@ -115,7 +115,7 @@
  ****************************************************************************************/
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_log.h"          // Include logging functions for debugging
-#include "octopus_uart_ptl_1.h"   // Include UART protocol header
+#include "octopus_uart_ptl.h"   // Include UART protocol header
 #include "octopus_tickcounter.h"  // Include tick counter for timing operations
 #include "octopus_msgqueue.h"     // Include message queue header for task communication
 #include "octopus_message.h"      // Include message id for inter-task communication

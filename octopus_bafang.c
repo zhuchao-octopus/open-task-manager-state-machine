@@ -5,8 +5,8 @@
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_bafang.h"
 #include "octopus_uart_hal.h"
-#include "octopus_uart_ptl_2.h" // Include UART protocol header
-#include "octopus_carinfor.h"
+#include "octopus_uart_upf.h" // Include UART protocol header
+#include "octopus_vehicle.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -63,7 +63,7 @@ typedef struct UartSendProtocolCmdCtrl
 static void com_uart_ptl_bafang_tx_process(void);
 
 // static bool bafang_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
-static bool bafang_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff);
+static bool bafang_receive_handler(upf_proc_buff_t *upf_proc_buff);
 
 // static bool com_uart_ptl_bafang_receive_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 // static bool com_uart_ptl_bafang_send_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
@@ -189,7 +189,6 @@ static const UartSendPtlBafangCmdCtrl_t protocolProcessCmdTable[] =
 
         {PTL_BAFANG_CMD_SYMBOL_BATTERY, uart_send_protocol_cmd_battery_info, 100}, // 11 60 71
         {PTL_BAFANG_CMD_SYMBOL_CELL, uart_send_protocol_cmd_cell_info, 100},       // 11 60 72
-
 };
 
 /*******************************************************************************
@@ -209,7 +208,7 @@ void task_bfang_ptl_start_running(void)
 {
     LOG_LEVEL("task_bafang_ptl_start_running\r\n");
 
-    ptl_2_register_module(PTL2_MODULE_BAFANG, bafang_receive_handler);
+    upf_register_module(UPF_MODULE_BAFANG, bafang_receive_handler);
     OTMS(TASK_MODULE_BAFANG, OTMS_S_ASSERT_RUN);
 }
 
@@ -340,50 +339,50 @@ void com_uart_ptl_bafang_tx_process(void)
     }
 }
 
-static bool bafang_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff)
+static bool bafang_receive_handler(upf_proc_buff_t *upf_proc_buff)
 {
     bool res = false;
     if (res == false)
     {
         // 系统状态协议帧处理
         // LOG_LEVEL("proc_protocol_frame_system_state\r\n");
-        res = proc_protocol_frame_system_state(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
+        res = proc_protocol_frame_system_state(upf_proc_buff->buffer, upf_proc_buff->size);
     }
     if (res == false)
     {
         // 工作状态协议帧处理
         // LOG_LEVEL("proc_protocol_frame_working_state\r\n");
-        res = proc_protocol_frame_working_state(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
+        res = proc_protocol_frame_working_state(upf_proc_buff->buffer, upf_proc_buff->size);
     }
     if (res == false)
     {
         // 电池电量协议帧处理
         // LOG_LEVEL("proc_protocol_frame_soc\r\n");
-        res = proc_protocol_frame_soc(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
+        res = proc_protocol_frame_soc(upf_proc_buff->buffer, upf_proc_buff->size);
     }
     if (res == false)
     {
         // 速度协议帧处理
         // LOG_LEVEL("proc_protocol_frame_speed\r\n");
-        res = proc_protocol_frame_speed(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
+        res = proc_protocol_frame_speed(upf_proc_buff->buffer, upf_proc_buff->size);
     }
     if (res == false)
     {
         // 瞬时电流协议帧处理
         // LOG_LEVEL("proc_protocol_frame_instantaneous_current\r\n");
-        res = proc_protocol_frame_instantaneous_current(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
+        res = proc_protocol_frame_instantaneous_current(upf_proc_buff->buffer, upf_proc_buff->size);
     }
     if (res == false)
     {
         // 电池信息协议帧处理
         // LOG_LEVEL("proc_protocol_frame_battery_info\r\n");
-        res = proc_protocol_frame_battery_info(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
+        res = proc_protocol_frame_battery_info(upf_proc_buff->buffer, upf_proc_buff->size);
     }
     if (res == false)
     {
         // 电芯信息协议帧处理
         // LOG_LEVEL("proc_protocol_frame_cell_info\r\n");
-        res = proc_protocol_frame_cell_info(ptl_2_proc_buff->buffer, ptl_2_proc_buff->size);
+        res = proc_protocol_frame_cell_info(upf_proc_buff->buffer, upf_proc_buff->size);
     }
 
     if (res)
@@ -460,7 +459,7 @@ void uart_send_protocol_cmd_speed_limit(void)
     send_data[2] = word_h;
     send_data[3] = word_l;
     send_data[4] = send_data[0] + send_data[1] + send_data[2] + send_data[3];
-    ptl_2_send_buffer(PTL2_MODULE_BAFANG, send_data, 5);
+    upf_send_buffer(UPF_MODULE_BAFANG, send_data, 5);
 }
 
 // 发送写入档位命令
@@ -468,7 +467,7 @@ void uart_send_protocol_cmd_gear(void)
 {
     if (lt_carinfo_indicator.walk_assist)
     {
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_06, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_06, 4);
     }
     else if (lt_carinfo_meter.gear_level_max == SETTING_MAX_PAS_3_LEVEL)
     {
@@ -492,26 +491,26 @@ void uart_send_protocol_cmd_gear(void)
 void uart_send_protocol_cmd_lamp(void)
 {
     // if (theIndicatorFlag.lamp)
-    if (lt_carinfo_indicator.highBeam > 0)
+    if (lt_carinfo_indicator.high_beam > 0)
     {
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_lamp_on, 3);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_lamp_on, 3);
     }
     else
     {
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_lamp_off, 3);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_lamp_off, 3);
     }
 }
 
 // 发送读取电池命令
 void uart_send_protocol_cmd_battery_info(void)
 {
-    ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_battery_info, 3);
+    upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_battery_info, 3);
 }
 
 // 发送读取电芯命令
 void uart_send_protocol_cmd_cell_info(void)
 {
-    ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_cell_info, 3);
+    upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_cell_info, 3);
 }
 
 // 0x11 x?
@@ -521,7 +520,7 @@ void bike_Uart_Send(unsigned char data)
 
     send_data[0] = 0x11;
     send_data[1] = data;
-    ptl_2_send_buffer(PTL2_MODULE_BAFANG, send_data, 2);
+    upf_send_buffer(UPF_MODULE_BAFANG, send_data, 2);
 }
 
 void Bike_pas_level_send_depend_max_9_level(void)
@@ -529,37 +528,37 @@ void Bike_pas_level_send_depend_max_9_level(void)
     switch (lt_carinfo_meter.gear)
     {
     case 0:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_00, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_00, 4);
         return;
     case 1:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_01, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_01, 4);
         return;
     case 2:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_11, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_11, 4);
         return;
     case 3:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_12, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_12, 4);
         return;
     case 4:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_13, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_13, 4);
         return;
     case 5:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_02, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_02, 4);
         return;
     case 6:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_21, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_21, 4);
         return;
     case 7:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_22, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_22, 4);
         return;
     case 8:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_23, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_23, 4);
         return;
     case 9:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_03, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_03, 4);
         return;
     default:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_01, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_01, 4);
         return;
     }
 }
@@ -569,25 +568,25 @@ void Bike_pas_level_send_depend_max_5_level(void)
     switch (lt_carinfo_meter.gear)
     {
     case 0:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_00, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_00, 4);
         return;
     case 1:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_11, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_11, 4);
         return;
     case 2:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_13, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_13, 4);
         return;
     case 3:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_21, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_21, 4);
         return;
     case 4:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_23, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_23, 4);
         return;
     case 5:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_03, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_03, 4);
         return;
     default:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_11, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_11, 4);
         return;
     }
 }
@@ -597,19 +596,19 @@ void Bike_pas_level_send_depend_max_3_level(void)
     switch (lt_carinfo_meter.gear)
     {
     case 0:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_00, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_00, 4);
         return;
     case 1:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_12, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_12, 4);
         return;
     case 2:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_02, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_02, 4);
         return;
     case 3:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_03, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_03, 4);
         return;
     default:
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_12, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_12, 4);
         return;
     }
 }
@@ -885,13 +884,13 @@ void bafang_lamp_on_off(bool on_off)
 {
     if (on_off)
     {
-        lt_carinfo_indicator.highBeam = 1;
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_lamp_on, sizeof(protocol_cmd_lamp_on));
+        lt_carinfo_indicator.high_beam = 1;
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_lamp_on, sizeof(protocol_cmd_lamp_on));
     }
     else
     {
-        lt_carinfo_indicator.highBeam = 0;
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_lamp_off, sizeof(protocol_cmd_lamp_off));
+        lt_carinfo_indicator.high_beam = 0;
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_lamp_off, sizeof(protocol_cmd_lamp_off));
     }
 }
 
@@ -901,7 +900,7 @@ void bafang_set_gear(uint8_t level)
     if (lt_carinfo_indicator.walk_assist)
     {
         LOG_LEVEL("lt_indicator.walk_assist=%d\r\n", lt_carinfo_indicator.walk_assist);
-        ptl_2_send_buffer(PTL2_MODULE_BAFANG, protocol_cmd_pas_gear_06, 4);
+        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_06, 4);
     }
     else if (lt_carinfo_meter.gear_level_max == SETTING_MAX_PAS_3_LEVEL)
     {

@@ -16,9 +16,9 @@
  */
 typedef enum
 {
-    DRIVE_MOD_REAR = 0, // åŽé©±
-    DRIVE_MOD_DOUBLE,   // åŒé©±
-    DRIVE_MOD_FRONT,    // å‰é©±
+    DRIVE_MOD_REAR = 0, // ºóÇý
+    DRIVE_MOD_DOUBLE,   // Ë«Çý
+    DRIVE_MOD_FRONT,    // Ç°Çý
 } drive_mode_;
 /*******************************************************************************
  * CONSTANTS

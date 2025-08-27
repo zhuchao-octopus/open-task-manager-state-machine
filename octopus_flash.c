@@ -16,7 +16,7 @@
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_flash.h"
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
-#include "octopus_carinfor.h"
+#include "octopus_vehicle.h"
 #endif
 
 void Print_VectorTable(void);
@@ -25,6 +25,7 @@ void Print_SRAM_VectorTable(void);
 void flash_print_mcu_meta_infor(void);
 /////////////////////////////////////////////////////////////////////////////////////
 flash_meta_infor_t flash_meta_infor = {0};
+system_meter_infor_t system_meter_infor = {0};
 
 #ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
 #if (defined(__CC_ARM))
@@ -159,13 +160,14 @@ void flash_print_mcu_meta_infor(void)
 	LOG_LEVEL("Appp Status Flags     : 0x%08X\n", flash_meta_infor.slot_stat_flags);
 	LOG_LEVEL("Meters Data Flags     : 0x%08X\n", flash_meta_infor.mete_data_flags);
 	LOG_LEVEL("Config Data Flags     : 0x%08X\n", flash_meta_infor.user_data_flags);
-	LOG_LEVEL("Active Slot           : %u\n", flash_meta_infor.active_slot);
+	LOG_LEVEL("Active Slot           : %u\n", flash_meta_infor.bank_slot_activated);
 	// LOG_LEVEL("Last Boot Ok        : %u\n", flash_meta_infor.last_boot_ok);
 	LOG_LEVEL("Loader Bank Mode      : 0x%02X\n", flash_meta_infor.bank_slot_mode);
 	// LOG_LEVEL("User Data Address    : 0x%08X\n", EEROM_DATAS_ADDRESS);
 	// LOG_LEVEL("VECT_TAB_OFFSET      : 0x%08X\n", SCB->AIRCR);
 }
-void flash_init(void)
+
+void otsm_flash_init(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_FLASH
 	hal_flash_init(0);
@@ -196,11 +198,11 @@ void flash_load_sync_data_infor(void)
 	LOG_NONE("\r\n");
 #ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
 	uint32_t calculated_crc = 0;
-	E2ROMReadToBuff(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
-	flash_meta_infor.active_slot = FLASH_BANK_CONFIG_MODE_SLOT;
+	E2ROMReadToBuff(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	flash_meta_infor.bank_slot_activated = FLASH_BANK_CONFIG_MODE_SLOT;
+	flash_meta_infor.bank_slot_mode = BOOTLOADER_CONFIG_MODE_TYPE;
 	flash_meta_infor.loader_addr = BOOTLOADER_START_ADDR;
 	flash_meta_infor.slot_a_addr = MAIN_APP_SLOT_A_START_ADDR;
-	flash_meta_infor.bank_slot_mode = BOOTLOADER_CONFIG_MODE_TYPE;
 	flash_meta_infor.slot_b_addr = MAIN_APP_SLOT_B_START_ADDR;
 	// flash_meta_infor.last_boot_ok = flash_meta_infor.active_slot;
 	// if(flash_meta_infor.slot_stat_flags == 0xFFFFFFFF) flash_meta_infor.slot_stat_flags = 0;
@@ -214,7 +216,7 @@ void flash_load_sync_data_infor(void)
 
 		if (!(flash_meta_infor.slot_stat_flags & APP_FLAG_VALID_A) && !IS_SLOT_A_UPGRADED(flash_meta_infor.slot_stat_flags)) //
 		{
-			LOG_LEVEL("First-Stage Boot Detected.\r\n");
+			LOG_LEVEL("First-Stage Boot Detected slot a.\r\n");
 			LOG_LEVEL("Starting data synchronization...\r\n");
 			flash_meta_infor.slot_a_size = MAIN_APP_SIZE;
 			if (flash_meta_infor.slot_a_size <= MAIN_APP_SIZE)
@@ -225,7 +227,7 @@ void flash_load_sync_data_infor(void)
 			}
 			flash_meta_infor.slot_a_crc = calculated_crc;
 			flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_A;
-			// E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+			// E2ROMWriteBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 		}
 	}
 	else if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_B)
@@ -233,7 +235,7 @@ void flash_load_sync_data_infor(void)
 		flash_meta_infor.slot_b_version = build_version_code();
 		if (!(flash_meta_infor.slot_stat_flags & APP_FLAG_VALID_B) && !IS_SLOT_B_UPGRADED(flash_meta_infor.slot_stat_flags)) //
 		{
-			LOG_LEVEL("First-Stage Boot Detected.\r\n");
+			LOG_LEVEL("First-Stage Boot Detected slot b.\r\n");
 			LOG_LEVEL("Starting data synchronization...\r\n");
 
 			flash_meta_infor.slot_b_size = MAIN_APP_SIZE;
@@ -246,7 +248,7 @@ void flash_load_sync_data_infor(void)
 
 			flash_meta_infor.slot_b_crc = calculated_crc;
 			flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_B;
-			// E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+			// E2ROMWriteBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 		}
 	}
 	else if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_LOADER)
@@ -257,15 +259,14 @@ void flash_load_sync_data_infor(void)
 	{
 	}
 
-	E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	E2ROMWriteBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 	flash_print_mcu_meta_infor();
 
 	if (flash_meta_infor.mete_data_flags == EEROM_DATAS_VALID_FLAG)
 	{
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
-		LOG_LEVEL("load meter data[%02d] ", sizeof(carinfo_meter_t));
+		LOG_LEVEL("Load meter data[%02d] ", sizeof(carinfo_meter_t));
 		E2ROMReadToBuff(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
-		lt_carinfo_meter.speed_actual = 0;
 		LOG_BUFF((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
 #endif
 	}
@@ -283,11 +284,11 @@ void flash_load_sync_data_infor(void)
 
 bool flash_is_meta_infor_valid(void)
 {
-	if ((flash_meta_infor.active_slot == BANK_SLOT_INVALID) || (flash_meta_infor.bank_slot_mode == BOOT_MODE_SINGLE_BANK_NONE))
+	if ((flash_meta_infor.bank_slot_activated == BANK_SLOT_INVALID) || (flash_meta_infor.bank_slot_mode == BOOT_MODE_SINGLE_BANK_NONE))
 		return false;
 	else if ((flash_meta_infor.slot_a_addr == 0) || (flash_meta_infor.slot_b_addr == 0))
 		return false;
-	else if ((flash_meta_infor.active_slot != BANK_SLOT_A) && (flash_meta_infor.active_slot != BANK_SLOT_A))
+	else if ((flash_meta_infor.bank_slot_activated != BANK_SLOT_A) && (flash_meta_infor.bank_slot_activated != BANK_SLOT_A))
 		return false;
 	else
 		return true;
@@ -308,6 +309,7 @@ bool flash_is_allow_update_bank(uint8_t bank_type)
 		return false;
 	}
 }
+
 bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address)
 {
 	if ((b_address & FLASH_BANK_MASK) == MAIN_APP_SLOT_A_START_ADDR)
@@ -325,12 +327,12 @@ bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address)
 
 uint32_t flash_get_current_bank(void)
 {
-	return flash_meta_infor.active_slot;
+	return flash_meta_infor.bank_slot_activated;
 }
 
 const char *flash_get_current_bank_name(void)
 {
-	return flash_get_bank_name(flash_meta_infor.active_slot);
+	return flash_get_bank_name(flash_meta_infor.bank_slot_activated);
 }
 
 const char *flash_get_bank_name(uint8_t bank)
@@ -406,7 +408,7 @@ void flash_save_app_meter_infor(void)
 {
 #ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
 	// LOG_LEVEL("flash_save_app_meter\r\n");
-	E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	E2ROMWriteBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 #endif
 }
 
@@ -421,7 +423,10 @@ void flash_save_carinfor_meter(void)
 	//	return;
 	// }
 	flash_meta_infor.mete_data_flags = EEROM_DATAS_VALID_FLAG;
-	E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	E2ROMWriteBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	system_meter_infor.trip_odo = lt_carinfo_meter.trip_odo;
+	system_meter_infor.speed_average = lt_carinfo_meter.speed_average;
+	E2ROMWriteBuffTo(EEROM_SYSTEM_METER_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
 	E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
 #endif
 }
@@ -530,7 +535,7 @@ void boot_loader_active_user_app(void)
 	uint32_t slot_length = 0;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	if (flash_meta_infor.active_slot == BANK_SLOT_LOADER)
+	if (flash_meta_infor.bank_slot_activated == BANK_SLOT_LOADER)
 	{
 		if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
 		{
@@ -538,7 +543,7 @@ void boot_loader_active_user_app(void)
 			expected_crc = flash_meta_infor.slot_b_crc;
 			slot_length = flash_meta_infor.slot_b_size;
 			LOG_LEVEL("Bootloader start to active slot B...\r\n");
-			if (flash_meta_infor.active_slot == BANK_SLOT_B)
+			if (flash_meta_infor.bank_slot_activated == BANK_SLOT_B)
 				return;
 		}
 		else
@@ -556,7 +561,7 @@ void boot_loader_active_user_app(void)
 			expected_crc = flash_meta_infor.slot_a_crc;
 			slot_length = flash_meta_infor.slot_a_size;
 			LOG_LEVEL("Active slot: A\r\n");
-			if (flash_meta_infor.active_slot == BANK_SLOT_A)
+			if (flash_meta_infor.bank_slot_activated == BANK_SLOT_A)
 				return;
 		}
 		else if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
@@ -565,7 +570,7 @@ void boot_loader_active_user_app(void)
 			expected_crc = flash_meta_infor.slot_b_crc;
 			slot_length = flash_meta_infor.slot_b_size;
 			LOG_LEVEL("Slot A activation failed. Fallback to Slot B initiated.\r\n");
-			if (flash_meta_infor.active_slot == BANK_SLOT_B)
+			if (flash_meta_infor.bank_slot_activated == BANK_SLOT_B)
 			{
 				return;
 			}
@@ -580,7 +585,7 @@ void boot_loader_active_user_app(void)
 			expected_crc = flash_meta_infor.slot_b_crc;
 			slot_length = flash_meta_infor.slot_b_size;
 			LOG_LEVEL("Active slot: B\r\n");
-			if (flash_meta_infor.active_slot == BANK_SLOT_B)
+			if (flash_meta_infor.bank_slot_activated == BANK_SLOT_B)
 				return;
 		}
 		else if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
@@ -589,7 +594,7 @@ void boot_loader_active_user_app(void)
 			expected_crc = flash_meta_infor.slot_a_crc;
 			slot_length = flash_meta_infor.slot_a_size;
 			LOG_LEVEL("Slot B activation failed. Fallback to Slot A initiated.\r\n");
-			if (flash_meta_infor.active_slot == BANK_SLOT_A)
+			if (flash_meta_infor.bank_slot_activated == BANK_SLOT_A)
 				return;
 		}
 	}
@@ -603,12 +608,12 @@ void boot_loader_active_user_app(void)
 	else
 	{
 		LOG_LEVEL("Bank verified crc failed,Can Not Jumping to application at 0x%08X...\r\n", active_app_addr);
-		if (flash_meta_infor.active_slot == BANK_SLOT_A)
+		if (flash_meta_infor.bank_slot_activated == BANK_SLOT_A)
 			return;
-		if (flash_meta_infor.active_slot == BANK_SLOT_B)
+		if (flash_meta_infor.bank_slot_activated == BANK_SLOT_B)
 			return;
 
-		if (flash_meta_infor.active_slot == BANK_SLOT_LOADER)
+		if (flash_meta_infor.bank_slot_activated == BANK_SLOT_LOADER)
 		{
 			// Both slots failed integrity check, enter firmware update mode
 			LOG_LEVEL("Active slot A/B failed! Both slots failed verification. Entering upgrade mode...\r\n");

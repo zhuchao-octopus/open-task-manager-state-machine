@@ -22,7 +22,7 @@
 #include "octopus_system.h"
 #include "octopus_ipc.h"
 #include "octopus_uart_hal.h"
-#include "octopus_carinfor.h"
+#include "octopus_vehicle.h"
 #include "octopus_flash.h"
 #include "octopus_update_mcu.h"
 /*******************************************************************************
@@ -42,12 +42,12 @@
  ******************************************************************************/
 static bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer);
-static void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id);
+static void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
 /*******************************************************************************
  * Global Variables
  * Define variables accessible across multiple files if needed.
  ******************************************************************************/
-static CarInforCallback_t CarInforCallback = NULL;
+static MessageDataInforCallback_t message_data_infor_callback = NULL;
 
 /*******************************************************************************
  * Local Variables
@@ -63,9 +63,9 @@ static uint32_t l_t_msg_wait_500_timer;
 /*******************************************************************************
  * Global Function Implementations
  ******************************************************************************/
-void register_car_infor_callback(CarInforCallback_t callback)
+void register_message_data_callback(MessageDataInforCallback_t callback)
 {
-    CarInforCallback = callback;
+    message_data_infor_callback = callback;
 }
 /**
  * @brief Initializes the system for running.
@@ -122,6 +122,7 @@ void task_ipc_assert_running(void)
  */
 void task_ipc_running(void)
 {
+    uint8_t tmp[2] = {0};
     if (GetTickCounter(&l_t_msg_wait_10_timer) < 10)
         return;
 
@@ -145,12 +146,12 @@ void task_ipc_running(void)
         {
             if (l_u8_idle_swich > 0)
             {
-                ipc_notify_message_to_client(MSG_GROUP_CAR, FRAME_CMD_CARINFOR_INDICATOR);
+                ipc_notify_message_to_client(MSG_GROUP_CAR, FRAME_CMD_CARINFOR_INDICATOR, NULL, 0);
                 l_u8_idle_swich = 0;
             }
             else
             {
-                ipc_notify_message_to_client(MSG_GROUP_CAR, FRAME_CMD_CARINFOR_METER);
+                ipc_notify_message_to_client(MSG_GROUP_CAR, FRAME_CMD_CARINFOR_METER, NULL, 0);
                 l_u8_idle_swich = 1;
             }
 
@@ -204,7 +205,7 @@ void task_ipc_running(void)
         case MSG_IPC_CMD_CAR_GET_BATTERY_INFO:
         default:
             // LOG_LEVEL("msg->id=%d param1=%d,param2=%d\r\n", msg->id, msg->param1,msg->param2);
-            ipc_notify_message_to_client(MSG_GROUP_CAR, msg->param1);
+            ipc_notify_message_to_client(MSG_GROUP_CAR, msg->param1, NULL, 0);
             break;
         }
         break;
@@ -236,12 +237,20 @@ void task_ipc_running(void)
             break;
 #endif
         case MSG_OTSM_CMD_MCU_UPDATING:
-            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_UPDATING);
+            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_UPDATING, NULL, 0);
             break;
         case MSG_OTSM_CMD_MCU_VERSION:
-            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_VERSION);
+            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_VERSION, NULL, 0);
             break;
         }
+
+        break;
+    case MSG_OTSM_DEVICE_KEY_EVENT:
+    case MSG_OTSM_DEVICE_KEY_DOWN_EVENT:
+    case MSG_OTSM_DEVICE_KEY_UP_EVENT:
+        tmp[0] = msg->param1;
+        tmp[1] = msg->param2;
+        ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_KEY_EVENT, tmp, 2);
         break;
     }
 
@@ -423,22 +432,34 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
             {
                 memcpy(&lt_carinfo_battery, payload->data, sizeof(carinfo_battery_t));
             }
-            return false;
+						
+			if (lt_carinfo_battery.abs_charge_state >= 255)
+			{
+				system_meter_infor.trip_odo = 0;
+			}
+			return false;
+		case FRAME_CMD_CAR_RESET_BATTERY:
+			system_meter_infor.trip_odo = 0;
+			return false;
+				
+		case FRAME_CMD_CAR_RESET_SYSTEM:
+			memset(&system_meter_infor,0,sizeof(system_meter_infor_t));
+			return false;
 #endif
         default:
             break;
         }
     }
-    // Handle received commands for MCU_TO_SOC_MOD_SYSTEM frame type
+    /// Handle received commands for MCU_TO_SOC_MOD_SYSTEM frame type
     return false; // Command not processed
 }
 
-void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id)
+void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length)
 {
-    if (CarInforCallback)
+    if (message_data_infor_callback)
     {
-        LOG_LEVEL("msg_grp=%d,msg_id=%d \r\n", msg_grp, msg_id);
-        CarInforCallback(msg_grp, msg_id);
+        ///LOG_LEVEL("msg_grp=%d,msg_id=%d \r\n", msg_grp, msg_id);
+        message_data_infor_callback(msg_grp, msg_id, data, length);
     }
 }
 

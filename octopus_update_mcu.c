@@ -532,11 +532,11 @@ bool update_and_verify_dest_bank(uint32_t slot_addr)
 
 uint8_t update_get_target_bank(void)
 {
-	if (flash_meta_infor.active_slot == BANK_SLOT_LOADER)
+	if (flash_meta_infor.bank_slot_activated == BANK_SLOT_LOADER)
 		return BANK_SLOT_A;
-	else if (flash_meta_infor.active_slot == BANK_SLOT_A)
+	else if (flash_meta_infor.bank_slot_activated == BANK_SLOT_A)
 		return BANK_SLOT_B;
-	else if (flash_meta_infor.active_slot == BANK_SLOT_B)
+	else if (flash_meta_infor.bank_slot_activated == BANK_SLOT_B)
 		return BANK_SLOT_A;
 	else
 		return BANK_SLOT_INVALID;

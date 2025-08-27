@@ -22,7 +22,7 @@
 #include "octopus_platform.h"
 #include "octopus_bt.h"
 #include "octopus_flash.h"
-#include "octopus_uart_ptl_2.h" // Include UART protocol header
+#include "octopus_uart_upf.h" // Include UART protocol header
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
@@ -56,7 +56,7 @@ void bt_connect_last_device(void);
 void bt_connect_selected_device(void);
 void bt_send_at_command(const char *format, ...);
 bool bt_is_audio_device(const bt_device_t *dev);
-bool bt_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff);
+bool bt_receive_handler(upf_proc_buff_t *upf_proc_buff);
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -67,7 +67,7 @@ static uint32_t l_t_bt_stat_polling_timer_8s = 0;
 static uint32_t l_t_bt_scan_polling_timer_15s = 0;
 static uint32_t l_t_bt_conn_polling_timer_20s = 0;
 
-bool bt_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff);
+bool bt_receive_handler(upf_proc_buff_t *upf_proc_buff);
 // static bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff);
 // static bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
@@ -86,8 +86,8 @@ void task_bt_init_running(void)
 void task_bt_start_running(void)
 {
 	LOG_LEVEL("task_bt_start_running\r\n");
-#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
-	ptl_2_register_module(PTL2_MODULE_BT, bt_receive_handler);
+#ifdef TASK_MANAGER_STATE_MACHINE_UPF
+	upf_register_module(UPF_MODULE_BT, bt_receive_handler);
 #endif
 	OTMS(TASK_MODULE_BT, OTMS_S_ASSERT_RUN);
 	StartTickCounter(&l_t_bt_auto_link_wait_timer);
@@ -145,7 +145,7 @@ void bt_module_init(void)
 	// bt_send_at_command("AT+PAIR=0\r\n");
 
 	// 4. Set a recognizable Bluetooth name (can skip if already set in module)
-	 bt_send_at_command("AT+NAME=KLD-BT-MUSIC\r\n");
+	bt_send_at_command("AT+NAME=KLD-BT-MUSIC\r\n");
 
 	// 5. Set audio input type
 	// Use "0" for analog (e.g., line-in/mic), "3" for I2S depending on your hardware
@@ -224,7 +224,7 @@ void bt_state_manager(void)
 				if (selected_best_dev.rssi > BT_SELECT_DISTANCE)
 				{
 					StopTickCounter(&l_t_bt_conn_polling_timer_20s);
-					//bt_connect_selected_device();
+					// bt_connect_selected_device();
 				}
 			}
 		}
@@ -234,14 +234,14 @@ void bt_state_manager(void)
 			bt_start_scan();
 			StartTickCounter(&l_t_bt_scan_polling_timer_15s);
 		}
-		else if (GetTickCounter(&l_t_bt_auto_link_wait_timer) >= 3 * 1000)
+		else if (GetTickCounter(&l_t_bt_auto_link_wait_timer) >= 5 * 1000)
 		{
 			bt_start_scan();
 			StopTickCounter(&l_t_bt_auto_link_wait_timer);
 		}
 
 		break;
-		
+
 	case BT_STATE_CONNECTING:
 	case BT_STATE_CONNECTED:
 	case BT_STATE_PLAYING:
@@ -250,10 +250,10 @@ void bt_state_manager(void)
 
 	case BT_STATE_SCANNING:
 		break;
-	
+
 	case BT_STATE_SCANNING_END:
-		
-		break;    
+
+		break;
 	default:
 		// Unknown state, ignore
 		break;
@@ -291,7 +291,7 @@ bool bt_parse_state_response(const char *resp)
 			return true;
 		}
 	}
-	
+
 #if 0
 	if (strncmp(resp, "+SCAN=S", 7) == 0)
 	{
@@ -446,20 +446,20 @@ void bt_send_at_command(const char *format, ...)
 	uint8_t length = vsnprintf(cmd_buf, sizeof(cmd_buf), format, args);
 	va_end(args);
 
-#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
+#ifdef TASK_MANAGER_STATE_MACHINE_UPF
 	if (length > 0 && length < sizeof(cmd_buf))
 	{
 		LOG_LEVEL("bt send at cmd: %s\r\n", cmd_buf);
 		// UART1_Send_Buffer((uint8_t *)cmd_buf, length);
-		ptl_2_send_buffer(PTL2_MODULE_BT, (uint8_t *)cmd_buf, length);
+		upf_send_buffer(UPF_MODULE_BT, (uint8_t *)cmd_buf, length);
 	}
 #endif
 }
 
-bool bt_parser_handler(ptl_2_proc_buff_t *ptl_2_proc_buff)
+bool bt_parser_handler(upf_proc_buff_t *upf_proc_buff)
 {
-	const uint8_t *src = ptl_2_proc_buff->buffer;
-	size_t total_len = ptl_2_proc_buff->size;
+	const uint8_t *src = upf_proc_buff->buffer;
+	size_t total_len = upf_proc_buff->size;
 
 	char line_buf[256] = {0};
 	size_t line_len = 0;
@@ -564,9 +564,9 @@ bool bt_is_audio_device(const bt_device_t *dev)
 	return false;
 }
 
-bool bt_receive_handler(ptl_2_proc_buff_t *ptl_2_proc_buff)
+bool bt_receive_handler(upf_proc_buff_t *upf_proc_buff)
 {
-	bt_parser_handler(ptl_2_proc_buff);
+	bt_parser_handler(upf_proc_buff);
 	return true;
 }
 

@@ -63,7 +63,7 @@ extern "C"
      * LOCAL FUNCTION DECLARATIONS
      * @details  Local function declarations for SIF communication operations
      */
-    void bms_init(void);
+    void otsm_bms_init(void);
     /**< Function to initialize the BMS communication */
     void BMS_DeInit(void);
     /**< Function to deinitialize the BMS communication */

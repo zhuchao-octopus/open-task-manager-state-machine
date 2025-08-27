@@ -55,7 +55,7 @@ extern "C"
      * @note The actual handling of events should be done within this function based on the event type.
      */
     // void hal_timer_interrupt_callback(uint8_t evt);
-
+    void otsm_timer_init(void);
 #ifdef __cplusplus
 }
 #endif
