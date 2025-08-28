@@ -60,7 +60,7 @@ extern "C"
      * FUNCTIONS
      * Function prototypes for UART communication and protocol handling.
      */
-    void uart_init(void);
+    void otsm_uart_init(void);
     // Initializes the UART protocol (e.g., UART configuration, GPIO, etc.)
     void hal_uart_init(uint8_t task_id);
     // Sends a string via UART, returning the number of bytes sent

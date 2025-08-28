@@ -17,8 +17,8 @@
  * @date     2024-12-12
  *******************************************************************************/
 
-#ifndef __OCTOPUS_TASK_MANAGER_PTL_2_H__
-#define __OCTOPUS_TASK_MANAGER_PTL_2_H__
+#ifndef __OCTOPUS_TASK_MANAGER_upf_H__
+#define __OCTOPUS_TASK_MANAGER_upf_H__
 /*******************************************************************************
  * INCLUDES
  */
@@ -33,8 +33,8 @@ extern "C"
 /*******************************************************************************
  * MACROS
  *******************************************************************************/
-#define PTL2_FIFO_MAX_SIZE 255
-#define PTL2_FRAME_MAX_SIZE 255 ///< Maximum frame size
+#define UPF_FIFO_MAX_SIZE 255
+#define UPF_FRAME_MAX_SIZE 255 ///< Maximum frame size
 
 	typedef enum
 	{
@@ -63,20 +63,20 @@ extern "C"
 	typedef enum
 	{
 		// #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
-		PTL2_MODULE_BAFANG, ///< Protocol for Bafang
+		UPF_MODULE_BAFANG, ///< Protocol for Bafang
 // #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_4G
-		PTL2_MODULE_LOT4G,
+		UPF_MODULE_LOT4G,
 #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
-		PTL2_MODULE_BT,
+		UPF_MODULE_BT,
 #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
-		PTL2_MODULE_LING_HUI_LIION2,
+		UPF_MODULE_LING_HUI_LIION2,
 #endif
 
-		PTL2_MODULE_MAX,
-	} PTL2_MODEL;
+		UPF_MODULE_MAX,
+	} UPF_MODEL;
 
 	// #define  SETTING_PTL_BEGIN SETTING_PTL_BAFANG
 	// #define  SETTING_PTL_END   (SETTING_PTL_MAX-1)
@@ -84,40 +84,40 @@ extern "C"
 /* ============================== UART PTL ============================== */
 #define PTL_FRAME_MAX_SIZE 255
 
-	typedef PTL2_MODEL ptl_2_module_t;
+	typedef UPF_MODEL upf_module_t;
 
 	typedef struct
 	{
 		uint16_t size;
 		uint8_t buffer[PTL_FRAME_MAX_SIZE];
-	} ptl_2_proc_buff_t;
+	} upf_proc_buff_t;
 
-	typedef bool (*ptl_2_module_receive_handler_t)(ptl_2_proc_buff_t *buffer);
+	typedef bool (*upf_module_receive_handler_t)(upf_proc_buff_t *buffer);
 
 	typedef struct
 	{
-		ptl_2_module_t module;
-		ptl_2_proc_buff_t ptl_2_proc_buff;
-		ptl_2_module_receive_handler_t receive_handler;
-		cFifo_t *ptl_2_usart_rx_fifo;
-		uint8_t ptl_2_usart_rx_fifo_buff[cFifo_ObjSize(PTL2_FIFO_MAX_SIZE)];
-	} ptl_2_module_info_t;
+		upf_module_t module;
+		upf_proc_buff_t upf_proc_buff;
+		upf_module_receive_handler_t receive_handler;
+		cFifo_t *upf_usart_rx_fifo;
+		uint8_t upf_usart_rx_fifo_buff[cFifo_ObjSize(UPF_FIFO_MAX_SIZE)];
+	} upf_module_info_t;
 
-	void ptl_2_init_running(void);
-	void ptl_2_start_running(void);
-	void ptl_2_assert_running(void);
-	void ptl_2_running(void);
-	void ptl_2_post_running(void);
-	void ptl_2_stop_running(void);
+	void task_upf_init_running(void);
+	void task_upf_start_running(void);
+	void task_upf_assert_running(void);
+	void task_upf_running(void);
+	void task_upf_post_running(void);
+	void task_upf_stop_running(void);
 
-	bool ptl_2_is_com_error(void);
+	bool upf_is_com_error(void);
 
-	uint8_t ptl_2_get_fifo_data(cFifo_t *a_ptFifo, uint8_t *buffer, uint16_t length);
+	uint8_t upf_get_fifo_data(cFifo_t *a_ptFifo, uint8_t *buffer, uint16_t length);
 
-	void ptl_2_register_module(ptl_2_module_t module, ptl_2_module_receive_handler_t receive_handler);
-	void ptl_2_receive_callback(ptl_2_module_t ptl_2_module, const uint8_t *buffer, uint16_t length);
-	void ptl_2_send_buffer(ptl_2_module_t ptl_2_module, const uint8_t *buffer, size_t size);
-	void print_ptl2_registered_module(void);
+	void upf_register_module(upf_module_t module, upf_module_receive_handler_t receive_handler);
+	void upf_receive_callback(upf_module_t upf_module, const uint8_t *buffer, uint16_t length);
+	void upf_send_buffer(upf_module_t upf_module, const uint8_t *buffer, size_t size);
+	void upf_print_registered_module(void);
 
 #ifdef __cplusplus
 }

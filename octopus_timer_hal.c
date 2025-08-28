@@ -139,4 +139,8 @@ void hal_timer_interrupt_callback(uint8_t event)
     SIF_IO_IRQHandler();
 #endif
 }
+
+void otsm_timer_init(void)
+{
+}
 #endif

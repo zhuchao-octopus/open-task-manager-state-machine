@@ -69,16 +69,15 @@ void hal_disable_bLe_pair_mode(void)
 	GAPBondMgr_SetParameter(GAPBOND_PAIRING_MODE, sizeof(uint8_t), &pairMode);
 }
 
-uint8_t hal_get_ble_rssi(uint8_t connecttion_id)
+uint8_t hal_get_ble_rssi(uint8_t connection_id)
 {
 	int8 rssi = 0;
-	LL_ReadRssi(connecttion_id,&rssi);
+	LL_ReadRssi(connection_id, &rssi);
 	return rssi;
 }
 #else
 uint8_t hal_set_pairing_mode_onoff(bool ono_ff, uint8_t current_pairing_mode)
 {
-
 	return current_pairing_mode;
 }
 

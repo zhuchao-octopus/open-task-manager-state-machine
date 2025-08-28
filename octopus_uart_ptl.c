@@ -20,15 +20,15 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"   // Include platform-specific header for hardware platform details
-#include "octopus_uart_ptl_1.h" // Include UART protocol header
-#include "octopus_uart_ptl_2.h" // Include UART protocol header
-#include "octopus_uart_hal.h"   // Include UART hardware abstraction layer header
+#include "octopus_platform.h" // Include platform-specific header for hardware platform details
+#include "octopus_uart_ptl.h" // Include UART protocol header
+#include "octopus_uart_upf.h" // Include UART protocol header
+#include "octopus_uart_hal.h" // Include UART hardware abstraction layer header
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
-#define TEST_LOG_DEBUG_PTL_RX_FRAME // Enable debugging for receiving frames
+// #define TEST_LOG_DEBUG_PTL_RX_FRAME // Enable debugging for receiving frames
 // #define TEST_LOG_DEBUG_PTL_TX_FRAME // Enable debugging for transmitting frames
 
 /*******************************************************************************
@@ -69,17 +69,17 @@ typedef struct
  */
 
 // Declare function prototypes for various tasks and processing functions
-void ptl_init(void);                                         // Initialize the Octopus protocol
-void ptl_remove_none_header_data(ptl_proc_buff_t *buffer);   // Remove data that is not part of the header
-void ptl_find_valid_frame(ptl_proc_buff_t *buffer);          // Find a valid frame from the received data
-void ptl_proc_valid_frame(uint8_t *buffer, uint16_t length); // Process the valid frame
-void ptl_error_detect(void);                                 // Detect communication errors
 
-void ptl_1_tx_event_handler(void); // Handle the transmission event message
-void ptl_1_rx_event_handler(void);
-void ptl_1_hal_tx(uint8_t *buffer, uint16_t length);
-bool ptl_is_sleep_enable(void);                             // Check if sleep mode is enabled
-module_info_t *ptl_get_module(ptl_frame_type_t frame_type); // Get module information by frame type
+static void ptl_remove_none_header_data(ptl_proc_buff_t *buffer);   // Remove data that is not part of the header
+static void ptl_find_valid_frame(ptl_proc_buff_t *buffer);          // Find a valid frame from the received data
+static void ptl_proc_valid_frame(uint8_t *buffer, uint16_t length); // Process the valid frame
+static void ptl_error_detect(void);                                 // Detect communication errors
+
+static void ptl_1_tx_event_handler(void); // Handle the transmission event message
+static void ptl_1_rx_event_handler(void);
+static void ptl_1_hal_tx(uint8_t channel, uint8_t *buffer, uint16_t length);
+static bool ptl_is_sleep_enable(void);                             // Check if sleep mode is enabled
+static module_info_t *ptl_get_module(ptl_frame_type_t frame_type); // Get module information by frame type
 /*******************************************************************************
  * STATIC VARIABLES
  */
@@ -99,13 +99,14 @@ static bool lb_opposite_running = false; // Flag indicating opposite task runnin
 static module_info_t l_t_module_info[PTL_MODULE_SUPPORT_CNT]; // Array holding module information
 static uint8_t l_u8_next_empty_module = 0;                    // Index for the next empty module slot
 
+void ptl_print_registered_module(void);
 /*******************************************************************************
  * GLOBAL FUNCTIONS IMPLEMENTATION
  */
 /**
  * Initializes the Octopus protocol (no specific actions for now).
  */
-void ptl_help(void)
+void otsm_ptl_help(void)
 {
     /// uint8_t tmp[2] = {0};
     /// LOG_LEVEL("app ptl help guide\r\n");
@@ -119,34 +120,30 @@ void ptl_help(void)
     ///  tmp[0] = 0x02;
     ///  ptl_build_frame(P2M_MOD_DEBUG, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
     ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
-    print_all_registered_module();
+    ptl_print_registered_module();
 
-#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
-    print_ptl2_registered_module();
+#ifdef TASK_MANAGER_STATE_MACHINE_UPF
+    upf_print_registered_module();
 #endif
 }
 
-void ptl_init(void)
-{
-    // No initialization needed
-}
 // Initialize UART communication for the task
-void ptl_init_running(void)
+void task_ptl_init_running(void)
 {
-    LOG_LEVEL("ptl_init_running\r\n");
-    ptl_init();
+    LOG_LEVEL("task_ptl_init_running\r\n");
+
     OTMS(TASK_MODULE_PTL_1, OTMS_S_INVALID);
 }
 
 // Start the UART communication for the task
-void ptl_start_running(void)
+void task_ptl_start_running(void)
 {
-    LOG_LEVEL("ptl_start_running\r\n");
+    LOG_LEVEL("task_ptl_start_running\r\n");
     OTMS(TASK_MODULE_PTL_1, OTMS_S_ASSERT_RUN);
 }
 
 // Assert that UART communication is running
-void ptl_assert_running(void)
+void task_ptl_assert_running(void)
 {
     StartTickCounter(&l_t_ptl_rx_main_timer);
     StartTickCounter(&l_t_ptl_tx_main_timer);
@@ -157,7 +154,7 @@ void ptl_assert_running(void)
 }
 
 // Main running function for UART communication
-void ptl_running(void)
+void task_ptl_running(void)
 {
     ptl_1_tx_event_handler();
 
@@ -168,7 +165,7 @@ void ptl_running(void)
 }
 
 // Post-running function for UART communication
-void ptl_post_running(void)
+void task_ptl_post_running(void)
 {
     if (true == ptl_is_sleep_enable())
     {
@@ -181,7 +178,7 @@ void ptl_post_running(void)
 }
 
 // Stop the UART communication task
-void ptl_stop_running(void)
+void task_ptl_stop_running(void)
 {
     LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_PTL_1, OTMS_S_INVALID);
@@ -269,7 +266,7 @@ module_info_t *ptl_get_module(ptl_frame_type_t frame_type)
     return module_info;
 }
 
-void print_all_registered_module(void)
+void ptl_print_registered_module(void)
 {
     for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
     {
@@ -415,7 +412,7 @@ void ptl_1_tx_event_handler(void)
             bool res = p_module->send_handler(frame_type, (ptl_frame_cmd_t)param1, param2, &l_t_tx_proc_buf);
             if (res)
             {
-                ptl_1_hal_tx(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+                ptl_1_hal_tx(l_t_tx_proc_buf.channel, l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
             }
         }
         else if (NULL == p_module->send_handler)
@@ -661,7 +658,7 @@ void ptl_proc_valid_frame(uint8_t *buffer, uint16_t length)
             // If the handler succeeds, clear error flag and restart timer
             lb_com_error = false;
             StartTickCounter(&l_t_ptl_error_detect_timer);
-            ptl_1_hal_tx(tx_frame->buff, tx_frame->size); // Send response via UART
+            ptl_1_hal_tx(tx_frame->channel, tx_frame->buff, tx_frame->size); // Send response via UART
         }
     }
     else /// if (NULL == module_)
@@ -689,7 +686,7 @@ void ptl_error_detect(void)
 /**
  * Sends data over UART using the hardware abstraction layer.
  */
-void ptl_1_hal_tx(uint8_t *data, uint16_t length)
+static void ptl_1_hal_tx(uint8_t channel, uint8_t *data, uint16_t length)
 {
     // Send the processed data over UART
 #ifdef TEST_LOG_DEBUG_PTL_TX_FRAME
@@ -698,5 +695,16 @@ void ptl_1_hal_tx(uint8_t *data, uint16_t length)
 #endif
     if (length <= 0)
         return;
-    hal_com_uart_send_buffer(data, length);
+
+    switch (channel)
+    {
+    case 0:
+        hal_com_uart_send_buffer(data, length);
+        break;
+    }
+}
+
+void ptl_send_buffer(uint8_t channel, uint8_t *data, uint16_t length)
+{
+    ptl_1_hal_tx(channel, data, length);
 }

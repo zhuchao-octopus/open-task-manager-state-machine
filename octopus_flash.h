@@ -21,13 +21,14 @@
 /***************************************************************************************
  * User Data EEPROM Struct Definition
  ***************************************************************************************/
-
-#define EEPROM_APP_META_SIZE (128) // 128byte app meta struct total 2kb
-
 #define EEROM_START_ADDRESS (0x00000000)
-#define EEROM_APP_MATA_ADDRESS (EEROM_START_ADDRESS)
-#define EEROM_DATAS_ADDRESS (EEROM_APP_MATA_ADDRESS + EEPROM_APP_META_SIZE) // user data area from app meta struct
+#define EEPROM_FLASH_META_SIZE (128) // 128byte app meta struct total 2kb
+#define EEROM_SYSTEM_METER_SIZE (128)
 
+#define EEROM_FLASH_MATA_ADDRESS (EEROM_START_ADDRESS)
+#define EEROM_SYSTEM_METER_ADDRESS (EEROM_FLASH_MATA_ADDRESS + EEPROM_FLASH_META_SIZE)
+
+#define EEROM_DATAS_ADDRESS (EEROM_SYSTEM_METER_ADDRESS + EEROM_SYSTEM_METER_SIZE) // user data area from app meta struct
 #define EEROM_CARINFOR_METER_ADDRESS (EEROM_DATAS_ADDRESS + 0)
 
 #define EEROM_DATAS_VALID_FLAG (0xAA55)
@@ -110,6 +111,8 @@ typedef enum
     BOOT_MODE_DUAL_BANK_WITH_LOADER    // Two banks and a bootloader present
 } boot_mode_t;
 
+
+#pragma pack(push, 1)
 typedef struct
 {
     uint32_t loader_addr; // Bootloader entry address (if present)
@@ -131,14 +134,35 @@ typedef struct
     uint32_t mete_data_flags; // Flags related to runtime/user/meter data validity
     uint32_t user_data_flags; // Flags related to configuration data state (e.g., checksum pass/fail)
 
-    uint8_t active_slot;    // Indicates the current active slot (1 = A, 2 = B)
-    uint8_t bank_slot_mode; // Current boot mode, corresponds to boot_mode_t
-    uint8_t reserved1;      // Reserved for future use or 4-byte alignment
-    uint8_t reserved2;
+    uint8_t bank_slot_activated; // Indicates the current active slot (1 = A, 2 = B)
+    uint8_t bank_slot_mode;      // Current boot mode, corresponds to boot_mode_t
+    uint32_t reserved1;          // Reserved for future use or 4-byte alignment
+    uint32_t reserved2;          // Reserved for future use or 4-byte alignment
 } flash_meta_infor_t;
+
+typedef struct
+{
+		uint32_t trip_odo;      // Total distance traveled (unit: 1 meters), also known as trip odometer
+		uint32_t trip_time;     // Total ride time (unit: seconds)
+		uint32_t trip_distance; // Trip distance   (unit: 1 meters), resettable
+
+		uint16_t speed_average; // Displayed vehicle speed (unit: 0.1 km/h)
+		uint16_t speed_actual;  // Actual wheel speed (unit: 0.1 km/h)
+		uint16_t speed_max;
+		uint16_t speed_limit;   // Speed limit setting; 0 = OFF, range: 10¨C90 km/h
+
+		uint16_t rpm;           // Motor RPM (raw value, offset by -20000)
+		uint8_t gear;           // Current gear level (0 = Neutral, 1¨CN)
+		uint8_t gear_level_max; // Maximum selectable gear level
+		uint8_t wheel_diameter; // Wheel diameter (unit: inch)
+		uint8_t reserve;
+} system_meter_infor_t;
+#pragma pack(pop)
+
 
 // Global instance holding metadata for application and bootloader
 extern flash_meta_infor_t flash_meta_infor;
+extern system_meter_infor_t system_meter_infor;
 /////////////////////////////////////////////////////////////////////////////////////////
 // * MCU Flash Memory Layout Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -214,7 +238,7 @@ extern "C"
     void JumpToApplication(uint32_t app_address);
     void boot_loader_active_user_app(void);
 
-    void flash_init(void);
+    void otsm_flash_init(void);
 
     void flash_vector_table_config(uint8_t active_slot);
     void flash_save_app_meter_infor(void);

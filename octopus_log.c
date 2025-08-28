@@ -26,7 +26,7 @@
  * INCLUDES
  */
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_log.h"      // Include logging functions for debugging
+#include "octopus_log.h"	  // Include logging functions for debugging
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -59,22 +59,22 @@ DBG_LOG_LEVEL current_log_level = LOG_LEVEL_NONE;
 
 #if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(OTSM_DEBUG_MODE) && !defined(USE_MY_PRINTF)
 /**
-  * @brief  Retargets the C library printf function to the USART.
-  * @param  None
-  * @retval None
-  */
+ * @brief  Retargets the C library printf function to the USART.
+ * @param  None
+ * @retval None
+ */
 PUTCHAR_PROTOTYPE
 {
-    uint32_t Timeout = 0;
-    FlagStatus Status;
-    USART_SendData(DEBUG_UART, (uint8_t) ch);
-    do
-    {
-        Status = USART_GetFlagStatus(DEBUG_UART, USART_FLAG_TXE);
-        Timeout++;
-    } while ((Status == RESET) && (Timeout != 0xFFFF));
+	uint32_t Timeout = 0;
+	FlagStatus Status;
+	USART_SendData(DEBUG_UART, (uint8_t)ch);
+	do
+	{
+		Status = USART_GetFlagStatus(DEBUG_UART, USART_FLAG_TXE);
+		Timeout++;
+	} while ((Status == RESET) && (Timeout != 0xFFFF));
 
-    return (ch);
+	return (ch);
 }
 #endif
 #endif
@@ -85,385 +85,351 @@ PUTCHAR_PROTOTYPE
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef USE_MY_PRINTF
-#define FMT_FLAG_LEFT (1 << 0)    // Left justify (for '-')
-#define FMT_FLAG_PLUS (1 << 1)    // Show positive sign '+' (for signed numbers)
-#define FMT_FLAG_SPACE (1 << 2)   // Show space for positive numbers (for signed numbers)
-#define FMT_FLAG_ZERO (1 << 3)    // Pad with zeros (for numbers)
-#define FMT_FLAG_SPECIAL (1 << 4) // Prefix for octal (0) or hexadecimal (0x)
-#define FMT_FLAG_SIGN (1 << 5)    // Flag for signed numbers (e.g. positive or negative integers)
-#define FMT_FLAG_LARGE (1 << 6)   // Use uppercase letters for hexadecimal (e.g., 'A'-'F')
 
+#define ZEROPAD 1  // Pad with zero
+#define SIGN 2	   // Unsigned/signed long
+#define PLUS 4	   // Show plus
+#define SPACE 8	   // Space if plus
+#define LEFT 16	   // Left justified
+#define SPECIAL 32 // 0x
+#define LARGE 64   // Use 'ABCDEF' instead of 'abcdef'
+#define is_digit(c) ((c) >= '0' && (c) <= '9')
 static const char *digits = "0123456789abcdefghijklmnopqrstuvwxyz";
 static const char *upper_digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-// Check if a character is a digit
-static inline int is_digital(char c)
+static size_t _strnlen(const char *s, size_t count)
 {
-    return c >= '0' && c <= '9';
+	const char *sc;
+	for (sc = s; *sc != '\0' && count--; ++sc)
+		;
+	return sc - s;
 }
-
-// Calculate string length with max limit
-static size_t strnlen__(const char *s, size_t count)
+static int skip_atoi(const char **s)
 {
-    const char *sc = s;
-    while (*sc != '\0' && count--)
-        ++sc;
-    return sc - s;
+	int i = 0;
+	while (is_digit(**s))
+		i = i * 10 + *((*s)++) - '0';
+	return i;
 }
-
-// Convert string to int (used for width/precision parsing)
-static int skip_atoi__(const char **s)
+static void number(std_putc putc, long num, int base, int size, int precision, int type)
 {
-    int i = 0;
-    while (is_digital(**s))
-        i = i * 10 + *((*s)++) - '0';
-    return i;
-}
+	char c, sign, tmp[66];
+	const char *dig = digits;
+	int i;
+	char tmpch;
 
-// Print number in specified base with formatting
-static void number__(std_putc putc, long num, int base, int size, int precision, int type)
-{
-    char sign, tmp[66];
-    const char *dig = digits;
-    int i;
-    char tmpch;
+	if (type & LARGE)
+		dig = upper_digits;
+	if (type & LEFT)
+		type &= ~ZEROPAD;
+	if (base < 2 || base > 36)
+		return;
 
-    if (type & FMT_FLAG_LARGE)
-        dig = upper_digits;
-    if (type & FMT_FLAG_LEFT)
-        type &= ~FMT_FLAG_ZERO;
-    if (base < 2 || base > 36)
-        return;
+	c = (type & ZEROPAD) ? '0' : ' ';
+	sign = 0;
+	if (type & SIGN)
+	{
+		if (num < 0)
+		{
+			sign = '-';
+			num = -num;
+			size--;
+		}
+		else if (type & PLUS)
+		{
+			sign = '+';
+			size--;
+		}
+		else if (type & SPACE)
+		{
+			sign = ' ';
+			size--;
+		}
+	}
+	if (type & SPECIAL)
+	{
+		if (base == 16)
+			size -= 2;
+		else if (base == 8)
+			size--;
+	}
+	i = 0;
+	if (num == 0)
+		tmp[i++] = '0';
+	else
+	{
+		while (num != 0)
+		{
+			tmp[i++] = dig[((unsigned long)num) % (unsigned)base];
+			num = ((unsigned long)num) / (unsigned)base;
+		}
+	}
+	if (i > precision)
+		precision = i;
+	size -= precision;
+	if (!(type & (ZEROPAD | LEFT)))
+	{
+		while (size-- > 0)
+		{
+			tmpch = ' ';
+			putc(&tmpch, 1);
+		}
+	}
+	if (sign)
+	{
+		putc(&sign, 1);
+	}
 
-    // c = (type & FMT_FLAG_ZERO) ? '0' : ' ';
-    sign = 0;
-    if (type & FMT_FLAG_SIGN)
-    {
-        if (num < 0)
-        {
-            sign = '-';
-            num = -num;
-            size--;
-        }
-        else if (type & FMT_FLAG_PLUS)
-        {
-            sign = '+';
-            size--;
-        }
-        else if (type & FMT_FLAG_SPACE)
-        {
-            sign = ' ';
-            size--;
-        }
-    }
-    if (type & FMT_FLAG_SPECIAL)
-    {
-        if (base == 16)
-            size -= 2;
-        else if (base == 8)
-            size--;
-    }
-
-    i = 0;
-    if (num == 0)
-        tmp[i++] = '0';
-    else
-    {
-        while (num != 0)
-        {
-            tmp[i++] = dig[((unsigned long)num) % (unsigned)base];
-            num = ((unsigned long)num) / (unsigned)base;
-        }
-    }
-
-    // Handle precision for zero-padded hexadecimal numbers
-    if (base == 16 && precision < 2)
-        precision = 2; // Ensure at least two digits for hexadecimal (e.g., "0x01" instead of "0x1")
-
-    if (i > precision)
-        precision = i;
-
-    size -= precision;
-    if (!(type & (FMT_FLAG_ZERO | FMT_FLAG_LEFT)))
-    {
-        while (size-- > 0)
-        {
-            tmpch = ' ';
-            putc(&tmpch, 1);
-        }
-    }
-
-    if (sign)
-    {
-        putc(&sign, 1);
-    }
-
-    if (type & FMT_FLAG_SPECIAL)
-    {
-        if (base == 8)
-        {
-            tmpch = '0';
-            putc(&tmpch, 1);
-        }
-        else if (base == 16)
-        {
-            tmpch = '0';
-            putc(&tmpch, 1);
-            tmpch = 'x'; // '0x' prefix for hexadecimal numbers
-            putc(&tmpch, 1);
-        }
-    }
-
-    if (!(type & FMT_FLAG_LEFT))
-    {
-        while (size-- > 0)
-        {
-            tmpch = ' ';
-            putc(&tmpch, 1);
-        }
-    }
-
-    while (i < precision--)
-    {
-        tmpch = '0'; // Fill with zeroes if the number is shorter than precision
-        putc(&tmpch, 1);
-    }
-
-    while (i-- > 0)
-    {
-        tmpch = tmp[i];
-        putc(&tmpch, 1);
-    }
-
-    while (size-- > 0)
-    {
-        tmpch = ' ';
-        putc(&tmpch, 1);
-    }
+	if (type & SPECIAL)
+	{
+		if (base == 8)
+		{
+			tmpch = '0';
+			putc(&tmpch, 1);
+		}
+		else if (base == 16)
+		{
+			tmpch = '0';
+			putc(&tmpch, 1);
+			tmpch = digits[33];
+			putc(&tmpch, 1);
+		}
+	}
+	if (!(type & LEFT))
+	{
+		while (size-- > 0)
+		{
+			putc(&c, 1);
+		}
+	}
+	while (i < precision--)
+	{
+		tmpch = '0';
+		putc(&tmpch, 1);
+	}
+	while (i-- > 0)
+	{
+		tmpch = tmp[i];
+		putc(&tmpch, 1);
+	}
+	while (size-- > 0)
+	{
+		tmpch = ' ';
+		putc(&tmpch, 1);
+	}
 }
 
 static void vsprintf__(std_putc putc, const char *fmt, va_list args)
 {
-    int len;
-    unsigned long num;
-    int base;
-    char *s;
-    int flags = 0;        // Flags for number formatting
-    int field_width = -1; // Width of output field
-    int precision = -1;   // Min. # of digits for integers; max for strings
-    int qualifier = -1;   // 'h', 'l', or 'L' for integer fields
-    char *tmpstr = NULL;
-    int tmpstr_size = 0;
-    char tmpch;
+	int len;
+	unsigned long num;
+	int base;
+	char *s;
+	int flags;		 // Flags to number()
+	int field_width; // Width of output field
+	int precision;	 // Min. # of digits for integers; max number of chars for from string
+	int qualifier;	 // 'h', 'l', or 'L' for integer fields
+	char *tmpstr = NULL;
+	int tmpstr_size = 0;
+	char tmpch;
+	for (; *fmt; fmt++)
+	{
 
-    // Iterate over the format string
-    for (; *fmt; fmt++)
-    {
-        if (*fmt != '%')
-        {
-            // Process non-format characters
-            if (tmpstr == NULL)
-            {
-                tmpstr = (char *)fmt;
-                tmpstr_size = 0;
-            }
-            tmpstr_size++;
-            continue;
-        }
-        else if (tmpstr_size)
-        {
-            putc(tmpstr, tmpstr_size);
-            tmpstr = NULL;
-            tmpstr_size = 0;
-        }
+		if (*fmt != '%')
+		{
+			if (tmpstr == NULL)
+			{
+				tmpstr = (char *)fmt;
+				tmpstr_size = 0;
+			}
+			tmpstr_size++;
+			continue;
+		}
+		else if (tmpstr_size)
+		{
+			putc(tmpstr, tmpstr_size);
+			tmpstr = NULL;
+			tmpstr_size = 0;
+		}
 
-        // Parse flags like '-', '+', ' ', etc.
-        flags = 0;
-    repeat:
-        fmt++; // Skip the first '%'
-        switch (*fmt)
-        {
-        case '-':
-            flags |= FMT_FLAG_LEFT;
-            goto repeat;
-        case '+':
-            flags |= FMT_FLAG_PLUS;
-            goto repeat;
-        case ' ':
-            flags |= FMT_FLAG_SPACE;
-            goto repeat;
-        case '#':
-            flags |= FMT_FLAG_SPECIAL;
-            goto repeat;
-        case '0':
-            flags |= FMT_FLAG_ZERO;
-            goto repeat;
-        }
+		// Process flags
+		flags = 0;
+	repeat:
+		fmt++; // This also skips first '%'
+		switch (*fmt)
+		{
+		case '-':
+			flags |= LEFT;
+			goto repeat;
+		case '+':
+			flags |= PLUS;
+			goto repeat;
+		case ' ':
+			flags |= SPACE;
+			goto repeat;
+		case '#':
+			flags |= SPECIAL;
+			goto repeat;
+		case '0':
+			flags |= ZEROPAD;
+			goto repeat;
+		}
 
-        // Get field width (e.g., for padding)
-        field_width = -1;
-        if (is_digital(*fmt))
-            field_width = skip_atoi__(&fmt);
-        else if (*fmt == '*')
-        {
-            fmt++;
-            field_width = va_arg(args, int);
-            if (field_width < 0)
-            {
-                field_width = -field_width;
-                flags |= FMT_FLAG_LEFT;
-            }
-        }
+		// Get field width
+		field_width = -1;
+		if (is_digit(*fmt))
+			field_width = skip_atoi(&fmt);
+		else if (*fmt == '*')
+		{
+			fmt++;
+			field_width = va_arg(args, int);
+			if (field_width < 0)
+			{
+				field_width = -field_width;
+				flags |= LEFT;
+			}
+		}
+		// Get the precision
+		precision = -1;
+		if (*fmt == '.')
+		{
+			++fmt;
+			if (is_digit(*fmt))
+				precision = skip_atoi(&fmt);
+			else if (*fmt == '*')
+			{
+				++fmt;
+				precision = va_arg(args, int);
+			}
+			if (precision < 0)
+				precision = 0;
+		}
+		// Get the conversion qualifier
+		qualifier = -1;
+		if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L')
+		{
+			qualifier = *fmt;
+			fmt++;
+		}
+		// Default base
+		base = 10;
+		switch (*fmt)
+		{
+		case 'c':
+			if (!(flags & LEFT))
+			{
+				while (--field_width > 0)
+				{
+					tmpch = ' ';
+					putc(&tmpch, 1);
+				}
+			}
+			tmpch = (unsigned char)va_arg(args, int);
+			putc(&tmpch, 1);
 
-        // Get precision for integers or strings
-        precision = -1;
-        if (*fmt == '.')
-        {
-            ++fmt;
-            if (is_digital(*fmt))
-                precision = skip_atoi__(&fmt);
-            else if (*fmt == '*')
-            {
-                ++fmt;
-                precision = va_arg(args, int);
-            }
-            if (precision < 0)
-                precision = 0;
-        }
-
-        // Get the conversion qualifier (e.g., 'h', 'l')
-        qualifier = -1;
-        if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L')
-        {
-            qualifier = *fmt;
-            fmt++;
-        }
-
-        // Default base (decimal)
-        base = 10;
-        switch (*fmt)
-        {
-        case 'c':
-            // Character
-            if (!(flags & FMT_FLAG_LEFT))
-            {
-                while (--field_width > 0)
-                {
-                    tmpch = ' ';
-                    putc(&tmpch, 1);
-                }
-            }
-            tmpch = (unsigned char)va_arg(args, int);
-            putc(&tmpch, 1);
-            while (--field_width > 0)
-            {
-                tmpch = ' ';
-                putc(&tmpch, 1);
-            }
-            continue;
-        case 's':
-            // String
-            s = va_arg(args, char *);
-            if (!s)
-                s = "<NULL>";
-            len = strnlen__(s, precision);
-            if (!(flags & FMT_FLAG_LEFT))
-            {
-                while (len < field_width--)
-                {
-                    tmpch = ' ';
-                    putc(&tmpch, 1);
-                }
-            }
-            putc(s, len);
-            while (len < field_width--)
-            {
-                tmpch = ' ';
-                putc(&tmpch, 1);
-            }
-            continue;
-        case 'p':
-            // Pointer (address)
-            if (field_width == -1)
-            {
-                field_width = 2 * sizeof(void *);
-                flags |= FMT_FLAG_ZERO;
-            }
-            number__(putc, (unsigned long)va_arg(args, void *), 16, field_width, precision, flags);
-            continue;
-        case 'o':
-            // Octal
-            base = 8;
-            break;
-        case 'X':
-            // Uppercase hexadecimal
-            flags |= FMT_FLAG_LARGE;
-        case 'x':
-            // Hexadecimal
-            base = 16;
-            break;
-        case 'd':
-        case 'i':
-            // Signed decimal
-            flags |= FMT_FLAG_SIGN;
-        case 'u':
-            // Unsigned decimal
-            break;
-        default:
-            if (*fmt != '%')
-            {
-                tmpch = '%';
-                putc(&tmpch, 1);
-            }
-            if (*fmt)
-            {
-                tmpch = *fmt;
-                putc(&tmpch, 1);
-            }
-            else
-            {
-                --fmt;
-            }
-            continue;
-        }
-
-        // Determine the number type (signed or unsigned)
-        if (qualifier == 'l')
-            num = va_arg(args, unsigned long);
-        else if (qualifier == 'h')
-        {
-            if (flags & FMT_FLAG_SIGN)
-                num = va_arg(args, int);
-            else
-                num = va_arg(args, unsigned int);
-        }
-        else if (flags & FMT_FLAG_SIGN)
-            num = va_arg(args, int);
-        else
-            num = va_arg(args, unsigned int);
-
-        // Output the formatted number
-        number__(putc, num, base, field_width, precision, flags);
-    }
-
-    // Output any remaining characters
-    if (tmpstr_size)
-    {
-        putc(tmpstr, tmpstr_size);
-    }
+			while (--field_width > 0)
+			{
+				tmpch = ' ';
+				putc(&tmpch, 1);
+			}
+			continue;
+		case 's':
+			s = va_arg(args, char *);
+			if (!s)
+				s = "<NULL>";
+			len = _strnlen(s, precision);
+			if (!(flags & LEFT))
+			{
+				while (len < field_width--)
+				{
+					tmpch = ' ';
+					putc(&tmpch, 1);
+				}
+			}
+			putc(s, len);
+			while (len < field_width--)
+			{
+				tmpch = ' ';
+				putc(&tmpch, 1);
+			}
+			continue;
+		case 'p':
+			if (field_width == -1)
+			{
+				field_width = 2 * sizeof(void *);
+				flags |= ZEROPAD;
+			}
+			number(putc, (unsigned long)va_arg(args, void *), 16, field_width, precision, flags);
+			continue;
+		case 'n':
+			continue;
+		case 'A':
+			continue;
+			// Integer number formats - set up the flags and "break"
+		case 'o':
+			base = 8;
+			break;
+		case 'X':
+			flags |= LARGE;
+		case 'x':
+			base = 16;
+			break;
+		case 'd':
+		case 'i':
+			flags |= SIGN;
+		case 'u':
+			break;
+		default:
+			if (*fmt != '%')
+			{
+				tmpch = '%';
+				putc(&tmpch, 1);
+			}
+			if (*fmt)
+			{
+				tmpch = *fmt;
+				putc(&tmpch, 1);
+			}
+			else
+			{
+				--fmt;
+			}
+			continue;
+		}
+		if (qualifier == 'l')
+			num = va_arg(args, unsigned long);
+		else if (qualifier == 'h')
+		{
+			if (flags & SIGN)
+				num = va_arg(args, int);
+			else
+				num = va_arg(args, unsigned int);
+		}
+		else if (flags & SIGN)
+			num = va_arg(args, int);
+		else
+			num = va_arg(args, unsigned int);
+		number(putc, num, base, field_width, precision, flags);
+	}
+	if (tmpstr_size)
+	{
+		putc(tmpstr, tmpstr_size);
+		tmpstr = NULL;
+		tmpstr_size = 0;
+	}
 }
 
 static void native_uart_putc(char *data, uint16_t size)
 {
 #ifdef OTSM_DEBUG_USART1
-	  UART1_Send_Buffer((uint8_t *)data, size);
-#elif defined(OTSM_DEBUG_USART2)	
-	  UART2_Send_Buffer((uint8_t *)data, size);	
+	UART1_Send_Buffer((uint8_t *)data, size);
+#elif defined(OTSM_DEBUG_USART2)
+	UART2_Send_Buffer((uint8_t *)data, size);
 #elif defined(OTSM_DEBUG_USART4)
-	  UART4_Send_Buffer((uint8_t *)data, size);
+	UART4_Send_Buffer((uint8_t *)data, size);
 #elif defined(PLATFORM_CST_OSAL_RTOS)
-	  HalUartSendBuf(UART0, (uint8_t *)data, size);
-#else  
+	HalUartSendBuf(UART0, (uint8_t *)data, size);
+#else
 #endif
 }
 
@@ -478,19 +444,19 @@ static void native_uart_putc(char *data, uint16_t size)
  */
 void dbg_log_printf(const char *format, ...)
 {
-    // Skip logging if log level is set to NONE or format is NULL
-    if (current_log_level == LOG_LEVEL_NONE || !format)
-    {
-        return;
-    }
-    va_list args;
-    va_start(args, format); // Initialize the va_list to process the variable arguments
+	// Skip logging if log level is set to NONE or format is NULL
+	if (current_log_level == LOG_LEVEL_NONE || !format)
+	{
+		return;
+	}
+	va_list args;
+	va_start(args, format); // Initialize the va_list to process the variable arguments
 #ifdef USE_MY_PRINTF
-    vsprintf__(native_uart_putc, format, args); // Call formatted print function
+	vsprintf__(native_uart_putc, format, args); // Call formatted print function
 #else
-    vprintf(format, args);
+	vprintf(format, args);
 #endif
-    va_end(args); // Clean up the va_list after use
+	va_end(args); // Clean up the va_list after use
 }
 
 /**
@@ -501,54 +467,56 @@ void dbg_log_printf(const char *format, ...)
  */
 void dbg_log_printf_level(const char *function_name, const char *format, ...)
 {
-    // Skip logging if log level is set to NONE or format is NULL
-    if (current_log_level == LOG_LEVEL_NONE || !format)
-    {
-        return;
-    }
+	// Skip logging if log level is set to NONE or format is NULL
+	if (current_log_level == LOG_LEVEL_NONE || !format)
+	{
+		return;
+	}
 
-    // Map log level to string representation
-    const char *level_str;
-    switch (current_log_level)
-    {
-    case LOG_LEVEL_DEBUG:
-        level_str = "DEBUG";
-        break;
-    case LOG_LEVEL_INFO:
-        level_str = "INFO";
-        break;
-    case LOG_LEVEL_WARNING:
-        level_str = "WARNING";
-        break;
-    case LOG_LEVEL_ERROR:
-        level_str = "ERROR";
-        break;
-    default:
-        level_str = "";
-        break;
-    }
+	// Map log level to string representation
+	const char *level_str;
+	switch (current_log_level)
+	{
+	case LOG_LEVEL_DEBUG:
+		level_str = "DEBUG";
+		break;
+	case LOG_LEVEL_INFO:
+		level_str = "INFO";
+		break;
+	case LOG_LEVEL_WARNING:
+		level_str = "WARNING";
+		break;
+	case LOG_LEVEL_ERROR:
+		level_str = "ERROR";
+		break;
+	default:
+		level_str = "";
+		break;
+	}
 
-// Print log header with timestamp, level, function name
+  // Print log header with timestamp, level, function name
 #ifdef USE_MY_PRINTF
-    dbg_log_printf("[%s][%28s] ", level_str, function_name);
+	//dbg_log_printf("[%s][%28s] ", level_str, function_name);
+	dbg_log_printf("[%s][%*.*s] ",LOG_DEFAULT_MAX_WIDTH,LOG_DEFAULT_MAX_WIDTH, level_str, function_name);
 #else
-    printf("[%s][%28s] ", level_str, function_name);
+	//printf("[%s][%28s] ", level_str, function_name);
+	printf("[%s][%*.*s] ", level_str, LOG_DEFAULT_MAX_WIDTH, LOG_DEFAULT_MAX_WIDTH, function_name);
 #endif
 
-    if (format == NULL || format[0] == '\0')
-    {
-        return;
-    }
+	if (format == NULL || format[0] == '\0')
+	{
+		return;
+	}
 
-    va_list args;
-    va_start(args, format);
+	va_list args;
+	va_start(args, format);
 // Print formatted log message
 #ifdef USE_MY_PRINTF
-    vsprintf__(native_uart_putc, format, args);
+	vsprintf__(native_uart_putc, format, args);
 #else
-    vprintf(format, args);
+	vprintf(format, args);
 #endif
-    va_end(args);
+	va_end(args);
 }
 
 /**
@@ -556,24 +524,24 @@ void dbg_log_printf_level(const char *function_name, const char *format, ...)
  * @param buff The buffer to print.
  * @param length The length of the buffer.
  */
-void dbg_log_printf_buffer(uint8_t *buff, uint16_t length)
+void dbg_log_printf_buffer(const uint8_t *buff, uint16_t length)
 {
-	 if (current_log_level == LOG_LEVEL_NONE)
-    {
-        return;
-    }
-    for (int i = 0; i < length; i++)
-    {
+	if (current_log_level == LOG_LEVEL_NONE)
+	{
+		return;
+	}
+	for (int i = 0; i < length; i++)
+	{
 #ifdef USE_MY_PRINTF
-        dbg_log_printf("%02x ", buff[i]);
+		dbg_log_printf("%02x ", buff[i]);
 #else
-        printf("%02x ", buff[i]);
+		printf("%02x ", buff[i]);
 #endif
-    }
+	}
 #ifdef USE_MY_PRINTF
-    dbg_log_printf("\r\n");
+	dbg_log_printf("\r\n");
 #else
-    printf("\r\n");
+	printf("\r\n");
 #endif
 }
 
@@ -585,23 +553,23 @@ void dbg_log_printf_buffer(uint8_t *buff, uint16_t length)
  */
 void dbg_log_printf_buffer_level(const char *function_name, const uint8_t *buff, uint16_t length)
 {
-    if (buff == NULL || length == 0 || current_log_level == LOG_LEVEL_NONE)
-    {
-        return;
-    }
-    dbg_log_printf_level(function_name, "");
-    for (int i = 0; i < length; i++)
-    {
+	if (buff == NULL || length == 0 || current_log_level == LOG_LEVEL_NONE)
+	{
+		return;
+	}
+	dbg_log_printf_level(function_name, "");
+	for (int i = 0; i < length; i++)
+	{
 #ifdef USE_MY_PRINTF
-        dbg_log_printf("%02x ", buff[i]);
+		dbg_log_printf("%02x ", buff[i]);
 #else
-        printf("%02x ", buff[i]);
+		printf("%02x ", buff[i]);
 #endif
-    }
+	}
 #ifdef USE_MY_PRINTF
-    dbg_log_printf("\r\n");
+	dbg_log_printf("\r\n");
 #else
-    printf("\r\n");
+	printf("\r\n");
 #endif
 }
 
@@ -611,5 +579,5 @@ void dbg_log_printf_buffer_level(const char *function_name, const uint8_t *buff,
  */
 void dbg_log_set_level(DBG_LOG_LEVEL level)
 {
-    current_log_level = level; // Update the log level
+	current_log_level = level; // Update the log level
 }

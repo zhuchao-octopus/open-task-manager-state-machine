@@ -29,7 +29,7 @@
 #include "octopus_gpio_hal.h"  // HAL for GPIO (General-Purpose Input/Output)
 #include "octopus_flash_hal.h" // HAL for flash memory management
 #include "octopus_ble_hal.h"   // HAL for Bluetooth Low Energy (BLE)
-#include "octopus_carinfor.h"  // Car information management structures and functions
+#include "octopus_vehicle.h"   // Car information management structures and functions
 #include "octopus_sif.h"       // SIF (Serial Interface Framework) protocol interface
 #include "octopus_key.h"       // Key input handling and processing
 #include "octopus_bms.h"

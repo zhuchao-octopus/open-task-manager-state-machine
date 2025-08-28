@@ -41,15 +41,6 @@ extern "C"
 
     typedef uint8_t GPIO_GROUP;
 
-#define GPIO_POWER_KEY_GROUP GPIOA
-#define GPIO_POWER_KEY_PIN GPIO_Pin_12
-
-#define GPIO_POWER_SWITCH_GROUP GPIOB
-#define GPIO_POWER_SWITCH_PIN GPIO_Pin_4
-
-#define GPIO_POWER_ENABLE_GROUP GPIOA
-#define GPIO_POWER_ENABLE_PIN GPIO_Pin_15
-
 // Event identifiers for user test timers
 #define USR_TEST_TIMER1_EVT 0x0001 /**< Event identifier for test timer 1 */
 #define USR_TEST_TIMER2_EVT 0x0002 /**< Event identifier for test timer 2 */
@@ -69,7 +60,40 @@ extern "C"
 #define GPIO_SIF_S_PIN P20 /**< SIF Send pin */
 
 #define GPIO_BMS_R_PIN P11 /**< BMS Receive pin */
-// #define GPIO_BMS_S_PIN                      P11    /**< BMS Send pin */
+    // #define GPIO_BMS_S_PIN  P11    /**< BMS Send pin */
+
+#define GPIO_POWER_KEY_GROUP 1
+#define GPIO_POWER_KEY_PIN GPIO_ACC_PIN
+
+#define GPIO_POWER_SWITCH_GROUP 1
+#define GPIO_POWER_SWITCH_PIN GPIO_ACC_PIN
+
+#define GPIO_POWER_ENABLE_GROUP 1
+#define GPIO_POWER_ENABLE_PIN GPIO_ACC_PIN
+
+#define GPIO_ACC_KEY_GROUP 1
+#define GPIO_ACC_KEY_PIN GPIO_ACC_PIN
+
+#define GPIO_DDD_KEY_GROUP 1
+#define GPIO_DDD_KEY_PIN GPIO_DDD_PIN
+
+#define GPIO_ZZD_KEY_GROUP 1
+#define GPIO_ZZD_KEY_PIN GPIO_ZZD_PIN
+
+#define GPIO_YZD_KEY_GROUP 1
+#define GPIO_YZD_KEY_PIN GPIO_YZD_PIN
+
+#define GPIO_SKD_KEY_GROUP 1
+#define GPIO_SKD_KEY_PIN GPIO_DDD_PIN
+
+#define GPIO_HORN_KEY_GROUP 1
+#define GPIO_HORN_KEY_PIN GPIO_DDD_PIN
+
+#define GPIO_PLUS_KEY_GROUP 1
+#define GPIO_PLUS_KEY_PIN P34
+
+#define GPIO_SUBT_KEY_GROUP 1
+#define GPIO_SUBT_KEY_PIN P11
 
 // Macros for controlling GPIO pin states (Low/High)
 #define GPIO_ACC_SOC_LOW() (HalGpioSet(GPIO_ACC_SOC_PIN, Bit_DISABLE)) /**< Set GPIO_ACC_SOC_PIN to Low */
@@ -124,14 +148,9 @@ typedef uint8_t GPIO_GROUP;
 #elif defined(PLATFORM_STM32_RTOS)
 typedef GPIO_TypeDef GPIO_GROUP;
 // Default GPIO pin definitions for unsupported platforms
-#define GPIO_ACC_SOC_PIN (0x00) /**< ACC_SOC pin */
-#define GPIO_ACC_PIN (0x00)     /**< ACC pin */
-#define GPIO_KEY_PIN (0x00)     /**< Key pin */
-#define GPIO_DDD_PIN (0x00)     /**< DDD pin */
-#define GPIO_ZZD_PIN (0x00)     /**< ZZD pin */
-#define GPIO_YZD_PIN (0x00)     /**< YZD pin */
-#define GPIO_SKD_PIN (0x00)     /**< SKD pin */
 
+#define GPIO_ACC_GROUP 0
+#define GPIO_ACC_PIN 0
 #define GPIO_POWER_KEY_GROUP GPIOA
 #define GPIO_POWER_KEY_PIN GPIO_Pin_12
 
@@ -140,6 +159,27 @@ typedef GPIO_TypeDef GPIO_GROUP;
 
 #define GPIO_POWER_ENABLE_GROUP GPIOA
 #define GPIO_POWER_ENABLE_PIN GPIO_Pin_15
+
+#define GPIO_DDD_KEY_GROUP 0
+#define GPIO_DDD_KEY_PIN 0
+
+#define GPIO_ZZD_KEY_GROUP 0
+#define GPIO_ZZD_KEY_PIN 0
+
+#define GPIO_YZD_KEY_GROUP 0
+#define GPIO_YZD_KEY_PIN 0
+
+#define GPIO_SKD_KEY_GROUP 0
+#define GPIO_SKD_KEY_PIN 0
+
+#define GPIO_PLUS_KEY_GROUP 0
+#define GPIO_PLUS_KEY_PIN 0
+
+#define GPIO_SUBT_KEY_GROUP 0
+#define GPIO_SUBT_KEY_PIN 0
+
+#define GPIO_PAGE_KEY_GROUP GPIOB
+#define GPIO_PAGE_KEY_PIN GPIO_Pin_1
 
 // Macros for controlling GPIO pin states (Low/High)
 #define GPIO_ACC_SOC_LOW()         // Set GPIO_ACC_SOC_PIN to Low

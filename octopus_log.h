@@ -79,7 +79,7 @@ extern "C"
      * @param buff Pointer to the buffer.
      * @param lenth Length of the buffer.
      */
-    void dbg_log_printf_buffer(uint8_t *buff, uint16_t lenth);
+    void dbg_log_printf_buffer(const uint8_t *buff, uint16_t lenth);
 
     /**
      * @brief Logs a formatted message.
