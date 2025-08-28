@@ -456,7 +456,9 @@ uint8_t hal_com_uartl_send_buffer(const uint8_t *buffer, uint16_t length)
 
 uint8_t hal_com_uart2_send_buffer(const uint8_t *buffer, uint16_t length)
 {
-    LOG_BUFF_LEVEL(buffer, length);
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+    // LOG_BUFF_LEVEL(buffer, length);
     UART2_Send_Buffer(buffer, length);
+#endif
     return 0;
 }

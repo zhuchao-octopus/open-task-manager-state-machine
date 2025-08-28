@@ -43,6 +43,8 @@ void system_event_handler(void);
 void system_power_on_off(bool onoff);
 void system_gpio_power_onoff(bool onoff);
 void system_power_onoff_auto(void);
+void system_mcu_init_remote_soc(void);
+void system_soc_request_mata_infor(void);
 /*******************************************************************************
  * Global Variables
  * Define variables accessible across multiple files if needed.
@@ -169,59 +171,44 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
     {
         switch (param1)
         {
-        case FRAME_CMD_SYSTEM_HANDSHAKE:
-            tmp[0] = 0;
-            tmp[1] = 0;
-            LOG_LEVEL("Send handshake frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
-            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, buff);
-            return true;
+            /// case FRAME_CMD_SYSTEM_HANDSHAKE:
+            /// LOG_LEVEL("Send handshake frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
+            /// ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, buff);
+            /// return false;
 
-        case FRAME_CMD_SYSTEM_MCU_META:
-            LOG_LEVEL("Request mcu meta infor frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
-            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, tmp, 2, buff);
-            return true;
+            /// case FRAME_CMD_SYSTEM_POWER_ON:
+            ///     ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_ON, tmp, 2, buff);
+            ///     return true;
 
-        case FRAME_CMD_SYSTEM_POWER_ON:
-            // Acknowledgement, no additional action needed
-            tmp[0] = 0;
-            tmp[1] = 0;
-            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_ON, tmp, 2, buff);
-            return true;
-
-        case FRAME_CMD_SYSTEM_POWER_OFF:
-            tmp[0] = 0;
-            tmp[1] = 0;
-            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, tmp, 2, buff);
-            return true;
+            /// case FRAME_CMD_SYSTEM_POWER_OFF:
+            ///     ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, tmp, 2, buff);
+            ///     return true;
 
         case MSG_OTSM_CMD_BLE_PAIR_ON:
         case MSG_OTSM_CMD_BLE_PAIR_OFF:
-            tmp[0] = 0;
-            tmp[1] = 0;
             LOG_LEVEL("MSG_OTSM_CMD_BLE_PAIR_ON/OFF \r\n");
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, (ptl_frame_cmd_t)MSG_OTSM_CMD_BLE_PAIR_ON, tmp, 2, buff);
-            hal_com_uart2_send_buffer(buff->buff, buff->size);
+            ptl_send_buffer(2, buff->buff, buff->size);
             return false;
 
         default:
             break;
         }
+
+        return false;
     }
+
     // Handle commands for SOC_TO_MCU_MOD_SYSTEM frame type
-    else if (SOC_TO_MCU_MOD_SYSTEM == frame_type)
+    if (SOC_TO_MCU_MOD_SYSTEM == frame_type)
     {
         switch (param1)
         {
         case FRAME_CMD_SYSTEM_HANDSHAKE:
-            tmp[0] = 0;
-            tmp[1] = 0;
             LOG_LEVEL("Send handshake frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
             ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, buff);
             return true;
 
         case FRAME_CMD_SYSTEM_MCU_META:
-            tmp[0] = 0;
-            tmp[1] = 0;
             LOG_LEVEL("Request mcu meta infor frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
             ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, tmp, 2, buff);
             return true;
@@ -256,7 +243,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 {
     MY_ASSERT(payload); // Ensure payload is valid
     MY_ASSERT(ackbuff); // Ensure acknowledgment buffer is valid
-    uint8_t tmp;        // Temporary variable for holding command data
+    // uint8_t tmp;        // Temporary variable for holding command data
 
     if (SOC_TO_MCU_MOD_SYSTEM == payload->frame_type)
     {
@@ -264,14 +251,12 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         {
         case FRAME_CMD_SYSTEM_HANDSHAKE:
             LOG_LEVEL("Handshake from soc payload->frame_type=%02x\r\n", payload->frame_type);
-            // after got handshake then send indicate respond by message
-            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, 0);
-            return false;
+            system_mcu_init_remote_soc();
+            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ackbuff);
+            return true;
 
         case FRAME_CMD_SYSTEM_MCU_META:
-            LOG_LEVEL("Send mcu meta information.\r\n");
-            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);
-            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
+            LOG_LEVEL("Send mcu meta information. flash_meta_infor.bank_slot_activated=%d\r\n", flash_meta_infor.bank_slot_activated);
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ackbuff);
             return true;
 
@@ -300,20 +285,19 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
     {
         switch (payload->frame_cmd)
         {
-        case FRAME_CMD_SYSTEM_HANDSHAKE:
-            LOG_LEVEL("Handshake from mcu payload->frame_type=%02x\r\n", payload->frame_type);
-            return false;
-        case FRAME_CMD_SYSTEM_ACC_STATE:
-            LOG_LEVEL("FRAME_CMD_SYSTEM_ACC_STATE\r\n");
-            return false;
+            /// case FRAME_CMD_SYSTEM_HANDSHAKE:
+            ///     LOG_LEVEL("Handshake from mcu payload->frame_type=%02x\r\n", payload->frame_type);
+            ///     return false;
+            /// case FRAME_CMD_SYSTEM_ACC_STATE:
+            ///     LOG_LEVEL("FRAME_CMD_SYSTEM_ACC_STATE\r\n");
+            ///     return false;
 
         case FRAME_CMD_SYSTEM_MCU_META:
             if (payload->data_len >= sizeof(flash_meta_infor_t))
             {
                 memcpy(&flash_meta_infor, payload->data, sizeof(flash_meta_infor_t));
-                LOG_LEVEL("FRAME_CMD_SYSTEM_MCU_META flash_meta_infor.bank_slot_activated=%d\r\n", flash_meta_infor.bank_slot_activated);
-
-                LOG_LEVEL("FRAME_CMD_SYSTEM_MCU_META successfully %d / %d\r\n", payload->data_len, sizeof(flash_meta_infor_t));
+                LOG_LEVEL("FRAME_CMD_SYSTEM_MCU_META size=%d flash_meta_infor.bank_slot_activated=%d \r\n",
+                          flash_meta_infor.bank_slot_activated, sizeof(flash_meta_infor_t));
                 send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_VERSION, 0);
             }
             else
@@ -322,19 +306,14 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             }
             return false;
 
-        case FRAME_CMD_SYSTEM_POWER_ON:
-            LOG_LEVEL("Got FRAME_CMD_SYSTEM_POWER_ON from mcu\r\n");
-            system_power_on_off(true);
-            return false;
-        case FRAME_CMD_SYSTEM_POWER_OFF:
-            LOG_LEVEL("Got FRAME_CMD_SYSTEM_POWER_OFF from mcu\r\n");
-            system_power_on_off(false);
-            return false;
-
-        case FRAME_CMD_SETUP_KEY:
-            tmp = 0x01;
-            ptl_build_frame(SOC_TO_MCU_MOD_SETUP, FRAME_CMD_SETUP_KEY, &tmp, 1, ackbuff);
-            return false;
+            /// case FRAME_CMD_SYSTEM_POWER_ON:
+            ///     LOG_LEVEL("Got FRAME_CMD_SYSTEM_POWER_ON from mcu\r\n");
+            ///     system_power_on_off(true);
+            ///     return false;
+            /// case FRAME_CMD_SYSTEM_POWER_OFF:
+            ///     LOG_LEVEL("Got FRAME_CMD_SYSTEM_POWER_OFF from mcu\r\n");
+            ///     system_power_on_off(false);
+            ///     return false;
 
         case MSG_OTSM_CMD_BLE_PAIR_ON:
         case MSG_OTSM_CMD_BLE_PAIR_OFF:
@@ -376,18 +355,7 @@ void system_event_handler(void)
     Msg_t *msg = get_message(TASK_MODULE_SYSTEM);
     if (msg->msg_id == NO_MSG)
     {
-#ifdef TASK_MANAGER_STATE_MACHINE_SOC
-        if (GetTickCounter(&l_t_msg_mcu_meta_wait_timer) > 60000)
-        {
-            // LOG_LEVEL("flash_is_meta_infor_valid=%d\r\n", flash_is_meta_infor_valid());
-            if (!flash_is_meta_infor_valid())
-            {
-                LOG_LEVEL("flash_is_meta_infor_valid=%d\r\n", flash_is_meta_infor_valid());
-                send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
-                StartTickCounter(&l_t_msg_mcu_meta_wait_timer);
-            }
-        }
-#endif
+        system_soc_request_mata_infor();
         return;
     }
 
@@ -405,8 +373,6 @@ void system_event_handler(void)
             system_gpio_power_onoff(true);
         else if (msg->param1 == FRAME_CMD_SYSTEM_POWER_OFF)
             system_gpio_power_onoff(false);
-        // else
-        //     system_power_onoff_auto();
         break;
 
     case MSG_OTSM_DEVICE_BLE_EVENT:
@@ -540,12 +506,12 @@ void system_gpio_power_onoff(bool onoff)
         lt_mb_state = MB_POWER_ST_ON;
         // send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_ON, 0);
         gpio_power_on_off(true);
-        LOG_LEVEL("power on SOC soc...\r\n");
+        LOG_LEVEL("Power on soc...\r\n");
         // system_delay_ms(5);
         gpio_power_on_off(true);
         if (gpio_is_power_on())
         {
-            LOG_LEVEL("Power on SOC succesfully\r\n");
+            LOG_LEVEL("Power on soc succesfully\r\n");
         }
     }
     else
@@ -569,5 +535,32 @@ void system_power_onoff_auto(void)
         system_gpio_power_onoff(false);
     else
         system_gpio_power_onoff(true);
+}
+
+void system_mcu_init_remote_soc(void)
+{
+    // after got handshake then send indicate respond by message
+    LOG_LEVEL("system_init_remote_soc...\r\n");
+    send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);
+    send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, 0);
+    send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
+}
+
+void system_soc_request_mata_infor(void)
+{
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
+    if (GetTickCounter(&l_t_msg_mcu_meta_wait_timer) > 60000)
+    {
+        if (!flash_is_meta_infor_valid())
+        {
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
+            StartTickCounter(&l_t_msg_mcu_meta_wait_timer);
+        }
+        else
+        {
+            StopTickCounter(&l_t_msg_mcu_meta_wait_timer);
+        }
+    }
+#endif
 }
 #endif

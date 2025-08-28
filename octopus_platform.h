@@ -68,33 +68,36 @@
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
- /* @brief Task Manager state machine modules.
+/* @brief Task Manager state machine modules.
  */
-//#define TASK_MANAGER_STATE_MACHINE_GPIO 1  
-//#define TASK_MANAGER_STATE_MACHINE_FLASH 1 
-#define TASK_MANAGER_STATE_MACHINE_SYSTEM 1  
-#define TASK_MANAGER_STATE_MACHINE_KEY 1 
+// #define TASK_MANAGER_STATE_MACHINE_GPIO 1
+// #define TASK_MANAGER_STATE_MACHINE_FLASH 1
+#define TASK_MANAGER_STATE_MACHINE_SYSTEM 1
+#define TASK_MANAGER_STATE_MACHINE_KEY 1
 
-#define TASK_MANAGER_STATE_MACHINE_IPC 1 
-#define TASK_MANAGER_STATE_MACHINE_PTL 1 
+#define TASK_MANAGER_STATE_MACHINE_PTL 1
+#define TASK_MANAGER_STATE_MACHINE_IPC 1
+// #define TASK_MANAGER_STATE_MACHINE_UPF 1
 
 #define TASK_MANAGER_STATE_MACHINE_CARINFOR 1
-//#define TASK_MANAGER_STATE_MACHINE_CAN 1 
+// #define TASK_MANAGER_STATE_MACHINE_CAN 1
 
-//#define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
-//#define TASK_MANAGER_STATE_MACHINE_SIF 1 
-//#define TASK_MANAGER_STATE_MACHINE_BLE 1 
-//#define TASK_MANAGER_STATE_MACHINE_BMS 1 
-//#define TASK_MANAGER_STATE_MACHINE_4G 1 
-//#define TASK_MANAGER_STATE_MACHINE_BT 1
+// #define TASK_MANAGER_STATE_MACHINE_BAFANG 1
+// #define TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2 1
 
-#define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
+// #define TASK_MANAGER_STATE_MACHINE_SIF 1
+// #define TASK_MANAGER_STATE_MACHINE_BLE 1
+// #define TASK_MANAGER_STATE_MACHINE_BMS 1
+// #define TASK_MANAGER_STATE_MACHINE_4G 1
+// #define TASK_MANAGER_STATE_MACHINE_BT 1
+
+#define TASK_MANAGER_STATE_MACHINE_UPDATE 1
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
-//#define FLASH_USE_EEROM_FOR_DATA_SAVING
-//#define FLASH_MAPPING_VECT_TABLE_TO_SRAM
+// #define FLASH_USE_EEROM_FOR_DATA_SAVING
+// #define FLASH_MAPPING_VECT_TABLE_TO_SRAM
 
-#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A
+// #define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A
 /***********************************************************************************
  * BASE INCLUDE FILES
  * Include necessary standard libraries and platform-specific headers.
@@ -115,7 +118,7 @@
  ****************************************************************************************/
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_log.h"          // Include logging functions for debugging
-#include "octopus_uart_ptl.h"   // Include UART protocol header
+#include "octopus_uart_ptl.h"     // Include UART protocol header
 #include "octopus_tickcounter.h"  // Include tick counter for timing operations
 #include "octopus_msgqueue.h"     // Include message queue header for task communication
 #include "octopus_message.h"      // Include message id for inter-task communication
@@ -182,16 +185,16 @@ extern "C"
 {
 #endif
 
-/*******************************************************************************
- * DEBUG SWITCH MACROS
- * Define macros for enabling or disabling debug functionality.
- ******************************************************************************/
+    /*******************************************************************************
+     * DEBUG SWITCH MACROS
+     * Define macros for enabling or disabling debug functionality.
+     ******************************************************************************/
 
-/*******************************************************************************
- * GENERAL MACROS
- * Define common bit manipulation macros and constants.
- ******************************************************************************/
- 
+    /*******************************************************************************
+     * GENERAL MACROS
+     * Define common bit manipulation macros and constants.
+     ******************************************************************************/
+
 #ifdef PLATFORM_CST_OSAL_RTOS
 
 #define GET_SYSTEM_TICK_COUNT (hal_systick() * 625 / 1000) // Convert system ticks to milliseconds
@@ -235,11 +238,11 @@ extern volatile uint32_t system_tick_ms;
 
 #endif
 
-/*******************************************************************************
- * BIT MANIPULATION MACROS
- * Define macros for setting, clearing, toggling, and extracting bit values.
- ******************************************************************************/
- 
+    /*******************************************************************************
+     * BIT MANIPULATION MACROS
+     * Define macros for setting, clearing, toggling, and extracting bit values.
+     ******************************************************************************/
+
 #define BIT_0 0x01 // Bit mask for bit 0
 #define BIT_1 0x02 // Bit mask for bit 1
 #define BIT_2 0x04 // Bit mask for bit 2
@@ -296,7 +299,7 @@ extern volatile uint32_t system_tick_ms;
  * CONSTANTS
  * Define mathematical constants and other useful values.
  ******************************************************************************/
-#define PI_FLOAT (3.14159f) // Value of �� as a floating-point constant
+#define PI_FLOAT (3.14159f) // Value of as a double/floating-point constant
 
 /*******************************************************************************
  * FUNCTION DECLARATIONS

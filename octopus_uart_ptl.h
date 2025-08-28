@@ -155,9 +155,9 @@ extern "C"
         FRAME_CMD_CAR_SET_INDICATOR = 0x23,
         FRAME_CMD_CAR_SET_METER = 0x24,
         FRAME_CMD_CAR_SET_BATTERY = 0x25,
-				FRAME_CMD_CAR_RESET_BATTERY = 0x26,
-				FRAME_CMD_CAR_RESET_SYSTEM = 0x27,
-				
+        FRAME_CMD_CAR_RESET_BATTERY = 0x26,
+        FRAME_CMD_CAR_RESET_SYSTEM = 0x27,
+
         FRAME_CMD_CARINFOR_MAX = 0x64
     } ptl_frame_cmd_t;
 
@@ -297,7 +297,7 @@ extern "C"
     uint8_t ptl_get_checksum(uint8_t *data, uint8_t length);
 
     void ptl_send_buffer(uint8_t channel, uint8_t *data, uint16_t length);
-		
+
     void otsm_ptl_help(void);
 #ifdef __cplusplus
 }

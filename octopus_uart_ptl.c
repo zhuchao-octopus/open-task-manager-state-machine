@@ -28,7 +28,7 @@
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
-//#define TEST_LOG_DEBUG_PTL_RX_FRAME // Enable debugging for receiving frames
+// #define TEST_LOG_DEBUG_PTL_RX_FRAME // Enable debugging for receiving frames
 // #define TEST_LOG_DEBUG_PTL_TX_FRAME // Enable debugging for transmitting frames
 
 /*******************************************************************************
@@ -698,7 +698,16 @@ static void ptl_1_hal_tx(uint8_t channel, uint8_t *data, uint16_t length)
 
     switch (channel)
     {
+    case 1:
+        hal_com_uartl_send_buffer(data, length);
+        break;
+
+    case 2:
+        hal_com_uart2_send_buffer(data, length);
+        break;
+
     case 0:
+    default:
         hal_com_uart_send_buffer(data, length);
         break;
     }

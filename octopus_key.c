@@ -415,6 +415,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t state)
         {
             lt_carinfo_indicator.high_beam = !lt_carinfo_indicator.high_beam;
             key_status_received_temp.ignore = true;
+            send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR);
             break;
         }
         else if (key_status_received_temp.ignore)
@@ -427,6 +428,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t state)
         {
             lt_carinfo_indicator.walk_assist = !lt_carinfo_indicator.walk_assist;
             key_status_received_temp.ignore = true;
+            send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR);
             break;
         }
         else if (key_status_received_temp.ignore)
