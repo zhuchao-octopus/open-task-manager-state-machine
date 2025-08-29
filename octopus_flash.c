@@ -276,9 +276,9 @@ void flash_load_sync_data_infor(void)
 	///	Print_VectorTable();
 	/// Print_Flash_VectorTable();
 	/// Print_SRAM_VectorTable();
-	LOG_LEVEL("__get_MSP       = 0x%08X\r\n", __get_MSP());
-	LOG_LEVEL("Reset_Handler   = 0x%08X\r\n", ((uint32_t *)0x00000000)[1]);
-	LOG_LEVEL("SysTick_Handler = 0x%08X\r\n", ((uint32_t *)0x00000000)[15]);
+	LOG_LEVEL("__get_MSP          : 0x%08X\r\n", __get_MSP());
+	LOG_LEVEL("Reset_Handler      : 0x%08X\r\n", ((uint32_t *)0x00000000)[1]);
+	LOG_LEVEL("SysTick_Handler    : 0x%08X\r\n", ((uint32_t *)0x00000000)[15]);
 #endif
 }
 

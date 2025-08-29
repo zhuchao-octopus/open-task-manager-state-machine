@@ -188,7 +188,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         case MSG_OTSM_CMD_BLE_PAIR_OFF:
             LOG_LEVEL("MSG_OTSM_CMD_BLE_PAIR_ON/OFF \r\n");
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, (ptl_frame_cmd_t)MSG_OTSM_CMD_BLE_PAIR_ON, tmp, 2, buff);
-            hal_com_uart2_send_buffer(buff->buff, buff->size);
+            ptl_send_buffer(2, buff->buff, buff->size);
             return false;
 
         default:

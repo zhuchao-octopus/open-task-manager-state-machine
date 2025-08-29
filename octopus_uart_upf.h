@@ -36,6 +36,9 @@ extern "C"
 #define UPF_FIFO_MAX_SIZE 255
 #define UPF_FRAME_MAX_SIZE 255 ///< Maximum frame size
 
+	/*******************************************************************************
+	 * ENUMERATIONS
+	 *******************************************************************************/
 	typedef enum
 	{
 		SETTING_WHEEL_16_Inch,
@@ -57,34 +60,57 @@ extern "C"
 		SETTING_MAX_PAS_9_LEVEL = 9,
 	} SETTING_MAX_PAS;
 
-	/*******************************************************************************
-	 * ENUMERATIONS
-	 *******************************************************************************/
+#define UPF_MODULE_NUMBER_LING_HUI_LIION2 0
+#define UPF_MODULE_NUMBER_BAFANG 1 ///< Protocol for Bafang
+#define UPF_MODULE_NUMBER_LOT4G 2
+#define UPF_MODULE_NUMBER_BT_MUSIC 3
+
 	typedef enum
 	{
-		// #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
-		UPF_MODULE_BAFANG, ///< Protocol for Bafang
-// #endif
-#ifdef TASK_MANAGER_STATE_MACHINE_4G
-		UPF_MODULE_LOT4G,
-#endif
-#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
-		UPF_MODULE_BT,
-#endif
 #ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
-		UPF_MODULE_LING_HUI_LIION2,
+		_UPF_MODULE_LING_HUI_LIION2_,
 #endif
 
-		UPF_MODULE_MAX,
-	} UPF_MODEL;
+#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
+		_UPF_MODULE_BAFANG_, ///< Protocol for Bafang
+#endif
 
-	// #define  SETTING_PTL_BEGIN SETTING_PTL_BAFANG
-	// #define  SETTING_PTL_END   (SETTING_PTL_MAX-1)
+#ifdef TASK_MANAGER_STATE_MACHINE_4G
+		_UPF_MODULE_LOT4G_,
+#endif
 
-/* ============================== UART PTL ============================== */
-#define PTL_FRAME_MAX_SIZE 255
+#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
+		_UPF_MODULE_BT_MUSIC_,
+#endif
+		_UPF_MODULE_MAX_,
+	} UPF_MODULE;
 
-	typedef UPF_MODEL upf_module_t;
+	typedef enum
+	{
+		UPF_CHANNEL_0, ///< Protocol for Bafang
+		UPF_CHANNEL_1,
+		UPF_CHANNEL_2,
+		UPF_CHANNEL_3,
+		UPF_CHANNEL_4,
+		UPF_CHANNEL_5,
+		UPF_CHANNEL_6,
+		UPF_CHANNEL_7,
+		UPF_CHANNEL_8, // LPUART1
+		UPF_CHANNEL_9, // LPUART2
+	} UPF_CHANNEL_NUMBER;
+
+	typedef enum
+	{
+		UPF_CHANNEL_TYPE_BYTE,
+		UPF_CHANNEL_TYPE_CHAR
+	} UPF_CHANNEL_TYPE;
+
+	typedef struct
+	{
+		uint8_t module;
+		UPF_CHANNEL_NUMBER channel;
+		UPF_CHANNEL_TYPE type;
+	} upf_module_t;
 
 	typedef struct
 	{
@@ -96,7 +122,7 @@ extern "C"
 
 	typedef struct
 	{
-		upf_module_t module;
+		upf_module_t upf_module;
 		upf_proc_buff_t upf_proc_buff;
 		upf_module_receive_handler_t receive_handler;
 		cFifo_t *upf_usart_rx_fifo;
@@ -110,14 +136,17 @@ extern "C"
 	void task_upf_post_running(void);
 	void task_upf_stop_running(void);
 
-	bool upf_is_com_error(void);
+	void upf_module_info_init(upf_module_info_t *array, size_t length);
 
-	uint8_t upf_get_fifo_data(cFifo_t *a_ptFifo, uint8_t *buffer, uint16_t length);
+	void upf_register_module(upf_module_t upf_module, upf_module_receive_handler_t receive_handler);
 
-	void upf_register_module(upf_module_t module, upf_module_receive_handler_t receive_handler);
 	void upf_receive_callback(upf_module_t upf_module, const uint8_t *buffer, uint16_t length);
+
 	void upf_send_buffer(upf_module_t upf_module, const uint8_t *buffer, size_t size);
+
 	void upf_print_registered_module(void);
+
+	void otsm_upf_help(void);
 
 #ifdef __cplusplus
 }

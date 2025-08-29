@@ -73,7 +73,7 @@ extern "C"
      * @param level The desired logging level.
      */
     void dbg_log_set_level(DBG_LOG_LEVEL level);
-
+    void dbg_log_set_channel(uint8_t channel);
     /**
      * @brief Outputs a buffer as a log message.
      * @param buff Pointer to the buffer.
