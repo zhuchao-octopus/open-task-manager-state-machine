@@ -233,12 +233,11 @@ extern "C"
     extern void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length);
     extern void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length);
 
-    void JumpToApplication(uint32_t app_address);
     void boot_loader_active_user_app(void);
-
     void otsm_flash_init(void);
 
-    void flash_vector_table_config(uint8_t active_slot);
+    void flash_JumpToApplication(uint32_t app_address);
+    void flash_vector_table_config(uint8_t bank_slot, bool mapping_vector);
     void flash_save_app_meter_infor(void);
     void flash_load_sync_data_infor(void);
     void flash_save_carinfor_meter(void);
@@ -248,7 +247,7 @@ extern "C"
     uint32_t flash_get_bank_offset_address(uint8_t bank_type);
     uint32_t flash_erase_user_app_bank(void);
 
-    void flash_decode_active_version(char *out_str, size_t max_len);
+    bool flash_decode_active_version(char *out_str, size_t max_len);
     bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);
     bool flash_is_meta_infor_valid(void);
     bool flash_is_allow_update_bank(uint8_t bank_type);

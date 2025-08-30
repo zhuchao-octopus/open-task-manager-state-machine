@@ -593,6 +593,7 @@ file_read_status_t read_next_record(FILE *fp, long *file_offset, file_type_t typ
 	return FILE_READ_INVALID;
 }
 #endif
+
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -612,11 +613,11 @@ static void update_state_process(void)
 	case MCU_UPDATE_STATE_CHECK:
 		break;
 	case MCU_UPDATE_STATE_INIT:
-		LOG_LEVEL("MCU_UPDATE_STATE_INIT FLASH_BANK_CONFIG_MODE_SLOT:%d\r\n", FLASH_BANK_CONFIG_MODE_SLOT);
+		LOG_LEVEL("MCU_UPDATE_STATE_INIT FLASH_BANK_CONFIG_MODE_SLOT:%d\r\n", flash_get_current_bank());
 		if (lt_mcu_program_buf.bank_slot == BANK_SLOT_INVALID)
 		{
 			// lt_mcu_program_buf.bank_slot = BANK_SLOT_INVALID;
-			LOG_LEVEL("MCU_UPDATE_STATE_INIT error! FLASH_BANK_CONFIG_MODE_SLOT:%d\r\n", FLASH_BANK_CONFIG_MODE_SLOT);
+			LOG_LEVEL("MCU_UPDATE_STATE_INIT error! FLASH_BANK_CONFIG_MODE_SLOT:%d\r\n", flash_get_current_bank());
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_IDLE;
 			break;
 		}
@@ -787,7 +788,7 @@ static void update_state_process(void)
 			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_b_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
 			LOG_LEVEL("It took %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
 			flash_save_app_meter_infor();
-			JumpToApplication(flash_meta_infor.slot_b_addr);
+			flash_JumpToApplication(flash_meta_infor.slot_b_addr);
 		}
 		else
 		{

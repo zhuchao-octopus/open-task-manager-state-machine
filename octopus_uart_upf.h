@@ -67,9 +67,7 @@ extern "C"
 
 	typedef enum
 	{
-#ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
 		_UPF_MODULE_LING_HUI_LIION2_,
-#endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
 		_UPF_MODULE_BAFANG_, ///< Protocol for Bafang
