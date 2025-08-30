@@ -231,10 +231,10 @@ extern "C"
 
 #else
 
-extern volatile uint32_t system_tick_ms;
+extern volatile uint32_t system_tick_counter_ms;
 #define DISABLE_IRQ (__disable_irq())
 #define ENABLE_IRQ (__enable_irq())
-#define GET_SYSTEM_TICK_COUNT system_tick_ms // Return zero for unsupported platforms
+#define GET_SYSTEM_TICK_COUNT system_tick_counter_ms // Return zero for unsupported platforms
 
 #endif
 

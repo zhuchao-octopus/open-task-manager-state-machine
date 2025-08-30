@@ -13,6 +13,7 @@ static Charger_Task_L_002_t g_chg2;
 static ABS_Task_L_001_t g_abs;
 static EBS_Task_L_001_t g_ebs;
 
+#ifdef OCTOPUS_CAN_2E006
 /**
  * @brief Dispatch a CAN message to appropriate handler based on its ID.
  *        This function may be used for routing logic in receive ISR or task.
@@ -215,3 +216,5 @@ void CAN_Parse_EBS_Level(const CanQueueMsg_t *msg)
         return;
     g_ebs.ebs_state = msg->data[0];
 }
+
+#endif

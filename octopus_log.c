@@ -32,7 +32,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define OTSM_DEBUG_MODE
 #define OTSM_DEBUG_USART4
-//#define USE_MY_PRINTF
+// #define USE_MY_PRINTF
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -494,12 +494,12 @@ void dbg_log_printf_level(const char *function_name, const char *format, ...)
 		break;
 	}
 
-  // Print log header with timestamp, level, function name
+	// Print log header with timestamp, level, function name
 #ifdef USE_MY_PRINTF
-	//dbg_log_printf("[%s][%28s] ", level_str, function_name);
-	dbg_log_printf("[%s][%*.*s] ",LOG_DEFAULT_MAX_WIDTH,LOG_DEFAULT_MAX_WIDTH, level_str, function_name);
+	// dbg_log_printf("[%s][%28s] ", level_str, function_name);
+	dbg_log_printf("[%s][%*.*s] ", LOG_DEFAULT_MAX_WIDTH, LOG_DEFAULT_MAX_WIDTH, level_str, function_name);
 #else
-	//printf("[%s][%28s] ", level_str, function_name);
+	// printf("[%s][%28s] ", level_str, function_name);
 	printf("[%s][%*.*s] ", level_str, LOG_DEFAULT_MAX_WIDTH, LOG_DEFAULT_MAX_WIDTH, function_name);
 #endif
 

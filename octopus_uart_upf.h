@@ -78,12 +78,6 @@ extern "C"
 		UPF_MODULE_MAX,
 	} UPF_MODEL;
 
-	// #define  SETTING_PTL_BEGIN SETTING_PTL_BAFANG
-	// #define  SETTING_PTL_END   (SETTING_PTL_MAX-1)
-
-/* ============================== UART PTL ============================== */
-#define PTL_FRAME_MAX_SIZE 255
-
 	typedef UPF_MODEL upf_module_t;
 
 	typedef struct

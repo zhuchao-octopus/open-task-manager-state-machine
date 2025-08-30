@@ -89,7 +89,7 @@ void upf_register_module(upf_module_t module, upf_module_receive_handler_t recei
 {
     if (upf_next_empty_module < UPF_MODULE_MAX)
     {
-        //LOG_LEVEL("register upf_module_info[%d]=%d\r\n",upf_next_empty_module, module);
+        // LOG_LEVEL("register upf_module_info[%d]=%d\r\n",upf_next_empty_module, module);
 
         upf_module_info[upf_next_empty_module].module = module;
         upf_module_info[upf_next_empty_module].receive_handler = receive_handler;

@@ -194,7 +194,7 @@ uint16_t TaskManagerStateEventLoop(uint8 task_id, uint16 events)
     if (events & DEVICE_TIMER_EVENT) // If the timer event is triggered
     {
         /////////////////////////////////////////////////////////////////////////////////////////////////////
-        otms_task_manager_run();                   // Run the task manager to handle pending tasks per MAIN_TASK_TIMER_INTERVAL ms
+        otms_task_manager_run();              // Run the task manager to handle pending tasks per MAIN_TASK_TIMER_INTERVAL ms
         return (events ^ DEVICE_TIMER_EVENT); // Remove the timer event from the active events
     }
     else if (events & DEVICE_BLE_PAIR) // If BLE pairing event is triggered
@@ -246,7 +246,7 @@ void *TaskManagerStateEventLoop(void *arg)
     LOG_LEVEL("task manager state machine event loop running\r\n"); // Log unhandled events
     while (!stop_thread)
     {
-        otms_task_manager_run();                      // Run the task manager to handle tasks in the event loop
+        otms_task_manager_run();                 // Run the task manager to handle tasks in the event loop
         usleep(MAIN_TASK_TIMER_INTERVAL * 1000); // Sleep for 10 millisecond to control loop frequency
     }
     return 0; // Exit the thread
@@ -264,12 +264,12 @@ void *TaskManagerStateEventLoop(void *arg)
     StartTickCounter(&wait_cnt);
     while (!stop_thread)
     {
-        otms_task_manager_run();                      // Run the task manager to handle tasks in the event loop
+        otms_task_manager_run();                 // Run the task manager to handle tasks in the event loop
         usleep(MAIN_TASK_TIMER_INTERVAL * 1000); // Sleep for 10 millisecond to control loop frequency
 
         if (GetTickCounter(&wait_cnt) >= 1000 * 60)
         {
-            ///LOG_LEVEL("task manager state machine event running %d\r\n", wait_cnt); // Log unhandled events
+            /// LOG_LEVEL("task manager state machine event running %d\r\n", wait_cnt); // Log unhandled events
             RestartTickCounter(&wait_cnt);
         }
     }

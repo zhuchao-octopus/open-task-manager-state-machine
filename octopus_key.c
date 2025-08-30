@@ -16,13 +16,29 @@
 #define ADDR_OTA_FLAG 0x1FFF18FC
 
 #ifdef TASK_MANAGER_STATE_MACHINE_KEY
-/*******************************************************************************
- * LOCAL FUNCTIONS DECLEAR
- */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
+
+// GPIO_STATUS gpio_zzd_pin_status = {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP, GPIO_ZZD_KEY_PIN, false, false, OCTOPUS_KEY_ZZD,0, 0};
+// GPIO_STATUS gpio_yzd_pin_status = {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP, GPIO_YZD_KEY_PIN, false, false, OCTOPUS_KEY_YZD,0, 0};
+// GPIO_STATUS gpio_skd_pin_status = {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP, GPIO_SKD_KEY_PIN, false, false, OCTOPUS_KEY_SKD,0, 0};
+// GPIO_STATUS gpio_plus_pin_status = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, false, false, OCTOPUS_KEY_PLUS,0, 0};
+// GPIO_STATUS gpio_subt_pin_status = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, false, false, OCTOPUS_KEY_SUBT,0, 0};
+
+GPIO_KEY_STATUS key_status_power = {(GPIO_GROUP *)GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, OCTOPUS_KEY_POWER, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_zzd =   {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP,GPIO_ZZD_KEY_PIN,OCTOPUS_KEY_ZZD, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_yzd =   {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP,GPIO_YZD_KEY_PIN,OCTOPUS_KEY_YZD, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_skd =   {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP,GPIO_SKD_KEY_PIN,OCTOPUS_KEY_SKD, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_ddd =   {(GPIO_GROUP *)GPIO_DDD_KEY_GROUP,GPIO_DDD_KEY_PIN,OCTOPUS_KEY_DDD, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_plus = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, OCTOPUS_KEY_PLUS, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_subt = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, OCTOPUS_KEY_SUBT, 0, 0, 0, 0, 0, 0, 0};
+GPIO_KEY_STATUS key_status_page = {(GPIO_GROUP *)GPIO_PAGE_KEY_GROUP, GPIO_PAGE_KEY_PIN, OCTOPUS_KEY_PAGE, 0, 0, 0, 0, 0, 0, 0};
+
+GPIO_STATUS *gpio_array[] = {NULL};
+GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_power, &key_status_page, NULL};
+
 uint8_t power_key_password[] = {OCTOPUS_KEY_POWER, OCTOPUS_KEY_POWER, OCTOPUS_KEY_POWER};
 uint8_t power_key_password_index = 0;
 GPIO_KEY_STATUS key_status_received_temp;
@@ -30,14 +46,18 @@ GPIO_KEY_STATUS key_status_received_temp;
 static uint32_t l_t_msg_wait_timer;
 // static uint32_t l_t_msg_boot_wait_timer;
 
+/*******************************************************************************
+ * LOCAL FUNCTIONS DECLEAR
+ */
 static bool key_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
-static void task_key_action_handler(void);
 
-void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status);
-void task_key_power_handler(GPIO_KEY_STATUS *key_status);
-void task_key_received_dispatcher(uint8_t key, uint8_t state);
-void task_key_local_dispatcher(uint8_t key, uint8_t state);
+static void task_key_action_handler(void);
+static void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status);
+static void task_key_power_handler(GPIO_KEY_STATUS *key_status);
+static void task_key_received_dispatcher(uint8_t key, uint8_t state);
+static void task_key_local_dispatcher(uint8_t key, uint8_t state);
+
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */

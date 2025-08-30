@@ -111,7 +111,6 @@ typedef enum
     BOOT_MODE_DUAL_BANK_WITH_LOADER    // Two banks and a bootloader present
 } boot_mode_t;
 
-
 #pragma pack(push, 1)
 typedef struct
 {
@@ -142,23 +141,22 @@ typedef struct
 
 typedef struct
 {
-		uint32_t trip_odo;      // Total distance traveled (unit: 1 meters), also known as trip odometer
-		uint32_t trip_time;     // Total ride time (unit: seconds)
-		uint32_t trip_distance; // Trip distance   (unit: 1 meters), resettable
+    uint32_t trip_odo;      // Total distance traveled (unit: 1 meters), also known as trip odometer
+    uint32_t trip_time;     // Total ride time (unit: seconds)
+    uint32_t trip_distance; // Trip distance   (unit: 1 meters), resettable
 
-		uint16_t speed_average; // Displayed vehicle speed (unit: 0.1 km/h)
-		uint16_t speed_actual;  // Actual wheel speed (unit: 0.1 km/h)
-		uint16_t speed_max;
-		uint16_t speed_limit;   // Speed limit setting; 0 = OFF, range: 10¨C90 km/h
+    uint16_t speed_average; // Displayed vehicle speed (unit: 0.1 km/h)
+    uint16_t speed_actual;  // Actual wheel speed (unit: 0.1 km/h)
+    uint16_t speed_max;
+    uint16_t speed_limit; // Speed limit setting; 0 = OFF, range: 10¨C90 km/h
 
-		uint16_t rpm;           // Motor RPM (raw value, offset by -20000)
-		uint8_t gear;           // Current gear level (0 = Neutral, 1¨CN)
-		uint8_t gear_level_max; // Maximum selectable gear level
-		uint8_t wheel_diameter; // Wheel diameter (unit: inch)
-		uint8_t reserve;
+    uint16_t rpm;           // Motor RPM (raw value, offset by -20000)
+    uint8_t gear;           // Current gear level (0 = Neutral, 1¨CN)
+    uint8_t gear_level_max; // Maximum selectable gear level
+    uint8_t wheel_diameter; // Wheel diameter (unit: inch)
+    uint8_t reserve;
 } system_meter_infor_t;
 #pragma pack(pop)
-
 
 // Global instance holding metadata for application and bootloader
 extern flash_meta_infor_t flash_meta_infor;

@@ -237,18 +237,6 @@ extern "C"
      */
     bool ptl_release_running(ptl_frame_type_t frame_type);
 
-    /**
-     * Sets the opposite running state of the protocol.
-     * @param running The opposite state to set.
-     */
-    void ptl_set_opposite_running(bool running);
-
-    /**
-     * Checks if there is a communication error in the protocol.
-     * @return True if a communication error exists, false otherwise.
-     */
-    bool ptl_is_com_error(void);
-
     /* Protocol frame operations */
     /**
      * Registers a module with the specified frame type and associated send and receive handlers.
@@ -276,17 +264,6 @@ extern "C"
      * @param buff The buffer to store the built header.
      */
     void ptl_build_frame_header(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint8_t datalen, ptl_proc_buff_t *buff);
-
-    /**
-     * Handles the reception of data for the protocol.
-     * @param data The received data byte.
-     */
-    void ptl_receive_handler(uint8_t data);
-
-    /**
-     * Analyzes the received protocol frame for proper handling.
-     */
-    void ptl_frame_analysis_handler(void);
 
     /**
      * Calculates the checksum for the given data.
