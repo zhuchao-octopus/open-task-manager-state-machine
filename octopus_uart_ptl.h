@@ -155,6 +155,8 @@ extern "C"
         FRAME_CMD_CAR_SET_INDICATOR = 0x23,
         FRAME_CMD_CAR_SET_METER = 0x24,
         FRAME_CMD_CAR_SET_BATTERY = 0x25,
+        FRAME_CMD_CAR_RESET_BATTERY = 0x26,
+        FRAME_CMD_CAR_RESET_SYSTEM = 0x27,
 
         FRAME_CMD_CARINFOR_MAX = 0x64
     } ptl_frame_cmd_t;
@@ -164,8 +166,9 @@ extern "C"
      */
     typedef struct
     {
-        uint16_t size;                    ///< Buffer size
+        uint8_t channel;
         uint8_t buff[PTL_FRAME_MAX_SIZE]; ///< Data buffer
+        uint16_t size;                    ///< Buffer size
     } ptl_proc_buff_t;
 
     /**
@@ -234,18 +237,6 @@ extern "C"
      */
     bool ptl_release_running(ptl_frame_type_t frame_type);
 
-    /**
-     * Sets the opposite running state of the protocol.
-     * @param running The opposite state to set.
-     */
-    void ptl_set_opposite_running(bool running);
-
-    /**
-     * Checks if there is a communication error in the protocol.
-     * @return True if a communication error exists, false otherwise.
-     */
-    bool ptl_is_com_error(void);
-
     /* Protocol frame operations */
     /**
      * Registers a module with the specified frame type and associated send and receive handlers.
@@ -275,23 +266,14 @@ extern "C"
     void ptl_build_frame_header(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint8_t datalen, ptl_proc_buff_t *buff);
 
     /**
-     * Handles the reception of data for the protocol.
-     * @param data The received data byte.
-     */
-    void ptl_receive_handler(uint8_t data);
-
-    /**
-     * Analyzes the received protocol frame for proper handling.
-     */
-    void ptl_frame_analysis_handler(void);
-
-    /**
      * Calculates the checksum for the given data.
      * @param data The data for which the checksum will be calculated.
      * @param len The length of the data.
      * @return The calculated checksum.
      */
     uint8_t ptl_get_checksum(uint8_t *data, uint8_t length);
+
+    void ptl_send_buffer(uint8_t channel, uint8_t *data, uint16_t length);
 
     void otsm_ptl_help(void);
 #ifdef __cplusplus

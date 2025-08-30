@@ -401,7 +401,7 @@ uint8_t hal_com_uart_send_string(const char *str, uint8_t length)
  * @param   length  Length of the buffer.
  * @return  Number of bytes sent.
  */
-uint8_t hal_com_uart_send_buffer(const uint8_t *buffer, uint16_t length)
+uint8_t hal_com_uart0_send_buffer(const uint8_t *buffer, uint16_t length)
 {
     uint8_t ret_code = 0;
 #ifdef TEST_LOG_DEBUG_UART_TX_DATA
@@ -435,28 +435,54 @@ uint8_t hal_com_uartl_send_buffer(const uint8_t *buffer, uint16_t length)
     uint8_t ret_code = length;
 #ifdef TEST_LOG_DEBUG_UART_TX_DATA
     LOG_BUFF_LEVEL(buffer, length);
-    /// LOG_NONE("\r\n");
 #endif
-
-#ifdef PLATFORM_CST_OSAL_RTOS
-    ret_code = HalUartSendBuf(UART1, (uint8_t *)buffer, length);
-#elif defined(PLATFORM_ITE_OPEN_RTOS)
-    ret_code = write(PROTOCOL_UART_PORT, buff, length);
-#elif defined(PLATFORM_LINUX_RISC)
-    if (linux_uart_serial_handle)
-        ret_code = serialport_write(linux_uart_serial_handle, buffer, length);
-    else
-        LOG_LEVEL("write failed linux_uart_serial_handle==null\r\n");
-
-#else
-    LPUART_Send_Buffer(buffer, length);
-#endif
+    UART1_Send_Buffer(buffer, length);
     return ret_code;
 }
 
 uint8_t hal_com_uart2_send_buffer(const uint8_t *buffer, uint16_t length)
 {
-    LOG_BUFF_LEVEL(buffer, length);
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+    // LOG_BUFF_LEVEL(buffer, length);
     UART2_Send_Buffer(buffer, length);
-    return 0;
+#endif
+    return length;
+}
+
+uint8_t hal_com_uart3_send_buffer(const uint8_t *buffer, uint16_t length)
+{
+    UART3_Send_Buffer(buffer, length);
+    return length;
+}
+
+uint8_t hal_com_uart4_send_buffer(const uint8_t *buffer, uint16_t length)
+{
+    UART4_Send_Buffer(buffer, length);
+    return length;
+}
+
+uint8_t hal_com_uart5_send_buffer(const uint8_t *buffer, uint16_t length)
+{
+    return length;
+}
+
+uint8_t hal_com_uart6_send_buffer(const uint8_t *buffer, uint16_t length)
+{
+    return length;
+}
+
+uint8_t hal_com_uart7_send_buffer(const uint8_t *buffer, uint16_t length)
+{
+    return length;
+}
+
+uint8_t hal_com_uart8_send_buffer(const uint8_t *buffer, uint16_t length) // LPUART
+{
+    LPUART_Send_Buffer(buffer, length);
+    return length;
+}
+
+uint8_t hal_com_uart9_send_buffer(const uint8_t *buffer, uint16_t length) // LPUART
+{
+    return length;
 }

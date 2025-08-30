@@ -56,7 +56,7 @@ typedef struct UartSendProtocolCmdCtrl
 /*******************************************************************************
  * CONSTANTS
  */
-
+upf_module_t upf_module_info_BAFANG = {UPF_MODULE_NUMBER_BAFANG, UPF_CHANNEL_8, UPF_CHANNEL_TYPE_BYTE};
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLEAR
  */
@@ -125,7 +125,7 @@ static bool proc_protocol_frame_cell_info(uint8_t *buff, int count);
 /*******************************************************************************
  * STATIC VARIABLES
  */
-static uint32_t lt_timer;
+static uint32_t lt_task_msg_tick_counter;
 
 // 骑行辅助等级
 // 档位命令：
@@ -208,23 +208,23 @@ void task_bfang_ptl_start_running(void)
 {
     LOG_LEVEL("task_bafang_ptl_start_running\r\n");
 
-    upf_register_module(UPF_MODULE_BAFANG, bafang_receive_handler);
+    upf_register_module(upf_module_info_BAFANG, bafang_receive_handler);
     OTMS(TASK_MODULE_BAFANG, OTMS_S_ASSERT_RUN);
 }
 
 void task_bfang_ptl_assert_running(void)
 {
-    StartTickCounter(&lt_timer);
+    StartTickCounter(&lt_task_msg_tick_counter);
     OTMS(TASK_MODULE_BAFANG, OTMS_S_RUNNING);
 }
 
 void task_bfang_ptl_running(void)
 {
-    if (GetTickCounter(&lt_timer) < 10)
+    if (GetTickCounter(&lt_task_msg_tick_counter) < 10)
     {
         return;
     }
-    StartTickCounter(&lt_timer);
+    StartTickCounter(&lt_task_msg_tick_counter);
     // lt_carinfo_indicator.walk_assist = theMeterInfo.walk_assist;
     com_uart_ptl_bafang_tx_process();
 }
@@ -459,7 +459,7 @@ void uart_send_protocol_cmd_speed_limit(void)
     send_data[2] = word_h;
     send_data[3] = word_l;
     send_data[4] = send_data[0] + send_data[1] + send_data[2] + send_data[3];
-    upf_send_buffer(UPF_MODULE_BAFANG, send_data, 5);
+    upf_send_buffer(upf_module_info_BAFANG, send_data, 5);
 }
 
 // 发送写入档位命令
@@ -467,7 +467,7 @@ void uart_send_protocol_cmd_gear(void)
 {
     if (lt_carinfo_indicator.walk_assist)
     {
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_06, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_06, 4);
     }
     else if (lt_carinfo_meter.gear_level_max == SETTING_MAX_PAS_3_LEVEL)
     {
@@ -493,24 +493,24 @@ void uart_send_protocol_cmd_lamp(void)
     // if (theIndicatorFlag.lamp)
     if (lt_carinfo_indicator.high_beam > 0)
     {
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_lamp_on, 3);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_lamp_on, 3);
     }
     else
     {
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_lamp_off, 3);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_lamp_off, 3);
     }
 }
 
 // 发送读取电池命令
 void uart_send_protocol_cmd_battery_info(void)
 {
-    upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_battery_info, 3);
+    upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_battery_info, 3);
 }
 
 // 发送读取电芯命令
 void uart_send_protocol_cmd_cell_info(void)
 {
-    upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_cell_info, 3);
+    upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_cell_info, 3);
 }
 
 // 0x11 x?
@@ -520,7 +520,7 @@ void bike_Uart_Send(unsigned char data)
 
     send_data[0] = 0x11;
     send_data[1] = data;
-    upf_send_buffer(UPF_MODULE_BAFANG, send_data, 2);
+    upf_send_buffer(upf_module_info_BAFANG, send_data, 2);
 }
 
 void Bike_pas_level_send_depend_max_9_level(void)
@@ -528,37 +528,37 @@ void Bike_pas_level_send_depend_max_9_level(void)
     switch (lt_carinfo_meter.gear)
     {
     case 0:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_00, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_00, 4);
         return;
     case 1:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_01, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_01, 4);
         return;
     case 2:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_11, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_11, 4);
         return;
     case 3:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_12, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_12, 4);
         return;
     case 4:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_13, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_13, 4);
         return;
     case 5:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_02, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_02, 4);
         return;
     case 6:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_21, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_21, 4);
         return;
     case 7:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_22, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_22, 4);
         return;
     case 8:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_23, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_23, 4);
         return;
     case 9:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_03, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_03, 4);
         return;
     default:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_01, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_01, 4);
         return;
     }
 }
@@ -568,25 +568,25 @@ void Bike_pas_level_send_depend_max_5_level(void)
     switch (lt_carinfo_meter.gear)
     {
     case 0:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_00, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_00, 4);
         return;
     case 1:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_11, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_11, 4);
         return;
     case 2:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_13, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_13, 4);
         return;
     case 3:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_21, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_21, 4);
         return;
     case 4:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_23, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_23, 4);
         return;
     case 5:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_03, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_03, 4);
         return;
     default:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_11, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_11, 4);
         return;
     }
 }
@@ -596,19 +596,19 @@ void Bike_pas_level_send_depend_max_3_level(void)
     switch (lt_carinfo_meter.gear)
     {
     case 0:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_00, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_00, 4);
         return;
     case 1:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_12, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_12, 4);
         return;
     case 2:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_02, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_02, 4);
         return;
     case 3:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_03, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_03, 4);
         return;
     default:
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_12, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_12, 4);
         return;
     }
 }
@@ -851,46 +851,18 @@ uint16_t get_wheel_radius_mm(void)
     return 330;
 }
 
-uint16_t get_wheel_radius_inch(void)
-{
-    lt_carinfo_meter.wheel_diameter = SETTING_WHEEL_27_Inch;
-    switch (lt_carinfo_meter.wheel_diameter)
-    {
-    case SETTING_WHEEL_16_Inch:
-        return 160;
-    case SETTING_WHEEL_18_Inch:
-        return 180;
-    case SETTING_WHEEL_20_Inch:
-        return 200;
-    case SETTING_WHEEL_22_Inch:
-        return 220;
-    case SETTING_WHEEL_24_Inch:
-        return 240;
-    case SETTING_WHEEL_26_Inch:
-        return 260;
-    case SETTING_WHEEL_27_Inch:
-        return 270;
-    case SETTING_WHEEL_27_5_Inch:
-        return 275;
-    case SETTING_WHEEL_28_Inch:
-        return 280;
-    case SETTING_WHEEL_29_Inch:
-        return 290;
-    }
-    return 260;
-}
 ///////////////////////////////////////////////////////////////////////////////////
 void bafang_lamp_on_off(bool on_off)
 {
     if (on_off)
     {
         lt_carinfo_indicator.high_beam = 1;
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_lamp_on, sizeof(protocol_cmd_lamp_on));
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_lamp_on, sizeof(protocol_cmd_lamp_on));
     }
     else
     {
         lt_carinfo_indicator.high_beam = 0;
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_lamp_off, sizeof(protocol_cmd_lamp_off));
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_lamp_off, sizeof(protocol_cmd_lamp_off));
     }
 }
 
@@ -900,7 +872,7 @@ void bafang_set_gear(uint8_t level)
     if (lt_carinfo_indicator.walk_assist)
     {
         LOG_LEVEL("lt_indicator.walk_assist=%d\r\n", lt_carinfo_indicator.walk_assist);
-        upf_send_buffer(UPF_MODULE_BAFANG, protocol_cmd_pas_gear_06, 4);
+        upf_send_buffer(upf_module_info_BAFANG, protocol_cmd_pas_gear_06, 4);
     }
     else if (lt_carinfo_meter.gear_level_max == SETTING_MAX_PAS_3_LEVEL)
     {

@@ -5,7 +5,6 @@
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
 #include <string.h>	  // Include string functions for string manipulation
 #include "hk32l0xx.h" // Include the HK32L0xx library for MCU-specific definitions and functions
-
 #include "octopus_bsp.h"
 
 #include "octopus_uart_hal.h"
@@ -14,11 +13,15 @@
 #include "octopus_system.h"
 #include "octopus_flash.h"
 #include "octopus_uart_upf.h"
-
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
+#include "octopus_ling_hui_liion2.h"
+#include "octopus_bafang.h"
+#include "octopus_bt.h"
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /* Exported macro ------------------------------------------------------------*/
 #define LPUARTx_TXIO_PORT GPIOB
@@ -127,6 +130,9 @@ CanRxMsg CanRxMessage = {0};
 #endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+volatile uint32_t system_tick_counter_ms = 0;
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* USART/DMA Structures -----------------------------------------------------*/
 // USART_InitTypeDef USART_InitStructure;    			 // USART initialization structure
 // DMA_InitTypeDef  DMA_InitStructure;       			 // DMA initialization structure
@@ -150,14 +156,23 @@ void DMA1_Channel6_7_IRQHandler(void); // DMA interrupt handler for USART2 TX an
 void UART2_Config_IRQ_STOP_Mode(void);
 
 extern void hal_timer_interrupt_callback(uint8_t event);
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**
+  * @brief  This function handles SysTick Handler.
+  * @retval None
+  */
+void SysTick_Handler(void)
+{
+	system_tick_counter_ms++;  // Increment the millisecond counter
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////BT/debug
 __weak void UART1_RX_Callback(uint8_t *buffer, uint16_t length) ///////BT
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
-	upf_receive_callback(UPF_MODULE_BT, buffer, length);
+	upf_receive_callback(upf_module_info_BT_MUSIC, buffer, length);
 #endif
 }
 
@@ -193,11 +208,11 @@ __weak void LPUART_RX_Callback(uint8_t *buffer, uint16_t length)
 	/// LPUART_Send_Buffer(buffer,length);
 	/// UART1_Send_Buffer(buffer,length);
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
-	upf_receive_callback(UPF_MODULE_BAFANG, buffer, length);
+	upf_receive_callback(upf_module_info_BAFANG, buffer, length);
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
-	upf_receive_callback(UPF_MODULE_LING_HUI_LIION2, buffer, length);
+	upf_receive_callback(upf_module_info_LING_HUI_LIION2, buffer, length);
 #endif
 }
 
@@ -230,13 +245,13 @@ void SYS_Config(void)
 {
 	// Configure SysTick timer to interrupt every 1 ms
 	SysTick->LOAD = (SystemCoreClock / 1000) - 1; // Set reload register for 1ms interval
-	SysTick->VAL = 0;							  // Clear current value
+	SysTick->VAL = 0;							  							// Clear current value
 	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk |  // Use processor clock
-					SysTick_CTRL_TICKINT_Msk |	  // Enable SysTick interrupt
-					SysTick_CTRL_ENABLE_Msk;	  // Enable SysTick timer
+					SysTick_CTRL_TICKINT_Msk |	  				// Enable SysTick interrupt
+					SysTick_CTRL_ENABLE_Msk;	  					// Enable SysTick timer
 
 	// Set the priority of the SysTick interrupt
-	NVIC_SetPriority(SysTick_IRQn, 0x3); // 0x0 is the highest priority
+	NVIC_SetPriority(SysTick_IRQn, 0x3); 					// 0x0 is the highest priority
 }
 /**
  * @brief  Configures GPIO pins for USART1 and USART2.
@@ -1654,7 +1669,8 @@ void CAN_Config(void)
 	/* CAN Baudrate = 500bps (CAN clocked at 48 MHz) */
 	CAN_InitStructure.CAN_BS1 = CAN_BS1_10tq;
 	CAN_InitStructure.CAN_BS2 = CAN_BS2_5tq;
-	CAN_InitStructure.CAN_Prescaler = 6;
+	//CAN_InitStructure.CAN_Prescaler = 6;//500bps
+	CAN_InitStructure.CAN_Prescaler = 12;//250bps
 #endif
 	CAN_Init(&CAN_InitStructure);
 

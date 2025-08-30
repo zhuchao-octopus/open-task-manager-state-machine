@@ -23,15 +23,18 @@
  *******************************************************************************/
 #include "octopus_platform.h" // Platform-specific definitions and utilities
 #include "octopus_system.h"
+#include "octopus_uart_upf.h" // Include UART protocol header
 
 #define MAX_BT_DEVICES 10
+
+extern upf_module_t upf_module_info_BT_MUSIC;
 
 typedef struct
 {
 	char name[32];	  // Bluetooth device name
 	char address[13]; // 12 hex digits, no colon, e.g. "00755810FD4F"
 	int type;
-	int rssi; // Signal strength in dBm
+	int rssi; 				// Signal strength in dBm
 	char class_str[8];
 } bt_device_t;
 

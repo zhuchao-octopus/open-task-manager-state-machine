@@ -312,12 +312,88 @@ uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec)
 {
     // speed_kmh is in km/h, time_sec is in seconds
     // Convert speed to m/s (1 km/h = 1000 m / 3600 s)
-    uint32_t speed_ms = (speed_kmh * 1000) / 3600;
+    // uint32_t speed_ms = (speed_kmh * 1000) / 3600;
+
+    // speed_kmh_x10: speed in 0.1 km/h units
+    // Convert to m/s: (speed * 100) / 3600 = speed / 36
+    uint32_t speed_ms = speed_kmh / 36; // 0.1dkm/h
 
     // Calculate distance in meters
     uint32_t distance_m = speed_ms * time_sec;
 
     return distance_m;
+}
+
+static const float DEFAULT_CONSUMPTION_WH_PER_KM = 10.0f; // 经验值：Wh/km，可按实际调整
+static const float DEFAULT_SAFETY_RESERVE_RATIO = 0.10f;  // 预留 10% 容量为安全余量（可设0）
+
+void calculate_battery_soc_ex(uint16_t voltage_mV,
+                              uint16_t capacity_mAh,
+                              uint32_t trip_odo_m,
+                              float consumption_Wh_per_km, // 例如 18.0
+                              float safety_reserve_ratio,  // 例如 0.10 = 10%
+                              float avg_speed_kph,         // 用于功率估算；若未知传 0
+                              uint16_t *out_power_w,
+                              uint16_t *out_soc_pct,
+                              uint16_t *out_range_100m,
+                              uint16_t *out_range_max_100m)
+{
+    if (!out_power_w || !out_soc_pct || !out_range_100m || !out_range_max_100m)
+        return;
+    if (voltage_mV < 1000)
+        voltage_mV = voltage_mV * 100;
+    if (capacity_mAh < 1000)
+        capacity_mAh = capacity_mAh * 100;
+
+    // 参数保护
+    if (consumption_Wh_per_km <= 0.01f)
+        consumption_Wh_per_km = 18.0f;
+    if (safety_reserve_ratio < 0.0f)
+        safety_reserve_ratio = 0.0f;
+    if (safety_reserve_ratio > 0.5f)
+        safety_reserve_ratio = 0.5f;
+
+    // 1. 电池总能量 (Wh)
+    float capacity_Wh = (voltage_mV * capacity_mAh) / 1000000.0f;
+
+    // 2. 可用能量 (扣除安全余量)
+    float usable_Wh = capacity_Wh * (1.0f - safety_reserve_ratio);
+
+    // 3. 已消耗能量
+    float used_km = trip_odo_m / 1000.0f;
+    float used_Wh = used_km * consumption_Wh_per_km;
+
+    // 4. 剩余能量
+    float remain_Wh = usable_Wh - used_Wh;
+    if (remain_Wh < 0.0f)
+        remain_Wh = 0.0f;
+
+    // 5. SOC (%)
+    float soc_f = (usable_Wh > 0.0f) ? (remain_Wh / usable_Wh) * 100.0f : 0.0f;
+    if (soc_f > 100.0f)
+        soc_f = 100.0f;
+
+    // 6. 理论最大/剩余里程
+    float full_range_km = (usable_Wh > 0.0f) ? (usable_Wh / consumption_Wh_per_km) : 0.0f;
+    float remain_range_km = (remain_Wh > 0.0f) ? (remain_Wh / consumption_Wh_per_km) : 0.0f;
+
+    // 7. 平均功率估算
+    uint16_t power_w = 0;
+    if (avg_speed_kph > 0.0f)
+    {
+        float p = consumption_Wh_per_km * avg_speed_kph; // Wh/km * km/h = Wh/h = W
+        if (p < 0.0f)
+            p = 0.0f;
+        if (p > 65535.0f)
+            p = 65535.0f;
+        power_w = (uint16_t)(p + 0.5f);
+    }
+
+    // 输出
+    *out_power_w = power_w;
+    *out_soc_pct = (uint16_t)(soc_f + 0.5f);
+    *out_range_100m = (uint16_t)(remain_range_km * 10.0f + 0.5f);
+    *out_range_max_100m = (uint16_t)(full_range_km * 10.0f + 0.5f);
 }
 
 void task_car_controller_msg_handler(void)
@@ -326,6 +402,16 @@ void task_car_controller_msg_handler(void)
     uint32_t trip_timer = 0;
     uint32_t trip_saving_timer = 0;
     uint32_t delta_distance = 0;
+
+    if ((lt_carinfo_meter.speed_actual > 0))
+    {
+        if (!IsTickCounterStart(&l_t_msg_car_trip_timer))
+            StartTickCounter(&l_t_msg_car_trip_timer);
+    }
+    else
+    {
+        StopTickCounter(&l_t_msg_car_trip_timer);
+    }
 
     Msg_t *msg = get_message(TASK_MODULE_CAR_INFOR);
     if (msg->msg_id == NO_MSG)
@@ -336,6 +422,9 @@ void task_car_controller_msg_handler(void)
         {
             if (lt_carinfo_meter.speed_actual > lt_carinfo_meter.speed_max)
                 lt_carinfo_meter.speed_max = lt_carinfo_meter.speed_actual;
+            if (lt_carinfo_meter.speed_average == 0)
+                lt_carinfo_meter.speed_average = lt_carinfo_meter.speed_actual;
+
             lt_carinfo_meter.speed_average = (lt_carinfo_meter.speed_average + lt_carinfo_meter.speed_actual) / 2;
 
             trip_timer = trip_timer / 1000;
@@ -344,6 +433,15 @@ void task_car_controller_msg_handler(void)
             lt_carinfo_meter.trip_time = lt_carinfo_meter.trip_time + trip_timer;
             lt_carinfo_meter.trip_distance = lt_carinfo_meter.trip_distance + delta_distance;
             lt_carinfo_meter.trip_odo = lt_carinfo_meter.trip_odo + delta_distance;
+
+            system_meter_infor.trip_odo = system_meter_infor.trip_odo + delta_distance;
+            system_meter_infor.speed_average = lt_carinfo_meter.speed_average;
+
+            calculate_battery_soc_ex(lt_carinfo_battery.voltage, lt_carinfo_battery.current, system_meter_infor.trip_odo,
+                                     DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
+                                     system_meter_infor.speed_average,
+                                     &lt_carinfo_battery.power, &lt_carinfo_battery.soc,
+                                     &lt_carinfo_battery.range, &lt_carinfo_battery.range_max);
             RestartTickCounter(&l_t_msg_car_trip_timer);
         }
 
@@ -352,6 +450,16 @@ void task_car_controller_msg_handler(void)
             flash_save_carinfor_meter();
             RestartTickCounter(&l_t_trip_saving_timer);
         }
+
+        if (lt_carinfo_battery.soc == 0)
+        {
+            calculate_battery_soc_ex(lt_carinfo_battery.voltage, lt_carinfo_battery.current, system_meter_infor.trip_odo,
+                                     DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
+                                     system_meter_infor.speed_average,
+                                     &lt_carinfo_battery.power, &lt_carinfo_battery.soc,
+                                     &lt_carinfo_battery.range, &lt_carinfo_battery.range_max);
+        }
+
         return;
     }
 
@@ -363,15 +471,6 @@ void task_car_controller_msg_handler(void)
             send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, 0);
             break;
         case FRAME_CMD_CARINFOR_METER:
-            if ((lt_carinfo_meter.speed_actual > 0))
-            {
-                if (!IsTickCounterStart(&l_t_msg_car_trip_timer))
-                    StartTickCounter(&l_t_msg_car_trip_timer);
-            }
-            else
-            {
-                StopTickCounter(&l_t_msg_car_trip_timer);
-            }
             send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);
             break;
         case FRAME_CMD_CARINFOR_BATTERY:

@@ -16,7 +16,7 @@
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x00000400) /* FLASH Page Size 1KB*/
 
-#ifdef TASK_MANAGER_STATE_MACHINE_FLASH
+
 void hal_flash_init(uint8_t task_id)
 {
     LOG_LEVEL("hal flash init\r\n");
@@ -166,7 +166,6 @@ uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
     return written_bytes; // Return the number of bytes written
 }
 #endif
-#endif // TASK_MANAGER_STATE_MACHINE_FLASH
 
 void hal_eeprom_write_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {

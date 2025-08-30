@@ -67,11 +67,12 @@ extern "C"
      * FUNCTION PROTOTYPES
      * Functions for managing the message queues
      */
+    void otsm_message_queue_init(void); // Initialize all message queues for the task manager
+
     Msg_t *get_message(TaskModule_t task_module);                                                   // Retrieve a message from the task module's queue
     void send_message(TaskModule_t task_module, uint16_t msg_id, uint16_t param1, uint16_t param2); // Send a message to the task module's queue
 
     void clear_message(TaskModule_t task_module); // Clear the task module's message queue
-    void message_queue_init(void);                // Initialize all message queues for the task manager
 
     void send_message_adapter(uint16_t task_module, uint16_t msg_id, uint16_t param1, uint16_t param2); // Send a message to the task module's queue
 #ifdef __cplusplus

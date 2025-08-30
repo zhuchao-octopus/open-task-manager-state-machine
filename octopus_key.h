@@ -1,4 +1,4 @@
-/*******************************************************************************
+/**************************************************************************************
  * @file octopus_task_manager_key.h
  * @brief Header file for managing key/button input handling within the Octopus Task Manager.
  *
@@ -15,12 +15,12 @@
  * @version  1.0
  * @date     2024-12-12
  * @author   Octopus Team
- ******************************************************************************/
+ **************************************************************************************/
 
 #ifndef __OCTOPUS_TASK_MANAGER_KEY_H__
 #define __OCTOPUS_TASK_MANAGER_KEY_H__
 
-/*******************************************************************************
+/**************************************************************************************
  * INCLUDES
  */
 #include "octopus_platform.h" // Platform-specific configurations and definitions
@@ -30,15 +30,15 @@ extern "C"
 {
 #endif
 
-/*******************************************************************************
+/**************************************************************************************
  * MACROS
  * The following macros define key IDs and their respective actions.
  */
 
 // Key IDs (these should correspond to the physical keys on the device)
-// ========================
+// =====================================================================================
 // Function Keys
-// ========================
+// =====================================================================================
 #define OCTOPUS_KEY_ESC 0
 #define OCTOPUS_KEY_F1 1
 #define OCTOPUS_KEY_F2 2
@@ -56,9 +56,9 @@ extern "C"
 #define OCTOPUS_KEY_SCROLLLOCK 14
 #define OCTOPUS_KEY_PAUSE 15
 
-// ========================
+// =====================================================================================
 // Number Row
-// ========================
+// =====================================================================================
 #define OCTOPUS_KEY_GRAVE 16 // `~
 #define OCTOPUS_KEY_1 17
 #define OCTOPUS_KEY_2 18
@@ -74,9 +74,9 @@ extern "C"
 #define OCTOPUS_KEY_EQUAL 28 // =+
 #define OCTOPUS_KEY_BACKSPACE 29
 
-// ========================
+// =====================================================================================
 // Tab / Caps / Shift / Ctrl
-// ========================
+// =====================================================================================
 #define OCTOPUS_KEY_TAB 30
 #define OCTOPUS_KEY_Q 31
 #define OCTOPUS_KEY_W 32
@@ -128,9 +128,9 @@ extern "C"
 #define OCTOPUS_KEY_MENU 75
 #define OCTOPUS_KEY_RIGHTCTRL 76
 
-// ========================
+// =====================================================================================
 // Arrow / Edit Keys
-// ========================
+// =====================================================================================
 #define OCTOPUS_KEY_INSERT 77
 #define OCTOPUS_KEY_DELETE 78
 #define OCTOPUS_KEY_HOME 79
@@ -142,9 +142,9 @@ extern "C"
 #define OCTOPUS_KEY_LEFT 85
 #define OCTOPUS_KEY_RIGHT 86
 
-// ========================
+// =====================================================================================
 // Numpad
-// ========================
+// =====================================================================================
 #define OCTOPUS_KEY_NUMLOCK 87
 #define OCTOPUS_KEY_KP_SLASH 88
 #define OCTOPUS_KEY_KP_ASTERISK 89
@@ -242,11 +242,10 @@ extern "C"
      * This function stops the key input event detection, effectively disabling the key input system.
      */
     void task_key_stop_running(void);
+#endif
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
 
 #endif /* __OCTOPUS_TASK_MANAGER_KEY_H__ */

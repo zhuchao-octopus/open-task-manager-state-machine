@@ -5,7 +5,6 @@
 #include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_ling_hui_liion2.h"
 #include "octopus_uart_hal.h"
-#include "octopus_uart_upf.h" // Include UART protocol header
 #include "octopus_vehicle.h"
 
 /*******************************************************************************
@@ -42,12 +41,13 @@ void lhl2_ptl_test_carinfo_indicator(void);
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-
+upf_module_t upf_module_info_LING_HUI_LIION2 = {UPF_MODULE_NUMBER_LING_HUI_LIION2, UPF_CHANNEL_8, UPF_CHANNEL_TYPE_BYTE};
 /*******************************************************************************
  * STATIC VARIABLES
  */
 static uint32_t lhl2_task_interval_ms = 0;
 static uint32_t lhl2_task_tx_interval_ms = 0;
+
 /*******************************************************************************
  * EXTERNAL VARIABLES
  */
@@ -65,7 +65,7 @@ void task_lhl2_ptl_init_running(void)
 void task_lhl2_ptl_start_running(void)
 {
     LOG_LEVEL("task_bafang_ptl_start_running\r\n");
-    upf_register_module(UPF_MODULE_LING_HUI_LIION2, lhl2_ptl_receive_handler);
+    upf_register_module(upf_module_info_LING_HUI_LIION2, lhl2_ptl_receive_handler);
     OTMS(TASK_MODULE_LING_HUI_LIION2, OTMS_S_ASSERT_RUN);
 }
 
@@ -75,19 +75,21 @@ void task_lhl2_ptl_assert_running(void)
     StartTickCounter(&lhl2_task_interval_ms);
     StartTickCounter(&lhl2_task_tx_interval_ms);
 
-    lt_carinfo_meter.wheel_diameter = SETTING_WHEEL_24_Inch;
+    lt_carinfo_meter.wheel_diameter = SETTING_WHEEL_20_Inch;
     lt_carinfo_meter.gear_level_max = SETTING_MAX_PAS_5_LEVEL;
     lt_carinfo_meter.speed_limit = 255;
     lt_carinfo_meter.gear = 0;
 
-    lt_carinfo_battery.voltage = 480;
-    lt_carinfo_battery.range_max = 60; // UINT16_MAX;
-    lt_carinfo_battery.range = 60;
-	
+    lt_carinfo_battery.voltage = 600;
+    lt_carinfo_battery.current = 175;
+    // lt_carinfo_battery.range_max = 60; // UINT16_MAX;
+    // lt_carinfo_battery.range = 60;
+
     lt_carinfo_indicator.cruise_control = true;
     lt_carinfo_indicator.start_poles = 1;
     lt_carinfo_indicator.motor_poles = 2;
     lt_carinfo_indicator.cruise_control = true;
+    // lt_carinfo_indicator.horn = true;
 }
 
 void task_lhl2_ptl_running(void)
@@ -100,7 +102,6 @@ void task_lhl2_ptl_running(void)
         return;
     }
     StartTickCounter(&lhl2_task_interval_ms);
-    // return;
 
     if (loop == 0)
     {
@@ -123,7 +124,9 @@ void task_lhl2_ptl_running(void)
         loop = 0;
     }
     else
+    {
         loop = 0;
+    }
 }
 
 void task_lhl2_ptl_post_running(void)
@@ -281,7 +284,7 @@ void lhl2_ptl_tx_process(void)
 
     lu_tx_buff[19] = lhl2_ptl_checksum(lu_tx_buff, 19);
 
-    upf_send_buffer(UPF_MODULE_LING_HUI_LIION2, lu_tx_buff, 20);
+    upf_send_buffer(upf_module_info_LING_HUI_LIION2, lu_tx_buff, 20);
 }
 
 void lhl2_ptl_remove_none_header_data(upf_proc_buff_t *upf_proc_buff)
@@ -422,7 +425,7 @@ uint16_t calculate_speed_kph_x10(uint16_t round_ms)
     uint32_t wheel_r = get_wheel_radius_inch();                        // 半径，0.1 英寸
     uint32_t speed_x10 = (wheel_r * 5748UL + round_ms / 2) / round_ms; // 四舍五入
 
-    return (uint16_t)(speed_x10 / 10 / 2);
+    return (uint16_t)(speed_x10 / 10);
 }
 
 // #define  YONGJIU_WHEEL_Inch 284 //284,700C50C,700C的车圈直径为622毫米,理论直径?：622mm+(50mm×2)=722mm（约28.4英寸）
@@ -431,14 +434,14 @@ void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length) // RX
 {
     uint8_t state1 = data[3];
     uint8_t state2 = data[4];
-    uint16_t cur = MK_WORD(data[5], data[6]);
+    // uint16_t cur = MK_WORD(data[5], data[6]);
     // uint8_t cur_pre = data[7];
     uint16_t round = MK_WORD(data[8], data[9]);
-    uint8_t soc = data[10];
-    uint8_t range = MK_WORD(data[11], data[12]);
+    // uint8_t soc = data[10];
+    // uint8_t range = MK_WORD(data[11], data[12]);
 
-    // LOG_LEVEL("data[]= ");
-    // LOG_BUFF(data, length);
+    // LOG_BUFF_LEVEL(data, length);
+#if 0
     // 实际电流数据
     uint32_t cur_tmp = cur & 0x3FFF;
 
@@ -447,27 +450,27 @@ void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length) // RX
     {
         cur_tmp = cur_tmp * 10;
     }
+		
     lt_carinfo_battery.current = cur_tmp;
     lt_carinfo_battery.power = lt_carinfo_battery.voltage * lt_carinfo_battery.current; /// 100;
-
-    if (soc == 0)
-    {
-        if (lt_carinfo_battery.current_limit != 0)
-            soc = (lt_carinfo_battery.current / lt_carinfo_battery.current_limit) * 100.0f;
-        else
-            soc = 100;
-    }
-
     lt_carinfo_battery.soc = soc;
 
-    if (range)
+    if (range > 0)
     {
         lt_carinfo_battery.range = range;
+		if (lt_carinfo_battery.soc == 0)
+		{
+			lt_carinfo_battery.soc = range / lt_carinfo_battery.range_max;
+		}
     }
-    else
+    else 
     {
-        lt_carinfo_battery.range = (lt_carinfo_battery.range_max * soc) / 100;
+		if (lt_carinfo_battery.soc > 0)
+			lt_carinfo_battery.range = (lt_carinfo_battery.range_max * soc) / 100;
+		else
+			lt_carinfo_battery.soc = cur_pre;
     }
+#endif
 
     if (round <= 10 || round >= 3500) // 如果一圈的时间大于等于30S，认为车辆已经停止
     {
@@ -534,7 +537,9 @@ void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length) // RX
 
     // 通讯故障
     if (state2 & BIT_4)
+    {
         task_carinfo_add_error_code(ERROR_CODE_BMS_ABNORMALITY, state2 & BIT_4, false);
+    }
 }
 
 uint8_t lhl2_ptl_checksum(uint8_t *data, uint8_t len)
@@ -550,7 +555,10 @@ uint8_t lhl2_ptl_checksum(uint8_t *data, uint8_t len)
 uint16_t get_wheel_radius_inch(void)
 {
     if (lt_carinfo_meter.wheel_diameter >= 100)
+    {
         return lt_carinfo_meter.wheel_diameter;
+    }
+
     switch (lt_carinfo_meter.wheel_diameter)
     {
     case SETTING_WHEEL_16_Inch:
@@ -574,6 +582,7 @@ uint16_t get_wheel_radius_inch(void)
     case SETTING_WHEEL_29_Inch:
         return 290;
     }
+
     return 260;
 }
 

@@ -25,6 +25,7 @@ void Print_SRAM_VectorTable(void);
 void flash_print_mcu_meta_infor(void);
 /////////////////////////////////////////////////////////////////////////////////////
 flash_meta_infor_t flash_meta_infor = {0};
+system_meter_infor_t system_meter_infor = {0};
 
 #ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
 #if (defined(__CC_ARM))
@@ -197,7 +198,7 @@ void flash_load_sync_data_infor(void)
 	LOG_NONE("\r\n");
 #ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
 	uint32_t calculated_crc = 0;
-	E2ROMReadToBuff(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	E2ROMReadToBuff(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 	flash_meta_infor.bank_slot_activated = FLASH_BANK_CONFIG_MODE_SLOT;
 	flash_meta_infor.bank_slot_mode = BOOTLOADER_CONFIG_MODE_TYPE;
 	flash_meta_infor.loader_addr = BOOTLOADER_START_ADDR;
@@ -226,7 +227,7 @@ void flash_load_sync_data_infor(void)
 			}
 			flash_meta_infor.slot_a_crc = calculated_crc;
 			flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_A;
-			// E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+			// E2ROMWriteBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 		}
 	}
 	else if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_B)
@@ -247,7 +248,7 @@ void flash_load_sync_data_infor(void)
 
 			flash_meta_infor.slot_b_crc = calculated_crc;
 			flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_B;
-			// E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+			// E2ROMWriteBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 		}
 	}
 	else if (FLASH_BANK_CONFIG_MODE_SLOT == BANK_SLOT_LOADER)
@@ -258,7 +259,7 @@ void flash_load_sync_data_infor(void)
 	{
 	}
 
-	E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	E2ROMWriteBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 	flash_print_mcu_meta_infor();
 
 	if (flash_meta_infor.mete_data_flags == EEROM_DATAS_VALID_FLAG)
@@ -308,6 +309,7 @@ bool flash_is_allow_update_bank(uint8_t bank_type)
 		return false;
 	}
 }
+
 bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address)
 {
 	if ((b_address & FLASH_BANK_MASK) == MAIN_APP_SLOT_A_START_ADDR)
@@ -406,7 +408,7 @@ void flash_save_app_meter_infor(void)
 {
 #ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
 	// LOG_LEVEL("flash_save_app_meter\r\n");
-	E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	E2ROMWriteBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 #endif
 }
 
@@ -421,7 +423,10 @@ void flash_save_carinfor_meter(void)
 	//	return;
 	// }
 	flash_meta_infor.mete_data_flags = EEROM_DATAS_VALID_FLAG;
-	E2ROMWriteBuffTo(EEROM_APP_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	E2ROMWriteBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	system_meter_infor.trip_odo = lt_carinfo_meter.trip_odo;
+	system_meter_infor.speed_average = lt_carinfo_meter.speed_average;
+	E2ROMWriteBuffTo(EEROM_SYSTEM_METER_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
 	E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
 #endif
 }

@@ -109,25 +109,18 @@ extern "C"
   /**
    * @brief Initialize the task manager, setting all tasks to INIT.
    */
-  void task_manager_init(void);
+  void otms_task_manager_init(void);
 
   /**
    * @brief Start all tasks by transitioning them to the START state.
    */
-  void task_manager_start(void);
+  void otms_task_manager_start(void);
 
   /**
    * @brief Stop all tasks by setting them to the STOP state.
    */
-  void task_manager_stop(void);
-
-  void task_manager_stop_except_1(TaskModule_t task_module1);
-  void task_manager_stop_except_2(TaskModule_t task_module1, TaskModule_t task_module2);
-  void task_manager_start_module(TaskModule_t TaskModule);
-  /**
-   * @brief Execute the current state handler for all registered tasks.
-   */
-  void task_manager_run(void);
+  void otms_task_manager_stop(void);
+  void otms_task_manager_run(void);
 
   /**
    * @brief Transition all tasks into the RUNNING state.
@@ -159,6 +152,9 @@ extern "C"
    */
   const otms_t *otms_get_config(void);
 
+  void task_manager_stop_except_1(TaskModule_t task_module1);
+  void task_manager_stop_except_2(TaskModule_t task_module1, TaskModule_t task_module2);
+  void task_manager_start_module(TaskModule_t TaskModule);
 #ifdef __cplusplus
 }
 #endif

@@ -2,6 +2,8 @@
 /*****************************************************************************/
 #include "octopus_can_2E006.h"
 
+#ifdef CAN_2E006
+
 static BMS_Task_H_001_t g_bms1;
 static BMS_Task_H_002_t g_bms2;
 static MCU_Task_H_001_t g_mcu1;
@@ -215,3 +217,5 @@ void CAN_Parse_EBS_Level(const CanQueueMsg_t *msg)
         return;
     g_ebs.ebs_state = msg->data[0];
 }
+
+#endif

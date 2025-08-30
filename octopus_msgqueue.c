@@ -167,7 +167,7 @@ void clear_message(TaskModule_t task_module)
 /**
  * @brief Initialize the message queues for all task modules.
  */
-void message_queue_init(void)
+void otsm_message_queue_init(void)
 {
     uint8_t i;
     for (i = 0; i < TASK_MODULE_MAX_NUM; i++) // Iterate through all task modules
