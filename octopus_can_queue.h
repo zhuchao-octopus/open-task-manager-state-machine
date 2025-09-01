@@ -22,15 +22,16 @@
 /**
  * @brief Structure representing a single CAN message in the queue.
  */
-// =============================
 // CAN queue message structure
-// =============================
+#pragma pack(push, 1)
+
 typedef struct
 {
-    uint8_t channel;  // CAN channel index (0 = CAN1, 1 = CAN2, etc.)
-    uint32_t id;      // CAN message identifier
+    uint32_t std_id;      // CAN message identifier
     uint8_t ide;      // Identifier type: 0 = Standard, 1 = Extended
     uint8_t rtr;      // Frame type: 0 = Data frame, 1 = Remote frame
+		uint8_t channel;  // CAN channel index (0 = CAN1, 1 = CAN2, etc.)
+	
     uint8_t data_len; // Length of CAN data (0 ~ 8)
     uint8_t data[8];  // CAN data payload
 } CanQueueMsg_t;
@@ -44,6 +45,8 @@ typedef struct
     uint16_t tail;                         // Index of the next free slot for pushing
     CanQueueMsg_t msg[CAN_MSG_QUEUE_SIZE]; // Internal buffer to store CAN messages
 } CanQueue_t;
+
+#pragma pack(pop)
 
 /**
  * @brief Initializes the CAN message queue by resetting head and tail.
@@ -70,7 +73,7 @@ uint16_t CanQueue_Length(CanQueue_t *queue);
  * @param data_len Length of the data payload.
  * @return 0 if push was successful, 1 if the queue is full.
  */
-uint8_t CanQueue_Push(CanQueue_t *queue, uint8_t channel, uint32_t id, const uint8_t *data, uint8_t data_len);
+uint8_t CanQueue_Push(CanQueue_t *queue, uint8_t channel, uint32_t std_id, const uint8_t *data, uint8_t data_len);
 
 /**
  * @brief Attempts to pop the oldest CAN message from the queue.

@@ -199,7 +199,7 @@ bool ptl_release_running(ptl_frame_type_t frame_type)
 bool ptl_is_exists_task(void)
 {
     // Check if there are no tasks running
-    if (l_t_ptl_running_req_mask == PTL_RUNNING_NONE)
+    if (l_t_ptl_running_req_mask != PTL_RUNNING_NONE)
     {
         return true; // Sleep mode is enabled
     }
