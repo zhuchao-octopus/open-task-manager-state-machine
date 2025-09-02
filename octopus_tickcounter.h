@@ -28,8 +28,7 @@
 /*******************************************************************************
  * INCLUDES
  */
-
-#include "octopus_platform.h" // Include platform-specific configurations and definitions
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 #ifdef __cplusplus
 extern "C"

@@ -2,7 +2,6 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_bafang.h"
 #include "octopus_uart_hal.h"
 #include "octopus_uart_upf.h" // Include UART protocol header

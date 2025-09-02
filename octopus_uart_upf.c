@@ -42,7 +42,6 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_uart_upf.h" // Include UART protocol header
 #include "octopus_uart_hal.h" // Include UART hardware abstraction layer header
 
@@ -59,7 +58,9 @@
 /*******************************************************************************
  * TYPEDEFS
  */
-
+// extern upf_module_info_t upf_module_info[];
+static upf_module_info_t *upf_module_info = NULL;
+static size_t s_upf_module_max = 0;
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLARATION
  */
@@ -78,20 +79,32 @@ static uint32_t l_t_ptl_rx_main_timer;
 // static uint32_t l_t_ptl_error_detect_timer;
 // static bool lb_com_error = false;
 
-static upf_module_info_t upf_module_info[UPF_MODULE_MAX];
 static uint8_t upf_next_empty_module = 0;
 
 /*******************************************************************************
  * GLOBAL FUNCTIONS IMPLEMENTATION
  */
 
-void upf_register_module(upf_module_t module, upf_module_receive_handler_t receive_handler)
+void otsm_upf_help(void)
 {
-    if (upf_next_empty_module < UPF_MODULE_MAX)
-    {
-        //LOG_LEVEL("register upf_module_info[%d]=%d\r\n",upf_next_empty_module, module);
+    upf_print_registered_module();
+}
 
-        upf_module_info[upf_next_empty_module].module = module;
+void upf_module_info_init(upf_module_info_t *array, size_t length)
+{
+    if (array == NULL || length == 0)
+        return;
+    upf_module_info = array;
+    s_upf_module_max = length;
+}
+
+void upf_register_module(upf_module_t upf_module, upf_module_receive_handler_t receive_handler)
+{
+    if (upf_next_empty_module < s_upf_module_max)
+    {
+        upf_module_info[upf_next_empty_module].upf_module.channel = upf_module.channel;
+        upf_module_info[upf_next_empty_module].upf_module.module = upf_module.module;
+
         upf_module_info[upf_next_empty_module].receive_handler = receive_handler;
 
         cFifo_Init(&upf_module_info[upf_next_empty_module].upf_usart_rx_fifo,
@@ -102,13 +115,14 @@ void upf_register_module(upf_module_t module, upf_module_receive_handler_t recei
     }
 }
 
-upf_module_info_t *upf_get_module(upf_module_t module)
+upf_module_info_t *upf_get_module(upf_module_t upf_module)
 {
     upf_module_info_t *module_info = NULL;
 
     for (uint8_t i = 0; i < upf_next_empty_module; i++)
     {
-        if (upf_module_info[i].module == module)
+        if (upf_module_info[i].upf_module.channel == upf_module.channel &&
+            upf_module_info[i].upf_module.module == upf_module.module)
         {
             module_info = &upf_module_info[i];
             break;
@@ -123,7 +137,7 @@ void upf_print_registered_module(void)
     // module_info_t *module_info = NULL;
     for (uint8_t i = 0; i < upf_next_empty_module; i++)
     {
-        LOG_LEVEL("registered upf_module_info[%d]=%02x \r\n", i, upf_module_info[i].module);
+        LOG_LEVEL("registered upf_module_info[%d]=%02x \r\n", i, upf_module_info[i].upf_module.channel);
     }
 }
 
@@ -178,6 +192,7 @@ void upf_receive_callback(upf_module_t upf_module, const uint8_t *buffer, uint16
 #ifdef TEST_LOG_DEBUG_UART_RX_DATA
     LOG_BUFF_LEVEL(buffer, length);
 #endif
+
 #if 1
     upf_module_info_t *upf_module_infor = upf_get_module(upf_module);
     if (upf_module_infor != NULL)
@@ -238,15 +253,13 @@ void upf_rx_event_message_handler(void)
     // while (1)
     for (uint8_t i = 0; i < upf_next_empty_module; i++) // handle all modules
     {
-#if 1
         upf_module_info_t *module_info = &upf_module_info[i];
         if (module_info->upf_proc_buff.size >= UPF_FRAME_MAX_SIZE)
         { // upf_proc_buff is full must to be processed first before get from fifo
             continue;
         }
-#endif
-#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
-        if (module_info->module == UPF_MODULE_BT)
+
+        if (module_info->upf_module.type == UPF_CHANNEL_TYPE_CHAR)
         {
             // For AT command module: Read until we get a '\n' or fill the buffer
             while (cFifo_HasLine(module_info->upf_usart_rx_fifo))
@@ -268,7 +281,6 @@ void upf_rx_event_message_handler(void)
             }
         }
         else
-#endif
         {
             count = upf_get_fifo_data(
                 module_info->upf_usart_rx_fifo,
@@ -303,33 +315,24 @@ void upf_proc_valid_frame(void)
         bool res = module_info->receive_handler(&(module_info->upf_proc_buff));
         if (res)
         {
-#ifdef TEST_LOG_DEBUG_UPF_RX_FRAME
-            if (module_info->module == UPF_MODULE_BAFANG)
-            {
-                LOG_LEVEL("upf_proc_valid_frame data[]=");
-                LOG_BUFF(module_info->upf_proc_buff.buffer, module_info->upf_proc_buff.size);
-            }
-#endif
             module_info->upf_proc_buff.size = 0;
         }
         else
         {
-#if defined(TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2)
-            if (module_info->module == UPF_MODULE_LING_HUI_LIION2)
-            {
-                if (module_info->upf_proc_buff.size > 25)
-                    module_info->upf_proc_buff.size = 0;
-            }
-#elif defined(TASK_MANAGER_STATE_MACHINE_BAFANG)
-            if (module_info->module == UPF_MODULE_BAFANG)
-            {
-                if (module_info->upf_proc_buff.size > 10)
-                    module_info->upf_proc_buff.size = 0;
-            }
-#endif
+            if (module_info->upf_proc_buff.size > 14)
+                module_info->upf_proc_buff.size = 0;
         }
     }
 }
+
+// uint8_t hal_com_uart0_send_buffer(const uint8_t *buffer, uint16_t length);
+// uint8_t hal_com_uartl_send_buffer(const uint8_t *buffer, uint16_t length);
+// uint8_t hal_com_uart2_send_buffer(const uint8_t *buffer, uint16_t length);
+// uint8_t hal_com_uart3_send_buffer(const uint8_t *buffer, uint16_t length);
+// uint8_t hal_com_uart4_send_buffer(const uint8_t *buffer, uint16_t length);
+// uint8_t hal_com_uart5_send_buffer(const uint8_t *buffer, uint16_t length);
+// uint8_t hal_com_uart6_send_buffer(const uint8_t *buffer, uint16_t length);
+// uint8_t hal_com_uart7_send_buffer(const uint8_t *buffer, uint16_t length);
 
 void upf_send_buffer(upf_module_t upf_module, const uint8_t *buffer, size_t size)
 {
@@ -338,33 +341,46 @@ void upf_send_buffer(upf_module_t upf_module, const uint8_t *buffer, size_t size
         return;
     }
 
-    switch (upf_module)
+    switch (upf_module.channel)
     {
-
-#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
-    case UPF_MODULE_BAFANG:
-        LPUART_Send_Buffer(buffer, size);
+    case UPF_CHANNEL_0:
+        hal_com_uart0_send_buffer(buffer, size);
         break;
-#endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
-    case UPF_MODULE_LING_HUI_LIION2:
-        LPUART_Send_Buffer(buffer, size);
+    case UPF_CHANNEL_1:
+        hal_com_uartl_send_buffer(buffer, size);
         break;
-#endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_4G
-    case UPF_MODULE_LOT4G:
-        UART4_Send_Buffer(buffer, size);
+    case UPF_CHANNEL_2:
+        hal_com_uart2_send_buffer(buffer, size);
         break;
-#endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
-    case UPF_MODULE_BT:
-        UART1_Send_Buffer(buffer, size);
+    case UPF_CHANNEL_3:
+        hal_com_uart3_send_buffer(buffer, size);
         break;
-#endif
-    default:
+
+    case UPF_CHANNEL_4:
+        hal_com_uart4_send_buffer(buffer, size);
+        break;
+
+    case UPF_CHANNEL_5:
+        hal_com_uart5_send_buffer(buffer, size);
+        break;
+
+    case UPF_CHANNEL_6:
+        hal_com_uart6_send_buffer(buffer, size);
+        break;
+
+    case UPF_CHANNEL_7:
+        hal_com_uart7_send_buffer(buffer, size);
+        break;
+
+    case UPF_CHANNEL_8:
+        hal_com_uart8_send_buffer(buffer, size);
+        break;
+
+    case UPF_CHANNEL_9:
+        hal_com_uart9_send_buffer(buffer, size);
         break;
     }
 }

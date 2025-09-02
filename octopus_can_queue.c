@@ -9,7 +9,6 @@
  * It is typically used in embedded systems where CAN messages are received via interrupt
  * and need to be processed asynchronously in the main loop or task thread.
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_can_queue.h"
 
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
@@ -51,7 +50,7 @@ uint16_t CanQueue_Length(CanQueue_t *queue)
  * @param data_len Length of the message data (0 ~ 8).
  * @return 0 if push was successful, 1 if the queue is full.
  */
-uint8_t CanQueue_Push(CanQueue_t *queue, uint8_t channel, uint32_t id, const uint8_t *data, uint8_t data_len)
+uint8_t CanQueue_Push(CanQueue_t *queue, uint8_t channel, uint32_t std_id, const uint8_t *data, uint8_t data_len)
 {
     // Check if the queue is not full
     if (CanQueue_Length(queue) < CAN_MSG_QUEUE_SIZE)
@@ -59,7 +58,7 @@ uint8_t CanQueue_Push(CanQueue_t *queue, uint8_t channel, uint32_t id, const uin
         uint8_t i;
         // Write message fields
         queue->msg[queue->tail].channel = channel;
-        queue->msg[queue->tail].id = id;
+        queue->msg[queue->tail].std_id = std_id;
         queue->msg[queue->tail].data_len = data_len;
 
         // Copy data bytes

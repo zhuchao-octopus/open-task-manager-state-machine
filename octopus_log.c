@@ -25,14 +25,16 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_log.h"	  // Include logging functions for debugging
+#include "octopus_log.h" // Include logging functions for debugging
+#include "octopus_uart_hal.h"
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define OTSM_DEBUG_MODE
-#define OTSM_DEBUG_USART4
-//#define USE_MY_PRINTF
+
+uint8_t OTSM_DEBUG_UART_CHANNEL = 3;
+
+// #define USE_MY_PRINTF
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -46,16 +48,6 @@ DBG_LOG_LEVEL current_log_level = LOG_LEVEL_NONE;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifndef USE_MY_PRINTF
-#ifdef OTSM_DEBUG_USART1
-#define DEBUG_UART USART1
-#elif defined(OTSM_DEBUG_USART2)
-#define DEBUG_UART USART2
-#elif defined(OTSM_DEBUG_USART3)
-#define DEBUG_UART UART3
-#elif defined(OTSM_DEBUG_USART4)
-#define DEBUG_UART UART4
-#else
-#endif
 
 #if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(OTSM_DEBUG_MODE) && !defined(USE_MY_PRINTF)
 /**
@@ -65,6 +57,7 @@ DBG_LOG_LEVEL current_log_level = LOG_LEVEL_NONE;
  */
 PUTCHAR_PROTOTYPE
 {
+#if 0
 	uint32_t Timeout = 0;
 	FlagStatus Status;
 	USART_SendData(DEBUG_UART, (uint8_t)ch);
@@ -74,6 +67,43 @@ PUTCHAR_PROTOTYPE
 		Timeout++;
 	} while ((Status == RESET) && (Timeout != 0xFFFF));
 
+	return (ch);
+#endif
+	uint8_t data[1] = {0};
+	data[0] = (uint8_t)ch;
+	switch (OTSM_DEBUG_UART_CHANNEL)
+	{
+	case 0:
+		hal_com_uart0_send_buffer(data, 1);
+		break;
+	case 1:
+		hal_com_uartl_send_buffer(data, 1);
+		break;
+	case 2:
+		hal_com_uart2_send_buffer(data, 1);
+		break;
+	case 3:
+		hal_com_uart3_send_buffer(data, 1);
+		break;
+	case 4:
+		hal_com_uart4_send_buffer(data, 1);
+		break;
+	case 5:
+		hal_com_uart5_send_buffer(data, 1);
+		break;
+	case 6:
+		hal_com_uart6_send_buffer(data, 1);
+		break;
+	case 7:
+		hal_com_uart7_send_buffer(data, 1);
+		break;
+	case 8:
+		hal_com_uart8_send_buffer(data, 1);
+		break;
+	case 9:
+		hal_com_uart9_send_buffer(data, 1);
+		break;
+	}
 	return (ch);
 }
 #endif
@@ -494,12 +524,12 @@ void dbg_log_printf_level(const char *function_name, const char *format, ...)
 		break;
 	}
 
-  // Print log header with timestamp, level, function name
+	// Print log header with timestamp, level, function name
 #ifdef USE_MY_PRINTF
-	//dbg_log_printf("[%s][%28s] ", level_str, function_name);
-	dbg_log_printf("[%s][%*.*s] ",LOG_DEFAULT_MAX_WIDTH,LOG_DEFAULT_MAX_WIDTH, level_str, function_name);
+	// dbg_log_printf("[%s][%28s] ", level_str, function_name);
+	dbg_log_printf("[%s][%*.*s] ", LOG_DEFAULT_MAX_WIDTH, LOG_DEFAULT_MAX_WIDTH, level_str, function_name);
 #else
-	//printf("[%s][%28s] ", level_str, function_name);
+	// printf("[%s][%28s] ", level_str, function_name);
 	printf("[%s][%*.*s] ", level_str, LOG_DEFAULT_MAX_WIDTH, LOG_DEFAULT_MAX_WIDTH, function_name);
 #endif
 
@@ -580,4 +610,9 @@ void dbg_log_printf_buffer_level(const char *function_name, const uint8_t *buff,
 void dbg_log_set_level(DBG_LOG_LEVEL level)
 {
 	current_log_level = level; // Update the log level
+}
+
+void dbg_log_set_channel(uint8_t channel)
+{
+	OTSM_DEBUG_UART_CHANNEL = channel; // Update the log level
 }

@@ -27,27 +27,26 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include "octopus_platform.h"
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
 
+/*******************************************************************************
+ * Callback function declaration
+ * Define a function pointer type for the callback that takes an integer.
+ ******************************************************************************/
+// Define a type for the callback that accepts an integer
+typedef void (*MessageDataInforCallback_t)(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
+
+/*******************************************************************************
+ * GLOBAL FUNCTIONS DECLARATION
+ ******************************************************************************/
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-    /*******************************************************************************
-     * Callback function declaration
-     * Define a function pointer type for the callback that takes an integer.
-     ******************************************************************************/
-    // Define a type for the callback that accepts an integer
-    typedef void (*MessageDataInforCallback_t)(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
-
-    /*******************************************************************************
-     * GLOBAL FUNCTIONS DECLARATION
-     ******************************************************************************/
-
     /**
      * @brief Initialize the application system.
      */

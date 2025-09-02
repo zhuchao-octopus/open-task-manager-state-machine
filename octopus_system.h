@@ -27,12 +27,7 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include "octopus_platform.h"
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 /*******************************************************************************
  * MACROS
@@ -52,35 +47,39 @@ extern "C"
 #define SYSTEM_MPU_STATE_LEAVE_PLAY (0x04)   /**< Exiting playback animation. */
 #define SYSTEM_MPU_STATE_LEAVE_FINISH (0x05) /**< Exit animation complete. */
 
-    /*******************************************************************************
-     * TYPEDEFS
-     ******************************************************************************/
+/*******************************************************************************
+ * TYPEDEFS
+ ******************************************************************************/
 
-    /**
-     * @brief Mainboard (MB) state enumeration.
-     */
-    typedef enum MB_POWER_STATE
-    {
-        MB_POWER_ST_INIT = 0, /**< Initialization state. */
+/**
+ * @brief Mainboard (MB) state enumeration.
+ */
+typedef enum MB_POWER_STATE
+{
+    MB_POWER_ST_INIT = 0, /**< Initialization state. */
 
-        MB_POWER_ST_LOWPOWER, /**< Low-power state. */
-        MB_POWER_ST_STANDBY,  /**< Standby state. */
+    MB_POWER_ST_LOWPOWER, /**< Low-power state. */
+    MB_POWER_ST_STANDBY,  /**< Standby state. */
 
-        MB_POWER_ST_BOOTING, /**< Booting state. */
+    MB_POWER_ST_BOOTING, /**< Booting state. */
 
-        MB_POWER_ST_ON,      /**< Fully operational state. */
-        MB_POWER_ST_PARTIAL, /**< Partial operation state. */
-        MB_POWER_ST_STOP,
+    MB_POWER_ST_ON,      /**< Fully operational state. */
+    MB_POWER_ST_PARTIAL, /**< Partial operation state. */
+    MB_POWER_ST_STOP,
 
-        MB_POWER_ST_SHUTDOWN, /**< Shutdown process. */
-        MB_POWER_ST_OFF,      /**< Power-off state. */
+    MB_POWER_ST_SHUTDOWN, /**< Shutdown process. */
+    MB_POWER_ST_OFF,      /**< Power-off state. */
 
-    } mb_state_t;
+} mb_state_t;
 
-    /*******************************************************************************
-     * GLOBAL FUNCTIONS DECLARATION
-     ******************************************************************************/
+/*******************************************************************************
+ * GLOBAL FUNCTIONS DECLARATION
+ ******************************************************************************/
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
     /**
      * @brief Initialize the application system.
      */

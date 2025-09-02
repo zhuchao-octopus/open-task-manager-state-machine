@@ -19,10 +19,17 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_flash.h"
 #include "octopus.h"
-
+#include "octopus_flash.h"
+#include "octopus_uart_ptl.h"
+#include "octopus_uart_upf.h"
+#include "octopus_uart_hal.h"
+#include "octopus_msgqueue.h"     // Include message queue header for task communication
+#include "octopus_task_manager.h" // Include task manager for scheduling tasks
+#include "octopus_message.h"      // Include message id for inter-task communication
+#include "octopus_tickcounter.h"  // Include tick counter for timing operations
+#include "octopus_system.h"
+#include "octopus_platform.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -34,6 +41,7 @@
  */
 void TaskManagerStateGoRunning(void);
 void TaskManagerStateStopRunning(void);
+
 /* Local functions are declared here, but no specific ones are listed */
 
 /*******************************************************************************
@@ -128,8 +136,6 @@ void TaskManagerStateMachineInit(void)
 #ifdef TASK_MANAGER_STATE_MACHINE_FLASH
     otsm_flash_init();
 #endif
-    otsm_uart_init(); // Initialize UART communication protocol
-
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     otsm_timer_init(); // Initialize timer with interval of 5 (could be milliseconds)
     otsm_sif_init();
@@ -137,6 +143,7 @@ void TaskManagerStateMachineInit(void)
 #ifdef TASK_MANAGER_STATE_MACHINE_BMS
     otsm_bms_init();
 #endif
+    otsm_uart_init(); // Initialize UART communication protocol
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Initialize the necessary modules
     otsm_message_queue_init(); // Initialize the task message queue.
@@ -144,19 +151,19 @@ void TaskManagerStateMachineInit(void)
     // Initialize user task manager state machine
     otms_task_manager_init();  // Initialize the task manager
     otms_task_manager_start(); // Start the task manager
-
+                               /////////////////////////////////////////////////////////////////////////////////////////////////////
+    otsm_ptl_help();
+    otsm_upf_help();
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Nofify Initialize complete
-#if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
-    system_handshake_with_app();
-#endif
 #if defined(TASK_MANAGER_STATE_MACHINE_SOC) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
     system_handshake_with_mcu();
 #endif
-    otsm_ptl_help();
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-// Enable task manager state matching main loop
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Enable task manager state matching main loop
 #ifdef PLATFORM_CST_OSAL_RTOS
     osal_start_reload_timer(TaskManagerStateMachine_Id_, DEVICE_TIMER_EVENT, MAIN_TASK_TIMER_INTERVAL); // timeout_value unit ms
 #endif
@@ -179,9 +186,9 @@ __attribute__((destructor)) void exit_cleanup()
     TaskManagerStateStopRunning();
 }
 #endif
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef PLATFORM_CST_OSAL_RTOS
 /**
  * @brief Handles events in the Task Manager State Machine for CST OSAL RTOS.
@@ -193,8 +200,8 @@ uint16_t TaskManagerStateEventLoop(uint8 task_id, uint16 events)
 {
     if (events & DEVICE_TIMER_EVENT) // If the timer event is triggered
     {
-        /////////////////////////////////////////////////////////////////////////////////////////////////////
-        otms_task_manager_run();                   // Run the task manager to handle pending tasks per MAIN_TASK_TIMER_INTERVAL ms
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+        otms_task_manager_run();              // Run the task manager to handle pending tasks per MAIN_TASK_TIMER_INTERVAL ms
         return (events ^ DEVICE_TIMER_EVENT); // Remove the timer event from the active events
     }
     else if (events & DEVICE_BLE_PAIR) // If BLE pairing event is triggered
@@ -246,7 +253,7 @@ void *TaskManagerStateEventLoop(void *arg)
     LOG_LEVEL("task manager state machine event loop running\r\n"); // Log unhandled events
     while (!stop_thread)
     {
-        otms_task_manager_run();                      // Run the task manager to handle tasks in the event loop
+        otms_task_manager_run();                 // Run the task manager to handle tasks in the event loop
         usleep(MAIN_TASK_TIMER_INTERVAL * 1000); // Sleep for 10 millisecond to control loop frequency
     }
     return 0; // Exit the thread
@@ -264,12 +271,12 @@ void *TaskManagerStateEventLoop(void *arg)
     StartTickCounter(&wait_cnt);
     while (!stop_thread)
     {
-        otms_task_manager_run();                      // Run the task manager to handle tasks in the event loop
+        otms_task_manager_run();                 // Run the task manager to handle tasks in the event loop
         usleep(MAIN_TASK_TIMER_INTERVAL * 1000); // Sleep for 10 millisecond to control loop frequency
 
         if (GetTickCounter(&wait_cnt) >= 1000 * 60)
         {
-            ///LOG_LEVEL("task manager state machine event running %d\r\n", wait_cnt); // Log unhandled events
+            /// LOG_LEVEL("task manager state machine event running %d\r\n", wait_cnt); // Log unhandled events
             RestartTickCounter(&wait_cnt);
         }
     }

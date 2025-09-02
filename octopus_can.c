@@ -2,7 +2,7 @@
 // Description: Implementation for CAN data dispatching and parsing logic
 // Author: ak47
 // Created: 2025-04-17
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
+#include "octopus_base.h" //  Base include file for the Octopus project.
 #include "octopus_vehicle.h"
 #include "octopus_gpio.h"
 #include "octopus_system.h"
@@ -48,7 +48,7 @@ void task_can_assert_running(void)
 {
   ptl_reqest_running(MCU_TO_SOC_MOD_CAN);
   OTMS(TASK_MODULE_CAN, OTMS_S_RUNNING);
-	can_message_sender(CAN_ID_BMS_TASK_H_001);
+  can_message_sender(CAN_ID_BMS_TASK_H_001);
 }
 
 void task_can_running(void)

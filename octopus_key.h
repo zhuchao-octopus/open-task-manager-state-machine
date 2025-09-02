@@ -15,7 +15,7 @@
  * @version  1.0
  * @date     2024-12-12
  * @author   Octopus Team
-**************************************************************************************/
+ **************************************************************************************/
 
 #ifndef __OCTOPUS_TASK_MANAGER_KEY_H__
 #define __OCTOPUS_TASK_MANAGER_KEY_H__
@@ -23,12 +23,7 @@
 /**************************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Platform-specific configurations and definitions
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 /**************************************************************************************
  * MACROS
@@ -174,12 +169,12 @@ extern "C"
 #define OCTOPUS_KEY_SUBT 156  ///< Minus key / volume down
 #define OCTOPUS_KEY_PAGE 157  ///< Page key
 
-    // #define OCTOPUS_NORMAL_KEY_MAX 100
+// #define OCTOPUS_NORMAL_KEY_MAX 100
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // #define OCTOPUS_KEY_PLUS_LONG (OCTOPUS_KEY_PLUS + OCTOPUS_NORMAL_KEY_MAX)
-    // #define OCTOPUS_KEY_SUBT_LONG (OCTOPUS_KEY_SUBT + OCTOPUS_NORMAL_KEY_MAX)
-    // #define OCTOPUS_KEY_CUSTOMER_BASE 200
+////////////////////////////////////////////////////////////////////////////////////////////////
+// #define OCTOPUS_KEY_PLUS_LONG (OCTOPUS_KEY_PLUS + OCTOPUS_NORMAL_KEY_MAX)
+// #define OCTOPUS_KEY_SUBT_LONG (OCTOPUS_KEY_SUBT + OCTOPUS_NORMAL_KEY_MAX)
+// #define OCTOPUS_KEY_CUSTOMER_BASE 200
 
 #define OCTOPUS_KEY_NONE 255
 
@@ -193,7 +188,10 @@ extern "C"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
-#ifdef TASK_MANAGER_STATE_MACHINE_KEY
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
     /*******************************************************************************
      * GLOBAL FUNCTIONS DECLARATIONS
@@ -242,7 +240,6 @@ extern "C"
      * This function stops the key input event detection, effectively disabling the key input system.
      */
     void task_key_stop_running(void);
-#endif
 
 #ifdef __cplusplus
 }

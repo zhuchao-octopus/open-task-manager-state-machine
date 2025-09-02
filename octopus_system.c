@@ -17,11 +17,16 @@
  ******************************************************************************/
 
 /* Includes ------------------------------------------------------------------*/
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_gpio.h"
 #include "octopus_system.h"
+#include "octopus_gpio.h"
 #include "octopus_flash.h"
 #include "octopus_uart_hal.h"
+
+#include "octopus_uart_ptl.h"    // Include UART protocol header
+#include "octopus_uart_upf.h"    // Include UART protocol header
+#include "octopus_tickcounter.h" // Include tick counter for timing operations
+#include "octopus_msgqueue.h"    // Include message queue header for task communication
+#include "octopus_message.h"     // Include message id for inter-task communication
 /*******************************************************************************
  * Debug Switch Macros
  * Define debug levels or other switches as required.
@@ -54,10 +59,10 @@ void system_soc_request_mata_infor(void);
  * Local Variables
  * Define static variables used only within this file.
  ******************************************************************************/
-static mb_state_t lt_mb_state;         // Current state of the system
-static uint8_t l_u8_mpu_status = 0;    // Tracks the status of the MPU
-static uint8_t l_u8_power_off_req = 0; // Tracks if a power-off request is pending
-static uint32_t l_t_msg_wait_10_timer; // Timer for 10 ms message waiting period
+static mb_state_t lt_mb_state = MB_POWER_ST_INIT; // Current state of the system
+static uint8_t l_u8_mpu_status = 0;               // Tracks the status of the MPU
+static uint8_t l_u8_power_off_req = 0;            // Tracks if a power-off request is pending
+static uint32_t l_t_msg_wait_10_timer;            // Timer for 10 ms message waiting period
 static uint32_t l_t_msg_lowpower_wait_timer;
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
 static uint32_t l_t_msg_booting_wait_timer;
@@ -503,7 +508,6 @@ void system_gpio_power_onoff(bool onoff)
 {
     if (onoff)
     {
-        lt_mb_state = MB_POWER_ST_ON;
         // send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_ON, 0);
         gpio_power_on_off(true);
         LOG_LEVEL("Power on soc...\r\n");
@@ -511,6 +515,7 @@ void system_gpio_power_onoff(bool onoff)
         gpio_power_on_off(true);
         if (gpio_is_power_on())
         {
+            lt_mb_state = MB_POWER_ST_ON;
             LOG_LEVEL("Power on soc succesfully\r\n");
         }
     }

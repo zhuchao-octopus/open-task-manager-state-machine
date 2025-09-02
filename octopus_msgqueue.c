@@ -30,8 +30,8 @@
 /*******************************************************************************
  * INCLUDES
  */
-
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
+#include "octopus_msgqueue.h"     // Include message queue header for task communication
+#include "octopus_task_manager.h" // Include task manager for scheduling tasks
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLARATION
  */

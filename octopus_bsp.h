@@ -18,7 +18,6 @@
 #ifndef __OCTOPUS_TASK_MANAGER_BSP_H__
 #define __OCTOPUS_TASK_MANAGER_BSP_H__
 
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_can.h"
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU

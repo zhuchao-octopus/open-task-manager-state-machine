@@ -17,14 +17,20 @@
  ******************************************************************************/
 
 /* Includes ------------------------------------------------------------------*/
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_gpio.h"
-#include "octopus_system.h"
 #include "octopus_ipc.h"
+#include "octopus_gpio.h"
 #include "octopus_uart_hal.h"
 #include "octopus_vehicle.h"
 #include "octopus_flash.h"
+#include "octopus_system.h"
 #include "octopus_update_mcu.h"
+#include "octopus_task_manager.h"
+
+#include "octopus_uart_ptl.h"    // Include UART protocol header
+#include "octopus_uart_upf.h"    // Include UART protocol header
+#include "octopus_tickcounter.h" // Include tick counter for timing operations
+#include "octopus_msgqueue.h"    // Include message queue header for task communication
+#include "octopus_message.h"     // Include message id for inter-task communication
 /*******************************************************************************
  * Debug Switch Macros
  * Define debug levels or other switches as required.
@@ -432,19 +438,19 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
             {
                 memcpy(&lt_carinfo_battery, payload->data, sizeof(carinfo_battery_t));
             }
-						
-			if (lt_carinfo_battery.abs_charge_state >= 255)
-			{
-				system_meter_infor.trip_odo = 0;
-			}
-			return false;
-		case FRAME_CMD_CAR_RESET_BATTERY:
-			system_meter_infor.trip_odo = 0;
-			return false;
-				
-		case FRAME_CMD_CAR_RESET_SYSTEM:
-			memset(&system_meter_infor,0,sizeof(system_meter_infor_t));
-			return false;
+
+            if (lt_carinfo_battery.abs_charge_state >= 255)
+            {
+                system_meter_infor.trip_odo = 0;
+            }
+            return false;
+        case FRAME_CMD_CAR_RESET_BATTERY:
+            system_meter_infor.trip_odo = 0;
+            return false;
+
+        case FRAME_CMD_CAR_RESET_SYSTEM:
+            memset(&system_meter_infor, 0, sizeof(system_meter_infor_t));
+            return false;
 #endif
         default:
             break;
@@ -458,7 +464,7 @@ void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, const uint8
 {
     if (message_data_infor_callback)
     {
-        ///LOG_LEVEL("msg_grp=%d,msg_id=%d \r\n", msg_grp, msg_id);
+        /// LOG_LEVEL("msg_grp=%d,msg_id=%d \r\n", msg_grp, msg_id);
         message_data_infor_callback(msg_grp, msg_id, data, length);
     }
 }

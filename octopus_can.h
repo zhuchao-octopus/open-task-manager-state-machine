@@ -6,8 +6,6 @@
 #ifndef __OCTOPUS_CAN_H__
 #define __OCTOPUS_CAN_H__
 
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
-
 // Default CAN data length (in bytes)
 #define CAN_DATA_MAX_LENGTH 8
 

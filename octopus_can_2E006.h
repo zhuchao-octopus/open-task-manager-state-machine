@@ -2,7 +2,7 @@
 #ifndef __OCTOPUS_CAN_FUNCTION_2E006__
 #define __OCTOPUS_CAN_FUNCTION_2E006__
 
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
+#include "octopus_base.h" //  Base include file for the Octopus project.
 #include "octopus_can_queue.h"
 #include "octopus_tickcounter.h"
 #include "octopus_vehicle.h"

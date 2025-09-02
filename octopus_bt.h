@@ -21,7 +21,6 @@
  * INCLUDES
  * Include necessary headers for BLE management.
  *******************************************************************************/
-#include "octopus_platform.h" // Platform-specific definitions and utilities
 #include "octopus_system.h"
 
 #define MAX_BT_DEVICES 10

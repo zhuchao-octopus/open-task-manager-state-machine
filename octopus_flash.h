@@ -13,7 +13,7 @@
 #define __OCTOPUS_TASK_MANAGER_FLASH_H__
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
-#include "octopus_platform.h"  ///< Include platform-specific configurations
+#include "octopus_base.h"      //  Base include file for the Octopus project.
 #include "octopus_flash_hal.h" ///< Include Flash Hardware Abstraction Layer (HAL) for low-level operations
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -111,7 +111,6 @@ typedef enum
     BOOT_MODE_DUAL_BANK_WITH_LOADER    // Two banks and a bootloader present
 } boot_mode_t;
 
-
 #pragma pack(push, 1)
 typedef struct
 {
@@ -142,23 +141,22 @@ typedef struct
 
 typedef struct
 {
-		uint32_t trip_odo;      // Total distance traveled (unit: 1 meters), also known as trip odometer
-		uint32_t trip_time;     // Total ride time (unit: seconds)
-		uint32_t trip_distance; // Trip distance   (unit: 1 meters), resettable
+    uint32_t trip_odo;      // Total distance traveled (unit: 1 meters), also known as trip odometer
+    uint32_t trip_time;     // Total ride time (unit: seconds)
+    uint32_t trip_distance; // Trip distance   (unit: 1 meters), resettable
 
-		uint16_t speed_average; // Displayed vehicle speed (unit: 0.1 km/h)
-		uint16_t speed_actual;  // Actual wheel speed (unit: 0.1 km/h)
-		uint16_t speed_max;
-		uint16_t speed_limit;   // Speed limit setting; 0 = OFF, range: 10¨C90 km/h
+    uint16_t speed_average; // Displayed vehicle speed (unit: 0.1 km/h)
+    uint16_t speed_actual;  // Actual wheel speed (unit: 0.1 km/h)
+    uint16_t speed_max;
+    uint16_t speed_limit; // Speed limit setting; 0 = OFF, range: 10ï¿½C90 km/h
 
-		uint16_t rpm;           // Motor RPM (raw value, offset by -20000)
-		uint8_t gear;           // Current gear level (0 = Neutral, 1¨CN)
-		uint8_t gear_level_max; // Maximum selectable gear level
-		uint8_t wheel_diameter; // Wheel diameter (unit: inch)
-		uint8_t reserve;
+    uint16_t rpm;           // Motor RPM (raw value, offset by -20000)
+    uint8_t gear;           // Current gear level (0 = Neutral, 1ï¿½CN)
+    uint8_t gear_level_max; // Maximum selectable gear level
+    uint8_t wheel_diameter; // Wheel diameter (unit: inch)
+    uint8_t reserve;
 } system_meter_infor_t;
 #pragma pack(pop)
-
 
 // Global instance holding metadata for application and bootloader
 extern flash_meta_infor_t flash_meta_infor;
@@ -235,12 +233,11 @@ extern "C"
     extern void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length);
     extern void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length);
 
-    void JumpToApplication(uint32_t app_address);
+    void otsm_flash_init(void);
     void boot_loader_active_user_app(void);
 
-    void otsm_flash_init(void);
-
-    void flash_vector_table_config(uint8_t active_slot);
+    void flash_JumpToApplication(uint32_t app_address);
+    void flash_vector_table_config(uint8_t bank_slot, bool mapping_vector);
     void flash_save_app_meter_infor(void);
     void flash_load_sync_data_infor(void);
     void flash_save_carinfor_meter(void);
@@ -250,7 +247,7 @@ extern "C"
     uint32_t flash_get_bank_offset_address(uint8_t bank_type);
     uint32_t flash_erase_user_app_bank(void);
 
-    void flash_decode_active_version(char *out_str, size_t max_len);
+    bool flash_decode_active_version(char *out_str, size_t max_len);
     bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);
     bool flash_is_meta_infor_valid(void);
     bool flash_is_allow_update_bank(uint8_t bank_type);

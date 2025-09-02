@@ -2,7 +2,6 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_ling_hui_liion2.h"
 #include "octopus_uart_hal.h"
 #include "octopus_uart_upf.h" // Include UART protocol header
@@ -81,15 +80,15 @@ void task_lhl2_ptl_assert_running(void)
     lt_carinfo_meter.gear = 0;
 
     lt_carinfo_battery.voltage = 600;
-	  lt_carinfo_battery.current = 175;
-    //lt_carinfo_battery.range_max = 60; // UINT16_MAX;
-    //lt_carinfo_battery.range = 60;
-	
+    lt_carinfo_battery.current = 175;
+    // lt_carinfo_battery.range_max = 60; // UINT16_MAX;
+    // lt_carinfo_battery.range = 60;
+
     lt_carinfo_indicator.cruise_control = true;
     lt_carinfo_indicator.start_poles = 1;
     lt_carinfo_indicator.motor_poles = 2;
     lt_carinfo_indicator.cruise_control = true;
-		//lt_carinfo_indicator.horn = true;
+    // lt_carinfo_indicator.horn = true;
 }
 
 void task_lhl2_ptl_running(void)
@@ -124,9 +123,9 @@ void task_lhl2_ptl_running(void)
         loop = 0;
     }
     else
-	{
+    {
         loop = 0;
-	}
+    }
 }
 
 void task_lhl2_ptl_post_running(void)
@@ -425,7 +424,7 @@ uint16_t calculate_speed_kph_x10(uint16_t round_ms)
     uint32_t wheel_r = get_wheel_radius_inch();                        // 半径，0.1 英寸
     uint32_t speed_x10 = (wheel_r * 5748UL + round_ms / 2) / round_ms; // 四舍五入
 
-    return (uint16_t)(speed_x10 / 10 );
+    return (uint16_t)(speed_x10 / 10);
 }
 
 // #define  YONGJIU_WHEEL_Inch 284 //284,700C50C,700C的车圈直径为622毫米,理论直径?：622mm+(50mm×2)=722mm（约28.4英寸）
@@ -434,14 +433,14 @@ void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length) // RX
 {
     uint8_t state1 = data[3];
     uint8_t state2 = data[4];
-    //uint16_t cur = MK_WORD(data[5], data[6]);
-    //uint8_t cur_pre = data[7];
+    // uint16_t cur = MK_WORD(data[5], data[6]);
+    // uint8_t cur_pre = data[7];
     uint16_t round = MK_WORD(data[8], data[9]);
-    //uint8_t soc = data[10];
-    //uint8_t range = MK_WORD(data[11], data[12]);
+    // uint8_t soc = data[10];
+    // uint8_t range = MK_WORD(data[11], data[12]);
 
-    //LOG_BUFF_LEVEL(data, length);
-	  #if 0
+    // LOG_BUFF_LEVEL(data, length);
+#if 0
     // 实际电流数据
     uint32_t cur_tmp = cur & 0x3FFF;
 
@@ -470,8 +469,8 @@ void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length) // RX
 		else
 			lt_carinfo_battery.soc = cur_pre;
     }
-		#endif
-		
+#endif
+
     if (round <= 10 || round >= 3500) // 如果一圈的时间大于等于30S，认为车辆已经停止
     {
         lt_carinfo_meter.rpm = 0;
@@ -537,9 +536,9 @@ void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length) // RX
 
     // 通讯故障
     if (state2 & BIT_4)
-		{
+    {
         task_carinfo_add_error_code(ERROR_CODE_BMS_ABNORMALITY, state2 & BIT_4, false);
-		}
+    }
 }
 
 uint8_t lhl2_ptl_checksum(uint8_t *data, uint8_t len)
@@ -555,10 +554,10 @@ uint8_t lhl2_ptl_checksum(uint8_t *data, uint8_t len)
 uint16_t get_wheel_radius_inch(void)
 {
     if (lt_carinfo_meter.wheel_diameter >= 100)
-		{
+    {
         return lt_carinfo_meter.wheel_diameter;
-		}
-		
+    }
+
     switch (lt_carinfo_meter.wheel_diameter)
     {
     case SETTING_WHEEL_16_Inch:
@@ -582,7 +581,7 @@ uint16_t get_wheel_radius_inch(void)
     case SETTING_WHEEL_29_Inch:
         return 290;
     }
-		
+
     return 260;
 }
 

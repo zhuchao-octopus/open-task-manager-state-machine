@@ -21,7 +21,7 @@
  * INCLUDES
  * Include necessary headers for BLE management.
  *******************************************************************************/
-#include "octopus_platform.h" // Platform-specific definitions and utilities
+#include "octopus_base.h" //  Base include file for the Octopus project.
 #include "octopus_system.h"
 #ifdef __cplusplus
 extern "C"

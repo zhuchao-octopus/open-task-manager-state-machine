@@ -3,28 +3,26 @@
 #ifndef __CAN_HAL_H__
 #define __CAN_HAL_H__
 
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-    /*********************************************************************
-     * CONSTANTS
-     */
+/*********************************************************************
+ * CONSTANTS
+ */
 
 #define TX_MSGBOX_START (1UL)
 #define TX_MSGBOX_NUMS (4UL)
 
-    /*********************************************************************
-     * TYPEDEFS
-     */
+/*********************************************************************
+ * TYPEDEFS
+ */
 
-    /*********************************************************************
-     * GLOBAL VARIABLES
-     */
-
+/*********************************************************************
+ * GLOBAL VARIABLES
+ */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
     // CAN设备初始化
     void Can_Init(void);
     // CAN设备卸载
@@ -33,9 +31,6 @@ extern "C"
     void Can_StartReceive(void);
 
     bool Can_SendMsg(uint8_t mailBox, uint32_t id, uint8_t *data, uint8_t len);
-
-    /*********************************************************************
-    *********************************************************************/
 
 #ifdef __cplusplus
 }

@@ -6,7 +6,7 @@
  * @version 1.0
  * @date    2025-05-10
  *
- * @note    Platform-specific functions are defined in octopus_platform.h
+ * @note    Platform-specific functions are defined in octopus_bsp.h
  *          and GPIO configuration is handled for status and key polling.
  *          Interrupt-based handling can be added for real-time event capture.
  *          This implementation uses polling for simplicity and clarity.
@@ -24,16 +24,18 @@
 /******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_gpio.h"     // Include GPIO control and configuration
-#include "octopus_flash.h"    // Include flash memory access functions
-#include "octopus_key.h"      // Include key status and event handling
+#include "octopus_gpio.h"  // Include GPIO control and configuration
+#include "octopus_flash.h" // Include flash memory access functions
+#include "octopus_key.h"   // Include key status and event handling
 #include "octopus_system.h"
 
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
+
+extern GPIO_STATUS *gpio_array[];
+extern GPIO_KEY_STATUS *gpio_key_array[];
 
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLEAR
@@ -53,24 +55,6 @@ void task_gpio_event_polling(void);
  * GLOBAL VARIABLES
  */
 
-// GPIO_STATUS gpio_zzd_pin_status = {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP, GPIO_ZZD_KEY_PIN, false, false, OCTOPUS_KEY_ZZD,0, 0};
-// GPIO_STATUS gpio_yzd_pin_status = {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP, GPIO_YZD_KEY_PIN, false, false, OCTOPUS_KEY_YZD,0, 0};
-// GPIO_STATUS gpio_skd_pin_status = {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP, GPIO_SKD_KEY_PIN, false, false, OCTOPUS_KEY_SKD,0, 0};
-// GPIO_STATUS gpio_plus_pin_status = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, false, false, OCTOPUS_KEY_PLUS,0, 0};
-// GPIO_STATUS gpio_subt_pin_status = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, false, false, OCTOPUS_KEY_SUBT,0, 0};
-
-GPIO_KEY_STATUS key_status_power = {(GPIO_GROUP *)GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, OCTOPUS_KEY_POWER, 0, 0, 0, 0, 0, 0, 0};
-// GPIO_KEY_STATUS key_status_zzd =   {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP,GPIO_ZZD_KEY_PIN,OCTOPUS_KEY_ZZD, 0, 0, 0, 0, 0, 0, 0};
-// GPIO_KEY_STATUS key_status_yzd =   {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP,GPIO_YZD_KEY_PIN,OCTOPUS_KEY_YZD, 0, 0, 0, 0, 0, 0, 0};
-// GPIO_KEY_STATUS key_status_skd =   {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP,GPIO_SKD_KEY_PIN,OCTOPUS_KEY_SKD, 0, 0, 0, 0, 0, 0, 0};
-// GPIO_KEY_STATUS key_status_ddd =   {(GPIO_GROUP *)GPIO_DDD_KEY_GROUP,GPIO_DDD_KEY_PIN,OCTOPUS_KEY_DDD, 0, 0, 0, 0, 0, 0, 0};
-// GPIO_KEY_STATUS key_status_plus = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, OCTOPUS_KEY_PLUS, 0, 0, 0, 0, 0, 0, 0};
-// GPIO_KEY_STATUS key_status_subt = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, OCTOPUS_KEY_SUBT, 0, 0, 0, 0, 0, 0, 0};
-GPIO_KEY_STATUS key_status_page = {(GPIO_GROUP *)GPIO_PAGE_KEY_GROUP, GPIO_PAGE_KEY_PIN, OCTOPUS_KEY_PAGE, 0, 0, 0, 0, 0, 0, 0};
-
-GPIO_STATUS *gpio_array[] = {NULL};
-GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_power, &key_status_page};
-
 // GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_power,&key_status_zzd,&key_status_yzd,&key_status_skd,&key_status_ddd,&key_status_plus,&key_status_subt};
 // static bool module_send_handler(ptl_frame_type_t frame_type, ptl_frame_cmd_t cmd, uint16_t param, ptl_proc_buff_t *buff);
 // static bool module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
@@ -84,10 +68,14 @@ void task_gpio_init_running(void)
     // com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
     OTMS(TASK_MODULE_GPIO, OTMS_S_INVALID);
 
-    for (size_t i = 0; i < sizeof(gpio_array) / sizeof(gpio_array[0]); i++)
+    /// for (size_t i = 0; i < sizeof(gpio_array) / sizeof(gpio_array[0]); i++)
+    ///{
+    ///     GPIO_STATUS *gpio_status = gpio_array[i];
+    ///     gpio_status->offon = hal_gpio_read(gpio_status->gpiox, gpio_status->pin);
+    /// }
+    for (GPIO_STATUS **gpio_ = gpio_array; *gpio_ != NULL; gpio_++)
     {
-        GPIO_STATUS *gpio_status = gpio_array[i];
-        gpio_status->offon = hal_gpio_read(gpio_status->gpiox, gpio_status->pin);
+        (*gpio_)->offon = hal_gpio_read((*gpio_)->gpiox, (*gpio_)->pin);
     }
 }
 
@@ -372,6 +360,7 @@ void task_gpio_key_polling_event_dispatcher(GPIO_KEY_STATUS *key_status)
 GPIO_KEY_STATUS *gpio_get_key_status_by_key(uint8_t key)
 {
     // Calculate the size of the array
+#if 0
     size_t array_size = sizeof(gpio_key_array) / sizeof(gpio_key_array[0]);
 
     // Iterate over the array to find the key
@@ -383,7 +372,15 @@ GPIO_KEY_STATUS *gpio_get_key_status_by_key(uint8_t key)
             return gpio_key_array[i];
         }
     }
+#endif
 
+    for (GPIO_KEY_STATUS **gpio_key_ = gpio_key_array; *gpio_key_ != NULL; gpio_key_++)
+    {
+        if ((*gpio_key_)->key == key)
+        {
+            return *gpio_key_;
+        }
+    }
     // If the key is not found, return NULL
     return NULL;
 }
@@ -391,6 +388,7 @@ GPIO_KEY_STATUS *gpio_get_key_status_by_key(uint8_t key)
 GPIO_STATUS *gpio_get_gpio_status_by_pin(uint16_t gpio_pin)
 {
     // Calculate the size of the array
+#if 0
     size_t array_size = sizeof(gpio_array) / sizeof(gpio_array[0]);
 
     // Iterate over the array to find the key
@@ -400,6 +398,14 @@ GPIO_STATUS *gpio_get_gpio_status_by_pin(uint16_t gpio_pin)
         if (gpio_array[i]->pin == gpio_pin)
         {
             return gpio_array[i];
+        }
+    }
+#endif
+    for (GPIO_STATUS **gpio_ = gpio_array; *gpio_ != NULL; gpio_++)
+    {
+        if ((*gpio_)->pin == gpio_pin)
+        {
+            return *gpio_;
         }
     }
     // If the key is not found, return NULL
@@ -440,23 +446,22 @@ void task_gpio_event_polling(void)
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-    for (size_t i = 0; i < sizeof(gpio_array) / sizeof(gpio_array[0]); i++)
+    // for (size_t i = 0; i < sizeof(gpio_array) / sizeof(gpio_array[0]); i++)
+    for (GPIO_STATUS **gpio_status = gpio_array; *gpio_status != NULL; gpio_status++)
     {
-        GPIO_STATUS *gpio_status = gpio_array[i];
-        if (gpio_status == NULL)
-            continue;
-        task_gpio_polling_status(gpio_status);
-        task_gpio_event_dispatcher(gpio_status);
+        task_gpio_polling_status(*gpio_status);
+        task_gpio_event_dispatcher(*gpio_status);
     }
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-    for (size_t i = 0; i < sizeof(gpio_key_array) / sizeof(gpio_key_array[0]); i++)
+    // for (size_t i = 0; i < sizeof(gpio_key_array) / sizeof(gpio_key_array[0]); i++)
+    for (GPIO_KEY_STATUS **gpio_key_ = gpio_key_array; *gpio_key_ != NULL; gpio_key_++)
     {
-        GPIO_KEY_STATUS *key_status = gpio_key_array[i];
-        if (key_status == NULL)
-            continue;
-        task_gpio_key_polling_event_status(key_status);
-        task_gpio_key_polling_event_dispatcher(key_status);
+        // GPIO_KEY_STATUS *key_status = gpio_key_array[i];
+        // if (key_status == NULL)
+        //     continue;
+        task_gpio_key_polling_event_status(*gpio_key_);
+        task_gpio_key_polling_event_dispatcher(*gpio_key_);
     }
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////

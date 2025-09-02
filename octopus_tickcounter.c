@@ -9,8 +9,9 @@
  */
 
 #include "octopus_tickcounter.h" // Includes the header file that defines tick counter functions
+#include "octopus_platform.h"    // Include platform-specific header for hardware platform details
 
-#if 1 //def TASK_MANAGER_STATE_MACHINE_PTL1
+#if 1 // def TASK_MANAGER_STATE_MACHINE_PTL1
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -44,7 +45,7 @@
 /*******************************************************************************
  * STATIC VARIABLES
  */
-//static uint32_t OsTickCounter = 0; // Stores the current tick value
+// static uint32_t OsTickCounter = 0; // Stores the current tick value
 
 /*******************************************************************************
  * EXTERNAL VARIABLES
@@ -122,12 +123,12 @@ bool IsTickCounterStart(const uint32_t *timer)
 // Get the current system tick (in milliseconds)
 uint32_t GetSystemTickClock(void)
 {
-	//return GET_SYSTEM_TICK_COUNT; // Calls a macro or function to get the system tick count
-	
-	DISABLE_IRQ;	
-	uint32_t system_tick = GET_SYSTEM_TICK_COUNT;
-	ENABLE_IRQ;
-	return system_tick;
+    // return GET_SYSTEM_TICK_COUNT; // Calls a macro or function to get the system tick count
+
+    DISABLE_IRQ;
+    uint32_t system_tick = GET_SYSTEM_TICK_COUNT;
+    ENABLE_IRQ;
+    return system_tick;
 }
 
 // Function to convert date string into tm structure (parsed from string)
