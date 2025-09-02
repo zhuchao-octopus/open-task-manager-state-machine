@@ -25,15 +25,44 @@
 /*******************************************************************************
  * INCLUDES
  */
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
-// #include "octopus_platform.h"
-#include <stdint.h> // Standard integer type definitions
-#include <stdarg.h> // Variable argument list handling
+/**
+ * @enum LogLevel
+ * @brief Enumeration representing different logging levels.
+ */
+// #ifdef PLATFORM_CST_OSAL_RTOS
+typedef enum
+{
+    LOG_LEVEL_NONE,    /**< No logging output. */
+    LOG_LEVEL_DEBUG,   /**< Debug-level logs. */
+    LOG_LEVEL_INFO,    /**< Informational logs. */
+    LOG_LEVEL_WARNING, /**< Warning-level logs. */
+    LOG_LEVEL_ERROR,   /**< Error-level logs. */
+    LOG_LEVEL_NO,      /**< Reserved (potentially unused). */
+    LOG_LEVEL_MAX      /**< Maximum logging level. */
+} DBG_LOG_LEVEL;
+
+/**
+ * @typedef std_putc
+ * @brief Callback function type for handling output data.
+ * @param data Pointer to the data buffer to output.
+ * @param size Size of the data buffer.
+ */
+typedef void (*std_putc)(char *data, uint16_t size);
+
+/**
+ * @brief Internal function for formatted string processing.
+ * @param putc Callback function for character output.
+ * @param fmt Format string.
+ * @param args Variable argument list.
+ */
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+<<<<<<< Updated upstream
 
     /**
      * @enum LogLevel
@@ -68,18 +97,20 @@ extern "C"
     void vsprintf__(std_putc putc, const char *fmt, va_list args);
     // #endif
 
+=======
+>>>>>>> Stashed changes
     /**
      * @brief Sets the global logging level.
      * @param level The desired logging level.
      */
     void dbg_log_set_level(DBG_LOG_LEVEL level);
-
+    void dbg_log_set_channel(uint8_t channel);
     /**
      * @brief Outputs a buffer as a log message.
      * @param buff Pointer to the buffer.
      * @param lenth Length of the buffer.
      */
-    void dbg_log_printf_buffer(uint8_t *buff, uint16_t lenth);
+    void dbg_log_printf_buffer(const uint8_t *buff, uint16_t lenth);
 
     /**
      * @brief Logs a formatted message.
@@ -103,11 +134,13 @@ extern "C"
      * @param lenth Length of the buffer.
      */
     void dbg_log_printf_buffer_level(const char *function_name, const uint8_t *buff, uint16_t lenth);
+#ifdef __cplusplus
+}
+#endif
 
 /*******************************************************************************
  * MACROS
  */
-
 /** Macro to retrieve the current function name. */
 //#define F_NAME __FUNCTION__
 
@@ -127,13 +160,14 @@ extern "C"
 /** Macro to log a simple message. */
 #define LOG_NONE(...) dbg_log_printf(__VA_ARGS__)
 
+<<<<<<< Updated upstream
 #define DBG(...) dbg_log_printf(__VA_ARGS__)
+=======
+#define LOG_DBG(...) dbg_log_printf(__VA_ARGS__)
+>>>>>>> Stashed changes
 
 /** Macro to log a buffer. */
 #define LOG_BUFF(a, b) dbg_log_printf_buffer(a, b)
 #define LOG_BUFF_LEVEL(a, b) dbg_log_printf_buffer_level(__FUNCTION__, a, b)
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __OCTOPUS_TASK_MANAGER_LOG_H__

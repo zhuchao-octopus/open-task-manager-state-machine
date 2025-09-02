@@ -11,10 +11,9 @@
  * INCLUDES
  * Includes necessary headers for UART functionality and platform-specific configurations.
  */
-#include "octopus_platform.h"
-#include "octopus_cfifo.h"
 #include "octopus_uart_hal.h"
-
+#include "octopus_cfifo.h"
+#include "octopus_platform.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  * Enable debug logging for specific events during UART operations.
@@ -116,15 +115,6 @@ static void ptl_uart_init(void)
  * @return  None.
  */
 
-void uart_init(void)
-{
-    // Configure UART settings.
-    ////////////////////////////////////////////////////////////////////////////////
-    ptl_uart_init();
-    // LOG_("\r\n");
-    ////////////////////////////////////////////////////////////////////////////////
-}
-
 void hal_uart_init(uint8 task_id)
 {
     Hal_TaskID = task_id;
@@ -132,6 +122,7 @@ void hal_uart_init(uint8 task_id)
     {
         LOG_LEVEL("hal uart1 init for protocol\r\n");
     }
+    ptl_uart_init();
 }
 /**
  * @brief   Callback function triggered when UART events occur.
@@ -191,7 +182,7 @@ uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events)
  * @brief   Configures the USART peripheral for ITE OPEN RTOS platform.
  * @return  None.
  */
-void uart_init(void)
+void hal_uart_init(uint8_t task_id)
 {
     UART_OBJ *pUartInfo = (UART_OBJ *)malloc(sizeof(UART_OBJ));
     pUartInfo->port = PROTOCOL_UART_ITH_PORT;
@@ -210,14 +201,10 @@ void uart_init(void)
     sem_init(&UartSemIntr, 0, 0);
     cFifo_Init(&ptl_1_usart_rx_fifo, ptl_1_usart_rx_fifo_buff, sizeof(ptl_1_usart_rx_fifo_buff));
     UartIsInit = true;
-}
 
-void hal_uart_init(uint8_t task_id)
-{
     pthread_t task_receive;
     pthread_attr_t attr_receive;
     pthread_attr_init(&attr_receive);
-    uart_init();
     LOG_LEVEL("hal uart2 init for protocol\r\n");
     pthread_create(&task_receive, &attr_receive, hal_com_uart_event_handler, NULL);
 }
@@ -268,7 +255,7 @@ void *hal_com_uart_event_handler(void *arg)
 
 #elif defined(PLATFORM_LINUX_RISC)
 
-void uart_init(void)
+void hal_uart_init(uint8_t task_id)
 {
     cFifo_Init(&ptl_1_usart_rx_fifo, ptl_1_usart_rx_fifo_buff, sizeof(ptl_1_usart_rx_fifo_buff));
     linux_uart_serial_handle = serialport_create("/dev/ttyS3", 115200);
@@ -285,12 +272,6 @@ void uart_init(void)
 
     // uint8_t test_help[] = {0xaa, 0xf0, 0x00, 0x02, 0x64, 0x00, 0x00, 0x9c};
     // hal_com_uart_send_buffer(test_help, sizeof(test_help)); // for test
-}
-
-void hal_uart_init(uint8_t task_id)
-{
-    // LOG_LEVEL("hal uart2 init for protocol\r\n");
-    uart_init();
 }
 
 void *hal_com_uart_event_handler(void *arg)
@@ -310,14 +291,10 @@ static void hal_com_uart_receive_callback(const uint8_t *data, int length)
 }
 
 #else
-void uart_init(void)
-{
-    hal_uart_init(0);
-}
 
 void hal_uart_init(uint8_t task_id)
 {
-    LOG_LEVEL("hal init uart & protocol\r\n");
+    LOG_LEVEL("hal uart init for ptl\r\n");
     cFifo_Init(&ptl_1_usart_rx_fifo, ptl_1_usart_rx_fifo_buff, sizeof(ptl_1_usart_rx_fifo_buff));
 #ifdef TASK_MANAGER_STATE_MACHINE_PTL2
     cFifo_Init(&ptl_2_usart_rx_fifo, ptl_2_usart_rx_fifo_buff, sizeof(ptl_2_usart_rx_fifo_buff));
@@ -356,8 +333,15 @@ void *hal_com_uart_event_handler(void *arg)
 }
 
 #endif // PLATFORM_ITE_OPEN_RTOS
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void otsm_uart_init(void)
+{
+    hal_uart_init(0);
+}
+
 /**
  * Reads data from the UART RX FIFO buffer into the provided buffer.
  * It will attempt to read up to `length` bytes from the FIFO.
@@ -474,7 +458,11 @@ uint8_t hal_com_uart_send_string(const char *str, uint8_t length)
  * @param   length  Length of the buffer.
  * @return  Number of bytes sent.
  */
+<<<<<<< Updated upstream
 uint8_t hal_com_uart_send_buffer_1(const uint8_t *buffer, uint16_t length)
+=======
+uint8_t hal_com_uart0_send_buffer(const uint8_t *buffer, uint16_t length)
+>>>>>>> Stashed changes
 {
     uint8_t ret_code = 0;
 #ifdef TEST_LOG_DEBUG_UART_TX_DATA
@@ -483,6 +471,7 @@ uint8_t hal_com_uart_send_buffer_1(const uint8_t *buffer, uint16_t length)
     else
         LOG_LEVEL("buffer.length=%d linux_uart_serial_handle is null %d\r\n", length, (linux_uart_serial_handle == NULL) ? true : false);
 #endif
+
 #ifdef PLATFORM_CST_OSAL_RTOS
     ret_code = HalUartSendBuf(UART1, (uint8_t *)buffer, length);
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
@@ -491,14 +480,15 @@ uint8_t hal_com_uart_send_buffer_1(const uint8_t *buffer, uint16_t length)
     if (linux_uart_serial_handle)
     {
         ret_code = serialport_write(linux_uart_serial_handle, buffer, length);
-#ifdef TEST_LOG_DEBUG_UART_TX_DATA
-        LOG_LEVEL("Serialport_write ret_code=%d \r\n", ret_code);
-        LOG_BUFF_LEVEL(buffer, length);
-// LOG_NONE("\r\n");
-#endif
     }
-#else
+#elif defined(PLATFORM_STM32_RTOS)
     PTL_1_UART_Send_Buffer(buffer, length);
+#else
+<<<<<<< Updated upstream
+    PTL_1_UART_Send_Buffer(buffer, length);
+=======
+
+>>>>>>> Stashed changes
 #endif
     return ret_code;
 }
@@ -509,9 +499,9 @@ uint8_t hal_com_uart_send_buffer_2(const uint8_t *buffer, uint16_t length)
     uint8_t ret_code = length;
 #ifdef TEST_LOG_DEBUG_UART_TX_DATA
     LOG_BUFF_LEVEL(buffer, length);
-    /// LOG_NONE("\r\n");
 #endif
 
+<<<<<<< Updated upstream
 #ifdef PLATFORM_CST_OSAL_RTOS
     ret_code = HalUartSendBuf(UART1, (uint8_t *)buffer, length);
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
@@ -524,14 +514,64 @@ uint8_t hal_com_uart_send_buffer_2(const uint8_t *buffer, uint16_t length)
 
 #else
     PTL_2_UART_Send_Buffer(buffer, length);
+=======
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+    UART1_Send_Buffer(buffer, length);
+>>>>>>> Stashed changes
 #endif
     return ret_code;
 }
 
 uint8_t hal_com_uart_send_buffer_3(const uint8_t *buffer, uint16_t length)
 {
-    LOG_BUFF_LEVEL(buffer, length);
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+    // LOG_BUFF_LEVEL(buffer, length);
     UART2_Send_Buffer(buffer, length);
-    return 0;
+#endif
+    return length;
+}
+
+uint8_t hal_com_uart3_send_buffer(const uint8_t *buffer, uint16_t length)
+{
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+    UART3_Send_Buffer(buffer, length);
+#endif
+    return length;
+}
+
+uint8_t hal_com_uart4_send_buffer(const uint8_t *buffer, uint16_t length)
+{
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+    UART4_Send_Buffer(buffer, length);
+#endif
+    return length;
+}
+
+uint8_t hal_com_uart5_send_buffer(const uint8_t *buffer, uint16_t length)
+{
+    return length;
+}
+
+uint8_t hal_com_uart6_send_buffer(const uint8_t *buffer, uint16_t length)
+{
+    return length;
+}
+
+uint8_t hal_com_uart7_send_buffer(const uint8_t *buffer, uint16_t length)
+{
+    return length;
+}
+
+uint8_t hal_com_uart8_send_buffer(const uint8_t *buffer, uint16_t length) // LPUART
+{
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+    //LPUART_Send_Buffer(buffer, length);
+#endif
+    return length;
+}
+
+uint8_t hal_com_uart9_send_buffer(const uint8_t *buffer, uint16_t length) // LPUART
+{
+    return length;
 }
 #endif

@@ -18,7 +18,7 @@
 #ifndef __OCTOPUS_TASK_MANAGER_CFIFO_H__
 #define __OCTOPUS_TASK_MANAGER_CFIFO_H__
 
-#include "octopus_platform.h" // Include platform-specific headers
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 /*******************************************************************************
  * TYPE DEFINITIONS
@@ -27,8 +27,9 @@
 /**
  * @brief Circular FIFO structure.
  */
-#pragma pack(push)
-#pragma pack(1) // Ensure structure is packed for memory alignment
+#pragma pack(push, 1)
+// #pragma pack(push)
+// #pragma pack(1) // Ensure structure is packed for memory alignment
 typedef struct
 {
     volatile uint32_t head;     /**< Input index (read pointer). */
@@ -116,4 +117,14 @@ bool cFifo_Push(cFifo_t *a_ptFifo, uint8_t a_u8Data);
  */
 bool cFifo_Pop(cFifo_t *a_ptFifo, uint8_t *a_pu8Data);
 
+<<<<<<< Updated upstream
+=======
+/**
+ * @brief Check if a full line (ending with '\n') is present in the FIFO.
+ * @param[in] a_ptFifo Pointer to the circular FIFO structure.
+ * @return True if a full line is available, false otherwise.
+ */
+bool cFifo_HasLine(cFifo_t *a_ptFifo);
+
+>>>>>>> Stashed changes
 #endif // __OCTOPUS_TASK_MANAGER_CFIFO_H__

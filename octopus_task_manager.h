@@ -22,7 +22,7 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <stdint.h> // Standard integer type definitions
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 /*******************************************************************************
  * MACROS
@@ -76,6 +76,7 @@ typedef struct
  */
 typedef enum
 {
+<<<<<<< Updated upstream
   TASK_MODULE_PTL_1 = 0,  /**< Protocol handling task. */
   TASK_MODULE_PTL_2,      /**< Protocol handling task. */
   TASK_MODULE_SYSTEM,     /**< System task. */
@@ -88,6 +89,25 @@ typedef enum
   TASK_MODULE_CAN,
   TASK_MODULE_PTL_BAFANG,
   TASK_MODULE_IPC_SOCKET, /**< IPC socket service. */
+=======
+  TASK_MODULE_SYSTEM = 0, /**< System task. */
+  TASK_MODULE_GPIO,       /**< GPIO task. */
+
+  TASK_MODULE_PTL_1, /**< Protocol handling task. */
+  TASK_MODULE_UPF,   /**< Protocol handling task. */
+  TASK_MODULE_IPC,   /**< IPC socket service. */
+
+  TASK_MODULE_CAR_INFOR, /**< Car information. */
+  TASK_MODULE_CAN,
+
+  TASK_MODULE_KEY, /**< Key input. */
+  TASK_MODULE_BLE, /**< BLE communication. */
+  TASK_MODULE_4G,
+  TASK_MODULE_BT,
+  TASK_MODULE_BAFANG,
+  TASK_MODULE_LING_HUI_LIION2,
+  TASK_MODULE_UPDATE_MCU, /**< MCU firmware update. */
+>>>>>>> Stashed changes
 
   TASK_MODULE_MAX_NUM /**< Total number of tasks. */
 } TaskModule_t;
@@ -104,25 +124,18 @@ extern "C"
   /**
    * @brief Initialize the task manager, setting all tasks to INIT.
    */
-  void task_manager_init(void);
+  void otms_task_manager_init(void);
 
   /**
    * @brief Start all tasks by transitioning them to the START state.
    */
-  void task_manager_start(void);
+  void otms_task_manager_start(void);
 
   /**
    * @brief Stop all tasks by setting them to the STOP state.
    */
-  void task_manager_stop(void);
-
-  void task_manager_stop_except_1(TaskModule_t task_module1);
-  void task_manager_stop_except_2(TaskModule_t task_module1, TaskModule_t task_module2);
-  void task_manager_start_module(TaskModule_t TaskModule);
-  /**
-   * @brief Execute the current state handler for all registered tasks.
-   */
-  void task_manager_run(void);
+  void otms_task_manager_stop(void);
+  void otms_task_manager_run(void);
 
   /**
    * @brief Transition all tasks into the RUNNING state.
@@ -154,6 +167,9 @@ extern "C"
    */
   const otms_t *otms_get_config(void);
 
+  void task_manager_stop_except_1(TaskModule_t task_module1);
+  void task_manager_stop_except_2(TaskModule_t task_module1, TaskModule_t task_module2);
+  void task_manager_start_module(TaskModule_t TaskModule);
 #ifdef __cplusplus
 }
 #endif

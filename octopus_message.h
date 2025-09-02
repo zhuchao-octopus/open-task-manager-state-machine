@@ -20,7 +20,7 @@
 #ifndef ___OCTOPUS_MESSAGE_ID_H___
 #define ___OCTOPUS_MESSAGE_ID_H___
 
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 /****************************************************************************************
  *                                MESSAGE GROUP DEFINITIONS

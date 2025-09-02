@@ -20,26 +20,22 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include the Octopus platform-specific configurations
+#include "octopus_base.h" //  Base include file for the Octopus project.
+#include "octopus_platform.h"
 
-#ifdef __cplusplus
-extern "C"
+/*******************************************************************************
+ * MACRO DEFINITIONS
+ * The following macros define GPIO pin mappings and their operations for different platforms.
+ */
+typedef enum
 {
-#endif
-
-    /*******************************************************************************
-     * MACRO DEFINITIONS
-     * The following macros define GPIO pin mappings and their operations for different platforms.
-     */
-    typedef enum
-    {
-        BIT_RESET = 0,
-        BIT_SET
-    } Bit_Action_T;
+    BIT_RESET = 0,
+    BIT_SET
+} Bit_Action_T;
 
 #ifdef PLATFORM_CST_OSAL_RTOS
 
-    typedef uint8_t GPIO_GROUP;
+typedef uint8_t GPIO_GROUP;
 
 #define GPIO_POWER_KEY_GROUP GPIOA
 #define GPIO_POWER_KEY_PIN GPIO_Pin_12
@@ -69,7 +65,44 @@ extern "C"
 #define GPIO_SIF_S_PIN P20 /**< SIF Send pin */
 
 #define GPIO_BMS_R_PIN P11 /**< BMS Receive pin */
+<<<<<<< Updated upstream
 // #define GPIO_BMS_S_PIN                      P11    /**< BMS Send pin */
+=======
+// #define GPIO_BMS_S_PIN  P11    /**< BMS Send pin */
+
+#define GPIO_POWER_KEY_GROUP 1
+#define GPIO_POWER_KEY_PIN GPIO_ACC_PIN
+
+#define GPIO_POWER_SWITCH_GROUP 1
+#define GPIO_POWER_SWITCH_PIN GPIO_ACC_PIN
+
+#define GPIO_POWER_ENABLE_GROUP 1
+#define GPIO_POWER_ENABLE_PIN GPIO_ACC_PIN
+
+#define GPIO_ACC_KEY_GROUP 1
+#define GPIO_ACC_KEY_PIN GPIO_ACC_PIN
+
+#define GPIO_DDD_KEY_GROUP 1
+#define GPIO_DDD_KEY_PIN GPIO_DDD_PIN
+
+#define GPIO_ZZD_KEY_GROUP 1
+#define GPIO_ZZD_KEY_PIN GPIO_ZZD_PIN
+
+#define GPIO_YZD_KEY_GROUP 1
+#define GPIO_YZD_KEY_PIN GPIO_YZD_PIN
+
+#define GPIO_SKD_KEY_GROUP 1
+#define GPIO_SKD_KEY_PIN GPIO_DDD_PIN
+
+#define GPIO_HORN_KEY_GROUP 1
+#define GPIO_HORN_KEY_PIN GPIO_DDD_PIN
+
+#define GPIO_PLUS_KEY_GROUP 1
+#define GPIO_PLUS_KEY_PIN P34
+
+#define GPIO_SUBT_KEY_GROUP 1
+#define GPIO_SUBT_KEY_PIN P11
+>>>>>>> Stashed changes
 
 // Macros for controlling GPIO pin states (Low/High)
 #define GPIO_ACC_SOC_LOW() (HalGpioSet(GPIO_ACC_SOC_PIN, Bit_DISABLE)) /**< Set GPIO_ACC_SOC_PIN to Low */
@@ -157,6 +190,22 @@ typedef GPIO_TypeDef GPIO_GROUP;
 #define GPIO_PIN_SIF_SET_HIGH()    // Set GPIO_SIF_S_PIN to High
 #define GPIO_PIN_READ_SIF() (0x00) // Read the state of SIF_R_PIN
 
+<<<<<<< Updated upstream
+=======
+#elif defined(PLATFORM_NATION_RTOS)
+
+typedef GPIO_Module GPIO_GROUP;
+
+#define GPIO_POWER_KEY_GROUP GPIOA
+#define GPIO_POWER_KEY_PIN GPIO_Pin_12
+
+#define GPIO_POWER_SWITCH_GROUP GPIOB
+#define GPIO_POWER_SWITCH_PIN GPIO_PIN_4
+
+#define GPIO_POWER_ENABLE_GROUP GPIOA
+#define GPIO_POWER_ENABLE_PIN GPIO_PIN_15
+
+>>>>>>> Stashed changes
 #else
 typedef uint8_t GPIO_GROUP;
 #define GPIO_POWER_KEY_GROUP 0
@@ -166,10 +215,13 @@ typedef uint8_t GPIO_GROUP;
 #define GPIO_POWER_SWITCH_PIN 0
 #endif
 
-    /*********************************************************************
-     * FUNCTION DECLARATIONS
-     */
-
+/*********************************************************************
+ * FUNCTION DECLARATIONS
+ */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
     // Function to initialize GPIOs for the task
     void hal_gpio_init(uint8_t task_id);
     bool hal_gpio_read(GPIO_GROUP *gpiox, uint16_t pin);

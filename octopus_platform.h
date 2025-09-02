@@ -1,5 +1,5 @@
 /*******************************************************************************
- * File Name: octopus_task_manager_platform.h
+ * File Name: octopus_platform.h
  * @version  1.0.0
  * @date     2024-12-11
  * @author   Octopus Team
@@ -43,6 +43,7 @@
 #ifndef ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 #define ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 
+<<<<<<< Updated upstream
 ///////////////////////////////////////////////////////////////////////////////////
 #define OTMS_VERSION_CODE (001)
 #define OTMS_VERSION_NAME ("0.0.1")
@@ -117,11 +118,19 @@
 #include "octopus_msgqueue.h"     // Include message queue header for task communication
 #include "octopus_message.h"      // Include message id for inter-task communication
 #include "octopus_utils.h"
+=======
+/*******************************************************************************
+ * INCLUDES
+ */
+#include "octopus_base.h" //  Base include file for the Octopus project.
+>>>>>>> Stashed changes
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
+
 #include <sys/ioctl.h>         // System I/O control definitions
 #include <sys/time.h>          // Time-related functions for UNIX systems
 #include <pthread.h>           // POSIX thread support
+#include <unistd.h>            // POSIX API for file and process handling
 #include "ite/ith.h"           // ITE hardware-specific definitions
 #include "ite/itp.h"           // ITE platform-specific definitions
 #include "uart/uart.h"         // UART communication module
@@ -130,8 +139,9 @@
 #include "SDL/SDL.h"           // SDL library for multimedia applications
 #include "openrtos/FreeRTOS.h" // FreeRTOS kernel for real-time tasks
 #include "openrtos/queue.h"    // FreeRTOS queue handling
-#include <unistd.h>            // POSIX API for file and process handling
+
 #elif defined(PLATFORM_CST_OSAL_RTOS)
+
 #include "OSAL.h"              // OS abstraction layer
 #include "OSAL_PwrMgr.h"       // OS power management utilities
 #include "OSAL_Memory.h"       // OS memory management functions
@@ -161,23 +171,36 @@
 #include "rom_sym_def.h"       // ROM symbol definitions
 #include "sdk_config.h"        // SDK configuration file
 #include "types.h"             // Basic type definitions
+
+#elif defined(PLATFORM_STM32_RTOS)
+
+#include "octopus_bsp_hk32l08x.h"
+
+#elif defined(PLATFORM_NATION_RTOS)
+
+#include "octopus_bsp_nation.h"
+
 #elif defined(PLATFORM_LINUX_RISC)
+
 #include <pthread.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <fnmatch.h>
 #include "../HAL/octopus_serialport_c.h"
 
+<<<<<<< Updated upstream
 #elif defined(PLATFORM_STM32_RTOS)
 #include "../src/native_devices.h"
 
 #else
 
 #endif
+=======
+#else
+>>>>>>> Stashed changes
 
-#ifdef __cplusplus
-extern "C"
-{
+#include "octopus_bsp.h"
+
 #endif
 
 /*******************************************************************************
@@ -189,6 +212,10 @@ extern "C"
  * GENERAL MACROS
  * Define common bit manipulation macros and constants.
  ******************************************************************************/
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 #ifdef PLATFORM_CST_OSAL_RTOS
 
 #define GET_SYSTEM_TICK_COUNT (hal_systick() * 625 / 1000) // Convert system ticks to milliseconds
@@ -213,7 +240,7 @@ extern "C"
     }                                                                                 \
     else                                                                              \
     {                                                                                 \
-        perror("clock_gettime");                                                      \
+        perror("GET_SYSTEM_TICK_COUNT");                                              \
     }                                                                                 \
     tick_count;                                                                       \
 }) // Return zero for unsupported platforms
@@ -221,6 +248,7 @@ extern "C"
 #define DISABLE_IRQ
 #define ENABLE_IRQ
 #else
+<<<<<<< Updated upstream
 #define DISABLE_IRQ (__disable_irq())
 #define ENABLE_IRQ (__enable_irq())
 extern volatile uint32_t system_tick_ms;
@@ -308,4 +336,14 @@ extern volatile uint32_t system_timer_tick_50us;
 }
 #endif
 
+=======
+
+extern volatile uint32_t system_tick_counter_ms;
+#define DISABLE_IRQ (__disable_irq())
+#define ENABLE_IRQ (__enable_irq())
+#define GET_SYSTEM_TICK_COUNT system_tick_counter_ms // Return zero for unsupported platforms
+
+#endif
+
+>>>>>>> Stashed changes
 #endif // ___OCTOPUS_TASK_MANAGER_PLATFORM_H___

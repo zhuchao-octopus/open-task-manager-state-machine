@@ -16,17 +16,27 @@
 #ifndef __OCTOPUS_TASK_MANAGER_FLASH_HAL_H__
 #define __OCTOPUS_TASK_MANAGER_FLASH_HAL_H__
 
-#include "octopus_platform.h" // Include platform-specific configurations
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
+<<<<<<< Updated upstream
+=======
+// Macro for user flash testing.
+// This could be used for testing purposes or debugging flash operations.
+#define USR_FLASH_TEST 0x0001
+
+>>>>>>> Stashed changes
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+<<<<<<< Updated upstream
 
 // Macro for user flash testing.
 // This could be used for testing purposes or debugging flash operations.
 #define USR_FLASH_TEST 0x0001
 
+=======
+>>>>>>> Stashed changes
     /******************************************************************************/
     /**
      * @brief   Initializes the flash memory module.
