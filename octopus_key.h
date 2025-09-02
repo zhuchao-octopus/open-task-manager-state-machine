@@ -31,48 +31,6 @@
  */
 
 // Key IDs (these should correspond to the physical keys on the device)
-<<<<<<< Updated upstream
-#define OCTOPUS_KEY_0 0
-#define OCTOPUS_KEY_1 1
-#define OCTOPUS_KEY_2 2
-#define OCTOPUS_KEY_3 3
-#define OCTOPUS_KEY_4 4
-#define OCTOPUS_KEY_5 5
-#define OCTOPUS_KEY_6 6
-#define OCTOPUS_KEY_7 7
-#define OCTOPUS_KEY_8 8
-#define OCTOPUS_KEY_9 9
-#define OCTOPUS_KEY_10 10
-#define OCTOPUS_KEY_11 11
-#define OCTOPUS_KEY_12 12
-#define OCTOPUS_KEY_13 13
-#define OCTOPUS_KEY_14 14
-#define OCTOPUS_KEY_POWER 20
-    /*******************************************************************************
-     * TYPEDEFS
-     * The following defines key codes representing different actions or states of the keys.
-     */
-    // key action
-#define KEY_ACTION_NONE 0
-#define KEY_ACTION_DOWN 1
-#define KEY_ACTION_UP 2
-#define KEY_ACTION_LONG 3
-#define KEY_ACTION_DUBDOW 4
-#define KEY_ACTION_DOUBLE 5
-
-// Key codes
-#define KEY_CODE_IDLE (0x00)  /**< No key action detected */
-#define KEY_CODE_MENU (0x01)  /**< Menu button pressed */
-#define KEY_CODE_UP (0x02)    /**< Up button pressed */
-#define KEY_CODE_DOWN (0x03)  /**< Down button pressed */
-#define KEY_CODE_OK (0x04)    /**< OK button pressed */
-#define KEY_CODE_LEFT (0x05)  /**< Left button pressed */
-#define KEY_CODE_RIGHT (0x06) /**< Right button pressed */
-#define KEY_CODE_BACK (0x07)  /**< Back button pressed */
-#define KEY_CODE_INFO (0x08)  /**< Info button pressed */
-#define KEY_CODE_ILL (0x09)   /**< Invalid key action */
-#define KEY_CODE_POWER (0x0A) /**< Power button pressed */
-=======
 // =====================================================================================
 // Function Keys
 // =====================================================================================
@@ -219,7 +177,6 @@
 // #define OCTOPUS_KEY_CUSTOMER_BASE 200
 
 #define OCTOPUS_KEY_NONE 255
->>>>>>> Stashed changes
 
 // Key states
 #define KEY_STATE_NONE (0x00)                   /**< Key is released */

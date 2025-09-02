@@ -123,91 +123,6 @@ extern "C"
 								  uint16_t *out_range_100m,
 								  uint16_t *out_range_max_100m);
 
-<<<<<<< Updated upstream
-	/**
-	 * @defgroup APP_SETTING APP:SETTING
-	 * @brief    Application settings and configurations.
-	 * @{
-	 */
-
-	/*******************************************************************************
-	 * DEBUG SWITCH MACROS
-	 * Define macros to enable or disable debug functionality.
-	 ******************************************************************************/
-
-	/*******************************************************************************
-	 * MACROS
-	 * Define commonly used macros for this module.
-	 ******************************************************************************/
-#define APP_MATA_INFO_MAGIC 0xDEADBEEF
-	/*******************************************************************************
-	 * TYPEDEFS
-	 * Define types used in the MCU update process.
-	 ******************************************************************************/
-	typedef enum
-	{
-		FILE_READ_DATA_OK = 0,
-		FILE_READ_CT_INFOR,
-		FILE_READ_EOF,
-
-		FILE_READ_INVALID,
-		FILE_READ_ERROR
-	} file_read_status_t;
-
-	typedef struct
-	{
-		uint32_t address;
-		uint8_t data[64];
-		uint8_t length;
-		uint16_t f_count;
-	} hex_record_t;
-
-	typedef enum
-	{
-		FILE_TYPE_UNKNOWN = 0, // Unknown file type
-		FILE_TYPE_HEX,		   // Intel HEX file format
-		FILE_TYPE_BIN		   // Raw binary file format
-	} file_type_t;
-
-	typedef struct
-	{
-		file_type_t file_type;
-		uint32_t file_size; // target bank size
-		uint32_t file_version;
-		uint32_t file_crc_32;	// target bank crc
-		uint32_t reset_handler; // target bank vect reset address
-	} file_info_t;				// HEX/BIN FILE
-
-	typedef struct
-	{
-		uint32_t magic;			// Magic constant for validation
-		uint32_t start_address; // Start address (e.g. 0x00000000 or 0x00010000)
-		uint32_t size;			// Actual app size in bytes
-		uint32_t crc32;			// CRC32 of the app binary
-	} bank_info_t;
-
-	typedef struct
-	{
-		bank_info_t bank1;
-		bank_info_t bank2;
-	} meta_info_t;
-
-	/*******************************************************************************
-	 * CONSTANTS
-	 * Define any module-specific constants.
-	 ******************************************************************************/
-
-	/*******************************************************************************
-	 * GLOBAL VARIABLES DECLARATION
-	 * Declare external variables used across the module.
-	 ******************************************************************************/
-
-	/*******************************************************************************
-	 * GLOBAL FUNCTIONS DECLARATION
-	 * Declare the public functions provided by this module.
-	 ******************************************************************************/
-=======
->>>>>>> Stashed changes
 	uint32_t calculate_crc_32(uint8_t *data, uint32_t length);
 	uint32_t calculate_crc_32_step(uint32_t current_crc, uint8_t *data, uint32_t length);
 
@@ -221,7 +136,7 @@ extern "C"
 	int32_t compare_versions(uint32_t v1, uint32_t v2);
 	bool is_version_code_valid(uint32_t version_code);
 
-	file_info_t parse_firmware_file(uint32_t target_bank_offset, const char *filename);
+	file_info_t parse_firmware_file(uint32_t model_number, uint32_t target_bank_offset, const char *filename);
 	file_read_status_t read_next_hex_record(FILE *hex_file, long *file_offset, hex_record_t *hex_record);
 	file_read_status_t read_next_bin_record(FILE *bin_file, long *file_offset, hex_record_t *hex_record);
 

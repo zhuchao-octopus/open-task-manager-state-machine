@@ -62,43 +62,6 @@ typedef void (*std_putc)(char *data, uint16_t size);
 extern "C"
 {
 #endif
-<<<<<<< Updated upstream
-
-    /**
-     * @enum LogLevel
-     * @brief Enumeration representing different logging levels.
-     */
-    // #ifdef PLATFORM_CST_OSAL_RTOS
-    typedef enum
-    {
-        LOG_LEVEL_NONE,    /**< No logging output. */
-        LOG_LEVEL_DEBUG,   /**< Debug-level logs. */
-        LOG_LEVEL_INFO,    /**< Informational logs. */
-        LOG_LEVEL_WARNING, /**< Warning-level logs. */
-        LOG_LEVEL_ERROR,   /**< Error-level logs. */
-        LOG_LEVEL_NO,      /**< Reserved (potentially unused). */
-        LOG_LEVEL_MAX      /**< Maximum logging level. */
-    } DBG_LOG_LEVEL;
-
-    /**
-     * @typedef std_putc
-     * @brief Callback function type for handling output data.
-     * @param data Pointer to the data buffer to output.
-     * @param size Size of the data buffer.
-     */
-    typedef void (*std_putc)(char *data, uint16_t size);
-
-    /**
-     * @brief Internal function for formatted string processing.
-     * @param putc Callback function for character output.
-     * @param fmt Format string.
-     * @param args Variable argument list.
-     */
-    void vsprintf__(std_putc putc, const char *fmt, va_list args);
-    // #endif
-
-=======
->>>>>>> Stashed changes
     /**
      * @brief Sets the global logging level.
      * @param level The desired logging level.
@@ -142,7 +105,7 @@ extern "C"
  * MACROS
  */
 /** Macro to retrieve the current function name. */
-//#define F_NAME __FUNCTION__
+// #define F_NAME __FUNCTION__
 
 /** Macro for formatted string processing. */
 #ifdef PLATFORM_CST_OSAL_RTOS
@@ -160,11 +123,7 @@ extern "C"
 /** Macro to log a simple message. */
 #define LOG_NONE(...) dbg_log_printf(__VA_ARGS__)
 
-<<<<<<< Updated upstream
-#define DBG(...) dbg_log_printf(__VA_ARGS__)
-=======
 #define LOG_DBG(...) dbg_log_printf(__VA_ARGS__)
->>>>>>> Stashed changes
 
 /** Macro to log a buffer. */
 #define LOG_BUFF(a, b) dbg_log_printf_buffer(a, b)

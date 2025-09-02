@@ -91,6 +91,7 @@
 #define CLEAR_FLAG(flags, flag) ((flags) &= ~(flag))
 // Toggle a specific flag
 #define TOGGLE_FLAG(flags, flag) ((flags) ^= (flag))
+
 /////////////////////////////////////////////////////////////////////////////////////////
 typedef enum
 {
@@ -131,17 +132,10 @@ typedef struct
     uint32_t mete_data_flags; // Flags related to runtime/user/meter data validity
     uint32_t user_data_flags; // Flags related to configuration data state (e.g., checksum pass/fail)
 
-<<<<<<< Updated upstream
-    uint8_t active_slot;    // Indicates the current active slot (1 = A, 2 = B)
-    uint8_t bank_slot_mode; // Current boot mode, corresponds to boot_mode_t
-    uint8_t reserved1;      // Reserved for future use or 4-byte alignment
-    uint8_t reserved2;
-=======
     uint8_t bank_slot_activated; // Indicates the current active slot (1 = A, 2 = B)
     uint8_t bank_slot_mode;      // Current boot mode, corresponds to boot_mode_t
     uint32_t reserved1;          // Reserved for future use or 4-byte alignment
     uint32_t reserved2;          // Reserved for future use or 4-byte alignment
->>>>>>> Stashed changes
 } flash_meta_infor_t;
 
 typedef struct
@@ -229,7 +223,7 @@ extern "C"
      * @details  These functions include Flash read/write operations and debugging
      *           utilities for printing Flash data in hexadecimal format.
      */
-    extern void PrintfBuffHex(const char *fun, int line, char *str, uint8_t *dat, int len);
+
     /**< Prints a buffer in hexadecimal format for debugging. */
     extern void FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t len);
     /**< Reads data from Flash memory into a buffer. */
@@ -250,13 +244,14 @@ extern "C"
     uint32_t flash_get_current_bank(void);
     uint32_t flash_get_bank_address(uint8_t bank_type);
     uint32_t flash_get_bank_offset_address(uint8_t bank_type);
-    uint32_t flash_erase_user_app_arear(void);
+    uint32_t flash_erase_user_app_bank(void);
 
     bool flash_decode_active_version(char *out_str, size_t max_len);
     bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);
     bool flash_is_meta_infor_valid(void);
     bool flash_is_allow_update_bank(uint8_t bank_type);
     const char *flash_get_current_bank_name(void);
+    const char *flash_get_bank_name(uint8_t bank);
     flash_meta_infor_t *flash_get_meta_infor(void);
 #ifdef __cplusplus
 }

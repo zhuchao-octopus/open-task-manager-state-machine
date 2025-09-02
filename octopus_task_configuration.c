@@ -26,11 +26,19 @@
 #include "octopus_system.h"
 #include "octopus_gpio.h"
 #include "octopus_key.h"
+
+#include "octopus_vehicle.h"
+#include "octopus_ble.h"
+#include "octopus_4g.h"
+#include "octopus_bt.h"
+#include "octopus_ling_hui_liion2.h"
+
 #include "octopus_update_mcu.h"
+#include "octopus_ipc.h"
+#include "octopus_can.h"
+#include "octopus_bafang.h"
 #include "octopus_uart_ptl.h" // Include UART protocol header
 #include "octopus_uart_upf.h" // Include UART protocol header
-#include "octopus_vehicle.h"
-
 
 /*******************************************************************************
  * CONSTANTS

@@ -27,16 +27,7 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-<<<<<<< Updated upstream
-#include "octopus_platform.h"
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-=======
 #include "octopus_base.h" //  Base include file for the Octopus project.
->>>>>>> Stashed changes
 
 /*******************************************************************************
  * MACROS
@@ -45,43 +36,6 @@ extern "C"
 /**
  * @brief Version information.
  */
-<<<<<<< Updated upstream
-
-
-/**
- * @brief System MPU (Microprocessor Unit) state definitions.
- */
-#define SYSTEM_MPU_STATE_INIT (0x00)         /**< Initial state. */
-#define SYSTEM_MPU_STATE_ENTER_PLAY (0x01)   /**< Entering playback animation. */
-#define SYSTEM_MPU_STATE_ENTER_FINISH (0x02) /**< Playback animation complete. */
-#define SYSTEM_MPU_STATE_COMPLETED (0x03)    /**< Loading completed. */
-#define SYSTEM_MPU_STATE_LEAVE_PLAY (0x04)   /**< Exiting playback animation. */
-#define SYSTEM_MPU_STATE_LEAVE_FINISH (0x05) /**< Exit animation complete. */
-
-    /*******************************************************************************
-     * TYPEDEFS
-     ******************************************************************************/
-
-    /**
-     * @brief Mainboard (MB) state enumeration.
-     */
-    typedef enum MB_POWER_STATE
-    {
-        MB_POWER_ST_INIT = 0, /**< Initialization state. */
-        MB_POWER_ST_LOWPOWER, /**< Low-power state. */
-        MB_POWER_ST_STANDBY,  /**< Standby state. */
-        MB_POWER_ST_BOOTING,  /**< Booting state. */
-        MB_POWER_ST_ON,       /**< Fully operational state. */
-        MB_POWER_ST_PARTIAL,  /**< Partial operation state. */
-        MB_POWER_ST_SHUTDOWN, /**< Shutdown process. */
-        MB_POWER_ST_OFF,      /**< Power-off state. */
-        MB_POWER_ST_STOP,
-    } mb_state_t;
-
-    /*******************************************************************************
-     * GLOBAL FUNCTIONS DECLARATION
-     ******************************************************************************/
-=======
 
 /**
  * @brief System MPU (Microprocessor Unit) state definitions.
@@ -121,7 +75,6 @@ typedef enum MB_POWER_STATE
 /*******************************************************************************
  * GLOBAL FUNCTIONS DECLARATION
  ******************************************************************************/
->>>>>>> Stashed changes
 
 #ifdef __cplusplus
 extern "C"

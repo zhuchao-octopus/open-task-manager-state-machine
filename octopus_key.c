@@ -19,18 +19,6 @@
  * DEBUG SWITCH MACROS
  */
 
-<<<<<<< Updated upstream
-#define ADDR_OTA_FLAG 0x1FFF18FC
-
-#ifdef TASK_MANAGER_STATE_MACHINE_KEY
-/*******************************************************************************
- * LOCAL FUNCTIONS DECLEAR
- */
-uint8_t get_dummy_key(uint8_t key);
-/*******************************************************************************
- * GLOBAL VARIABLES
- */
-=======
 // #define ADDR_OTA_FLAG 0x1FFF18FC
 
 #ifdef TASK_MANAGER_STATE_MACHINE_KEY
@@ -61,7 +49,6 @@ GPIO_KEY_STATUS *gpio_key_array[] = {NULL};
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
->>>>>>> Stashed changes
 uint8_t power_key_password[] = {OCTOPUS_KEY_POWER, OCTOPUS_KEY_POWER, OCTOPUS_KEY_POWER};
 uint8_t power_key_password_index = 0;
 GPIO_KEY_STATUS key_status_received_temp;
@@ -78,11 +65,6 @@ static uint32_t l_t_msg_wait_timer;
  */
 static bool key_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
-<<<<<<< Updated upstream
-
-static void task_key_action_hanlder(void);
-=======
->>>>>>> Stashed changes
 
 static void task_key_action_handler(void);
 static void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status);
@@ -164,45 +146,10 @@ static void task_key_action_handler(void)
         // LOG_LEVEL("key %d pressed key_status=%d\r\n",key,msg->param2);
         switch (key)
         {
-<<<<<<< Updated upstream
-        case OCTOPUS_KEY_POWER:
-            task_key_power_event_process(key_status);
-            break;
-        default:
-            break;
-        }
-    }
-
-    else if (msg->msg_id != NO_MSG && msg->msg_id == MSG_OTSM_DEVICE_KEY_UP_EVENT)
-    {
-        uint8_t key = msg->param1; // get_dummy_key(msg->param1);
-        GPIO_KEY_STATUS *key_status = get_key_status_by_key(key);
-        // LOG_LEVEL("key release key=%d key_status=%d\r\n", key, msg->param2);
-        switch (key)
-        {
-        case OCTOPUS_KEY_POWER:
-            task_key_power_event_process(key_status);
-            break;
-        default:
-            break;
-        }
-    }
-}
-
-void task_key_goto_bootloader(void)
-{
-  LOG_LEVEL("reboot to dul ota to upgrade mcu ble sw.\r\n");
-#if 0
-	write_reg(ADDR_OTA_FLAG,0x55AAAA55);
-	GAPRole_TerminateConnection();
-	WaitMs(500);
-	NVIC_SystemReset();
-=======
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
         case OCTOPUS_KEY_POWER:
             task_key_power_handler(key_status);
             break;
->>>>>>> Stashed changes
 #endif
         case OCTOPUS_KEY_PLUS:
         case OCTOPUS_KEY_SUBT:
@@ -237,11 +184,8 @@ void task_key_goto_bootloader(void)
 void task_key_power_handler(GPIO_KEY_STATUS *key_status)
 {
     static uint32_t power_key_wait_timer;
-<<<<<<< Updated upstream
-=======
     if (key_status == NULL)
         return;
->>>>>>> Stashed changes
     if (key_status->key != OCTOPUS_KEY_POWER)
         return;
 
@@ -371,25 +315,6 @@ void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t get_dummy_key(uint8_t key)
-{
-    switch (key)
-    {
-    case 0:
-        return OCTOPUS_KEY_0;
-    case 1:
-        return OCTOPUS_KEY_1;
-    case 2:
-        return OCTOPUS_KEY_2;
-    case 3:
-        return OCTOPUS_KEY_3;
-
-    case 14:
-        return OCTOPUS_KEY_14;
-    }
-    return 0;
-}
-
 bool key_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
 {
     MY_ASSERT(buff);
@@ -474,9 +399,6 @@ bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
     }
     return false;
 }
-<<<<<<< Updated upstream
-
-=======
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -556,5 +478,4 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
         break;
     }
 }
->>>>>>> Stashed changes
 #endif

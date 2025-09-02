@@ -139,6 +139,16 @@ bool BMS_Is_Idle(void);
 /***************************************************************************************************
  *                                            LOCAL FUNCTION
  ***************************************************************************************************/
+void otsm_bms_init(void)
+{
+  if (!BMS_has_inited)
+	{
+		BMS_GPIO_Init();
+		///BMS_TIM2_Int_Init(50 - 1, 96 - 1);
+		BMS_has_inited = true;
+	}
+}
+ 
 bool BMS_IsInit(void)
 {
   return BMS_has_inited;
@@ -147,16 +157,6 @@ bool BMS_IsInit(void)
 void BMS_GPIO_Init(void)
 {
 	BMS_SEND_DATA_BIT_LOW();
-}
-
-void bms_init(void)
-{
-if (!BMS_has_inited)
-	{
-		BMS_GPIO_Init();
-		///BMS_TIM2_Int_Init(50 - 1, 96 - 1);
-		BMS_has_inited = true;
-	}
 }
 
 void BMS_DeInit(void)

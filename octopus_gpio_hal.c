@@ -28,17 +28,40 @@ bool hal_gpio_read(GPIO_GROUP *gpiox, uint16_t pin)
 
 bool hal_gpio_write(GPIO_GROUP *gpiox, uint16_t pin, uint8_t value)
 {
-// Macros for writing to and reading from GPIO pins
+    // Macros for writing to and reading from GPIO pins
 #ifdef PLATFORM_STM32_RTOS
     GPIO_WriteBit(gpiox, pin, (BitAction)value); // Write to the specified GPIO pin
 #elif defined(PLATFORM_CST_OSAL_RTOS)
     HalGpioSet((GpioPin_t)pin, (bit_action_e)value);
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
-
 #else
-
 #endif
     return value;
+}
+
+void hal_gpio_power_on(void)
+{
+#ifdef PLATFORM_STM32_RTOS
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;        // Alternate function mode
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;      // Open-drain output//GPIO_OType_PP;// Push-pull output
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;    // GPIO_PuPd_UP;// Pull-up resistor enabled
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_3; // High speed
+
+    // PA15 - 3.3V power enable for MCU (MCU_3V3_EN)
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+    // PB4 - SWB+ power enable (SWB+_EN)
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+    hal_gpio_write(GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET);
+    hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
+#endif
 }
 
 #ifdef PLATFORM_CST_OSAL_RTOS

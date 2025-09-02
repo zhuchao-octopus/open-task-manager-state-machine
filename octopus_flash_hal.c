@@ -31,8 +31,6 @@ uint32_t hal_flash_erase_page_(uint32_t startaddr, uint8_t page_count)
 {
     return 0;
 }
-<<<<<<< Updated upstream
-=======
 uint32_t hal_flash_erase_area_(uint32_t startaddr, uint32_t endaddr)
 {
     return 0;
@@ -52,7 +50,6 @@ uint32_t hal_flash_erase_page_(uint32_t startaddr, uint8_t page_count)
 {
     return 0;
 }
->>>>>>> Stashed changes
 uint32_t hal_flash_erase_area_(uint32_t startaddr, uint32_t endaddr)
 {
     return 0;
@@ -185,10 +182,6 @@ uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
     FLASH_Lock();
     return written_bytes; // Return the number of bytes written
 }
-<<<<<<< Updated upstream
-#endif
-#endif // TASK_MANAGER_STATE_MACHINE_FLASH
-=======
 #else
 uint32_t hal_flash_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {
@@ -208,7 +201,6 @@ uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
     return 0;
 }
 #endif
->>>>>>> Stashed changes
 
 void hal_eeprom_write_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {

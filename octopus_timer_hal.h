@@ -17,7 +17,7 @@
 #ifndef __OCTOPUS_TASK_MANAGER_TIMER_HAL_H__
 #define __OCTOPUS_TASK_MANAGER_TIMER_HAL_H__
 
-#include "octopus_platform.h" // Include platform-specific configurations and definitions
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 #ifdef __cplusplus
 extern "C"
@@ -55,7 +55,7 @@ extern "C"
      * @note The actual handling of events should be done within this function based on the event type.
      */
     // void hal_timer_interrupt_callback(uint8_t evt);
-
+    void otsm_timer_init(void);
 #ifdef __cplusplus
 }
 #endif

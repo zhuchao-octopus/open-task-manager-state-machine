@@ -97,24 +97,6 @@ void TaskManagerStateMachineInit(uint8_t task_id)
 void TaskManagerStateMachineInit(void)
 #endif
 {
-<<<<<<< Updated upstream
-    LOG_NONE("-----------------------------------------------------------------------------\r\n");
-    LOG_NONE("               _____                                 \r\n");
-    LOG_NONE(" ______ _________  /_______ ________ ____  __________\r\n");
-    LOG_NONE(" _  __ \\_  ___/_  __/_  __ \\___  __ \\_  / / /__  ___/\r\n");
-    LOG_NONE(" / /_/ // /__  / /_  / /_/ /__  /_/ // /_/ / _(__  ) \r\n");
-    LOG_NONE(" \\____/ \\___/  \\__/  \\____/ _  .___/ \\__,_/  /____/  \r\n");
-    LOG_NONE("                            /_/                       \r\n");
-    LOG_NONE(" Embedded Real-Time Task Scheduler + FSM Engine\r\n");
-
-    LOG_NONE(" Firmware  : v%s\r\n", OTMS_VERSION_NAME);
-    LOG_NONE(" Compiled  : %s %s\r\n", __DATE__, __TIME__);
-    LOG_NONE(" Module    : %s\r\n",flash_get_current_bank_name());
-	  LOG_NONE(" Author    : Octopus Dev Team\r\n");
-    LOG_NONE("-----------------------------------------------------------------------------\r\n");
-
-=======
->>>>>>> Stashed changes
 #ifdef PLATFORM_CST_OSAL_RTOS
     TaskManagerStateMachine_Id_ = task_id; // Store the task ID in the global variable
 #endif
@@ -131,17 +113,10 @@ void TaskManagerStateMachineInit(void)
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Initialize hardware abstraction layers (HAL)
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
-<<<<<<< Updated upstream
-    gpio_init(); // Initialize GPIO
-#endif
-#ifdef TASK_MANAGER_STATE_MACHINE_FLASH
-    flash_init();
-=======
     otsm_gpio_init(); // Initialize GPIO
 #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_FLASH
     otsm_flash_init();
->>>>>>> Stashed changes
 #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     otsm_timer_init(); // Initialize timer with interval of 5 (could be milliseconds)
@@ -163,14 +138,7 @@ void TaskManagerStateMachineInit(void)
     otsm_upf_help();
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Nofify Initialize complete
-<<<<<<< Updated upstream
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    system_handshake_with_app();
-#endif
-#ifdef TASK_MANAGER_STATE_MACHINE_SOC
-=======
 #if defined(TASK_MANAGER_STATE_MACHINE_SOC) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
->>>>>>> Stashed changes
     system_handshake_with_mcu();
 #endif
     /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -188,13 +156,9 @@ void TaskManagerStateMachineInit(void)
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // LOG_NONE("#####################################BOOT COMPLETE#####################################\r\n");
     LOG_NONE("-----------------------------------------------------------------------------\r\n");
-<<<<<<< Updated upstream
-    system_set_mb_state(MB_POWER_ST_ON);
-=======
 #if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
     system_set_mb_state(MB_POWER_ST_ON);
 #endif
->>>>>>> Stashed changes
 }
 
 #if defined(PLATFORM_ITE_OPEN_RTOS) || defined(PLATFORM_LINUX_RISC)

@@ -14,8 +14,8 @@
  * @date    2024-12-09
  *******************************************************************************/
 
-#ifndef __OCTOPUS_TASK_MANAGER_BLE_H__
-#define __OCTOPUS_TASK_MANAGER_BLE_H__
+#ifndef __OCTOPUS_TASK_MANAGER_4G_H__
+#define __OCTOPUS_TASK_MANAGER_4G_H__
 
 /*******************************************************************************
  * INCLUDES
@@ -23,74 +23,57 @@
  *******************************************************************************/
 #include "octopus_base.h" //  Base include file for the Octopus project.
 #include "octopus_system.h"
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
-#ifdef TASK_MANAGER_STATE_MACHINE_BLE
-    /*******************************************************************************
-     * MACROS
-     * Define commonly used macros for this module.
-     *******************************************************************************/
+#ifdef TASK_MANAGER_STATE_MACHINE_4G
+/*******************************************************************************
+ * MACROS
+ * Define commonly used macros for this module.
+ *******************************************************************************/
+/*******************************************************************************
+ * TYPEDEFS
+ * Define types used in the BLE management process.
+ *******************************************************************************/
 
-    /*******************************************************************************
-     * TYPEDEFS
-     * Define types used in the BLE management process.
-     *******************************************************************************/
-
-    /**
-     * @struct BLE_STATUS
-     * @brief  Structure representing the status of the BLE module.
-     */
-    typedef struct
-    {
-        signed char rssi;
-        uint8_t mode; /**< Current mode of the BLE module. */
-        // bool locked;    /**< Indicates if the BLE module is locked. */
-        bool to_lock; /**< Indicates if the BLE module should be locked. */
-        bool connected;
-        bool rssi_unlock;
-        uint8_t mac[6]; /**< MAC address associated with the BLE module. */
-    } BLE_STATUS;
-
-    /*******************************************************************************
-     * GLOBAL FUNCTIONS DECLARATION
-     * Declare the public functions provided by this module.
-     *******************************************************************************/
-
+/*******************************************************************************
+ * GLOBAL FUNCTIONS DECLARATION
+ * Declare the public functions provided by this module.
+ *******************************************************************************/
+#ifdef __cplusplus
+extern "C"
+{
+#endif
     /**
      * @brief Initialize BLE functionality.
      */
-    void task_ble_init_running(void);
+    void task_4g_init_running(void);
 
     /**
      * @brief Start BLE operations.
      */
-    void task_ble_start_running(void);
+    void task_4g_start_running(void);
 
     /**
      * @brief Assert and verify the BLE module is running correctly.
      */
-    void task_ble_assert_running(void);
+    void task_4g_assert_running(void);
 
     /**
      * @brief Handle the main logic for BLE operations.
      */
-    void task_ble_running(void);
+    void task_4g_running(void);
 
     /**
      * @brief Perform post-processing for BLE operations.
      */
-    void task_ble_post_running(void);
+    void task_4g_post_running(void);
 
     /**
      * @brief Stop BLE operations.
      */
-    void task_ble_stop_running(void);
+    void task_4g_stop_running(void);
 
 #ifdef __cplusplus
 }
