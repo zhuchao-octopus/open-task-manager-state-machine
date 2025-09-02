@@ -44,7 +44,8 @@
  */
 #include "octopus_uart_upf.h" // Include UART protocol header
 #include "octopus_uart_hal.h" // Include UART hardware abstraction layer header
-
+#include "octopus_task_manager.h" // Include task manager for scheduling tasks
+#include "octopus_tickcounter.h" // Include tick counter for timing operations
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */

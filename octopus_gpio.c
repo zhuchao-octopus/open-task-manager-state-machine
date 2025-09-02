@@ -27,7 +27,10 @@
 #include "octopus_gpio.h"  // Include GPIO control and configuration
 #include "octopus_flash.h" // Include flash memory access functions
 #include "octopus_key.h"   // Include key status and event handling
-#include "octopus_system.h"
+#include "octopus_task_manager.h" // Include task manager for scheduling tasks
+#include "octopus_tickcounter.h" // Include tick counter for timing operations
+#include "octopus_msgqueue.h"    // Include message queue header for task communication
+#include "octopus_message.h"     // Include message id for inter-task communication
 
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
 /*******************************************************************************

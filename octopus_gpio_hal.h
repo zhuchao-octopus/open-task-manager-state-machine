@@ -21,6 +21,7 @@
  * INCLUDES
  */
 #include "octopus_base.h" //  Base include file for the Octopus project.
+#include "octopus_platform.h"
 
 /*******************************************************************************
  * MACRO DEFINITIONS

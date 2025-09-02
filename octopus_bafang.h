@@ -22,7 +22,7 @@ extern "C"
 
     uint16_t get_top_error_code(void);
     uint16_t get_wheel_radius_mm(void);
-    uint16_t get_wheel_radius_inch(void);
+    // uint16_t get_wheel_radius_inch(void);
     void add_error_code(uint16_t code);
     void TRIP_Reset_mileage(void);
     void Factory_Setting_mileage(void);

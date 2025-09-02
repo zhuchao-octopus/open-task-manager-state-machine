@@ -98,7 +98,6 @@ typedef enum
     BANK_SLOT_LOADER = 0, // Bootloader bank (reserved for the loader)
     BANK_SLOT_A,          // Application Slot A
     BANK_SLOT_B,          // Application Slot B
-    BANK_SLOT_AUTO,       // Automatically choose between Slot A or B
     BANK_SLOT_INVALID,    // Invalid bank (used for error conditions)
 } boot_bank_t;
 
@@ -166,7 +165,7 @@ extern system_meter_infor_t system_meter_infor;
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #define FLASH_BLOCK_SIZE (1024)                                 // 0x00000400  /* FLASH Page Size 1KB(1024)*/
-#define FLASH_TOTAL_BLOCK (128)                                 // 128K 0x20000                   // Total Flash size: 128KB
+#define FLASH_TOTAL_BLOCK (128 - 2)                             // 128K 0x20000 Total Flash size: 128KB
 #define FLASH_TOTAL_SIZE (FLASH_TOTAL_BLOCK * FLASH_BLOCK_SIZE) // Total Flash size: 128KB
 
 #define FLASH_BASE_START_ADDR (0x08000000)
@@ -198,7 +197,7 @@ extern system_meter_infor_t system_meter_infor;
 
 #ifdef BOOTLOADER_LOCATION_TAIL
 #define MAIN_APP_SLOT_A_START_ADDR (0x08000000)                                 // Main Application start address
-#define MAIN_APP_SLOT_B_START_ADDR (MAIN_APP_SLOT_A_START_ADDR + MAIN_APP_SIZE) // Main Application start address
+#define MAIN_APP_SLOT_B_START_ADDR (MAIN_APP_SLOT_A_START_ADDR + MAIN_APP_SIZE + FLASH_BLOCK_SIZE) // Main Application start address
 #else
 #define MAIN_APP_SLOT_A_START_ADDR (BOOTLOADER_END_ADDR)                        // Main Application start address
 #define MAIN_APP_SLOT_B_START_ADDR (MAIN_APP_SLOT_A_START_ADDR + MAIN_APP_SIZE) // Main Application start address
