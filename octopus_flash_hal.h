@@ -16,30 +16,16 @@
 #ifndef __OCTOPUS_TASK_MANAGER_FLASH_HAL_H__
 #define __OCTOPUS_TASK_MANAGER_FLASH_HAL_H__
 
-#include "octopus_platform.h" // Include platform-specific configurations
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
-typedef enum
-{
-    FLASH_STATUS_BUSY = 1,
-    FLASH_STATUS_RESERVED,
-    FLASH_STATUS_ERR_PAGE,
-    FLASH_STATUS_ERR_PV,
-    FLASH_STATUS_ERR_WRP,
-    FLASH_STATUS_COMPLETE,
-    FLASH_STATUS_ERR_EV,
-    FLASH_STATUS_ERR_RDP2,
-    FLASH_STATUS_ERR_ADD,
-    FLASH_STATUS_TIMEOUT
-} FLASH_STATUS_T;
+// Macro for user flash testing.
+// This could be used for testing purposes or debugging flash operations.
+#define USR_FLASH_TEST 0x0001
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-// Macro for user flash testing.
-// This could be used for testing purposes or debugging flash operations.
-
     /******************************************************************************/
     /**
      * @brief   Initializes the flash memory module.

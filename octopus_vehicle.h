@@ -26,51 +26,49 @@
 /*******************************************************************************
  * INCLUDES
  */
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
-#include "octopus_platform.h"
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-    /*******************************************************************************
-     * DEBUG SWITCH MACROS
-     */
-
-    /*******************************************************************************
-     * MACROS
-     */
+/*******************************************************************************
+ * MACROS
+ */
 #define CELL_COUNT 64
 #define ERROR_CODE_COUNT 10
-    /*******************************************************************************
-     * TYPEDEFS
-     */
-    // 故障-故障信息
-    typedef enum __attribute__((packed))
-    {
-        ERROR_CODE_IDLE = 0X00,                                      // 无动作
-        ERROR_CODE_NORMAL = 0X01,                                    // 正常状态
-        ERROR_CODE_BRAKE = 0X03,                                     // 已刹车
-        ERROR_CODE_THROTTLE_NOT_ZERO = 0X04,                         // 转把没有归位（停在高位处）
-        ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY = 0X05,           // 转把故障
-        ERROR_CODE_LOW_VOLTAGE_PROTECTION = 0X06,                    // 低电压保护
-        ERROR_CODE_OVER_VOLTAGE_PROTECTION = 0X07,                   // 过电压保护
-        ERROR_CODE_HALLSENSOR_ABNORMALITY = 0X08,                    // 电机霍尔信号线故障
-        ERROR_CODE_MOTOR_ABNORMALITY = 0X09,                         // 电机相线故障
-        ERROR_CODE_CONTROLLER_OVERHEAT = 0X10,                       // 控制器温度高已达到保护点
-        ERROR_CODE_CONTROLLER_TEMPERATURE_SENSOR_ABNORMALITY = 0X11, // 控制器温度传感器故障
-        ERROR_CODE_CURRENT_SENSOR_ABNORMALITY = 0X12,                // 电流传感器故障
-        ERROR_CODE_BATTERY_OVERHEAT = 0X13,                          // 电池内温度故障
-        ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY = 0X14,      // 电机内温度传感器故障
-        ERROR_CODE_CONTROLLER_ABNORMALITY = 0X15,                    // 控制器故障
-        ERROR_CODE_ASSIST_POWER_SENSOR_ABNORMALITY = 0X16,           // 助力传感器故障
-        ERROR_CODE_SPEED_SENSOR_ABNORMALITY = 0X21,                  // 速度传感器故障
-        ERROR_CODE_BMS_ABNORMALITY = 0X22,                           // BMS通讯故障
-        ERROR_CODE_LAMP_ABNORMALITY = 0X23,                          // 大灯故障
-        ERROR_CODE_LAMP_SENSOR_ABNORMALITY = 0X24,                   // 大灯传感器故障
-        ERROR_CODE_COMMUNICATION_ABNORMALITY = 0X30,                 // 通讯故障
+#define DEFAULT_CONSUMPTION_WH_PER_KM (10.0f) // 经验值：Wh/km，可按实际调整
+#define DEFAULT_SAFETY_RESERVE_RATIO (0.10f)  // 预留 10% 容量为安全余量（可设0）
 
-    } __attribute__((packed)) ERROR_CODE;
+/*******************************************************************************
+ * DEBUG SWITCH MACROS
+ */
+
+/*******************************************************************************
+ * TYPEDEFS
+ */
+// 故障-故障信息
+typedef enum __attribute__((packed))
+{
+    ERROR_CODE_IDLE = 0X00,                                      // 无动作
+    ERROR_CODE_NORMAL = 0X01,                                    // 正常状态
+    ERROR_CODE_BRAKE = 0X03,                                     // 已刹车
+    ERROR_CODE_THROTTLE_NOT_ZERO = 0X04,                         // 转把没有归位（停在高位处）
+    ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY = 0X05,           // 转把故障
+    ERROR_CODE_LOW_VOLTAGE_PROTECTION = 0X06,                    // 低电压保护
+    ERROR_CODE_OVER_VOLTAGE_PROTECTION = 0X07,                   // 过电压保护
+    ERROR_CODE_HALLSENSOR_ABNORMALITY = 0X08,                    // 电机霍尔信号线故障
+    ERROR_CODE_MOTOR_ABNORMALITY = 0X09,                         // 电机相线故障
+    ERROR_CODE_CONTROLLER_OVERHEAT = 0X10,                       // 控制器温度高已达到保护点
+    ERROR_CODE_CONTROLLER_TEMPERATURE_SENSOR_ABNORMALITY = 0X11, // 控制器温度传感器故障
+    ERROR_CODE_CURRENT_SENSOR_ABNORMALITY = 0X12,                // 电流传感器故障
+    ERROR_CODE_BATTERY_OVERHEAT = 0X13,                          // 电池内温度故障
+    ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY = 0X14,      // 电机内温度传感器故障
+    ERROR_CODE_CONTROLLER_ABNORMALITY = 0X15,                    // 控制器故障
+    ERROR_CODE_ASSIST_POWER_SENSOR_ABNORMALITY = 0X16,           // 助力传感器故障
+    ERROR_CODE_SPEED_SENSOR_ABNORMALITY = 0X21,                  // 速度传感器故障
+    ERROR_CODE_BMS_ABNORMALITY = 0X22,                           // BMS通讯故障
+    ERROR_CODE_LAMP_ABNORMALITY = 0X23,                          // 大灯故障
+    ERROR_CODE_LAMP_SENSOR_ABNORMALITY = 0X24,                   // 大灯传感器故障
+    ERROR_CODE_COMMUNICATION_ABNORMALITY = 0X30,                 // 通讯故障
+
+} __attribute__((packed)) ERROR_CODE;
 
 #define ERROR_CODE_BEGIN ERROR_CODE_THROTTLE_NOT_ZERO       // 故障码开始
 #define ERROR_CODE_END ERROR_CODE_COMMUNICATION_ABNORMALITY // 故障码结束
@@ -175,85 +173,85 @@ extern "C"
     } battery_t;
 #endif
 #pragma pack(push, 1)
-    typedef struct
-    {
-        uint8_t ready;     // Ready status (1 = system ready to operate)
-        uint8_t high_beam;  // High beam light status (1 = ON)
-        uint8_t low_beam;   // Low beam light status (1 = ON)
-        uint8_t width_lamp ;  // Position/marker light status
-        uint8_t front_fog;  // Front fog light status
-        uint8_t rear_fog;   // Rear fog light status
-        uint8_t left_turn;  // Left turn signal indicator status
-        uint8_t right_turn; // Right turn signal indicator status
+typedef struct
+{
+    uint8_t ready;      // Ready status (1 = system ready to operate)
+    uint8_t high_beam;  // High beam light status (1 = ON)
+    uint8_t low_beam;   // Low beam light status (1 = ON)
+    uint8_t width_lamp; // Position/marker light status
+    uint8_t front_fog;  // Front fog light status
+    uint8_t rear_fog;   // Rear fog light status
+    uint8_t left_turn;  // Left turn signal indicator status
+    uint8_t right_turn; // Right turn signal indicator status
 
-        uint8_t parking;             // Parking status (1 = in parking mode)
-        uint8_t brake;               // Brake status (1 = braking)
-        uint8_t horn;                // Horn status (1 = horn active)
-        uint8_t cruise_control;      // Cruise control status (1 = active)
-        uint8_t start_poles;         // Start behavior after motor poles setup
-        uint8_t motor_poles;         // Number of poles in motor (raw value)
-        uint8_t horizontal_position; // Horizontal orientation/position sensor value
+    uint8_t parking;             // Parking status (1 = in parking mode)
+    uint8_t brake;               // Brake status (1 = braking)
+    uint8_t horn;                // Horn status (1 = horn active)
+    uint8_t cruise_control;      // Cruise control status (1 = active)
+    uint8_t start_poles;         // Start behavior after motor poles setup
+    uint8_t motor_poles;         // Number of poles in motor (raw value)
+    uint8_t horizontal_position; // Horizontal orientation/position sensor value
 
-        uint8_t walk_assist; // Walk assist status (1 = enabled)
-        uint8_t drive_mode;  // Drive mode selection (0 = eco, 1 = normal, etc.)
-        uint8_t start_mode;  // Start mode setting (e.g., throttle/pedal)
+    uint8_t walk_assist; // Walk assist status (1 = enabled)
+    uint8_t drive_mode;  // Drive mode selection (0 = eco, 1 = normal, etc.)
+    uint8_t start_mode;  // Start mode setting (e.g., throttle/pedal)
 
-        uint8_t bt;   // Bluetooth indicator status (1 = connected)
-        uint8_t wifi; // Wi-Fi indicator status (1 = connected)
-    } carinfo_indicator_t;
+    uint8_t bt;   // Bluetooth indicator status (1 = connected)
+    uint8_t wifi; // Wi-Fi indicator status (1 = connected)
+} carinfo_indicator_t;
 
-    typedef struct
-    {
-        uint32_t trip_odo;      // Total distance traveled (unit: 1 meters), also known as trip odometer
-        uint32_t trip_time;     // Total ride time (unit: seconds)
-        uint32_t trip_distance; // Trip distance   (unit: 1 meters), resettable
+typedef struct
+{
+    uint32_t trip_odo;      // Total distance traveled (unit: 1 meters), also known as trip odometer
+    uint32_t trip_time;     // Total ride time (unit: seconds)
+    uint32_t trip_distance; // Trip distance   (unit: 1 meters), resettable
 
-        uint16_t speed_average; // Displayed vehicle speed (unit: 0.1 km/h)
-        uint16_t speed_actual;  // Actual wheel speed (unit: 0.1 km/h)
-        uint16_t speed_max;
-        uint16_t speed_limit;   // Speed limit setting; 0 = OFF, range: 10–90 km/h
+    uint16_t speed_average; // Displayed vehicle speed (unit: 0.1 km/h)
+    uint16_t speed_actual;  // Actual wheel speed (unit: 0.1 km/h)
+    uint16_t speed_max;
+    uint16_t speed_limit; // Speed limit setting; 0 = OFF, range: 10–90 km/h
 
-        uint16_t rpm;           // Motor RPM (raw value, offset by -20000)
-        uint8_t gear;           // Current gear level (0 = Neutral, 1–N)
-        uint8_t gear_level_max; // Maximum selectable gear level
-        uint8_t wheel_diameter; // Wheel diameter (unit: inch)
-        uint8_t reserve;
-    } carinfo_meter_t;
+    uint16_t rpm;           // Motor RPM (raw value, offset by -20000)
+    uint8_t gear;           // Current gear level (0 = Neutral, 1–N)
+    uint8_t gear_level_max; // Maximum selectable gear level
+    uint8_t wheel_diameter; // Wheel diameter (unit: inch)
+    uint8_t reserve;
+} carinfo_meter_t;
 
-    typedef struct
-    {
-        uint16_t voltage;      // Battery voltage (unit: millivolts or volts depending on context)
-        uint16_t current;      // Battery or motor current (unit: milliamps or amps)
-        uint16_t power;        // Instantaneous power output (unit: watts)
-        uint16_t soc;          // State of Charge, 0–100% (based on voltage/SOC curve)
-        uint16_t range;        // Estimated remaining range (unit: 100 meters)
-        uint16_t range_max;    // Estimated maximum range (unit: 100 meters)
-        uint16_t throttle_pwm; // Throttle signal PWM duty (0–1000 for 0–100%)
+typedef struct
+{
+    uint16_t voltage;      // Battery voltage (unit: millivolts or volts depending on context)
+    uint16_t current;      // Battery or motor current (unit: milliamps or amps)
+    uint16_t power;        // Instantaneous power output (unit: watts)
+    uint16_t soc;          // State of Charge, 0–100% (based on voltage/SOC curve)
+    uint16_t range;        // Estimated remaining range (unit: 100 meters)
+    uint16_t range_max;    // Estimated maximum range (unit: 100 meters)
+    uint16_t throttle_pwm; // Throttle signal PWM duty (0–1000 for 0–100%)
 
-        uint8_t current_limit;    // Current limit, range: 6~50A, default: 12A, unit: 1A
-        uint8_t rel_charge_state; // Relative charge state (e.g., fast/slow charging, enum value)
-        uint8_t abs_charge_state; // Absolute charge state (e.g., charging, full, fault, enum value)
-        uint8_t reserve;
-    } carinfo_battery_t;
+    uint8_t current_limit;    // Current limit, range: 6~50A, default: 12A, unit: 1A
+    uint8_t rel_charge_state; // Relative charge state (e.g., fast/slow charging, enum value)
+    uint8_t abs_charge_state; // Absolute charge state (e.g., charging, full, fault, enum value)
+    uint8_t reserve;
+} carinfo_battery_t;
 
-    // 故障信息
-    typedef struct
-    {
-        uint8_t fault_ecu;    // ECU fault status
-        uint8_t fault_sensor; // Sensor fault status//assist_power_sensor_switch
-        uint8_t fault_motor;  // Motor fault status
+// 故障信息
+typedef struct
+{
+    uint8_t fault_ecu;    // ECU fault status
+    uint8_t fault_sensor; // Sensor fault status//assist_power_sensor_switch
+    uint8_t fault_motor;  // Motor fault status
 
-        uint8_t fault_fuse;     // Fuse fault status (0: OK, 1: Fault, others: reserved)
-        uint8_t fault_plug;     // Charging plug fault status
-        uint8_t fault_battery;  // Battery fault status
-        uint8_t fault_brake;    // Brake fault status
-        uint8_t fault_throttle; // Throttle fault status
-        // uint8_t error[ERROR_CODE_COUNT];
-    } __attribute__((packed)) carinfo_error_t;
+    uint8_t fault_fuse;     // Fuse fault status (0: OK, 1: Fault, others: reserved)
+    uint8_t fault_plug;     // Charging plug fault status
+    uint8_t fault_battery;  // Battery fault status
+    uint8_t fault_brake;    // Brake fault status
+    uint8_t fault_throttle; // Throttle fault status
+    // uint8_t error[ERROR_CODE_COUNT];
+} __attribute__((packed)) carinfo_error_t;
 #pragma pack(pop)
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 #if 0		
     typedef struct
     {
@@ -309,24 +307,27 @@ extern "C"
         carinfo_drivinfo_drivemode_t driveMode; // Driving mode
     } carinfo_drivinfo_t;
 #endif
-    /*******************************************************************************
-     * CONSTANTS
-     */
+/*******************************************************************************
+ * CONSTANTS
+ */
 
-    /*******************************************************************************
-     * GLOBAL VARIABLES DECLEAR
-     */
+/*******************************************************************************
+ * GLOBAL VARIABLES DECLEAR
+ */
 
-    /*******************************************************************************
-     * GLOBAL FUNCTIONS DECLEAR
-     */
-
-    void task_carinfo_init_running(void);
-    void task_carinfo_start_running(void);
-    void task_carinfo_assert_running(void);
-    void task_carinfo_running(void);
-    void task_carinfo_post_running(void);
-    void task_carinfo_stop_running(void);
+/*******************************************************************************
+ * GLOBAL FUNCTIONS DECLEAR
+ */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+    void task_vehicle_init_running(void);
+    void task_vehicle_start_running(void);
+    void task_vehicle_assert_running(void);
+    void task_vehicle_running(void);
+    void task_vehicle_post_running(void);
+    void task_vehicle_stop_running(void);
 
     /**
      * @brief Retrieve current vehicle speed (0.1 km/h).

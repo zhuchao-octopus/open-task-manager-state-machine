@@ -16,13 +16,7 @@
 /*********************************************************************
  * INCLUDES
  */
-
-#include "octopus_platform.h" // Include custom types (likely custom data types or hardware-specific definitions)
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 /*******************************************************************************
  * GENERAL MACROS
@@ -46,30 +40,38 @@ extern "C"
 #define PROTOCOL_UART_GPIO_TX CFG_GPIO_UART2_TX   // GPIO pin for UART TX (transmit)
 #endif
 
-    // If the platform is CST OSAL RTOS, define the UART data buffer structure
-    // #ifdef PLATFORM_CST_OSAL_RTOS
-    typedef struct
-    {
-        uint16_t wr;                      // Write index for data buffer
-        uint16_t rd;                      // Read index for data buffer
-        uint8_t data[UART_BUFF_MAX_SIZE]; // Data buffer
-    } com_uart_data_buff_t;
-    // #endif
+typedef struct
+{
+    uint16_t wr;                      // Write index for data buffer
+    uint16_t rd;                      // Read index for data buffer
+    uint8_t data[UART_BUFF_MAX_SIZE]; // Data buffer
+} com_uart_data_buff_t;
 
-    /*******************************************************************************
-     * FUNCTIONS
-     * Function prototypes for UART communication and protocol handling.
-     */
-    void uart_init(void);
+/*******************************************************************************
+ * FUNCTIONS
+ * Function prototypes for UART communication and protocol handling.
+ */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+    void otsm_uart_init(void);
     // Initializes the UART protocol (e.g., UART configuration, GPIO, etc.)
     void hal_uart_init(uint8_t task_id);
     // Sends a string via UART, returning the number of bytes sent
     uint8_t hal_com_uart_send_string(const char *str, uint8_t length);
 
     // Sends a buffer of data via UART, returning the number of bytes sent
-    uint8_t hal_com_uart_send_buffer(const uint8_t *buffer, uint16_t length);
+    uint8_t hal_com_uart0_send_buffer(const uint8_t *buffer, uint16_t length);
     uint8_t hal_com_uartl_send_buffer(const uint8_t *buffer, uint16_t length);
     uint8_t hal_com_uart2_send_buffer(const uint8_t *buffer, uint16_t length);
+    uint8_t hal_com_uart3_send_buffer(const uint8_t *buffer, uint16_t length);
+    uint8_t hal_com_uart4_send_buffer(const uint8_t *buffer, uint16_t length);
+    uint8_t hal_com_uart5_send_buffer(const uint8_t *buffer, uint16_t length);
+    uint8_t hal_com_uart6_send_buffer(const uint8_t *buffer, uint16_t length);
+    uint8_t hal_com_uart7_send_buffer(const uint8_t *buffer, uint16_t length);
+    uint8_t hal_com_uart8_send_buffer(const uint8_t *buffer, uint16_t length);
+    uint8_t hal_com_uart9_send_buffer(const uint8_t *buffer, uint16_t length);
 
     // Reads data from the UART FIFO and stores it in the provided buffer
     uint8_t hal_com_uart_get_fifo_data_1(uint8_t *buffer, uint16_t length);

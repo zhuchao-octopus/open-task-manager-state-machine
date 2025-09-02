@@ -1,5 +1,5 @@
 /*******************************************************************************
- * File Name: octopus_task_manager_platform.h
+ * File Name: octopus_platform.h
  * @version  1.0.0
  * @date     2024-12-11
  * @author   Octopus Team
@@ -43,105 +43,17 @@
 #ifndef ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 #define ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 
-///////////////////////////////////////////////////////////////////////////////////
-#define OTMS_VERSION_CODE (001)
-#define OTMS_VERSION_NAME "0.0.1"
-
-///////////////////////////////////////////////////////////////////////////////////
 /*******************************************************************************
- * PROJECT SWITCH MACROS
- * Define which platform and RTOS to use by enabling the corresponding macro.
- ******************************************************************************/
-// #define PLATFORM_ITE_OPEN_RTOS   // Enable ITE platform with OPEN RTOS
-// #define PLATFORM_CST_OSAL_RTOS   // Uncomment to use CST platform with OSAL RTOS
-// #define PLATFORM_X86_WIND_RTOS   // Uncomment to use XB6 platform with WIND RTOS
-// #define PLATFORM_STM32_RTOS
-// #define PLATFORM_LINUX_RISC         // X86 ARM linux
-#define PLATFORM_NATION_RTOS
-
-///////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////
-/********************************************************************************
- * @brief Task Manager state machine modes.
+ * INCLUDES
  */
-#define TASK_MANAGER_STATE_MACHINE_MCU 1 /**< Main control mode. */
-//#define TASK_MANAGER_STATE_MACHINE_SOC 1 /**< (Reserved) SOC mode. */
-
-///////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////
-//#define TASK_MANAGER_STATE_MACHINE_GPIO 1  
-//#define TASK_MANAGER_STATE_MACHINE_FLASH 1 
-//#define TASK_MANAGER_STATE_MACHINE_SYSTEM 1  
-//#define TASK_MANAGER_STATE_MACHINE_KEY 1 
-
-//#define TASK_MANAGER_STATE_MACHINE_AUDIO 1 
-
-#define TASK_MANAGER_STATE_MACHINE_IPC 1 
-#define TASK_MANAGER_STATE_MACHINE_PTL2 1 
-//#define TASK_MANAGER_STATE_MACHINE_I2C 1 
-
-#define TASK_MANAGER_STATE_MACHINE_CARINFOR 1
-//#define TASK_MANAGER_STATE_MACHINE_CAN 1 
-
-//#define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
-//#define TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2 1
-//#define TASK_MANAGER_STATE_MACHINE_SIF 1 
-//#define TASK_MANAGER_STATE_MACHINE_BLE 1 
-//#define TASK_MANAGER_STATE_MACHINE_BMS 1 
-//#define TASK_MANAGER_STATE_MACHINE_4G 1 
-//#define TASK_MANAGER_STATE_MACHINE_BT_MUSIC 1
-
-#define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
-///////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////
-//#define FLASH_USE_EEROM_FOR_DATA_SAVING
-//#define FLASH_MAPPING_VECT_TABLE_TO_SRAM
-
-#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A
-
-//Optional DWT Delay
-#define DWT_DELAY_FUNCTION
-
-#ifndef TRUE
-  #define TRUE true
-#endif
-#ifndef FALSE
-  #define FALSE false
-#endif
-	
-	
-	
-/***********************************************************************************
- * BASE INCLUDE FILES
- * Include necessary standard libraries and platform-specific headers.
- ***********************************************************************************/
-#include <stddef.h>  // Standard definitions for NULL and size_t
-#include <stdint.h>  // Standard integer type definitions
-#include <stdbool.h> // Boolean type definitions
-#include <stdio.h>   // Standard input/output functions
-#include <stdarg.h>  // Variable argument list handling
-#include <stdlib.h>  // Standard library functions
-#include <string.h>  // String manipulation functions
-#include <assert.h>  // Debugging support for assertions
-#include <time.h>    // Time manipulation functions
-#include <ctype.h>
-	
-/****************************************************************************************
- * OCTOPUS INCLUDES
- ****************************************************************************************/
-#include "octopus_task_manager.h" // Include task manager for scheduling tasks
-#include "octopus_log.h"          // Include logging functions for debugging
-#include "octopus_uart_ptl_1.h"   // Include UART protocol header
-#include "octopus_tickcounter.h"  // Include tick counter for timing operations
-#include "octopus_msgqueue.h"     // Include message queue header for task communication
-#include "octopus_message.h"      // Include message id for inter-task communication
-#include "octopus_utils.h"
-#include "octopus_config.h"
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
+
 #include <sys/ioctl.h>         // System I/O control definitions
 #include <sys/time.h>          // Time-related functions for UNIX systems
 #include <pthread.h>           // POSIX thread support
+#include <unistd.h>            // POSIX API for file and process handling
 #include "ite/ith.h"           // ITE hardware-specific definitions
 #include "ite/itp.h"           // ITE platform-specific definitions
 #include "uart/uart.h"         // UART communication module
@@ -150,8 +62,9 @@
 #include "SDL/SDL.h"           // SDL library for multimedia applications
 #include "openrtos/FreeRTOS.h" // FreeRTOS kernel for real-time tasks
 #include "openrtos/queue.h"    // FreeRTOS queue handling
-#include <unistd.h>            // POSIX API for file and process handling
+
 #elif defined(PLATFORM_CST_OSAL_RTOS)
+
 #include "OSAL.h"              // OS abstraction layer
 #include "OSAL_PwrMgr.h"       // OS power management utilities
 #include "OSAL_Memory.h"       // OS memory management functions
@@ -181,26 +94,27 @@
 #include "rom_sym_def.h"       // ROM symbol definitions
 #include "sdk_config.h"        // SDK configuration file
 #include "types.h"             // Basic type definitions
+
+#elif defined(PLATFORM_STM32_RTOS)
+
+#include "octopus_bsp_hk32l08x.h"
+
+#elif defined(PLATFORM_NATION_RTOS)
+
+#include "octopus_bsp_nation.h"
+
 #elif defined(PLATFORM_LINUX_RISC)
+
 #include <pthread.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <fnmatch.h>
 #include "../HAL/octopus_serialport_c.h"
 
-#elif defined(PLATFORM_STM32_RTOS)
-#include "octopus_bsp.h"
-
-#elif defined(PLATFORM_NATION_RTOS)
-#include "octopus_nation_bsp.h"
-
 #else
-#include "octopus_bsp.h"
-#endif
 
-#ifdef __cplusplus
-extern "C"
-{
+#include "octopus_bsp.h"
+
 #endif
 
 /*******************************************************************************
@@ -212,7 +126,7 @@ extern "C"
  * GENERAL MACROS
  * Define common bit manipulation macros and constants.
  ******************************************************************************/
- 
+
 #ifdef PLATFORM_CST_OSAL_RTOS
 
 #define GET_SYSTEM_TICK_COUNT (hal_systick() * 625 / 1000) // Convert system ticks to milliseconds
@@ -239,7 +153,7 @@ extern "C"
     }                                                                                 \
     else                                                                              \
     {                                                                                 \
-        perror("clock_gettime");                                                      \
+        perror("GET_SYSTEM_TICK_COUNT");                                              \
     }                                                                                 \
     tick_count;                                                                       \
 }) // Return zero for unsupported platforms
@@ -249,86 +163,11 @@ extern "C"
 
 #else
 
-extern volatile uint32_t system_tick_ms;
+extern volatile uint32_t system_tick_counter_ms;
 #define DISABLE_IRQ (__disable_irq())
 #define ENABLE_IRQ (__enable_irq())
-#define GET_SYSTEM_TICK_COUNT system_tick_ms // Return zero for unsupported platforms
+#define GET_SYSTEM_TICK_COUNT system_tick_counter_ms // Return zero for unsupported platforms
 
-#endif
-
-uint32_t platform_dwt_get_us(void);
-void platform_dwt_init(void);
-void delay_us(uint32_t us);
-void delay_ms(uint32_t ms);
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Macros for setting, clearing, toggling, and checking bits
-#define SetBit(VAR, Place) ((VAR) |= (1 << (Place)))          // Set specified bit
-#define ClrBit(VAR, Place) ((VAR) &= ~(1 << (Place)))         // Clear specified bit
-#define ValBit(VAR, Place) ((VAR) & (1 << (Place)))           // Get value of specified bit
-#define ChgBit(VAR, Place) ((VAR) ^= (1 << (Place)))          // Toggle specified bit
-#define GetBit(VAR, Place) (((VAR) & (1 << (Place))) ? 1 : 0) // Check bit state
-
-// Macros for byte and word manipulation
-#define LSB_BIT(BYTE) ((BYTE) & 0x0F)        // Extract least significant nibble
-#define MSB_BIT(BYTE) (((BYTE) >> 4) & 0x0F) // Extract most significant nibble
-
-#define LSB_WORD(a) ((uint8_t)((a) & 0xFF))        // Extract least significant byte
-#define MSB_WORD(a) ((uint8_t)(((a) >> 8) & 0xFF)) // Extract most significant byte
-
-#define MK_LSB(a) (uint8_t)(a & 0xFF)                              // Extract the least significant byte (LSB) from a 16-bit word
-#define MK_MSB(a) (uint8_t)((a >> 8) & 0xFF)                       // Extract the most significant byte (MSB) from a 16-bit word
-#define MK_LSBWORD(a) (uint16_t)(a & 0xFFFF)                       // Extract the least significant word (LSB) from a 32-bit word
-#define MK_MSBWORD(a) (uint16_t)((a >> 16) & 0xFFFF)               // Extract the most significant word (MSB) from a 32-bit word
-#define MK_BYTE(MSB, LSB) ((uint8_t)(((MSB) << 4) | (LSB)))        // Combine two 4-bit values (MSB and LSB) into a single byte (alternative method)
-#define MK_WORD(MSB, LSB) (uint16_t)(((uint16_t)MSB << 8) + LSB)   // Combine two 8-bit values (MSB and LSB) into a 16-bit word
-#define MK_DWORD(MSB, LSB) (uint32_t)(((uint32_t)MSB << 16) + LSB) // Combine two 16-bit values (MSB and LSB) into a 32-bit double word
-#define MK_SIG_WORD(a) (*(int16_t *)(&a))                          // Interpret a word as a signed 16-bit value
-
-#define BYTES_TO_UINT32_LE(p)   \
-    (((uint32_t)(p)[0]) |       \
-     ((uint32_t)(p)[1] << 8) |  \
-     ((uint32_t)(p)[2] << 16) | \
-     ((uint32_t)(p)[3] << 24))
-
-#define BYTES_TO_UINT32_BE(p)   \
-    (((uint32_t)(p)[0] << 24) | \
-     ((uint32_t)(p)[1] << 16) | \
-     ((uint32_t)(p)[2] << 8) |  \
-     ((uint32_t)(p)[3]))
-
-#define UINT32_TO_BYTES_LE(val, p)                \
-    do                                            \
-    {                                             \
-        (p)[0] = (uint8_t)((val) & 0xFF);         \
-        (p)[1] = (uint8_t)(((val) >> 8) & 0xFF);  \
-        (p)[2] = (uint8_t)(((val) >> 16) & 0xFF); \
-        (p)[3] = (uint8_t)(((val) >> 24) & 0xFF); \
-    } while (0)
-/*******************************************************************************
- * CONSTANTS
- * Define mathematical constants and other useful values.
- ******************************************************************************/
-#define PI_FLOAT (3.14159f) // Value of as a double/floating-point constant
-
-/*******************************************************************************
- * FUNCTION DECLARATIONS
- * Declare any external functions used in this file.
- ******************************************************************************/
-#define MY_ASSERT(expr)                                           \
-    do                                                            \
-    {                                                             \
-        if (!(expr))                                              \
-        {                                                         \
-            LOG_LEVEL("ASSERT WARNING: %s, FILE: %s, LINE: %d\n", \
-                      #expr, __FILE__, __LINE__);                 \
-        }                                                         \
-    } while (0)
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif // ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
