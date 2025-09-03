@@ -21,10 +21,13 @@
  * INCLUDES
  * Include necessary headers for BLE management.
  *******************************************************************************/
-#include "octopus_platform.h" // Platform-specific definitions and utilities
 #include "octopus_system.h"
+#include "octopus_uart_upf.h"
+
 
 #define MAX_BT_DEVICES 10
+
+extern upf_module_t upf_module_info_BT_MUSIC;
 
 typedef struct
 {

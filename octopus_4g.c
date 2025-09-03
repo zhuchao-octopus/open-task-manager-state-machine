@@ -18,8 +18,6 @@
  * INCLUDES
  * Include the necessary header files for the Octopus platform and BLE functionality.
  */
-
-#include "octopus_platform.h"
 #include "octopus_4g.h"
 #include "octopus_flash.h"
 #include "octopus_uart_upf.h" // Include UART protocol header

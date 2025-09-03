@@ -21,6 +21,7 @@
 /******************************************************************************
  * INCLUDES
  */
+#include "octopus_configuration.h"
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_system.h"
 #include "octopus_gpio.h"
@@ -227,4 +228,6 @@ const otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
     },
 #endif
 };
+
+upf_module_info_t upf_module_info[_UPF_MODULE_MAX_];
 

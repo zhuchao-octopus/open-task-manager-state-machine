@@ -2,7 +2,7 @@
 /*******************************************************************************
  * INCLUDES
  */
-
+#include "octopus_uart_upf.h" // Include UART protocol header
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -16,9 +16,9 @@
  */
 typedef enum
 {
-    DRIVE_MOD_REAR = 0, // ∫Û«˝
-    DRIVE_MOD_DOUBLE,   // À´«˝
-    DRIVE_MOD_FRONT,    // «∞«˝
+    DRIVE_MOD_REAR = 0, // ÂêéÈ©±
+    DRIVE_MOD_DOUBLE,   // ÂèåÈ©±
+    DRIVE_MOD_FRONT,    // ÂâçÈ©±
 } drive_mode_;
 /*******************************************************************************
  * CONSTANTS
@@ -46,3 +46,5 @@ void task_lhl2_ptl_assert_running(void);
 void task_lhl2_ptl_running(void);
 void task_lhl2_ptl_post_running(void);
 void task_lhl2_ptl_stop_running(void);
+
+extern upf_module_t upf_module_info_LING_HUI_LIION2;

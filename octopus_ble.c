@@ -19,7 +19,6 @@
  * Include the necessary header files for the Octopus platform and BLE functionality.
  */
 
-#include "octopus_platform.h"
 #include "octopus_ble_hal.h" // Include Bluetooth Low Energy Hardware Abstraction Layer (HAL) header
 #include "octopus_ble.h"	 // Include Bluetooth Low Energy functionality
 #include "octopus_flash.h"

@@ -17,14 +17,20 @@
  ******************************************************************************/
 
 /* Includes ------------------------------------------------------------------*/
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_gpio.h"
-#include "octopus_system.h"
 #include "octopus_ipc.h"
+#include "octopus_gpio.h"
 #include "octopus_uart_hal.h"
 #include "octopus_vehicle.h"
 #include "octopus_flash.h"
+#include "octopus_system.h"
 #include "octopus_update_mcu.h"
+#include "octopus_task_manager.h"
+
+#include "octopus_uart_ptl.h"    // Include UART protocol header
+#include "octopus_uart_upf.h"    // Include UART protocol header
+#include "octopus_tickcounter.h" // Include tick counter for timing operations
+#include "octopus_msgqueue.h"    // Include message queue header for task communication
+#include "octopus_message.h"     // Include message id for inter-task communication
 /*******************************************************************************
  * Debug Switch Macros
  * Define debug levels or other switches as required.

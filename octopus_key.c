@@ -1,23 +1,31 @@
 
-/*******************************************************************************
+/*****************************************************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_flash.h"
 #include "octopus_key.h"
 #include "octopus_gpio.h" // Include GPIO HAL for hardware-specific functionality
+
+#include "octopus_uart_ptl.h"    // Include UART protocol header
+#include "octopus_uart_upf.h"    // Include UART protocol header
+#include "octopus_tickcounter.h" // Include tick counter for timing operations
+#include "octopus_msgqueue.h"    // Include message queue header for task communication
+#include "octopus_message.h"     // Include message id for inter-task communication
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
 #include "octopus_vehicle.h"
 #endif
-/*******************************************************************************
+
+/*****************************************************************************************************************
  * DEBUG SWITCH MACROS
  */
 
-#define ADDR_OTA_FLAG 0x1FFF18FC
+// #define ADDR_OTA_FLAG 0x1FFF18FC
 
 #ifdef TASK_MANAGER_STATE_MACHINE_KEY
-
-/*******************************************************************************
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*****************************************************************************************************************
  * GLOBAL VARIABLES
  */
 
@@ -38,15 +46,21 @@ GPIO_KEY_STATUS key_status_page = {(GPIO_GROUP *)GPIO_PAGE_KEY_GROUP, GPIO_PAGE_
 
 GPIO_STATUS *gpio_array[] = {NULL};
 GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_power, &key_status_page, NULL};
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 uint8_t power_key_password[] = {OCTOPUS_KEY_POWER, OCTOPUS_KEY_POWER, OCTOPUS_KEY_POWER};
 uint8_t power_key_password_index = 0;
 GPIO_KEY_STATUS key_status_received_temp;
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static uint32_t l_t_msg_wait_timer;
 // static uint32_t l_t_msg_boot_wait_timer;
-
-/*******************************************************************************
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*****************************************************************************************************************
  * LOCAL FUNCTIONS DECLEAR
  */
 static bool key_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
@@ -55,10 +69,10 @@ static bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
 static void task_key_action_handler(void);
 static void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status);
 static void task_key_power_handler(GPIO_KEY_STATUS *key_status);
-static void task_key_received_dispatcher(uint8_t key, uint8_t state);
-static void task_key_local_dispatcher(uint8_t key, uint8_t state);
+static void task_key_received_dispatcher(uint8_t key, uint8_t key_status);
+static void task_key_local_dispatcher(uint8_t key, uint8_t key_status);
 
-/*******************************************************************************
+/*****************************************************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
 void task_key_init_running(void)
@@ -268,7 +282,7 @@ void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status)
     case KEY_STATE_LONG_PRESSED:
         if (!key_status->ignore)
         {
-            LOG_LEVEL("key %02d pressed long duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
+            LOG_LEVEL("key %02d pressed key_status=%02x duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
             key_status->ignore = true;
             send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_KEY, key_status->key, key_status->state);
         }
@@ -277,7 +291,7 @@ void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status)
     case KEY_STATE_LONG_LONG_PRESSED:
         if (!key_status->ignore)
         {
-            LOG_LEVEL("key %02d pressed 2long duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
+            LOG_LEVEL("key %02d pressed key_status=%02x duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
             key_status->ignore = true;
         }
         break;
@@ -285,7 +299,7 @@ void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status)
     case KEY_STATE_LONG_LONG_LONG_PRESSED:
         if (!key_status->ignore)
         {
-            LOG_LEVEL("key %02d pressed 3long duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
+            LOG_LEVEL("key %02d pressed key_status=%02x duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
             key_status->ignore = true;
         }
         break;
@@ -297,8 +311,9 @@ void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status)
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool key_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
 {
@@ -382,27 +397,29 @@ bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
             task_key_received_dispatcher(payload->frame_cmd, payload->data[0]);
         }
     }
-
     return false;
 }
-
-void task_key_local_dispatcher(uint8_t key, uint8_t state)
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void task_key_local_dispatcher(uint8_t key, uint8_t key_status)
 {
-    LOG_LEVEL("key local key=%02d state=%02d\r\n", key, state);
+    LOG_LEVEL("key %02d key_status=%02d\r\n", key, key_status);
     switch (key)
     {
     case OCTOPUS_KEY_PAGE:
-        send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_KEY, key, state);
+        send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_KEY, key, key_status);
         break;
     }
 }
-void task_key_received_dispatcher(uint8_t key, uint8_t state)
+
+void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
 {
-    LOG_LEVEL("key received key=%02d state=%02d\r\n", key, state);
+    LOG_LEVEL("key %02d state %02d\r\n", key, key_status);
     switch (key)
     {
     case OCTOPUS_KEY_ZZD:
-        if (state == KEY_STATE_PRESSED)
+        if (key_status == KEY_STATE_PRESSED)
         {
             lt_carinfo_indicator.left_turn = !lt_carinfo_indicator.left_turn;
             lt_carinfo_indicator.right_turn = 0;
@@ -410,7 +427,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t state)
         break;
 
     case OCTOPUS_KEY_YZD:
-        if (state == KEY_STATE_PRESSED)
+        if (key_status == KEY_STATE_PRESSED)
         {
             lt_carinfo_indicator.right_turn = !lt_carinfo_indicator.right_turn;
             lt_carinfo_indicator.left_turn = 0;
@@ -419,7 +436,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t state)
 
     case OCTOPUS_KEY_SKD:
         // lt_carinfo_indicator.width_lamp = !lt_carinfo_indicator.width_lamp;
-        if (state == KEY_STATE_PRESSED)
+        if (key_status == KEY_STATE_PRESSED)
             lt_carinfo_indicator.horn = 1;
         else
             lt_carinfo_indicator.horn = 0;
@@ -431,7 +448,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t state)
         break;
 
     case OCTOPUS_KEY_PLUS:
-        if (state == KEY_STATE_LONG_PRESSED)
+        if (key_status == KEY_STATE_LONG_PRESSED)
         {
             lt_carinfo_indicator.high_beam = !lt_carinfo_indicator.high_beam;
             key_status_received_temp.ignore = true;
@@ -444,7 +461,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t state)
         }
 
     case OCTOPUS_KEY_SUBT:
-        if (state == KEY_STATE_LONG_PRESSED)
+        if (key_status == KEY_STATE_LONG_PRESSED)
         {
             lt_carinfo_indicator.walk_assist = !lt_carinfo_indicator.walk_assist;
             key_status_received_temp.ignore = true;
@@ -457,7 +474,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t state)
         }
 
     case OCTOPUS_KEY_PAGE:
-        send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_KEY, key, state);
+        send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_KEY, key, key_status);
         break;
     }
 }

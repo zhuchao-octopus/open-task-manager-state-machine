@@ -27,7 +27,7 @@
  * @details  Include necessary platform and library headers for Bluetooth Low Energy (BLE) functionality.
  */
 
-#include "octopus_platform.h" ///< Platform-specific configurations
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 #ifdef __cplusplus
 extern "C"
