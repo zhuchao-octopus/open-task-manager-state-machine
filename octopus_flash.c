@@ -267,11 +267,26 @@ void flash_load_sync_data_infor(void)
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
 		LOG_LEVEL("Load meter data[%02d] ", sizeof(carinfo_meter_t));
 		E2ROMReadToBuff(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+		E2ROMReadToBuff(EEROM_SYSTEM_METER_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
 		LOG_BUFF((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
 #endif
 	}
+	else
+	{
+		lt_carinfo_meter.trip_odo = 0;
+		system_meter_infor.trip_odo = 0;
+	}
 #endif
-
+  if(lt_carinfo_meter.trip_odo >= UINT32_MAX -100)
+	{
+		lt_carinfo_meter.trip_odo = 0;
+	}
+	
+  if(system_meter_infor.trip_odo >= UINT32_MAX-100)
+	{
+		system_meter_infor.trip_odo = 0;
+	}	
+	
 #ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
 	///	Print_VectorTable();
 	/// Print_Flash_VectorTable();

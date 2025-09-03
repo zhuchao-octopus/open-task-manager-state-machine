@@ -97,7 +97,11 @@
 #define FLASH_USE_EEROM_FOR_DATA_SAVING
 #define FLASH_MAPPING_VECT_TABLE_TO_SRAM
 
+#ifdef TARGET_BANK_SLOT_A
 #define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A
+#elif defined(TARGET_BANK_SLOT_B)
+#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_B
+#endif
 /***********************************************************************************
  * BASE INCLUDE FILES
  * Include necessary standard libraries and platform-specific headers.

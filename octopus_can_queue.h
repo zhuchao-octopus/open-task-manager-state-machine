@@ -30,7 +30,7 @@ typedef struct
     uint32_t std_id;      // CAN message identifier
     uint8_t ide;      // Identifier type: 0 = Standard, 1 = Extended
     uint8_t rtr;      // Frame type: 0 = Data frame, 1 = Remote frame
-		uint8_t channel;  // CAN channel index (0 = CAN1, 1 = CAN2, etc.)
+	uint8_t channel;  // CAN channel index (0 = CAN1, 1 = CAN2, etc.)
 	
     uint8_t data_len; // Length of CAN data (0 ~ 8)
     uint8_t data[8];  // CAN data payload
