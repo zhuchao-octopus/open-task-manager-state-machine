@@ -18,15 +18,16 @@
 #ifndef __OCTOPUS_TASK_MANAGER_BSP_H__
 #define __OCTOPUS_TASK_MANAGER_BSP_H__
 
-
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
+
+#include "hk32l0xx.h"
+#include "hk32l0xx_eeprom.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
- 
 
 #ifdef __cplusplus
 }

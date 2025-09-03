@@ -20,26 +20,22 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include the Octopus platform-specific configurations
+#include "octopus_base.h" //  Base include file for the Octopus project.
+#include "octopus_platform.h"
 
-#ifdef __cplusplus
-extern "C"
+/*******************************************************************************
+ * MACRO DEFINITIONS
+ * The following macros define GPIO pin mappings and their operations for different platforms.
+ */
+typedef enum
 {
-#endif
-
-    /*******************************************************************************
-     * MACRO DEFINITIONS
-     * The following macros define GPIO pin mappings and their operations for different platforms.
-     */
-    typedef enum
-    {
-        BIT_RESET = 0,
-        BIT_SET
-    } Bit_Action_T;
+    BIT_RESET = 0,
+    BIT_SET
+} Bit_Action_T;
 
 #ifdef PLATFORM_CST_OSAL_RTOS
 
-    typedef uint8_t GPIO_GROUP;
+typedef uint8_t GPIO_GROUP;
 
 // Event identifiers for user test timers
 #define USR_TEST_TIMER1_EVT 0x0001 /**< Event identifier for test timer 1 */
@@ -60,7 +56,7 @@ extern "C"
 #define GPIO_SIF_S_PIN P20 /**< SIF Send pin */
 
 #define GPIO_BMS_R_PIN P11 /**< BMS Receive pin */
-    // #define GPIO_BMS_S_PIN  P11    /**< BMS Send pin */
+// #define GPIO_BMS_S_PIN  P11    /**< BMS Send pin */
 
 #define GPIO_POWER_KEY_GROUP 1
 #define GPIO_POWER_KEY_PIN GPIO_ACC_PIN
@@ -197,7 +193,21 @@ typedef GPIO_TypeDef GPIO_GROUP;
 #define GPIO_PIN_SIF_SET_HIGH()    // Set GPIO_SIF_S_PIN to High
 #define GPIO_PIN_READ_SIF() (0x00) // Read the state of SIF_R_PIN
 
+#elif defined(PLATFORM_NATION_RTOS)
+
+typedef GPIO_Module GPIO_GROUP;
+
+#define GPIO_POWER_KEY_GROUP GPIOA
+#define GPIO_POWER_KEY_PIN GPIO_Pin_12
+
+#define GPIO_POWER_SWITCH_GROUP GPIOB
+#define GPIO_POWER_SWITCH_PIN GPIO_PIN_4
+
+#define GPIO_POWER_ENABLE_GROUP GPIOA
+#define GPIO_POWER_ENABLE_PIN GPIO_PIN_15
+
 #else
+
 typedef uint8_t GPIO_GROUP;
 #define GPIO_POWER_KEY_GROUP 0
 #define GPIO_POWER_KEY_PIN 0
@@ -206,10 +216,13 @@ typedef uint8_t GPIO_GROUP;
 #define GPIO_POWER_SWITCH_PIN 0
 #endif
 
-    /*********************************************************************
-     * FUNCTION DECLARATIONS
-     */
-
+/*********************************************************************
+ * FUNCTION DECLARATIONS
+ */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
     // Function to initialize GPIOs for the task
     void hal_gpio_init(uint8_t task_id);
     bool hal_gpio_read(GPIO_GROUP *gpiox, uint16_t pin);

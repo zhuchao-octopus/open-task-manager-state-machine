@@ -9,10 +9,9 @@
  * It is typically used in embedded systems where CAN messages are received via interrupt
  * and need to be processed asynchronously in the main loop or task thread.
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_can_queue.h"
 
-#if 1 //def TASK_MANAGER_STATE_MACHINE_CAN
+#ifdef TASK_MANAGER_STATE_MACHINE_CAN
 
 CanQueue_t can_rx_msg_queue;
 

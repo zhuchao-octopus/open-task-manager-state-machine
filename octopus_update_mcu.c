@@ -22,11 +22,14 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"	// Include platform-specific hardware details
 #include "octopus_update_mcu.h" // Include header for MCU update management
 #include "octopus_flash.h"		// Include flash memory handling utilities
-#include "octopus_system.h"
-
+#include "octopus_uart_ptl.h"	 // Include UART protocol header
+#include "octopus_uart_upf.h"	 // Include UART protocol header
+#include "octopus_tickcounter.h" // Include tick counter for timing operations
+#include "octopus_msgqueue.h"	 // Include message queue header for task communication
+#include "octopus_message.h"	 // Include message id for inter-task communication
+#include "octopus_platform.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -532,11 +535,11 @@ bool update_and_verify_dest_bank(uint32_t slot_addr)
 
 uint8_t update_get_target_bank(void)
 {
-	if (flash_meta_infor.bank_slot_activated == BANK_SLOT_LOADER)
+	if (flash_get_current_bank() == BANK_SLOT_LOADER)
 		return BANK_SLOT_A;
-	else if (flash_meta_infor.bank_slot_activated == BANK_SLOT_A)
+	else if (flash_get_current_bank() == BANK_SLOT_A)
 		return BANK_SLOT_B;
-	else if (flash_meta_infor.bank_slot_activated == BANK_SLOT_B)
+	else if (flash_get_current_bank() == BANK_SLOT_B)
 		return BANK_SLOT_A;
 	else
 		return BANK_SLOT_INVALID;

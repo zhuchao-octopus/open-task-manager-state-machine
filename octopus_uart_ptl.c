@@ -20,9 +20,11 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_uart_ptl.h" // Include UART protocol header
-#include "octopus_uart_hal.h" // Include UART hardware abstraction layer header
+#include "octopus_uart_ptl.h"     // Include UART protocol header
+#include "octopus_uart_hal.h"     // Include UART hardware abstraction layer header
+#include "octopus_task_manager.h" // Include task manager for scheduling tasks
+#include "octopus_tickcounter.h"  // Includes the header file that defines tick counter functions
+#include "octopus_msgqueue.h"     // Include message queue header for task communication
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
@@ -195,7 +197,7 @@ bool ptl_release_running(ptl_frame_type_t frame_type)
 bool ptl_is_exists_task(void)
 {
     // Check if there are no tasks running
-    if (l_t_ptl_running_req_mask == PTL_RUNNING_NONE)
+    if (l_t_ptl_running_req_mask != PTL_RUNNING_NONE)
     {
         return true; // Sleep mode is enabled
     }

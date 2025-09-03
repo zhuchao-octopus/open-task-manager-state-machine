@@ -9,6 +9,7 @@
  */
 
 #include "octopus_tickcounter.h" // Includes the header file that defines tick counter functions
+#include "octopus_platform.h"    // Include platform-specific header for hardware platform details
 
 #if 1 // def TASK_MANAGER_STATE_MACHINE_PTL1
 /*******************************************************************************

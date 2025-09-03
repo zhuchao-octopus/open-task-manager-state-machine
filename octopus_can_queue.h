@@ -11,10 +11,10 @@
  * from their processing in the main loop or another thread/task.
  */
 
+#include "octopus_base.h" //  Base include file for the Octopus project.
+
 #ifndef __OCTOPUS_CAN_CANQUEUE_H_
 #define __OCTOPUS_CAN_CANQUEUE_H_
-
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 
 #define CAN_MSG_QUEUE_SIZE (128U)                        // Must be a power of 2
 #define CAN_MSG_QUEUE_SIZE_MASK (CAN_MSG_QUEUE_SIZE - 1) // Used for efficient modulo operation
@@ -27,11 +27,11 @@
 
 typedef struct
 {
-    uint32_t std_id;      // CAN message identifier
-    uint8_t ide;      // Identifier type: 0 = Standard, 1 = Extended
-    uint8_t rtr;      // Frame type: 0 = Data frame, 1 = Remote frame
-		uint8_t channel;  // CAN channel index (0 = CAN1, 1 = CAN2, etc.)
-	
+    uint32_t std_id; // CAN message identifier
+    uint8_t ide;     // Identifier type: 0 = Standard, 1 = Extended
+    uint8_t rtr;     // Frame type: 0 = Data frame, 1 = Remote frame
+    uint8_t channel; // CAN channel index (0 = CAN1, 1 = CAN2, etc.)
+
     uint8_t data_len; // Length of CAN data (0 ~ 8)
     uint8_t data[8];  // CAN data payload
 } CanQueueMsg_t;

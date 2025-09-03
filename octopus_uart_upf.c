@@ -42,10 +42,10 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_uart_upf.h" // Include UART protocol header
 #include "octopus_uart_hal.h" // Include UART hardware abstraction layer header
-
+#include "octopus_task_manager.h" // Include task manager for scheduling tasks
+#include "octopus_tickcounter.h" // Include tick counter for timing operations
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -104,8 +104,8 @@ void upf_register_module(upf_module_t upf_module, upf_module_receive_handler_t r
     if (upf_next_empty_module < s_upf_module_max)
     {
         upf_module_info[upf_next_empty_module].upf_module.channel = upf_module.channel;
-			  upf_module_info[upf_next_empty_module].upf_module.module = upf_module.module;
-			
+        upf_module_info[upf_next_empty_module].upf_module.module = upf_module.module;
+
         upf_module_info[upf_next_empty_module].receive_handler = receive_handler;
 
         cFifo_Init(&upf_module_info[upf_next_empty_module].upf_usart_rx_fifo,
@@ -122,8 +122,8 @@ upf_module_info_t *upf_get_module(upf_module_t upf_module)
 
     for (uint8_t i = 0; i < upf_next_empty_module; i++)
     {
-        if (upf_module_info[i].upf_module.channel == upf_module.channel && 
-					  upf_module_info[i].upf_module.module == upf_module.module)
+        if (upf_module_info[i].upf_module.channel == upf_module.channel &&
+            upf_module_info[i].upf_module.module == upf_module.module)
         {
             module_info = &upf_module_info[i];
             break;

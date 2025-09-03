@@ -25,9 +25,9 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_log.h"	  // Include logging functions for debugging
+#include "octopus_log.h" // Include logging functions for debugging
 #include "octopus_uart_hal.h"
+#include "octopus_platform.h"
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -58,7 +58,7 @@ DBG_LOG_LEVEL current_log_level = LOG_LEVEL_NONE;
  */
 PUTCHAR_PROTOTYPE
 {
-	#if 0
+#if 0
 	uint32_t Timeout = 0;
 	FlagStatus Status;
 	USART_SendData(DEBUG_UART, (uint8_t)ch);
@@ -69,21 +69,41 @@ PUTCHAR_PROTOTYPE
 	} while ((Status == RESET) && (Timeout != 0xFFFF));
 
 	return (ch);
-	#endif
+#endif
 	uint8_t data[1] = {0};
 	data[0] = (uint8_t)ch;
 	switch (OTSM_DEBUG_UART_CHANNEL)
 	{
-		case 0: hal_com_uart0_send_buffer(data,1);break;
-		case 1: hal_com_uartl_send_buffer(data,1);break;
-		case 2: hal_com_uart2_send_buffer(data,1);break;
-		case 3: hal_com_uart3_send_buffer(data,1);break;
-		case 4: hal_com_uart4_send_buffer(data,1);break;
-		case 5: hal_com_uart5_send_buffer(data,1);break;
-		case 6: hal_com_uart6_send_buffer(data,1);break;
-		case 7: hal_com_uart7_send_buffer(data,1);break;
-		case 8: hal_com_uart8_send_buffer(data,1);break;
-		case 9: hal_com_uart9_send_buffer(data,1);break;
+	case 0:
+		hal_com_uart0_send_buffer(data, 1);
+		break;
+	case 1:
+		hal_com_uartl_send_buffer(data, 1);
+		break;
+	case 2:
+		hal_com_uart2_send_buffer(data, 1);
+		break;
+	case 3:
+		hal_com_uart3_send_buffer(data, 1);
+		break;
+	case 4:
+		hal_com_uart4_send_buffer(data, 1);
+		break;
+	case 5:
+		hal_com_uart5_send_buffer(data, 1);
+		break;
+	case 6:
+		hal_com_uart6_send_buffer(data, 1);
+		break;
+	case 7:
+		hal_com_uart7_send_buffer(data, 1);
+		break;
+	case 8:
+		hal_com_uart8_send_buffer(data, 1);
+		break;
+	case 9:
+		hal_com_uart9_send_buffer(data, 1);
+		break;
 	}
 	return (ch);
 }

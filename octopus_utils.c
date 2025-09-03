@@ -24,9 +24,8 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_utils.h"
-
+#include "octopus_platform.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -68,6 +67,98 @@
  */
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Calculate the distance traveled based on speed and time.
+ *
+ * @param speedKmh Speed in kilometers per hour (km/h)(100m/h)
+ * @param timeSec Time in seconds (s)
+ * @return double Distance traveled in meters (m)
+ */
+uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec)
+{
+    // speed_kmh is in km/h, time_sec is in seconds
+    // Convert speed to m/s (1 km/h = 1000 m / 3600 s)
+    // uint32_t speed_ms = (speed_kmh * 1000) / 3600;
+
+    // speed_kmh_x10: speed in 0.1 km/h units
+    // Convert to m/s: (speed * 100) / 3600 = speed / 36
+    uint32_t speed_ms = speed_kmh / 36; // 0.1dkm/h
+
+    // Calculate distance in meters
+    uint32_t distance_m = speed_ms * time_sec;
+
+    return distance_m;
+}
+
+void calculate_battery_soc_ex(uint16_t voltage_mV,
+                              uint16_t capacity_mAh,
+                              uint32_t trip_odo_m,
+                              float consumption_Wh_per_km,
+                              float safety_reserve_ratio,
+                              float avg_speed_kph,
+                              uint16_t *out_power_w,
+                              uint16_t *out_soc_pct,
+                              uint16_t *out_range_100m,
+                              uint16_t *out_range_max_100m)
+{
+    if (!out_power_w || !out_soc_pct || !out_range_100m || !out_range_max_100m)
+        return;
+    if (voltage_mV < 1000)
+        voltage_mV = voltage_mV * 100;
+    if (capacity_mAh < 1000)
+        capacity_mAh = capacity_mAh * 100;
+
+    // å‚æ•°ä¿æŠ¤
+    if (consumption_Wh_per_km <= 0.01f)
+        consumption_Wh_per_km = 18.0f;
+    if (safety_reserve_ratio < 0.0f)
+        safety_reserve_ratio = 0.0f;
+    if (safety_reserve_ratio > 0.5f)
+        safety_reserve_ratio = 0.5f;
+
+    // 1. ç”µæ± æ€»èƒ½é‡ (Wh)
+    float capacity_Wh = (voltage_mV * capacity_mAh) / 1000000.0f;
+
+    // 2. å¯ç”¨èƒ½é‡ (æ‰£é™¤å®‰å…¨ä½™é‡)
+    float usable_Wh = capacity_Wh * (1.0f - safety_reserve_ratio);
+
+    // 3. å·²æ¶ˆè€—èƒ½é‡
+    float used_km = trip_odo_m / 1000.0f;
+    float used_Wh = used_km * consumption_Wh_per_km;
+
+    // 4. å‰©ä½™èƒ½é‡
+    float remain_Wh = usable_Wh - used_Wh;
+    if (remain_Wh < 0.0f)
+        remain_Wh = 0.0f;
+
+    // 5. SOC (%)
+    float soc_f = (usable_Wh > 0.0f) ? (remain_Wh / usable_Wh) * 100.0f : 0.0f;
+    if (soc_f > 100.0f)
+        soc_f = 100.0f;
+
+    // 6. ç†è®ºæœ€å¤§/å‰©ä½™é‡Œç¨‹
+    float full_range_km = (usable_Wh > 0.0f) ? (usable_Wh / consumption_Wh_per_km) : 0.0f;
+    float remain_range_km = (remain_Wh > 0.0f) ? (remain_Wh / consumption_Wh_per_km) : 0.0f;
+
+    // 7. å¹³å‡åŠŸçŽ‡ä¼°ç®—
+    uint16_t power_w = 0;
+    if (avg_speed_kph > 0.0f)
+    {
+        float p = consumption_Wh_per_km * avg_speed_kph; // Wh/km * km/h = Wh/h = W
+        if (p < 0.0f)
+            p = 0.0f;
+        if (p > 65535.0f)
+            p = 65535.0f;
+        power_w = (uint16_t)(p + 0.5f);
+    }
+
+    // è¾“å‡º
+    *out_power_w = power_w;
+    *out_soc_pct = (uint16_t)(soc_f + 0.5f);
+    *out_range_100m = (uint16_t)(remain_range_km * 10.0f + 0.5f);
+    *out_range_max_100m = (uint16_t)(full_range_km * 10.0f + 0.5f);
+}
+
 /*******************************************************************************
  * CRC Calculation
  *******************************************************************************/
@@ -354,38 +445,38 @@ bool validate_hex_crc(const char *line)
     if (!line || line[0] != ':')
         return false;
 
-    // �����������β���з�
+    // 拷贝并清除结尾换行符
     char clean_line[128];
     snprintf(clean_line, sizeof(clean_line), "%s", line);
     size_t len = strlen(clean_line);
     while (len > 0 && (clean_line[len - 1] == '\n' || clean_line[len - 1] == '\r'))
         clean_line[--len] = '\0';
 
-    if (len < 11 || (len % 2) != 1) // ������ð�� + ż���� hex �ֽ� + checksum ���������ַ�
+    if (len < 11 || (len % 2) != 1) // 必须是冒号 + 偶数个 hex 字节 + checksum 共奇数个字符
         return false;
 
     uint8_t sum = 0;
 
-    // ��������һ���ֽڣ�checksum����ĺ�
+    // 计算除最后一个字节（checksum）外的和
     for (size_t i = 1; i < len - 2; i += 2)
     {
         char byte_str[3] = {clean_line[i], clean_line[i + 1], '\0'};
 
         if (!isxdigit(byte_str[0]) || !isxdigit(byte_str[1]))
-            return false; // �Ƿ�ʮ�������ַ�
+            return false; // 非法十六进制字符
 
         uint8_t byte = (uint8_t)strtoul(byte_str, NULL, 16);
         sum += byte;
     }
 
-    // ��ȡ checksum
+    // 提取 checksum
     char checksum_str[3] = {clean_line[len - 2], clean_line[len - 1], '\0'};
     if (!isxdigit(checksum_str[0]) || !isxdigit(checksum_str[1]))
         return false;
 
     uint8_t checksum = (uint8_t)strtoul(checksum_str, NULL, 16);
 
-    // Intel HEX checksum: �����ֽڼ��� + checksum Ӧ��Ϊ 0x00
+    // Intel HEX checksum: 所有字节加总 + checksum 应该为 0x00
     return ((sum + checksum) & 0xFF) == 0x00;
 }
 
@@ -459,7 +550,7 @@ file_info_t is_valid_hex_file(const char *path_filename)
     {
         if (line[0] != ':')
         {
-            // �Ƿ���ͷ�������� BIN �ļ�
+            // 非法开头，可能是 BIN 文件
             LOG_LEVEL("Line doesn't start with ':' -> Not a HEX file\n");
             fclose(f);
             return info;
@@ -774,7 +865,7 @@ int copy_file_to_tmp(const char *src_path, const char *filename, char *dst_path,
 #ifdef PLATFORM_LINUX_RISC
     if (access(dst_path, F_OK) == 0)
     {
-        return 1; // ��ʾ�Ѵ��ڣ�δ����
+        return 1; // 表示已存在，未复制
     }
 
     FILE *src = fopen(src_path, "rb");

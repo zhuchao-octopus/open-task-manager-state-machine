@@ -12,54 +12,14 @@
  *   - Reading and writing to Flash memory
  *
  ************************************************************************************************/
-
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_flash.h"
+#include "octopus_utils.h"
 #include "octopus_vehicle.h"
+#include "octopus_platform.h"
 
-#define FLASH_USE_EEROM_FOR_DATA_SAVING
-#define FLASH_MAPPING_VECT_TABLE_TO_SRAM
+// #define FLASH_USE_EEROM_FOR_DATA_SAVING
+// #define FLASH_MAPPING_VECT_TABLE_TO_SRAM
 
-void Print_VectorTable(void);
-void Print_Flash_VectorTable(void);
-void Print_SRAM_VectorTable(void);
-void flash_print_mcu_meta_infor(void);
-//////////////////////////////////////////////////////////////////////////////////////////////////
-flash_meta_infor_t flash_meta_infor = {0};
-system_meter_infor_t system_meter_infor = {0};
-//FLASH_BANK_CONFIG_MODE_SLOT
-uint8_t flash_bank_config_mode_slot = BANK_SLOT_INVALID;
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-void flash_print_logo(void)
-{
-	  LOG_NONE("\r\n");
-    LOG_NONE("-----------------------------------------------------------------------------\r\n");
-    LOG_NONE("               _____                                 \r\n");
-    LOG_NONE(" ______ _________  /_______ ________ ____  __________\r\n");
-    LOG_NONE(" _  __ \\_  ___/_  __/_  __ \\___  __ \\_  / / /__  ___/\r\n");
-    LOG_NONE(" / /_/ // /__  / /_  / /_/ /__  /_/ // /_/ / _(__  ) \r\n");
-    LOG_NONE(" \\____/ \\___/  \\__/  \\____/ _  .___/ \\__,_/  /____/  \r\n");
-    LOG_NONE("                            /_/                       \r\n");
-    LOG_NONE(" Embedded Real-Time Task Scheduler + FSM Engine\r\n");
-
-    LOG_NONE(" Firmware  : v%s\r\n", OTMS_VERSION_NAME);
-    LOG_NONE(" Compiled  : %s %s\r\n", __DATE__, __TIME__);
-    LOG_NONE(" Module    : %s\r\n", flash_get_current_bank_name());
-    LOG_NONE(" Author    : Octopus Dev Team\r\n");
-    LOG_NONE("-----------------------------------------------------------------------------\r\n");
-}
-
-void otsm_flash_init(void)
-{
-	hal_flash_init(0);
-}
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
 #if (defined(__CC_ARM))
 __IO uint32_t Vector_Table[48] __attribute__((at(0x20000000)));
@@ -69,59 +29,208 @@ __IO uint32_t Vector_Table[48] __attribute__((section(".SRAM_VECTOR_TABLE")));
 __IO uint32_t Vector_Table[48] __at(0x20000000);
 #endif
 #endif
+
+void Print_VectorTable(void);
+void Print_Flash_VectorTable(void);
+void Print_SRAM_VectorTable(void);
+void flash_print_mcu_meta_infor(void);
+bool flash_verify_bank_slot_crc(uint32_t slot_addr, uint32_t slot_size, uint32_t expected_crc);
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+flash_meta_infor_t flash_meta_infor = {0};
+system_meter_infor_t system_meter_infor = {0};
+uint8_t flash_bank_config_mode_slot = BANK_SLOT_INVALID;
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+void flash_print_logo(void)
+{
+	LOG_NONE("\r\n");
+	LOG_NONE("-----------------------------------------------------------------------------\r\n");
+	LOG_NONE("               _____                                 \r\n");
+	LOG_NONE(" ______ _________  /_______ ________ ____  __________\r\n");
+	LOG_NONE(" _  __ \\_  ___/_  __/_  __ \\___  __ \\_  / / /__  ___/\r\n");
+	LOG_NONE(" / /_/ // /__  / /_  / /_/ /__  /_/ // /_/ / _(__  ) \r\n");
+	LOG_NONE(" \\____/ \\___/  \\__/  \\____/ _  .___/ \\__,_/  /____/  \r\n");
+	LOG_NONE("                            /_/                       \r\n");
+	LOG_NONE(" Embedded Real-Time Task Scheduler + FSM Engine\r\n");
+
+	LOG_NONE(" Firmware  : v%s\r\n", OTMS_VERSION_NAME);
+	LOG_NONE(" Compiled  : %s %s\r\n", __DATE__, __TIME__);
+	LOG_NONE(" Module    : %s\r\n", flash_get_current_bank_name());
+	LOG_NONE(" Author    : Octopus Dev Team\r\n");
+	LOG_NONE("-----------------------------------------------------------------------------\r\n");
+}
+
+void otsm_flash_init(void)
+{
+	hal_flash_init(0);
+	if(flash_bank_config_mode_slot >= BANK_SLOT_INVALID)
+	{
+	   flash_bank_config_mode_slot = BANK_SLOT_A;
+	}
+
+	flash_meta_infor.bank_slot_mode = BOOTLOADER_CONFIG_MODE_TYPE;
+	flash_meta_infor.loader_addr = BOOTLOADER_START_ADDR;
+	flash_meta_infor.slot_a_addr = MAIN_APP_SLOT_A_START_ADDR;
+	flash_meta_infor.slot_b_addr = MAIN_APP_SLOT_B_START_ADDR;
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLEAR
  */
-flash_meta_infor_t *flash_get_meta_infor(void)
-{
-	return &flash_meta_infor;
-}
-
 #ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
 void flash_vector_table_config(uint8_t bank_slot, bool mapping_vector)
 {
 	flash_bank_config_mode_slot = bank_slot;
-  if(!mapping_vector) return;
-	
+	if (!mapping_vector)
+		return;
+
 	DISABLE_IRQ;
 	switch (flash_bank_config_mode_slot)
 	{
-		case BANK_SLOT_A:
-				for (uint8_t i = 0; i < 48; i++)
-				{
-					Vector_Table[i] = *(volatile uint32_t *)(MAIN_APP_SLOT_A_START_ADDR + i * 4);
-				}
+	case BANK_SLOT_A:
+		for (uint8_t i = 0; i < 48; i++)
+		{
+			Vector_Table[i] = *(volatile uint32_t *)(MAIN_APP_SLOT_A_START_ADDR + i * 4);
+		}
 
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-				SYSCFG_MemoryRemapConfig(SYSCFG_MemoryRemap_SRAM);
-				break;
-			
-		case BANK_SLOT_B:
-				for (uint8_t i = 0; i < 48; i++)
-					{
-						Vector_Table[i] = *(volatile uint32_t *)(MAIN_APP_SLOT_B_START_ADDR + i * 4);
-					}	
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+		SYSCFG_MemoryRemapConfig(SYSCFG_MemoryRemap_SRAM);
+		break;
 
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-					SYSCFG_MemoryRemapConfig(SYSCFG_MemoryRemap_SRAM);
-				break;
-		
-    case BANK_SLOT_LOADER:
-				for (uint8_t i = 0; i < 48; i++)
-				{
-					Vector_Table[i] = *(volatile uint32_t *)(BOOTLOADER_START_ADDR + i * 4);
-				}
+	case BANK_SLOT_B:
+		for (uint8_t i = 0; i < 48; i++)
+		{
+			Vector_Table[i] = *(volatile uint32_t *)(MAIN_APP_SLOT_B_START_ADDR + i * 4);
+		}
 
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-				SYSCFG_MemoryRemapConfig(SYSCFG_MemoryRemap_SRAM);
-				break;	
-		
-		case BANK_SLOT_AUTO:
-		case BANK_SLOT_INVALID:			
-    default:	break;					
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+		SYSCFG_MemoryRemapConfig(SYSCFG_MemoryRemap_SRAM);
+		break;
+
+	case BANK_SLOT_LOADER:
+		for (uint8_t i = 0; i < 48; i++)
+		{
+			Vector_Table[i] = *(volatile uint32_t *)(BOOTLOADER_START_ADDR + i * 4);
+		}
+
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+		SYSCFG_MemoryRemapConfig(SYSCFG_MemoryRemap_SRAM);
+		break;
+
+	case BANK_SLOT_INVALID:
+	default:
+		break;
 	}
-	
+
 	ENABLE_IRQ;
+}
+/**
+ * @brief Main bootloader logic: verify and jump to the valid application
+ */
+void boot_loader_active_user_app(void)
+{
+	flash_meta_infor.bank_slot_activated = flash_bank_config_mode_slot;
+	flash_print_logo();
+	// Read application metadata from EEPROM
+	flash_load_sync_data_infor();
+
+	uint32_t active_app_addr = 0;
+	uint32_t expected_crc = 0;
+	uint32_t slot_length = 0;
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	if (flash_get_current_bank() == BANK_SLOT_LOADER)
+	{
+		if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
+		{
+			active_app_addr = flash_meta_infor.slot_b_addr;
+			expected_crc = flash_meta_infor.slot_b_crc;
+			slot_length = flash_meta_infor.slot_b_size;
+			LOG_LEVEL("Bootloader start to active slot B...\r\n");
+			if (flash_get_current_bank() == BANK_SLOT_B)
+				return;
+		}
+		else
+		{
+			LOG_LEVEL("Bank slot B is invalid Fallback to loader...\r\n");
+			return;
+		}
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	else if (compare_versions(flash_meta_infor.slot_a_version, flash_meta_infor.slot_b_version) >= 0)
+	{
+		if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
+		{
+			active_app_addr = flash_meta_infor.slot_a_addr;
+			expected_crc = flash_meta_infor.slot_a_crc;
+			slot_length = flash_meta_infor.slot_a_size;
+			LOG_LEVEL("Bank Active Slot   : A\r\n");
+			if (flash_get_current_bank() == BANK_SLOT_A)
+				return;
+		}
+		else if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
+		{
+			active_app_addr = flash_meta_infor.slot_b_addr;
+			expected_crc = flash_meta_infor.slot_b_crc;
+			slot_length = flash_meta_infor.slot_b_size;
+			LOG_LEVEL("Slot A activation failed. Fallback to Slot B initiated.\r\n");
+			if (flash_get_current_bank() == BANK_SLOT_B)
+			{
+				return;
+			}
+		}
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	else
+	{
+		if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
+		{
+			active_app_addr = flash_meta_infor.slot_b_addr;
+			expected_crc = flash_meta_infor.slot_b_crc;
+			slot_length = flash_meta_infor.slot_b_size;
+			LOG_LEVEL("Bank Active Slot   : B\r\n");
+			if (flash_get_current_bank() == BANK_SLOT_B)
+				return;
+		}
+		else if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
+		{
+			active_app_addr = flash_meta_infor.slot_a_addr;
+			expected_crc = flash_meta_infor.slot_a_crc;
+			slot_length = flash_meta_infor.slot_a_size;
+			LOG_LEVEL("Slot B activation failed. Fallback to Slot A initiated.\r\n");
+			if (flash_get_current_bank() == BANK_SLOT_A)
+				return;
+		}
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Verify CRC of the active application
+	if (flash_verify_bank_slot_crc(active_app_addr, slot_length, expected_crc))
+	{
+		LOG_LEVEL("Bank verified crc passed,Jumping to application at 0x%08X...\r\n", active_app_addr);
+		flash_JumpToApplication(active_app_addr); // Hand over control to application
+	}
+	else
+	{
+		LOG_LEVEL("Bank verified crc failed,Can Not Jumping to application at 0x%08X...\r\n", active_app_addr);
+		if (flash_get_current_bank() == BANK_SLOT_A)
+			return;
+		if (flash_get_current_bank() == BANK_SLOT_B)
+			return;
+
+		if (flash_get_current_bank() == BANK_SLOT_LOADER)
+		{
+			// Both slots failed integrity check, enter firmware update mode
+			LOG_LEVEL("Active slot A/B failed! Both slots failed verification. Entering upgrade mode...\r\n");
+			// EnterFirmwareUpgradeMode();  // Implement your IAP or OTA entry point
+		}
+	}
 }
 
 void Print_VectorTable(void)
@@ -170,6 +279,11 @@ void Print_SRAM_VectorTable(void)
 }
 #endif
 
+flash_meta_infor_t *flash_get_meta_infor(void)
+{
+	return &flash_meta_infor;
+}
+
 void flash_print_mcu_meta_infor(void)
 {
 	LOG_LEVEL("Bootloader Address    : 0x%08X\n", flash_meta_infor.loader_addr);
@@ -185,8 +299,8 @@ void flash_print_mcu_meta_infor(void)
 	LOG_LEVEL("Appp Status Flags     : 0x%08X\n", flash_meta_infor.slot_stat_flags);
 	LOG_LEVEL("Meters Data Flags     : 0x%08X\n", flash_meta_infor.mete_data_flags);
 	LOG_LEVEL("Config Data Flags     : 0x%08X\n", flash_meta_infor.user_data_flags);
-	LOG_LEVEL("Active Slot           : %u\n", flash_meta_infor.bank_slot_activated);
-	// LOG_LEVEL("Last Boot Ok        : %u\n", flash_meta_infor.last_boot_ok);
+	LOG_LEVEL("Bank Actived Slot     : 0x%02X\n", flash_meta_infor.bank_slot_activated);
+
 	LOG_LEVEL("Loader Bank Mode      : 0x%02X\n", flash_meta_infor.bank_slot_mode);
 	// LOG_LEVEL("User Data Address    : 0x%08X\n", EEROM_DATAS_ADDRESS);
 	// LOG_LEVEL("VECT_TAB_OFFSET      : 0x%08X\n", SCB->AIRCR);
@@ -217,7 +331,7 @@ void flash_load_sync_data_infor(void)
 #ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
 	uint32_t calculated_crc = 0;
 	E2ROMReadToBuff(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
-	flash_meta_infor.bank_slot_activated = flash_bank_config_mode_slot;
+	
 	flash_meta_infor.bank_slot_mode = BOOTLOADER_CONFIG_MODE_TYPE;
 	flash_meta_infor.loader_addr = BOOTLOADER_START_ADDR;
 	flash_meta_infor.slot_a_addr = MAIN_APP_SLOT_A_START_ADDR;
@@ -300,11 +414,11 @@ void flash_load_sync_data_infor(void)
 
 bool flash_is_meta_infor_valid(void)
 {
-	if ((flash_meta_infor.bank_slot_activated == BANK_SLOT_INVALID) || (flash_meta_infor.bank_slot_mode == BOOT_MODE_SINGLE_BANK_NONE))
+	if ((flash_get_current_bank() == BANK_SLOT_INVALID) || (flash_meta_infor.bank_slot_mode == BOOT_MODE_SINGLE_BANK_NONE))
 		return false;
 	else if ((flash_meta_infor.slot_a_addr == 0) || (flash_meta_infor.slot_b_addr == 0))
 		return false;
-	else if ((flash_meta_infor.bank_slot_activated != BANK_SLOT_A) && (flash_meta_infor.bank_slot_activated != BANK_SLOT_A))
+	else if ((flash_get_current_bank() != BANK_SLOT_A) && (flash_get_current_bank() != BANK_SLOT_A))
 		return false;
 	else
 		return true;
@@ -348,7 +462,7 @@ uint32_t flash_get_current_bank(void)
 
 const char *flash_get_current_bank_name(void)
 {
-	return flash_get_bank_name(flash_meta_infor.bank_slot_activated);
+	return flash_get_bank_name(flash_get_current_bank());
 }
 
 const char *flash_get_bank_name(uint8_t bank)
@@ -465,12 +579,13 @@ bool flash_verify_bank_slot_crc(uint32_t slot_addr, uint32_t slot_size, uint32_t
 	LOG_LEVEL("Bank crc verify at: 0x%08X, size:0x%08X, expected crc:0x%08X\r\n", slot_addr, slot_size, expected_crc);
 
 	DISABLE_IRQ;
-	uint32_t calculated_crc = calculate_crc_32((uint8_t *)slot_addr, slot_size);
+	uint32_t calculated_crc = calculate_crc_32((uint8_t *)(uintptr_t)slot_addr, slot_size);
 	ENABLE_IRQ;
 	LOG_LEVEL("Bank crc verify at: 0x%08X, size:0x%08X, expected crc:0x%08X, calculate crc:%08X\r\n", slot_addr, slot_size, expected_crc, calculated_crc);
 
 	return (calculated_crc == expected_crc);
 }
+
 /**
  * @brief  Safely jump from bootloader to user application at given address.
  *         For Cortex-M0 (no VTOR), assumes the application will remap RAM at 0x00000000
@@ -479,6 +594,7 @@ bool flash_verify_bank_slot_crc(uint32_t slot_addr, uint32_t slot_size, uint32_t
  * @param  app_address: Start address of the user application (where its vector table is located).
  *         Typically something like 0x08010000.
  */
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
 void flash_JumpToApplication(uint32_t app_address)
 {
 	typedef void (*pFunction)(void); // Function pointer type for Reset_Handler
@@ -529,107 +645,7 @@ void flash_JumpToApplication(uint32_t app_address)
 	while (1)
 		;
 }
-
-/**
- * @brief Main bootloader logic: verify and jump to the valid application
- */
-void boot_loader_active_user_app(void)
-{
-	flash_print_logo();
-	// Read application metadata from EEPROM
-	flash_load_sync_data_infor();
-
-	uint32_t active_app_addr = 0;
-	uint32_t expected_crc = 0;
-	uint32_t slot_length = 0;
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	if (flash_meta_infor.bank_slot_activated == BANK_SLOT_LOADER)
-	{
-		if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
-		{
-			active_app_addr = flash_meta_infor.slot_b_addr;
-			expected_crc = flash_meta_infor.slot_b_crc;
-			slot_length = flash_meta_infor.slot_b_size;
-			LOG_LEVEL("Bootloader start to active slot B...\r\n");
-			if (flash_meta_infor.bank_slot_activated == BANK_SLOT_B)
-				return;
-		}
-		else
-		{
-			LOG_LEVEL("Bank slot B is invalid Fallback to loader...\r\n");
-			return;
-		}
-	}
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	else if (compare_versions(flash_meta_infor.slot_a_version, flash_meta_infor.slot_b_version) >= 0)
-	{
-		if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
-		{
-			active_app_addr = flash_meta_infor.slot_a_addr;
-			expected_crc = flash_meta_infor.slot_a_crc;
-			slot_length = flash_meta_infor.slot_a_size;
-			LOG_LEVEL("Bank Active Slot   : A\r\n");
-			if (flash_meta_infor.bank_slot_activated == BANK_SLOT_A)
-				return;
-		}
-		else if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
-		{
-			active_app_addr = flash_meta_infor.slot_b_addr;
-			expected_crc = flash_meta_infor.slot_b_crc;
-			slot_length = flash_meta_infor.slot_b_size;
-			LOG_LEVEL("Slot A activation failed. Fallback to Slot B initiated.\r\n");
-			if (flash_meta_infor.bank_slot_activated == BANK_SLOT_B)
-			{
-				return;
-			}
-		}
-	}
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	else
-	{
-		if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
-		{
-			active_app_addr = flash_meta_infor.slot_b_addr;
-			expected_crc = flash_meta_infor.slot_b_crc;
-			slot_length = flash_meta_infor.slot_b_size;
-			LOG_LEVEL("Bank Active Slot   : B\r\n");
-			if (flash_meta_infor.bank_slot_activated == BANK_SLOT_B)
-				return;
-		}
-		else if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
-		{
-			active_app_addr = flash_meta_infor.slot_a_addr;
-			expected_crc = flash_meta_infor.slot_a_crc;
-			slot_length = flash_meta_infor.slot_a_size;
-			LOG_LEVEL("Slot B activation failed. Fallback to Slot A initiated.\r\n");
-			if (flash_meta_infor.bank_slot_activated == BANK_SLOT_A)
-				return;
-		}
-	}
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Verify CRC of the active application
-	if (flash_verify_bank_slot_crc(active_app_addr, slot_length, expected_crc))
-	{
-		LOG_LEVEL("Bank verified crc passed,Jumping to application at 0x%08X...\r\n", active_app_addr);
-		flash_JumpToApplication(active_app_addr); // Hand over control to application
-	}
-	else
-	{
-		LOG_LEVEL("Bank verified crc failed,Can Not Jumping to application at 0x%08X...\r\n", active_app_addr);
-		if (flash_meta_infor.bank_slot_activated == BANK_SLOT_A)
-			return;
-		if (flash_meta_infor.bank_slot_activated == BANK_SLOT_B)
-			return;
-
-		if (flash_meta_infor.bank_slot_activated == BANK_SLOT_LOADER)
-		{
-			// Both slots failed integrity check, enter firmware update mode
-			LOG_LEVEL("Active slot A/B failed! Both slots failed verification. Entering upgrade mode...\r\n");
-			// EnterFirmwareUpgradeMode();  // Implement your IAP or OTA entry point
-		}
-	}
-}
+#endif
 
 //__attribute__((section(".ramfunc")))
 uint32_t FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
