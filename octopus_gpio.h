@@ -13,7 +13,7 @@
 
 #include "octopus_base.h"     //  Base include file for the Octopus project.
 #include "octopus_gpio_hal.h" // Include GPIO HAL for hardware-specific functionality
-
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
 /******************************************************************************/
 /**
  * @brief    GPIO status redundancy macros.
@@ -99,4 +99,5 @@ extern "C"
 }
 #endif
 
+#endif
 #endif /* __OCTOPUS_TASK_MANAGER_GPIO_H__ */

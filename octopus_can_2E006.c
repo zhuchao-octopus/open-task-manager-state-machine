@@ -2,12 +2,12 @@
 /*****************************************************************************/
 #include "octopus_can_2E006.h"
 #include "octopus_platform.h"
-#include "octopus_uart_ptl.h" // Include UART protocol header
-#include "octopus_task_manager.h" // Include task manager for scheduling tasks
-#include "octopus_message.h"     // Include message id for inter-task communication
-#include "octopus_msgqueue.h"    // Include message queue header for task communication
+#include "octopus_tickcounter.h" // Tick Counter: provides timing and delay utilities
+#include "octopus_message.h"     // Message IDs: defines identifiers for inter-task communication
+#include "octopus_msgqueue.h"    // Message Queue: API for sending/receiving messages between tasks
+#include "octopus_uart_ptl.h"    // UART Protocol Layer: handles protocol-level UART operations
 
-#if 1 //def CAN_2E006
+#ifdef TASK_MANAGER_STATE_MACHINE_CAN
 
 static BMS_Task_H_001_t g_bms1;
 static BMS_Task_H_002_t g_bms2;
@@ -33,9 +33,9 @@ static float Calculate_Speed_From_RPM(uint16_t rpm, uint16_t tire_diameter_mm, u
  */
 void can_message_dispatcher(const CanQueueMsg_t *queue_msg)
 {
-    //LOG_BUFF_LEVEL((uint8_t *)queue_msg, sizeof(CanQueueMsg_t));
-		bool updated = false;
-	
+    // LOG_BUFF_LEVEL((uint8_t *)queue_msg, sizeof(CanQueueMsg_t));
+    bool updated = false;
+
     switch (queue_msg->std_id)
     {
     case CAN_ID_BMS_TASK_H_001:
@@ -54,21 +54,21 @@ void can_message_dispatcher(const CanQueueMsg_t *queue_msg)
 
     case CAN_ID_MCU_TASK_H_001:
         updated = CAN_Parse_MCU_Task_H_001(queue_msg);
-		    if(updated)
-				{
-					LOG_LEVEL("g_mcu1.motor_speed_rpm: %d\n", g_mcu1.motor_speed_rpm);
-					LOG_LEVEL("g_mcu1.info           : %d\n", g_mcu1.info.raw);
-					LOG_LEVEL("g_mcu1.fault_state    : %d\n", g_mcu1.fault_state.raw);
-					CAN_update_vehicle_infor(queue_msg);
-				}
-		
+        if (updated)
+        {
+            LOG_LEVEL("g_mcu1.motor_speed_rpm: %d\n", g_mcu1.motor_speed_rpm);
+            LOG_LEVEL("g_mcu1.info           : %d\n", g_mcu1.info.raw);
+            LOG_LEVEL("g_mcu1.fault_state    : %d\n", g_mcu1.fault_state.raw);
+            CAN_update_vehicle_infor(queue_msg);
+        }
+
         break;
     case CAN_ID_MCU_TASK_H_002:
         updated = CAN_Parse_MCU_Task_H_002(queue_msg);
-		    if(updated)
-				{
-					CAN_update_vehicle_infor(queue_msg);
-				}
+        if (updated)
+        {
+            CAN_update_vehicle_infor(queue_msg);
+        }
         break;
 
     case CAN_ID_CHARGER_TASK_L_001:
@@ -186,39 +186,42 @@ void CAN_Parse_VCU_Task_L_002(const CanQueueMsg_t *msg)
 // -------- MCU --------
 bool CAN_Parse_MCU_Task_H_001(const CanQueueMsg_t *msg)
 {
-	  bool b_ret = false;
+    bool b_ret = false;
     if (msg->data_len != 8)
         return false;
-		
-		MCU_Task_H_001_t g_mcu1_new;
-		g_mcu1_new.motor_speed_rpm = (uint16_t)(msg->data[0] | (msg->data[1] << 8));
-    g_mcu1_new.info.raw        = (uint16_t)(msg->data[2] | (msg->data[3] << 8));
+
+    MCU_Task_H_001_t g_mcu1_new;
+    g_mcu1_new.motor_speed_rpm = (uint16_t)(msg->data[0] | (msg->data[1] << 8));
+    g_mcu1_new.info.raw = (uint16_t)(msg->data[2] | (msg->data[3] << 8));
     g_mcu1_new.fault_state.raw = (uint32_t)(msg->data[4] | (msg->data[5] << 8) |
-                                       (msg->data[6] << 16) | (msg->data[7] << 24));
-		
-		if(g_mcu1_new.motor_speed_rpm != g_mcu1.motor_speed_rpm)
-			b_ret = true;
-		
-		if(g_mcu1_new.info.raw  != g_mcu1.info.raw)
-			b_ret = true;
-		
-		if(g_mcu1_new.fault_state.raw != g_mcu1.fault_state.raw)
-			b_ret = true;
-		
-		if(b_ret)
-		{
-			g_mcu1 = g_mcu1_new;
-		}
-		
-		return b_ret;
+                                            (msg->data[6] << 16) | (msg->data[7] << 24));
+
+    if (g_mcu1_new.motor_speed_rpm != g_mcu1.motor_speed_rpm)
+        b_ret = true;
+
+    if (g_mcu1_new.info.raw != g_mcu1.info.raw)
+        b_ret = true;
+
+    if (g_mcu1_new.fault_state.raw != g_mcu1.fault_state.raw)
+        b_ret = true;
+
+    if (b_ret)
+    {
+        g_mcu1 = g_mcu1_new;
+    }
+
+    return b_ret;
 }
 
 bool CAN_Parse_MCU_Task_H_002(const CanQueueMsg_t *msg)
 {
-	  bool b_ret = false;
-    if (msg == NULL) return false;
-    if (msg->std_id != 0x171) return false;
-    if (msg->data_len != 8) return false;
+    bool b_ret = false;
+    if (msg == NULL)
+        return false;
+    if (msg->std_id != 0x171)
+        return false;
+    if (msg->data_len != 8)
+        return false;
 
     MCU_Task_H_002_t new_frame;
 
@@ -242,31 +245,31 @@ bool CAN_Parse_MCU_Task_H_002(const CanQueueMsg_t *msg)
     /* 6) Throttle Voltage (Byte7, 0.5V/bit) */
     new_frame.throttle_volt = msg->data[7];
 
-     if(new_frame.mcu_temp != g_mcu2.mcu_temp)
-			  b_ret = true;
-		 
-     if(new_frame.motor_temp != g_mcu2.motor_temp)
-			  b_ret = true;	
+    if (new_frame.mcu_temp != g_mcu2.mcu_temp)
+        b_ret = true;
 
-     if(new_frame.bus_current != g_mcu2.bus_current)
-			  b_ret = true;	
-		 
-     if(new_frame.phase_current != g_mcu2.phase_current)
-			  b_ret = true;	
-		 
-     if(new_frame.bus_voltage != g_mcu2.bus_voltage)
-			  b_ret = true;	
-		 
-     if(new_frame.throttle_volt != g_mcu2.throttle_volt)
-			  b_ret = true;	
-		 
-		if(b_ret)
-		{			
-			/* 更新全局变量 */
-			g_mcu2 = new_frame;
-		}
-		
-		return b_ret;
+    if (new_frame.motor_temp != g_mcu2.motor_temp)
+        b_ret = true;
+
+    if (new_frame.bus_current != g_mcu2.bus_current)
+        b_ret = true;
+
+    if (new_frame.phase_current != g_mcu2.phase_current)
+        b_ret = true;
+
+    if (new_frame.bus_voltage != g_mcu2.bus_voltage)
+        b_ret = true;
+
+    if (new_frame.throttle_volt != g_mcu2.throttle_volt)
+        b_ret = true;
+
+    if (b_ret)
+    {
+        /* 更新全局变量 */
+        g_mcu2 = new_frame;
+    }
+
+    return b_ret;
 }
 
 // -------- Charger --------
@@ -296,7 +299,7 @@ void CAN_Parse_ABS_Task_L_001(const CanQueueMsg_t *msg)
 {
     if (msg->data_len != 8)
         return;
-		
+
     g_abs.abs_state = msg->data[0];
     g_abs.front_speed_rpm = msg->data[1] | (msg->data[2] << 8);
     g_abs.rear_speed_rpm = msg->data[3] | (msg->data[4] << 8);
@@ -332,7 +335,7 @@ void CAN_Parse_EBS_Level(const CanQueueMsg_t *msg)
 // ERROR_CODE_COMMUNICATION_ABNORMALITY = 0X30,                 // 通讯故障
 void CAN_update_vehicle_infor(const CanQueueMsg_t *msg)
 {
- switch (msg->std_id)
+    switch (msg->std_id)
     {
     case CAN_ID_BMS_TASK_H_001:
         break;
@@ -342,32 +345,32 @@ void CAN_update_vehicle_infor(const CanQueueMsg_t *msg)
         break;
     case CAN_ID_VCU_TASK_L_002:
         break;
-		
+
     case CAN_ID_MCU_TASK_H_001:
-			  lt_carinfo_meter.rpm = g_mcu1.motor_speed_rpm;
-			  lt_carinfo_meter.speed_actual = Calculate_Speed_From_RPM(g_mcu1.motor_speed_rpm,lt_carinfo_meter.wheel_diameter,10);
-				lt_carinfo_meter.gear = g_mcu1.info.bits.forwardGear; 
-				lt_carinfo_indicator.brake = g_mcu1.info.bits.brake;
-				lt_carinfo_indicator.cruise_control = g_mcu1.info.bits.cruise;
-				lt_carinfo_battery.rel_charge_state = g_mcu1.info.bits.charge;
-		    lt_carinfo_indicator.drive_mode = g_mcu1.info.bits.workMode;
-		
-		    carinfo_add_error_code(ERROR_CODE_CURRENT_SENSOR_ABNORMALITY,g_mcu1.fault_state.bits.overCurrent,false);
-		    carinfo_add_error_code(ERROR_CODE_OVER_VOLTAGE_PROTECTION,g_mcu1.fault_state.bits.overVoltage,false);
-		    carinfo_add_error_code(ERROR_CODE_LOW_VOLTAGE_PROTECTION,g_mcu1.fault_state.bits.underVoltage,false);
-		
-		    carinfo_add_error_code(ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY,g_mcu1.fault_state.bits.throttleFault,false);
-		    carinfo_add_error_code(ERROR_CODE_MOTOR_ABNORMALITY,g_mcu1.fault_state.bits.pLockFault,false);
-		    carinfo_add_error_code(ERROR_CODE_HALLSENSOR_ABNORMALITY,g_mcu1.fault_state.bits.motorHallFault,false);
-		    carinfo_add_error_code(ERROR_CODE_CONTROLLER_ABNORMALITY,g_mcu1.fault_state.bits.angleFault,false);
-		    carinfo_add_error_code(ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY,g_mcu1.fault_state.bits.motorOverTemp1,false);
-		    carinfo_add_error_code(ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY,g_mcu1.fault_state.bits.motorOverTemp2,true);
+        lt_carinfo_meter.rpm = g_mcu1.motor_speed_rpm;
+        lt_carinfo_meter.speed_actual = Calculate_Speed_From_RPM(g_mcu1.motor_speed_rpm, lt_carinfo_meter.wheel_diameter, 10);
+        lt_carinfo_meter.gear = g_mcu1.info.bits.forwardGear;
+        lt_carinfo_indicator.brake = g_mcu1.info.bits.brake;
+        lt_carinfo_indicator.cruise_control = g_mcu1.info.bits.cruise;
+        lt_carinfo_battery.rel_charge_state = g_mcu1.info.bits.charge;
+        lt_carinfo_indicator.drive_mode = g_mcu1.info.bits.workMode;
+
+        carinfo_add_error_code(ERROR_CODE_CURRENT_SENSOR_ABNORMALITY, g_mcu1.fault_state.bits.overCurrent, false);
+        carinfo_add_error_code(ERROR_CODE_OVER_VOLTAGE_PROTECTION, g_mcu1.fault_state.bits.overVoltage, false);
+        carinfo_add_error_code(ERROR_CODE_LOW_VOLTAGE_PROTECTION, g_mcu1.fault_state.bits.underVoltage, false);
+
+        carinfo_add_error_code(ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY, g_mcu1.fault_state.bits.throttleFault, false);
+        carinfo_add_error_code(ERROR_CODE_MOTOR_ABNORMALITY, g_mcu1.fault_state.bits.pLockFault, false);
+        carinfo_add_error_code(ERROR_CODE_HALLSENSOR_ABNORMALITY, g_mcu1.fault_state.bits.motorHallFault, false);
+        carinfo_add_error_code(ERROR_CODE_CONTROLLER_ABNORMALITY, g_mcu1.fault_state.bits.angleFault, false);
+        carinfo_add_error_code(ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY, g_mcu1.fault_state.bits.motorOverTemp1, false);
+        carinfo_add_error_code(ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY, g_mcu1.fault_state.bits.motorOverTemp2, true);
         break;
-		
+
     case CAN_ID_MCU_TASK_H_002:
-				lt_carinfo_battery.current = g_mcu2.bus_current;
-				lt_carinfo_battery.voltage = g_mcu2.bus_voltage;
-		    send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, FRAME_CMD_CARINFOR_BATTERY);
+        lt_carinfo_battery.current = g_mcu2.bus_current;
+        lt_carinfo_battery.voltage = g_mcu2.bus_voltage;
+        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, FRAME_CMD_CARINFOR_BATTERY);
         break;
 
     case CAN_ID_CHARGER_TASK_L_001:
@@ -380,7 +383,7 @@ void CAN_update_vehicle_infor(const CanQueueMsg_t *msg)
         break;
     default:
         break; // unknown ID
-    }	
+    }
 }
 
 // 根据电机转速和轮胎直径计算速度 (km/h)
@@ -393,7 +396,7 @@ float Calculate_Speed_From_RPM(uint16_t rpm, uint16_t tire_diameter_mm, uint8_t 
     float wheel_rpm = (float)rpm / (float)gear_ratio;
 
     // 计算车速 km/h
-    float speed_kmh = wheel_rpm * D_m * (float)PI_FLOAT * 0.06f;  // 0.06 = (60/1000)*3.6
+    float speed_kmh = wheel_rpm * D_m * (float)PI_FLOAT * 0.06f; // 0.06 = (60/1000)*3.6
 
     return speed_kmh;
 }

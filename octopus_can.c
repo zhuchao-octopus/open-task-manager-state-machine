@@ -2,7 +2,7 @@
 // Description: Implementation for CAN data dispatching and parsing logic
 // Author: ak47
 // Created: 2025-04-17
-#include "octopus_base.h" //  Base include file for the Octopus project.
+
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_vehicle.h"
 #include "octopus_gpio.h"

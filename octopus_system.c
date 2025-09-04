@@ -554,7 +554,7 @@ void system_mcu_init_remote_soc(void)
 void system_soc_request_mata_infor(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
-    if (GetTickCounter(&l_t_msg_mcu_meta_wait_timer) > 60000)
+    if (GetTickCounter(&l_t_msg_mcu_meta_wait_timer) >= 15000)
     {
         if (!flash_is_meta_infor_valid())
         {

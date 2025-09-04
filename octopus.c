@@ -100,6 +100,7 @@ void TaskManagerStateMachineInit(void)
 #ifdef PLATFORM_CST_OSAL_RTOS
     TaskManagerStateMachine_Id_ = task_id; // Store the task ID in the global variable
 #endif
+	LOG_NONE("\r\n");
     /// LOG_NONE("\r\n\r\n");//[1B blob data]
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     /// LOG_NONE("\r\n######################################BOOT  START######################################\r\n");
@@ -107,6 +108,7 @@ void TaskManagerStateMachineInit(void)
 #endif
     char version_str[32];
     flash_decode_active_version(version_str, sizeof(version_str));
+	  
     LOG_LEVEL("OTMS task_id :%02x initializing...\r\n", TaskManagerStateMachine_Id_);
     LOG_LEVEL("OTMS version :%s \r\n", version_str);
 
@@ -135,7 +137,9 @@ void TaskManagerStateMachineInit(void)
     otms_task_manager_start(); // Start the task manager
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     otsm_ptl_help();
+	#ifdef TASK_MANAGER_STATE_MACHINE_UPF
     otsm_upf_help();
+	#endif
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // Nofify Initialize complete
 #if defined(TASK_MANAGER_STATE_MACHINE_SOC) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)

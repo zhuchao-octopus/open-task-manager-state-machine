@@ -3,18 +3,11 @@
 #include "octopus_platform.h"
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-#include <string.h>	  // Include string functions for string manipulation
-#include "hk32l0xx.h" // Include the HK32L0xx library for MCU-specific definitions and functions
-
-#include "octopus_bsp.h"
-
 #include "octopus_uart_hal.h"
-#include "octopus_log.h"
-#include "octopus_gpio_hal.h"
-#include "octopus_system.h"
-#include "octopus_flash.h"
-#include "octopus_uart_upf.h"
-
+#include "octopus_ling_hui_liion2.h"
+#include "octopus_4g.h"
+#include "octopus_bt.h"
+#include "octopus_bafang.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -171,7 +164,7 @@ void SysTick_Handler(void)
 __weak void UART1_RX_Callback(uint8_t *buffer, uint16_t length) ///////BT
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
-	upf_receive_callback(UPF_MODULE_BT, buffer, length);
+	upf_receive_callback(upf_module_info_BT_MUSIC, buffer, length);
 #endif
 }
 
@@ -195,8 +188,8 @@ __weak void UART3_RX_Callback(uint8_t *buffer, uint16_t length)
 __weak void UART4_RX_Callback(uint8_t *buffer, uint16_t length)
 {
 	// UART4_Send_Buffer(buffer,length);
-#ifdef TASK_MANAGER_STATE_MACHINE_4G
-	upf_receive_callback(UPF_MODULE_LOT4G, buffer, length);
+#ifdef TASK_MANAGER_STATE_MACHINE_LOT4G
+	upf_receive_callback(upf_module_info_LOT4G, buffer, length);
 #endif
 }
 
@@ -207,11 +200,11 @@ __weak void LPUART_RX_Callback(uint8_t *buffer, uint16_t length)
 	/// LPUART_Send_Buffer(buffer,length);
 	/// UART1_Send_Buffer(buffer,length);
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
-	upf_receive_callback(UPF_MODULE_BAFANG, buffer, length);
+	upf_receive_callback(upf_module_info_BAFANG, buffer, length);
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
-	upf_receive_callback(UPF_MODULE_LING_HUI_LIION2, buffer, length);
+	upf_receive_callback(upf_module_info_LING_HUI_LIION2, buffer, length);
 #endif
 }
 

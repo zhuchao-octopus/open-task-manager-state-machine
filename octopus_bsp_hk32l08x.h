@@ -18,17 +18,13 @@
 #ifndef __OCTOPUS_TASK_MANAGER_BSP_H__
 #define __OCTOPUS_TASK_MANAGER_BSP_H__
 
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_can.h"
-
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
 #include <stddef.h> // Standard definitions for NULL and size_t
 #include <stdint.h> // Standard integer type definitions
+
+#include "octopus_can.h"
 #include "hk32l0xx.h"
 #include "hk32l0xx_eeprom.h"
 
-// #define UART2_DMA_MODE
-// #define UART3_DMA_MODE
 
 #ifdef __cplusplus
 extern "C"
@@ -74,7 +70,6 @@ extern "C"
   void native_enter_sleep_mode(void);
 
   void PTL_1_UART_Send_Buffer(const uint8_t *buffer, uint16_t length);
-  // void upf_UART_Send_Buffer(const uint8_t *buffer, uint16_t length);
 
   CAN_Status_t CAN_Send_Data(uint32_t id, uint8_t ide, const uint8_t *buffer, uint8_t length);
 
@@ -82,5 +77,4 @@ extern "C"
 }
 #endif
 
-#endif
 #endif

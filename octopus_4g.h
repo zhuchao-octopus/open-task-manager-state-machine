@@ -22,12 +22,11 @@
  * Include necessary headers for BLE management.
  *******************************************************************************/
 #include "octopus_base.h" //  Base include file for the Octopus project.
-#include "octopus_system.h"
-
+#include "octopus_uart_upf.h" // Include UART protocol header
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
-#ifdef TASK_MANAGER_STATE_MACHINE_4G
+#ifdef TASK_MANAGER_STATE_MACHINE_LOT4G
 /*******************************************************************************
  * MACROS
  * Define commonly used macros for this module.
@@ -78,6 +77,8 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+extern upf_module_t upf_module_info_LOT4G;
 
 #endif
 

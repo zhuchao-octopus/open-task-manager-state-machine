@@ -3,8 +3,13 @@
  * INCLUDES
  */
 #include "octopus_ling_hui_liion2.h"
-#include "octopus_uart_hal.h"
-#include "octopus_uart_upf.h" // Include UART protocol header
+#include "octopus_task_manager.h"   // Task Manager: handles scheduling and execution of system tasks
+#include "octopus_tickcounter.h"    // Tick Counter: provides timing and delay utilities
+#include "octopus_message.h"        // Message IDs: defines identifiers for inter-task communication
+#include "octopus_msgqueue.h"       // Message Queue: API for sending/receiving messages between tasks
+#include "octopus_uart_ptl.h"       // UART Protocol Layer: handles protocol-level UART operations
+#include "octopus_uart_upf.h"       // UART Packet Framework: low-level UART packet processing
+
 #include "octopus_vehicle.h"
 
 /*******************************************************************************
@@ -41,7 +46,7 @@ void lhl2_ptl_test_carinfo_indicator(void);
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-upf_module_t upf_module_info_LING_HUI_LIION2 = {UPF_MODULE_NUMBER_LING_HUI_LIION2, UPF_CHANNEL_8, UPF_CHANNEL_TYPE_BYTE};
+upf_module_t upf_module_info_LING_HUI_LIION2 = {UPF_MODULE_ID_LING_HUI_LIION2, UPF_CHANNEL_8, UPF_CHANNEL_TYPE_BYTE};
 /*******************************************************************************
  * STATIC VARIABLES
  */

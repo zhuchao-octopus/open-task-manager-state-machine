@@ -196,8 +196,8 @@ __weak void UART3_RX_Callback(uint8_t *buffer, uint16_t length)
 __weak void UART4_RX_Callback(uint8_t *buffer, uint16_t length)
 {
 	// UART4_Send_Buffer(buffer,length);
-#ifdef TASK_MANAGER_STATE_MACHINE_4G
-	upf_receive_callback(UPF_MODULE_LOT4G, buffer, length);
+#ifdef TASK_MANAGER_STATE_MACHINE_LOT4G
+	upf_receive_callback(upf_module_info_LOT4G, buffer, length);
 #endif
 }
 
@@ -1601,6 +1601,7 @@ void ADC_DMA_Config(void)
     ADC_StartOfConversion(ADC);
 }
 #endif
+
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
 /////////////////////////////////////////////////////////////////////////////
 void CAN_Config(void)
@@ -1614,7 +1615,7 @@ void CAN_Config(void)
 
 	/* Enable GPIO clock */
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-#if 1
+#ifdef HK_DEMO_BORAD_TEST
 	/* Connect CAN pins to AF4 */
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource11, GPIO_AF_4);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource12, GPIO_AF_4);
@@ -1623,8 +1624,8 @@ void CAN_Config(void)
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 | GPIO_Pin_12;
 #else
 	/* Connect CAN pins to AF4 */
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_4);
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_4);
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_3);
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_3);
 
 	/* Configure CAN RX and TX pins */
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
@@ -1633,7 +1634,7 @@ void CAN_Config(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	/* NVIC configuration *******************************************************/
 	NVIC_InitStructure.NVIC_IRQChannel = LCD_CAN_IRQn;
