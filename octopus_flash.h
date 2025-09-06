@@ -249,6 +249,7 @@ extern "C"
 
     bool flash_decode_active_version(uint8_t bank_slot, char *out_str, size_t max_len, const char *date_str, const char *time_str);
     bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);
+    void flash_print_mcu_meta_infor(void);
     bool flash_is_meta_infor_valid(void);
     bool flash_is_allow_update_bank(uint8_t bank_type);
     const char *flash_get_current_bank_name(void);

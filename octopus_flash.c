@@ -462,7 +462,7 @@ bool flash_is_meta_infor_valid(void)
 		return false;
 	else if ((flash_meta_infor.slot_a_addr == 0) || (flash_meta_infor.slot_b_addr == 0))
 		return false;
-	else if ((flash_get_current_bank() != BANK_SLOT_A) && (flash_get_current_bank() != BANK_SLOT_A))
+	else if ((flash_get_current_bank() != BANK_SLOT_A) && (flash_get_current_bank() != BANK_SLOT_B))
 		return false;
 	else
 		return true;

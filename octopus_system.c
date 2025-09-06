@@ -301,8 +301,9 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             if (payload->data_len >= sizeof(flash_meta_infor_t))
             {
                 memcpy(&flash_meta_infor, payload->data, sizeof(flash_meta_infor_t));
-                LOG_LEVEL("FRAME_CMD_SYSTEM_MCU_META size=%d flash_meta_infor.bank_slot_activated=%d \r\n",
-                          flash_meta_infor.bank_slot_activated, sizeof(flash_meta_infor_t));
+                LOG_LEVEL("FRAME_CMD_SYSTEM_MCU_META mata size=%d bank_slot_activated=%d \r\n",
+                          sizeof(flash_meta_infor_t), flash_meta_infor.bank_slot_activated);
+
                 send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_VERSION, 0);
             }
             else
@@ -351,7 +352,7 @@ void system_event_handler(void)
             lt_mb_state = MB_POWER_ST_BOOTING;
             StartTickCounter(&l_t_msg_booting_wait_timer);
             otms_task_manager_start();
-            system_gpio_power_onoff(true);
+            system_power_onoff(true);
             StopTickCounter(&l_t_msg_lowpower_wait_timer);
         }
     }
@@ -536,7 +537,7 @@ bool system_is_power_on(void)
 void system_mcu_initate_remote_soc(void)
 {
     // after got handshake then send indicate respond by message
-    LOG_LEVEL("System init remote soc...\r\n");
+    LOG_LEVEL("System initate remote soc...\r\n");
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, 0);
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
@@ -549,6 +550,7 @@ void system_soc_request_mata_infor(void)
     {
         if (!flash_is_meta_infor_valid())
         {
+            flash_print_mcu_meta_infor();
             send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
             StartTickCounter(&l_t_msg_mcu_meta_wait_timer);
         }
