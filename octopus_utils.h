@@ -131,8 +131,8 @@ extern "C"
 								 uint8_t *hour, uint8_t *minute,
 								 uint8_t *version_code);
 
-	void build_version_string(char *out_str, size_t max_len, const char *date_str,const char *time_str);
-	uint32_t build_version_code( const char *date_str,const char *time_str);
+	void build_version_string(char *out_str, size_t max_len, const char *date_str, const char *time_str);
+	uint32_t build_version_code(const char *date_str, const char *time_str);
 	int32_t compare_versions(uint32_t v1, uint32_t v2);
 	bool is_version_code_valid(uint32_t version_code);
 

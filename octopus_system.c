@@ -45,10 +45,9 @@ static bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, ui
 static bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
 void system_event_handler(void);
-void system_power_on_off(bool onoff);
-void system_gpio_power_onoff(bool onoff);
-void system_power_onoff_auto(void);
-void system_mcu_init_remote_soc(void);
+void system_power_onoff(bool onoff);
+bool system_is_power_on(void);
+void system_mcu_initate_remote_soc(void);
 void system_soc_request_mata_infor(void);
 /*******************************************************************************
  * Global Variables
@@ -64,6 +63,7 @@ static uint8_t l_u8_mpu_status = 0;               // Tracks the status of the MP
 static uint8_t l_u8_power_off_req = 0;            // Tracks if a power-off request is pending
 static uint32_t l_t_msg_wait_10_timer;            // Timer for 10 ms message waiting period
 static uint32_t l_t_msg_lowpower_wait_timer;
+
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
 static uint32_t l_t_msg_booting_wait_timer;
 #endif
@@ -199,7 +199,6 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         default:
             break;
         }
-
         return false;
     }
 
@@ -256,7 +255,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         {
         case FRAME_CMD_SYSTEM_HANDSHAKE:
             LOG_LEVEL("Handshake from soc payload->frame_type=%02x\r\n", payload->frame_type);
-            system_mcu_init_remote_soc();
+            system_mcu_initate_remote_soc();
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ackbuff);
             return true;
 
@@ -266,10 +265,10 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             return true;
 
         case MSG_OTSM_CMD_BLE_CONNECTED:
-            if (!gpio_is_power_on())
+            if (!system_is_power_on())
             {
                 LOG_LEVEL("Got MSG_OTSM_CMD_BLE_CONNECTED prameter=%02x\r\n", payload->data[0]);
-                system_gpio_power_onoff(true);
+                system_power_onoff(true);
             }
             break;
         case MSG_OTSM_CMD_BLE_DISCONNECTED:
@@ -277,9 +276,10 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             LOG_LEVEL("Got MSG_OTSM_CMD_BLE_DISCONNECTED prameter=%02x\r\n", payload->data[1]);
             if (payload->data[1] == FRAME_CMD_SYSTEM_POWER_OFF)
             {
-                system_gpio_power_onoff(false);
+                system_power_onoff(false);
             }
             break;
+
         default:
             break;
         }
@@ -301,8 +301,9 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             if (payload->data_len >= sizeof(flash_meta_infor_t))
             {
                 memcpy(&flash_meta_infor, payload->data, sizeof(flash_meta_infor_t));
-                LOG_LEVEL("FRAME_CMD_SYSTEM_MCU_META size=%d flash_meta_infor.bank_slot_activated=%d \r\n",
-                          flash_meta_infor.bank_slot_activated, sizeof(flash_meta_infor_t));
+                LOG_LEVEL("FRAME_CMD_SYSTEM_MCU_META mata size=%d bank_slot_activated=%d \r\n",
+                          sizeof(flash_meta_infor_t), flash_meta_infor.bank_slot_activated);
+
                 send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_VERSION, 0);
             }
             else
@@ -351,7 +352,7 @@ void system_event_handler(void)
             lt_mb_state = MB_POWER_ST_BOOTING;
             StartTickCounter(&l_t_msg_booting_wait_timer);
             otms_task_manager_start();
-            system_gpio_power_onoff(true);
+            system_power_onoff(true);
             StopTickCounter(&l_t_msg_lowpower_wait_timer);
         }
     }
@@ -375,9 +376,9 @@ void system_event_handler(void)
     case MSG_OTSM_DEVICE_POWER_EVENT:
         LOG_LEVEL("Got Event MSG_DEVICE_POWER_EVENT\r\n");
         if (msg->param1 == FRAME_CMD_SYSTEM_POWER_ON)
-            system_gpio_power_onoff(true);
+            system_power_onoff(true);
         else if (msg->param1 == FRAME_CMD_SYSTEM_POWER_OFF)
-            system_gpio_power_onoff(false);
+            system_power_onoff(false);
         break;
 
     case MSG_OTSM_DEVICE_BLE_EVENT:
@@ -473,7 +474,7 @@ void system_set_mb_state(mb_state_t status)
     lt_mb_state = status;
 }
 
-void system_reboot_system(void)
+void system_reboot_soc(void)
 {
     LOG_LEVEL("System is rebooting...\n");
     int result = -1;
@@ -492,20 +493,9 @@ void system_reboot_system(void)
     }
 }
 
-/**
- * @brief Handles the system power on/off state.
- *
- * Logs the power state and updates GPIO pins accordingly.
- *
- * @param onoff Boolean indicating power state (true for on, false for off).
- */
-void system_power_on_off(bool onoff)
+void system_power_onoff(bool onoff)
 {
-    system_reboot_system();
-}
-
-void system_gpio_power_onoff(bool onoff)
-{
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     if (onoff)
     {
         // send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_ON, 0);
@@ -532,20 +522,22 @@ void system_gpio_power_onoff(bool onoff)
             StartTickCounter(&l_t_msg_lowpower_wait_timer); // time out goto sleep
         }
     }
+#endif
 }
 
-void system_power_onoff_auto(void)
+bool system_is_power_on(void)
 {
-    if (gpio_is_power_on())
-        system_gpio_power_onoff(false);
-    else
-        system_gpio_power_onoff(true);
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
+    return gpio_is_power_on();
+#else
+    return true;
+#endif
 }
 
-void system_mcu_init_remote_soc(void)
+void system_mcu_initate_remote_soc(void)
 {
     // after got handshake then send indicate respond by message
-    LOG_LEVEL("System init remote soc...\r\n");
+    LOG_LEVEL("System initate remote soc...\r\n");
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, 0);
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
@@ -558,6 +550,7 @@ void system_soc_request_mata_infor(void)
     {
         if (!flash_is_meta_infor_valid())
         {
+            flash_print_mcu_meta_infor();
             send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
             StartTickCounter(&l_t_msg_mcu_meta_wait_timer);
         }

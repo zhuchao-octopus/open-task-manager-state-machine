@@ -100,7 +100,7 @@ void TaskManagerStateMachineInit(void)
 #ifdef PLATFORM_CST_OSAL_RTOS
     TaskManagerStateMachine_Id_ = task_id; // Store the task ID in the global variable
 #endif
-	  LOG_NONE("\r\n");
+	LOG_NONE("\r\n");
     /// LOG_NONE("\r\n\r\n");//[1B blob data]
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     /// LOG_NONE("\r\n######################################BOOT  START######################################\r\n");

@@ -100,6 +100,8 @@
 #define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A /**< Select Flash bank slot */
 #elif defined(TARGET_BANK_SLOT_B)
 #define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_B /**< Select Flash bank slot */
+#else
+#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_INVALID /**< Select Flash bank slot */
 #endif
 
 
