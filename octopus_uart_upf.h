@@ -135,15 +135,18 @@ extern "C"
 	void task_upf_post_running(void);
 	void task_upf_stop_running(void);
 
-	void upf_module_info_init(upf_module_info_t *array, uint16_t length);
+	//void upf_module_info_init(upf_module_info_t *array, uint16_t length);
 	void upf_register_module(upf_module_t upf_module, upf_module_receive_handler_t receive_handler);
 	void upf_receive_callback(upf_module_t upf_module, const uint8_t *buffer, uint16_t length);
 	void upf_send_buffer(upf_module_t upf_module, const uint8_t *buffer, uint16_t length);
 	void upf_print_registered_module(void);
+
+  void otsm_upf_init(upf_module_info_t *array, uint16_t length);
 	void otsm_upf_help(void);
 
 #ifdef __cplusplus
 }
 #endif
 
+extern upf_module_info_t upf_module_array[];
 #endif /* __OCTOPUS_TASK_MANAGER_PTL_H__ */

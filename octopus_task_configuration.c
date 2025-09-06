@@ -262,7 +262,7 @@ const otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
  *   - All modules must be initialized before use to ensure proper operation.
  */
 #ifdef TASK_MANAGER_STATE_MACHINE_UPF
-upf_module_info_t upf_module_info[_UPF_MODULE_MAX_];
+upf_module_info_t upf_module_array[_UPF_MODULE_MAX_];
 #endif
 
 

@@ -94,7 +94,7 @@ static bool can_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
 void can_message_receiver(const CAN_Message_t *message)
 {
   // Example: Check message ID and parse accordingly
-  // LOG_BUFF_LEVEL((const uint8_t *)message, sizeof(CAN_Message_t));
+   LOG_BUFF_LEVEL((const uint8_t *)message, sizeof(CAN_Message_t));
   // LOG_BUFF_LEVEL((const uint8_t *)&message->Data,message->DLC);
   CanQueue_Push(&can_rx_msg_queue, 1, message->StdId, message->Data, message->DLC);
 }
@@ -116,8 +116,9 @@ void can_tx_message_event_handler(void)
 {
 	if (GetTickCounter(&l_t_msg_wait_tx_timer) >= 1000)
 	{
-     //can_message_sender(CAN_ID_BMS_TASK_H_001);
+     can_message_sender(CAN_ID_BMS_TASK_H_001);
 		 StartTickCounter(&l_t_msg_wait_tx_timer);
+		 //StopTickCounter(&l_t_msg_wait_tx_timer);
 	}
 }
 

@@ -2,6 +2,7 @@
 #ifndef __OCTOPUS_CAN_FUNCTION_2E006__
 #define __OCTOPUS_CAN_FUNCTION_2E006__
 
+#ifdef TASK_MANAGER_STATE_MACHINE_CAN
 #include "octopus_base.h" //  Base include file for the Octopus project.
 #include "octopus_can_queue.h"
 #include "octopus_tickcounter.h"
@@ -256,4 +257,6 @@ void CAN_Parse_EBS_Level(const CanQueueMsg_t *msg);
  */
 void can_message_dispatcher(const CanQueueMsg_t *queue_msg);
 void can_message_sender(const uint16_t message_id);
-#endif //__OCTOPUS_CAN_FUNCTION__
+
+#endif
+#endif //__OCTOPUS_CAN_FUNCTION_2E006__

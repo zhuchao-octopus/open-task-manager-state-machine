@@ -338,7 +338,6 @@ void GPIO_Config(void)
 	GPIO_PinAFConfig(LPUARTx_TXIO_PORT, LPUARTx_AF_TX_PIN, LPUARTx_AF_SELECT);
 	GPIO_PinAFConfig(LPUARTx_RXIO_PORT, LPUARTx_AF_RX_PIN, LPUARTx_AF_SELECT);
 
-
 	///////////////////////////////////////////////////////////////////////////
 	// CAN Bus Configuration: PA6 (CAN_RX), PA7 (CAN_TX)
 	///////////////////////////////////////////////////////////////////////////
@@ -375,6 +374,9 @@ void GPIO_Config(void)
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	// hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
 
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	///////////////////////////////////////////////////////////////////////////
 	// BL_EN_PWM1 (PB1): Backlight enable or PWM control
 	// NOTE: If using PWM, reconfigure as alternate function and assign TIMx
@@ -1610,31 +1612,29 @@ void CAN_Config(void)
 	NVIC_InitTypeDef NVIC_InitStructure;
 	CAN_InitTypeDef CAN_InitStructure;
 	CAN_FilterInitTypeDef CAN_FilterInitStructure;
-
-	/* CAN GPIOs configuration **************************************************/
-
 	/* Enable GPIO clock */
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-#ifdef HK_DEMO_BORAD_TEST
+
+	/* CAN GPIOs configuration **************************************************/
+	/* Connect CAN pins to AF4 */
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_4);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_4);
+	/* Configure CAN RX and TX pins */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+
+#if 0 //def HK_DEMO_BORAD_TEST
 	/* Connect CAN pins to AF4 */
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource11, GPIO_AF_4);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource12, GPIO_AF_4);
-
 	/* Configure CAN RX and TX pins */
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 | GPIO_Pin_12;
-#else
-	/* Connect CAN pins to AF4 */
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_3);
-	GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_3);
-
-	/* Configure CAN RX and TX pins */
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
 #endif
+
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	/* NVIC configuration *******************************************************/
 	NVIC_InitStructure.NVIC_IRQChannel = LCD_CAN_IRQn;
@@ -1760,7 +1760,7 @@ CAN_Status_t CAN_Send_Data(uint32_t id, uint8_t ide, const uint8_t *buffer, uint
 
 	// 发送
 	uint8_t mailbox = CAN_Transmit(&CanTxMessage);
-	if (mailbox > 2)
+	if (mailbox >= CAN_TxStatus_NoMailBox)
 	{ // 假设只有三个邮箱 0~2
 		return CAN_ERR_TRANSMIT;
 	}

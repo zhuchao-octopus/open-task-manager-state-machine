@@ -261,7 +261,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             return true;
 
         case FRAME_CMD_SYSTEM_MCU_META:
-            LOG_LEVEL("Send mcu meta information. flash_meta_infor.bank_slot_activated=%d\r\n", flash_meta_infor.bank_slot_activated);
+            LOG_LEVEL("Send mcu meta information,flash_meta_infor.bank_slot_activated=%d\r\n", flash_meta_infor.bank_slot_activated);
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ackbuff);
             return true;
 
@@ -545,7 +545,7 @@ void system_power_onoff_auto(void)
 void system_mcu_init_remote_soc(void)
 {
     // after got handshake then send indicate respond by message
-    LOG_LEVEL("system_init_remote_soc...\r\n");
+    LOG_LEVEL("System init remote soc...\r\n");
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, 0);
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);

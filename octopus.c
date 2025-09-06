@@ -100,17 +100,17 @@ void TaskManagerStateMachineInit(void)
 #ifdef PLATFORM_CST_OSAL_RTOS
     TaskManagerStateMachine_Id_ = task_id; // Store the task ID in the global variable
 #endif
-	LOG_NONE("\r\n");
+	  LOG_NONE("\r\n");
     /// LOG_NONE("\r\n\r\n");//[1B blob data]
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     /// LOG_NONE("\r\n######################################BOOT  START######################################\r\n");
     TaskManagerStateStopRunning();
 #endif
     char version_str[32];
-    flash_decode_active_version(version_str, sizeof(version_str));
+    flash_decode_active_version(FLASH_BANK_CONFIG_MODE_SLOT, version_str, sizeof(version_str),__DATE__, __TIME__);
 	  
-    LOG_LEVEL("OTMS task_id :%02x initializing...\r\n", TaskManagerStateMachine_Id_);
-    LOG_LEVEL("OTMS version :%s \r\n", version_str);
+    LOG_LEVEL("OTMS initializing  :%02x\r\n", TaskManagerStateMachine_Id_);
+    LOG_LEVEL("OTMS version       :%s \r\n", version_str);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Initialize hardware abstraction layers (HAL)
@@ -126,6 +126,9 @@ void TaskManagerStateMachineInit(void)
 #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_BMS
     otsm_bms_init();
+#endif
+#ifdef TASK_MANAGER_STATE_MACHINE_UPF
+    otsm_upf_init(upf_module_array,_UPF_MODULE_MAX_);
 #endif
     otsm_uart_init(); // Initialize UART communication protocol
     /////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -123,6 +123,7 @@ static void task_key_action_handler(void)
     if (msg->msg_id == NO_MSG)
         return;
 
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     uint16_t key = msg->param1;
     GPIO_KEY_STATUS *key_status = NULL;
     GPIO_STATUS *gpio_status = NULL;
@@ -146,11 +147,11 @@ static void task_key_action_handler(void)
         // LOG_LEVEL("key %d pressed key_status=%d\r\n",key,msg->param2);
         switch (key)
         {
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+
         case OCTOPUS_KEY_POWER:
             task_key_power_handler(key_status);
             break;
-#endif
+
         case OCTOPUS_KEY_PLUS:
         case OCTOPUS_KEY_SUBT:
         default:
@@ -165,11 +166,11 @@ static void task_key_action_handler(void)
         // LOG_LEVEL("key %d release key_status=%d\r\n",key,msg->param2);
         switch (key)
         {
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+
         case OCTOPUS_KEY_POWER:
             task_key_power_handler(key_status);
             break;
-#endif
+
         case OCTOPUS_KEY_PLUS:
         case OCTOPUS_KEY_SUBT:
         default:
@@ -178,11 +179,12 @@ static void task_key_action_handler(void)
         }
         break;
     }
+#endif
 }
 
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
 void task_key_power_handler(GPIO_KEY_STATUS *key_status)
 {
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     static uint32_t power_key_wait_timer;
     if (key_status == NULL)
         return;
@@ -247,8 +249,8 @@ void task_key_power_handler(GPIO_KEY_STATUS *key_status)
         power_key_password_index = 0;
         break;
     }
-}
 #endif
+}
 
 void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status)
 {

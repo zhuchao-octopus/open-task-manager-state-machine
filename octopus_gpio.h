@@ -13,7 +13,7 @@
 
 #include "octopus_base.h"     //  Base include file for the Octopus project.
 #include "octopus_gpio_hal.h" // Include GPIO HAL for hardware-specific functionality
-#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
+
 /******************************************************************************/
 /**
  * @brief    GPIO status redundancy macros.
@@ -69,6 +69,10 @@ typedef struct
   uint32_t count2; ///< Another counter used for tracking GPIO events.
 } GPIO_STATUS;
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
 /*******************************************************************************
  * @brief    Function declarations for managing GPIO tasks.
  * @details  These functions are used to initialize, start, and manage GPIO-related
