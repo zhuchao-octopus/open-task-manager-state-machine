@@ -1614,7 +1614,7 @@ void CAN_Config(void)
 	CAN_FilterInitTypeDef CAN_FilterInitStructure;
 	/* Enable GPIO clock */
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-
+    memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
 	/* CAN GPIOs configuration **************************************************/
 	/* Connect CAN pins to AF4 */
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_4);
@@ -1687,8 +1687,14 @@ void CAN_Config(void)
 	CAN_FilterInitStructure.CAN_FilterActivation = ENABLE;
 	CAN_FilterInit(&CAN_FilterInitStructure);
 
-	/* Enable FIFO 0 message pending Interrupt */
-	CAN_ITConfig(CAN_IT_FMP0, ENABLE);
+	/* Enable FIFO 0 full Interrupt */
+	CAN_ITConfig(CAN_IT_FF0, ENABLE);
+
+	/* Enable FIFO 1 full Interrupt */
+	CAN_ITConfig(CAN_IT_FF1, ENABLE);	
+	
+	//uint8_t TxMessages[8] = { 0, 1, 2, 3, 4, 5, 6, 7};
+	//CAN_Send_Data(0,CAN_ID_STD,TxMessages,8);	
 }
 
 /**

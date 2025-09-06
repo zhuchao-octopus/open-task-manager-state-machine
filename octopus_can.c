@@ -117,7 +117,7 @@ void can_tx_message_event_handler(void)
 	if (GetTickCounter(&l_t_msg_wait_tx_timer) >= 1000)
 	{
      can_message_sender(CAN_ID_BMS_TASK_H_001);
-		 StartTickCounter(&l_t_msg_wait_tx_timer);
+	 StartTickCounter(&l_t_msg_wait_tx_timer);
 		 //StopTickCounter(&l_t_msg_wait_tx_timer);
 	}
 }

@@ -480,4 +480,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
         break;
     }
 }
+#else
+GPIO_STATUS *gpio_array[] = {NULL};
+GPIO_KEY_STATUS *gpio_key_array[] = {NULL};
 #endif

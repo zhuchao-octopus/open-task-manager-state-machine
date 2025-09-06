@@ -73,9 +73,9 @@
 #define TASK_MANAGER_STATE_MACHINE_UPF       1   /**< UART Packet Framework */
 #define TASK_MANAGER_STATE_MACHINE_IPC 1 /**< Inter-process communication */
 
-//#define TASK_MANAGER_STATE_MACHINE_CAN       1   /**< CAN bus protocol */
+#define TASK_MANAGER_STATE_MACHINE_CAN       1   /**< CAN bus protocol */
 //#define TASK_MANAGER_STATE_MACHINE_BAFANG    1   /**< Bafang system support */
-#define TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2 1 /**< Ling Hui battery */
+//#define TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2 1 /**< Ling Hui battery */
 
 //#define TASK_MANAGER_STATE_MACHINE_LOT4G        1   /**< 4G module handler */
 //#define TASK_MANAGER_STATE_MACHINE_BT_MUSIC     1   /**< Classic Bluetooth */
@@ -84,7 +84,7 @@
 // #define TASK_MANAGER_STATE_MACHINE_BLE       1   /**< Bluetooth Low Energy */
 // #define TASK_MANAGER_STATE_MACHINE_BMS       1   /**< Battery Management System */
 
-
+#define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 3
 ///////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------//
 //                             FLASH CONFIGURATION                              //

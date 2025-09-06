@@ -2,12 +2,13 @@
 #ifndef __OCTOPUS_CAN_FUNCTION_2E006__
 #define __OCTOPUS_CAN_FUNCTION_2E006__
 
-#ifdef TASK_MANAGER_STATE_MACHINE_CAN
+
 #include "octopus_base.h" //  Base include file for the Octopus project.
 #include "octopus_can_queue.h"
 #include "octopus_tickcounter.h"
 #include "octopus_vehicle.h"
 
+#ifdef TASK_MANAGER_STATE_MACHINE_CAN
 // -------- BMS --------
 #pragma pack(push, 1)
 typedef struct
