@@ -781,17 +781,18 @@ static void update_state_process(void)
 		if (lt_mcu_program_buf.bank_slot == BANK_SLOT_A)
 		{
 			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_a_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
-			LOG_LEVEL("It took %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
+			LOG_LEVEL("Task finished, time taken: %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
 
 			flash_save_app_meter_infor();
-			/////JumpToApplication(flash_meta_infor.slot_a_addr);
+			/////JumpToApplication(flash_meta_infor.slot_a_addr); 
+			/////Because BANK A is the default boot slot, no jump is required after a successful upgrade on BANK A.
 		}
 		else if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 		{
 			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_b_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
-			LOG_LEVEL("It took %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
+			LOG_LEVEL("Task finished, time taken: %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
 			flash_save_app_meter_infor();
-			flash_JumpToApplication(flash_meta_infor.slot_b_addr);
+			flash_JumpToApplication(flash_meta_infor.slot_b_addr);//bank B must to perform a jump when the upgrade on BANK B succeeds.
 		}
 		else
 		{

@@ -446,7 +446,7 @@ extern "C"
     // void car_indicator_proc_turn_signal(void);
     // void car_meter_proc_speed_rpm(void);
 
-    void task_carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately);
+    void carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately);
     bool task_carinfo_has_error_code(void);
 
     extern carinfo_meter_t lt_carinfo_meter;         // Local meter data structure

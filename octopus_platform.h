@@ -49,11 +49,9 @@
 #include "octopus_base.h" //  Base include file for the Octopus project.
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
-
 #include <sys/ioctl.h>         // System I/O control definitions
 #include <sys/time.h>          // Time-related functions for UNIX systems
 #include <pthread.h>           // POSIX thread support
-#include <unistd.h>            // POSIX API for file and process handling
 #include "ite/ith.h"           // ITE hardware-specific definitions
 #include "ite/itp.h"           // ITE platform-specific definitions
 #include "uart/uart.h"         // UART communication module
@@ -62,9 +60,8 @@
 #include "SDL/SDL.h"           // SDL library for multimedia applications
 #include "openrtos/FreeRTOS.h" // FreeRTOS kernel for real-time tasks
 #include "openrtos/queue.h"    // FreeRTOS queue handling
-
+#include <unistd.h>            // POSIX API for file and process handling
 #elif defined(PLATFORM_CST_OSAL_RTOS)
-
 #include "OSAL.h"              // OS abstraction layer
 #include "OSAL_PwrMgr.h"       // OS power management utilities
 #include "OSAL_Memory.h"       // OS memory management functions
@@ -96,21 +93,15 @@
 #include "types.h"             // Basic type definitions
 
 #elif defined(PLATFORM_STM32_RTOS)
-
 #include "octopus_bsp_hk32l08x.h"
-
 #elif defined(PLATFORM_NATION_RTOS)
-
 #include "octopus_bsp_nation.h"
-
 #elif defined(PLATFORM_LINUX_RISC)
-
 #include <pthread.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <fnmatch.h>
 #include "../HAL/octopus_serialport_c.h"
-
 #else
 
 #include "octopus_bsp.h"

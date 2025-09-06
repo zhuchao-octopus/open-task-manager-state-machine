@@ -112,8 +112,8 @@ extern "C"
 {
 #endif
 	uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec);
-	void calculate_battery_soc_ex(uint16_t voltage_mV,
-								  uint16_t capacity_mAh,
+	void calculate_battery_soc_ex(uint32_t voltage_mV,
+								  uint32_t capacity_mAh,
 								  uint32_t trip_odo_m,
 								  float consumption_Wh_per_km, // 例如 18.0
 								  float safety_reserve_ratio,  // 例如 0.10 = 10%
@@ -131,8 +131,8 @@ extern "C"
 								 uint8_t *hour, uint8_t *minute,
 								 uint8_t *version_code);
 
-	void build_version_string(char *out_str, size_t max_len);
-	uint32_t build_version_code(void);
+	void build_version_string(char *out_str, size_t max_len, const char *date_str, const char *time_str);
+	uint32_t build_version_code(const char *date_str, const char *time_str);
 	int32_t compare_versions(uint32_t v1, uint32_t v2);
 	bool is_version_code_valid(uint32_t version_code);
 

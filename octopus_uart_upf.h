@@ -54,11 +54,6 @@ typedef enum
 	SETTING_MAX_PAS_9_LEVEL = 9,
 } SETTING_MAX_PAS;
 
-#define UPF_MODULE_NUMBER_LING_HUI_LIION2 0
-#define UPF_MODULE_NUMBER_BAFANG 1 ///< Protocol for Bafang
-#define UPF_MODULE_NUMBER_LOT4G 2
-#define UPF_MODULE_NUMBER_BT_MUSIC 3
-
 typedef enum
 {
 	_UPF_MODULE_LING_HUI_LIION2_,
@@ -67,7 +62,7 @@ typedef enum
 	_UPF_MODULE_BAFANG_, ///< Protocol for Bafang
 #endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_4G
+#ifdef TASK_MANAGER_STATE_MACHINE_LOT4G
 	_UPF_MODULE_LOT4G_,
 #endif
 
@@ -76,6 +71,14 @@ typedef enum
 #endif
 	_UPF_MODULE_MAX_,
 } UPF_MODULE;
+
+typedef enum
+{
+	UPF_MODULE_ID_LING_HUI_LIION2 = 0,
+	UPF_MODULE_ID_BAFANG, ///< Protocol for Bafang
+	UPF_MODULE_ID_LOT4G,
+	UPF_MODULE_ID_BT_MUSIC,
+} UPF_MODULE_ID;
 
 typedef enum
 {
@@ -99,7 +102,7 @@ typedef enum
 
 typedef struct
 {
-	uint8_t module;
+	UPF_MODULE_ID id;
 	UPF_CHANNEL_NUMBER channel;
 	UPF_CHANNEL_TYPE type;
 } upf_module_t;
@@ -132,20 +135,18 @@ extern "C"
 	void task_upf_post_running(void);
 	void task_upf_stop_running(void);
 
-	void upf_module_info_init(upf_module_info_t *array, size_t length);
-
+	//void upf_module_info_init(upf_module_info_t *array, uint16_t length);
 	void upf_register_module(upf_module_t upf_module, upf_module_receive_handler_t receive_handler);
-
 	void upf_receive_callback(upf_module_t upf_module, const uint8_t *buffer, uint16_t length);
-
-	void upf_send_buffer(upf_module_t upf_module, const uint8_t *buffer, size_t size);
-
+	void upf_send_buffer(upf_module_t upf_module, const uint8_t *buffer, uint16_t length);
 	void upf_print_registered_module(void);
 
+  void otsm_upf_init(upf_module_info_t *array, uint16_t length);
 	void otsm_upf_help(void);
 
 #ifdef __cplusplus
 }
 #endif
 
+extern upf_module_info_t upf_module_array[];
 #endif /* __OCTOPUS_TASK_MANAGER_PTL_H__ */

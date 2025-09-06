@@ -6,7 +6,7 @@
  * @version 1.0
  * @date    2025-05-10
  *
- * @note    Platform-specific functions are defined in octopus_bsp.h
+ * @note    Platform-specific functions are defined in octopus_gpio.h
  *          and GPIO configuration is handled for status and key polling.
  *          Interrupt-based handling can be added for real-time event capture.
  *          This implementation uses polling for simplicity and clarity.
@@ -24,6 +24,8 @@
 /******************************************************************************
  * INCLUDES
  ******************************************************************************/
+ 
+
 #include "octopus_gpio.h"  // Include GPIO control and configuration
 #include "octopus_flash.h" // Include flash memory access functions
 #include "octopus_key.h"   // Include key status and event handling
@@ -32,10 +34,10 @@
 #include "octopus_msgqueue.h"    // Include message queue header for task communication
 #include "octopus_message.h"     // Include message id for inter-task communication
 
-#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
 
 extern GPIO_STATUS *gpio_array[];
 extern GPIO_KEY_STATUS *gpio_key_array[];
@@ -96,10 +98,6 @@ void task_gpio_assert_running(void)
 
 void task_gpio_running(void)
 {
-#if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
-    if (system_get_mb_state() != MB_POWER_ST_ON)
-        return;
-#endif
     task_gpio_event_polling();
 }
 
@@ -441,12 +439,6 @@ bool gpio_is_high(GPIO_GROUP *gpiox, uint16_t pin)
 
 void task_gpio_event_polling(void)
 {
-
-#if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
-    if (system_get_mb_state() != MB_POWER_ST_ON)
-        return;
-#endif
-
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // for (size_t i = 0; i < sizeof(gpio_array) / sizeof(gpio_array[0]); i++)
