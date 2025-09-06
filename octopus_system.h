@@ -27,94 +27,59 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include "octopus_platform.h"
-#include "driver_audio.h"
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
 
+/**
+ * @brief Version information.
+ */
+
+/**
+ * @brief System MPU (Microprocessor Unit) state definitions.
+ */
+#define SYSTEM_MPU_STATE_INIT (0x00)         /**< Initial state. */
+#define SYSTEM_MPU_STATE_ENTER_PLAY (0x01)   /**< Entering playback animation. */
+#define SYSTEM_MPU_STATE_ENTER_FINISH (0x02) /**< Playback animation complete. */
+#define SYSTEM_MPU_STATE_COMPLETED (0x03)    /**< Loading completed. */
+#define SYSTEM_MPU_STATE_LEAVE_PLAY (0x04)   /**< Exiting playback animation. */
+#define SYSTEM_MPU_STATE_LEAVE_FINISH (0x05) /**< Exit animation complete. */
+
 /*******************************************************************************
-* TYPEDEFS
-******************************************************************************/
-		typedef enum POWER_MANAGER_STATE {
-				POWER_STATE_START_INIT = 0,     /**< Initialization state. */
-				POWER_STATE_BOOTING,            /**< Booting process state. */
+ * TYPEDEFS
+ ******************************************************************************/
 
-				POWER_STATE_ACC_ON,             /**< ACC is ON (engine/key ON). */
-				POWER_STATE_ACC_OFF,            /**< ACC is OFF. */
-				POWER_STATE_ACC_OFF_WAITING,        /**< Waiting for ACC stabilization. */
-				POWER_STATE_ACC_OFF_WAITING_HOST,    /**< Waiting for host command (from SoC). */
-			
-				POWER_STATE_ENTER_LOWPOWER,     /**< Entering low-power mode. */
-				POWER_STATE_ENTER_STANDBY,      /**< Entering standby (sleep) mode. */
+/**
+ * @brief Mainboard (MB) state enumeration.
+ */
+typedef enum MB_POWER_STATE
+{
+    MB_POWER_ST_INIT = 0, /**< Initialization state. */
 
-				POWER_STATE_POWER_ON,           /**< System fully operational. */
-				POWER_STATE_POWER_OFF,          /**< System shutting down or off. */
-			
-				POWER_STATE_NORMAL_RUNNING,     /**< System is running normally. */
-        POWER_STATE_STANDBY,
-			  POWER_STATE_SHUTDOWN,
-		} mb_power_manager_state_t;
+    MB_POWER_ST_LOWPOWER, /**< Low-power state. */
+    MB_POWER_ST_STANDBY,  /**< Standby state. */
 
-		typedef enum {
-				MODULE_OFF = 0,  /**< Module is turned OFF. */
-				MODULE_ON        /**< Module is turned ON. */
-		} module_state_t;
-				
-		typedef struct {
-			 // --- Power Management ---
-			mb_power_manager_state_t power_state;              /**< Current power state. */
+    MB_POWER_ST_BOOTING, /**< Booting state. */
 
-			// --- Peripheral Status ---
-			module_state_t lcd_backlight;           /**< LCD backlight state. */
-			module_state_t audio_amp;               /**< Audio amplifier state. */
-			module_state_t gps_module;              /**< GPS module enable state. */
-			module_state_t antenna_power;           /**< Antenna power state. */
-			module_state_t led_indicator;           /**< LED status indicator. */	
-		
-			// --- Input Signal States ---
-			uint8_t acc_signal;                     /**< ACC signal (1 = ON). */
-			uint8_t brake_signal;                   /**< Brake signal. */
-			uint8_t ill_signal;                     /**< Illumination signal. */
-			uint8_t reverse_signal;                 /**< Reverse gear signal. */
-			uint8_t tel_mute_signal;                /**< Telephone mute signal. */
+    MB_POWER_ST_ON,      /**< Fully operational state. */
+    MB_POWER_ST_PARTIAL, /**< Partial operation state. */
+    MB_POWER_ST_STOP,
 
-			// --- Communication Status ---
-			uint8_t uart_soc_connected;            /**< UART to SoC connected (1 = OK). */
-			uint8_t ota_update_in_progress;        /**< OTA update flag. */
+    MB_POWER_ST_SHUTDOWN, /**< Shutdown process. */
+    MB_POWER_ST_OFF,      /**< Power-off state. */
 
-			// --- Runtime Info ---
-			bool system_need_reset;
-			bool host_is_sleeping;
-			bool host_is_charging;
-			bool force_kill_host;
-			uint32_t acc_wait_time;
-			uint32_t host_wait_time;
-			uint32_t low_power_wait_timer;
-			uint32_t uptime_ms;                    /**< System uptime in milliseconds. */
-		} system_state_t;
+} mb_state_t;
 
-		typedef struct {
-			uint32_t magic_num;
-			uint8_t radio_area;
-			uint8_t brake_mode;
-			uint8_t led_always_on;
-			uint8_t led_r_level;
-			uint8_t led_g_level;
-			uint8_t led_b_level;
-			uint8_t vcom_value;
-			uint32_t acc_wait_timeout;
-		} user_mata_infor_t;
-    /*******************************************************************************
-     * GLOBAL FUNCTIONS DECLARATION
-     ******************************************************************************/
+/*******************************************************************************
+ * GLOBAL FUNCTIONS DECLARATION
+ ******************************************************************************/
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
     /**
      * @brief Initialize the application system.
      */
@@ -146,6 +111,24 @@ extern "C"
     void task_system_stop_running(void);
 
     /**
+     * @brief Set the current MPU (Microprocessor Unit) status.
+     * @param status Status value to set.
+     */
+    void system_set_mpu_status(uint8_t status);
+
+    /**
+     * @brief Get the power-off request status.
+     * @return True if power-off is requested, false otherwise.
+     */
+    bool system_get_power_off_req(void);
+
+    /**
+     * @brief Get the current MPU (Microprocessor Unit) status.
+     * @return Current MPU status.
+     */
+    uint8_t system_get_mpu_status(void);
+
+    /**
      * @brief Perform a handshake with the application layer.
      */
     void system_handshake_with_app(void);
@@ -159,11 +142,11 @@ extern "C"
      * @brief Get the current mainboard state.
      * @return Current mainboard state.
      */
-    mb_power_manager_state_t system_get_mb_state(void);
+    mb_state_t system_get_mb_state(void);
 
-    void system_set_mb_state(mb_power_manager_state_t status);
+    void system_set_mb_state(mb_state_t status);
     void system_power_on_off(bool onoff);
-    void system_power_manager_init(void);
+
 #ifdef __cplusplus
 }
 #endif

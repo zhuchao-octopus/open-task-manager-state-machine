@@ -7,10 +7,8 @@
 
 /******************************************************************************/
 /* Header file contains */
-
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_system.h"
 #include "octopus_sif.h"
+#include "octopus_system.h"
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
@@ -132,17 +130,8 @@ bool SIF_Is_Idle(void);
 /***************************************************************************************************
  *                                            LOCAL FUNCTION
  ***************************************************************************************************/
-bool SIF_IsInit(void)
-{
-	return SIF_has_inited;
-}
 
-void SIF_GPIO_Init(void)
-{
-	SIF_SEND_DATA_BIT_LOW();
-}
-
-void sif_init(void)
+void otsm_sif_init(void)
 {
 	if (!SIF_has_inited)
 	{
@@ -151,6 +140,16 @@ void sif_init(void)
 		SIF_has_inited = true;
 		LOG_LEVEL("sif init\r\n");
 	}
+}
+
+bool SIF_IsInit(void)
+{
+	return SIF_has_inited;
+}
+
+void SIF_GPIO_Init(void)
+{
+	SIF_SEND_DATA_BIT_LOW();
 }
 
 void SIF_DeInit(void)

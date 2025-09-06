@@ -11,7 +11,6 @@
  * INCLUDES
  */
 
-#include "octopus_platform.h"
 #include "octopus_sif.h"
 #include "octopus_timer_hal.h"
 
@@ -138,5 +137,9 @@ void hal_timer_interrupt_callback(uint8_t event)
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     SIF_IO_IRQHandler();
 #endif
+}
+
+void otsm_timer_init(void)
+{
 }
 #endif

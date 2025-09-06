@@ -25,15 +25,7 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Platform-specific configurations and definitions
-#include "octopus_gpio_hal.h" // GPIO hardware abstraction layer
-#include "octopus_gpio.h"     // GPIO pin manipulation functions
-#include "octopus_system.h"
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
@@ -60,6 +52,10 @@ extern "C"
 // Set the send data GPIO pin to high for transmission
 #define SIF_SEND_DATA_BIT_HIGH() GPIO_PIN_SIF_SET_HIGH()
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
     /*******************************************************************************
      * TYPEDEFS
      * Place for defining types related to SIF communication, if needed.
@@ -136,6 +132,7 @@ extern "C"
 
     /*******************************************************************************
     *******************************************************************************/
+    void otsm_sif_init(void);
 
 #ifdef __cplusplus
 }

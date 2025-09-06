@@ -29,16 +29,21 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
-#include "octopus_carinfor.h"
+#include "octopus_vehicle.h"
+#include "octopus_utils.h"
 #include "octopus_sif.h"
 #include "octopus_ipc.h"
 #include "octopus_flash.h"
+#include "octopus_uart_ptl.h"    // Include UART protocol header
+#include "octopus_uart_upf.h"    // Include UART protocol header
+#include "octopus_tickcounter.h" // Include tick counter for timing operations
+#include "octopus_msgqueue.h"    // Include message queue header for task communication
+#include "octopus_message.h"     // Include message id for inter-task communication
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
 /// #define CARINFOR_PTL_ACK
-///  #define TEST_LOG_DEBUG_SIF  // Uncomment to enable debug logging for SIF module
+/// #define TEST_LOG_DEBUG_SIF  // Uncomment to enable debug logging for SIF module
 
 /*******************************************************************************
  * MACROS
@@ -107,22 +112,22 @@ static uint32_t l_t_trip_saving_timer; // Timer for state of charge monitoring
 /*******************************************************************************
  *  GLOBAL FUNCTIONS IMPLEMENTATION
  */
-void task_carinfo_init_running(void)
+void task_vehicle_init_running(void)
 {
-	LOG_LEVEL("task_carinfo_init_running\r\n");
-	ptl_register_module(MCU_TO_SOC_MOD_CARINFOR, meter_module_send_handler, meter_module_receive_handler);
-	// ptl_register_module(MCU_TO_SOC_MOD_INDICATOR, indicator_module_send_handler, indicator_module_receive_handler);
-	// ptl_register_module(MCU_TO_SOC_MOD_DRIV_INFO, drivinfo_module_send_handler, drivinfo_module_receive_handler);
+    LOG_LEVEL("task_vehicle_init_running\r\n");
+    ptl_register_module(MCU_TO_SOC_MOD_CARINFOR, meter_module_send_handler, meter_module_receive_handler);
+    // ptl_register_module(MCU_TO_SOC_MOD_INDICATOR, indicator_module_send_handler, indicator_module_receive_handler);
+    // ptl_register_module(MCU_TO_SOC_MOD_DRIV_INFO, drivinfo_module_send_handler, drivinfo_module_receive_handler);
 
-	OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_INVALID);
-	lt_carinfo_meter.speed_actual = 0;
-	lt_carinfo_meter.speed_max = 0;  
-	lt_carinfo_meter.speed_average = 0;	
+    OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_INVALID);
+    lt_carinfo_meter.speed_actual = 0;
+    lt_carinfo_meter.speed_max = 0;
+    lt_carinfo_meter.speed_average = 0;
 }
 
-void task_carinfo_start_running(void)
+void task_vehicle_start_running(void)
 {
-    LOG_LEVEL("task_carinfo_start_running\r\n");
+    LOG_LEVEL("task_vehicle_start_running\r\n");
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_ASSERT_RUN);
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     lt_carinfo_indicator.ready = 1; // ready flag
@@ -131,7 +136,7 @@ void task_carinfo_start_running(void)
 #endif
 }
 
-void task_carinfo_assert_running(void)
+void task_vehicle_assert_running(void)
 {
     ptl_reqest_running(MCU_TO_SOC_MOD_CARINFOR);
     // ptl_reqest_running(MCU_TO_SOC_MOD_INDICATOR);
@@ -142,7 +147,7 @@ void task_carinfo_assert_running(void)
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_RUNNING);
 }
 
-void task_carinfo_running(void)
+void task_vehicle_running(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
     task_car_controller_sif_updating();
@@ -156,13 +161,13 @@ void task_carinfo_running(void)
 #endif
 }
 
-void task_carinfo_post_running(void)
+void task_vehicle_post_running(void)
 {
     ptl_release_running(MCU_TO_SOC_MOD_CARINFOR);
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_ASSERT_RUN);
 }
 
-void task_carinfo_stop_running(void)
+void task_vehicle_stop_running(void)
 {
     LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_INVALID);
@@ -238,6 +243,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
 {
     MY_ASSERT(payload); // Ensure the payload pointer is valid
     MY_ASSERT(ackbuff); // Ensure the ack buffer pointer is valid
+
     // Handle M2A (Module to Application) frames — actual data updates
     // LOG_LEVEL("payload->frame_type=%d payload->data_len=%d\r\n",payload->frame_type, payload->data_len);
     if (MCU_TO_SOC_MOD_CARINFOR == payload->frame_type)
@@ -301,24 +307,6 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
- * @brief Calculate the distance traveled based on speed and time.
- *
- * @param speedKmh Speed in kilometers per hour (km/h)
- * @param timeSec Time in seconds (s)
- * @return double Distance traveled in meters (m)
- */
-uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec)
-{
-    // speed_kmh is in km/h, time_sec is in seconds
-    // Convert speed to m/s (1 km/h = 1000 m / 3600 s)
-    uint32_t speed_ms = (speed_kmh * 1000) / 3600;
-
-    // Calculate distance in meters
-    uint32_t distance_m = speed_ms * time_sec;
-
-    return distance_m;
-}
 
 void task_car_controller_msg_handler(void)
 {
@@ -327,6 +315,16 @@ void task_car_controller_msg_handler(void)
     uint32_t trip_saving_timer = 0;
     uint32_t delta_distance = 0;
 
+    if ((lt_carinfo_meter.speed_actual > 0))
+    {
+        if (!IsTickCounterStart(&l_t_msg_car_trip_timer))
+            StartTickCounter(&l_t_msg_car_trip_timer);
+    }
+    else
+    {
+        StopTickCounter(&l_t_msg_car_trip_timer);
+    }
+
     Msg_t *msg = get_message(TASK_MODULE_CAR_INFOR);
     if (msg->msg_id == NO_MSG)
     {
@@ -334,16 +332,28 @@ void task_car_controller_msg_handler(void)
         trip_saving_timer = GetTickCounter(&l_t_trip_saving_timer);
         if (trip_timer > 2000)
         {
-			if(lt_carinfo_meter.speed_actual > lt_carinfo_meter.speed_max)
-			lt_carinfo_meter.speed_max = lt_carinfo_meter.speed_actual;
-			lt_carinfo_meter.speed_average = (lt_carinfo_meter.speed_average + lt_carinfo_meter.speed_actual) / 2;
-						
+            if (lt_carinfo_meter.speed_actual > lt_carinfo_meter.speed_max)
+                lt_carinfo_meter.speed_max = lt_carinfo_meter.speed_actual;
+            if (lt_carinfo_meter.speed_average == 0)
+                lt_carinfo_meter.speed_average = lt_carinfo_meter.speed_actual;
+
+            lt_carinfo_meter.speed_average = (lt_carinfo_meter.speed_average + lt_carinfo_meter.speed_actual) / 2;
+
             trip_timer = trip_timer / 1000;
             delta_distance = calculateTotalDistance(lt_carinfo_meter.speed_actual, trip_timer);
 
             lt_carinfo_meter.trip_time = lt_carinfo_meter.trip_time + trip_timer;
             lt_carinfo_meter.trip_distance = lt_carinfo_meter.trip_distance + delta_distance;
             lt_carinfo_meter.trip_odo = lt_carinfo_meter.trip_odo + delta_distance;
+
+            system_meter_infor.trip_odo = system_meter_infor.trip_odo + delta_distance;
+            system_meter_infor.speed_average = lt_carinfo_meter.speed_average;
+
+            calculate_battery_soc_ex(lt_carinfo_battery.voltage, lt_carinfo_battery.current, system_meter_infor.trip_odo,
+                                     DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
+                                     system_meter_infor.speed_average,
+                                     &lt_carinfo_battery.power, &lt_carinfo_battery.soc,
+                                     &lt_carinfo_battery.range, &lt_carinfo_battery.range_max);
             RestartTickCounter(&l_t_msg_car_trip_timer);
         }
 
@@ -352,6 +362,16 @@ void task_car_controller_msg_handler(void)
             flash_save_carinfor_meter();
             RestartTickCounter(&l_t_trip_saving_timer);
         }
+
+        if (lt_carinfo_battery.soc == 0)
+        {
+            calculate_battery_soc_ex(lt_carinfo_battery.voltage, lt_carinfo_battery.current, system_meter_infor.trip_odo,
+                                     DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
+                                     system_meter_infor.speed_average,
+                                     &lt_carinfo_battery.power, &lt_carinfo_battery.soc,
+                                     &lt_carinfo_battery.range, &lt_carinfo_battery.range_max);
+        }
+
         return;
     }
 
@@ -363,15 +383,6 @@ void task_car_controller_msg_handler(void)
             send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, 0);
             break;
         case FRAME_CMD_CARINFOR_METER:
-            if ((lt_carinfo_meter.speed_actual > 0))
-            {
-                if (!IsTickCounterStart(&l_t_msg_car_trip_timer))
-                    StartTickCounter(&l_t_msg_car_trip_timer);
-            }
-            else
-            {
-                StopTickCounter(&l_t_msg_car_trip_timer);
-            }
             send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);
             break;
         case FRAME_CMD_CARINFOR_BATTERY:
@@ -387,7 +398,6 @@ void task_car_controller_msg_handler(void)
 
     else if (MSG_OTSM_DEVICE_GPIO_EVENT == msg->msg_id)
     {
-
     }
 }
 // ERROR_CODE_IDLE = 0X00,                                      // 无动作
@@ -413,7 +423,7 @@ void task_car_controller_msg_handler(void)
 // ERROR_CODE_COMMUNICATION_ABNORMALITY = 0X30,                 // 通讯故障
 //  添加错误代码
 
-void task_carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately)
+void carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately)
 {
     if (code_append)
     {

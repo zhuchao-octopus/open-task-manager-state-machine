@@ -21,7 +21,7 @@
  * INCLUDES
  * Include necessary headers for BLE management.
  *******************************************************************************/
-#include "octopus_platform.h" // Platform-specific definitions and utilities
+#include "octopus_base.h" //  Base include file for the Octopus project.
 #include "octopus_system.h"
 #ifdef __cplusplus
 extern "C"
@@ -48,12 +48,12 @@ extern "C"
      */
     typedef struct
     {
-		signed char rssi;
-        uint8_t mode;   /**< Current mode of the BLE module. */
-        //bool locked;    /**< Indicates if the BLE module is locked. */
-        bool to_lock;   /**< Indicates if the BLE module should be locked. */
+        signed char rssi;
+        uint8_t mode; /**< Current mode of the BLE module. */
+        // bool locked;    /**< Indicates if the BLE module is locked. */
+        bool to_lock; /**< Indicates if the BLE module should be locked. */
         bool connected;
-		bool rssi_unlock;
+        bool rssi_unlock;
         uint8_t mac[6]; /**< MAC address associated with the BLE module. */
     } BLE_STATUS;
 

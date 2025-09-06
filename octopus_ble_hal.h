@@ -27,7 +27,7 @@
  * @details  Include necessary platform and library headers for Bluetooth Low Energy (BLE) functionality.
  */
 
-#include "octopus_platform.h" ///< Platform-specific configurations
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 #ifdef __cplusplus
 extern "C"
@@ -62,7 +62,7 @@ extern "C"
     /**< Function to enable BLE pairing mode */
     void hal_disable_bLe_pair_mode(void);
     /**< Function to disable BLE pairing mode */
-	uint8_t hal_get_ble_rssi(uint8_t connecttion_id);
+    uint8_t hal_get_ble_rssi(uint8_t connection_id);
 #ifdef __cplusplus
 }
 #endif

@@ -23,46 +23,36 @@
  * INCLUDE FILES
  * Include standard libraries and platform-specific headers.
  */
-#include "octopus_platform.h"  // Platform-specific configurations and settings
-#include "octopus_timer_hal.h" // Hardware Abstraction Layer (HAL) for timers
-#include "octopus_uart_hal.h"  // HAL for UART communication
-#include "octopus_gpio_hal.h"  // HAL for GPIO (General-Purpose Input/Output)
-#include "octopus_flash_hal.h" // HAL for flash memory management
-#include "octopus_ble_hal.h"   // HAL for Bluetooth Low Energy (BLE)
-#include "octopus_carinfor.h"  // Car information management structures and functions
-#include "octopus_sif.h"       // SIF (Serial Interface Framework) protocol interface
-#include "octopus_key.h"       // Key input handling and processing
-#include "octopus_bms.h"
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
+/*******************************************************************************
+ * DEBUG SWITCH MACROS
+ * Add macros for enabling or disabling debug functionality.
+ */
+
+/*******************************************************************************
+ * GENERAL MACROS
+ * Define common bit manipulation macros and constants.
+ */
+
+/*******************************************************************************
+ * TYPE DEFINITIONS
+ * Define any necessary types or structs here.
+ */
+
+/*******************************************************************************
+ * CONSTANTS
+ * Define any necessary constant values here.
+ */
+
+/*******************************************************************************
+ * FUNCTION DECLARATIONS
+ * Declare external functions used in the task manager.
+ */
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-    /*******************************************************************************
-     * DEBUG SWITCH MACROS
-     * Add macros for enabling or disabling debug functionality.
-     */
-
-    /*******************************************************************************
-     * GENERAL MACROS
-     * Define common bit manipulation macros and constants.
-     */
-
-    /*******************************************************************************
-     * TYPE DEFINITIONS
-     * Define any necessary types or structs here.
-     */
-
-    /*******************************************************************************
-     * CONSTANTS
-     * Define any necessary constant values here.
-     */
-
-    /*******************************************************************************
-     * FUNCTION DECLARATIONS
-     * Declare external functions used in the task manager.
-     */
 
     // Retrieves the main user task ID.
     uint8_t GetTaskManagerStateMachineId(void);
@@ -74,17 +64,19 @@ extern "C"
     uint16_t TaskManagerStateEventLoop(uint8_t task_id, uint16_t events);
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
-    void TaskManagerStateMachineInit(void);
-    void TaskManagerStateEventLoop(void *arg);
-    void *TaskManagerStateEventLoop(void *arg);
+void TaskManagerStateMachineInit(void);
+void TaskManagerStateEventLoop(void *arg);
+void *TaskManagerStateEventLoop(void *arg);
 
 #elif defined(PLATFORM_LINUX_RISC)
-    void TaskManagerStateMachineInit(void);
-    void TaskManagerStateStopRunning(void);
-    void *TaskManagerStateEventLoop(void *arg);
+void TaskManagerStateMachineInit(void);
+void TaskManagerStateStopRunning(void);
+void *TaskManagerStateEventLoop(void *arg);
+
 #else
-    void TaskManagerStateMachineInit(void);
-    void TaskManagerStateEventLoop(void *arg);
+
+void TaskManagerStateMachineInit(void);
+void TaskManagerStateEventLoop(void *arg);
 #endif
 
 #ifdef __cplusplus

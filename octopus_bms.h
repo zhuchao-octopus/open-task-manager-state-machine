@@ -15,7 +15,6 @@
 #ifndef __OCTOPUS_TASK_MANAGER_BMS_H__
 #define __OCTOPUS_TASK_MANAGER_BMS_H__
 
-#include "octopus_platform.h" ///< Include platform-specific configurations
 #include "octopus_gpio_hal.h" ///< Include GPIO Hardware Abstraction Layer for low-level pin control
 #include "octopus_gpio.h"     ///< Include GPIO header for GPIO-related operations
 
@@ -63,7 +62,7 @@ extern "C"
      * LOCAL FUNCTION DECLARATIONS
      * @details  Local function declarations for SIF communication operations
      */
-    void bms_init(void);
+    void otsm_bms_init(void);
     /**< Function to initialize the BMS communication */
     void BMS_DeInit(void);
     /**< Function to deinitialize the BMS communication */

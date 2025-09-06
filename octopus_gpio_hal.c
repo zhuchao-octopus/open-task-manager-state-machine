@@ -10,8 +10,6 @@
 /*********************************************************************
  * INCLUDES
  */
-
-#include "octopus_platform.h" // Include Octopus module header
 #include "octopus_gpio_hal.h" // Include the GPIO hardware abstraction layer header
 
 bool hal_gpio_read(GPIO_GROUP *gpiox, uint16_t pin)
@@ -142,7 +140,6 @@ void hal_gpio_set_wifi_onoff(bool onoff)
 #else
 void hal_gpio_init(uint8_t task_id)
 {
-    // LOG_LEVEL("GPIO init\r\n");  // Optional log for GPIO initialization (disabled here)
     LOG_LEVEL("hal gpio init\r\n"); // Optional log for GPIO initialization (disabled here)
 }
 
