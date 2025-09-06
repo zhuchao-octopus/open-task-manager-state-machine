@@ -11,7 +11,7 @@
  */
 #include "octopus_can_queue.h"
 
-#ifdef TASK_MANAGER_STATE_MACHINE_CAN
+#if 1 //def TASK_MANAGER_STATE_MACHINE_CAN
 
 CanQueue_t can_rx_msg_queue;
 

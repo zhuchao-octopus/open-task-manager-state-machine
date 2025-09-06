@@ -69,6 +69,10 @@ typedef struct
   uint32_t count2; ///< Another counter used for tracking GPIO events.
 } GPIO_STATUS;
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
 /*******************************************************************************
  * @brief    Function declarations for managing GPIO tasks.
  * @details  These functions are used to initialize, start, and manage GPIO-related
@@ -99,4 +103,5 @@ extern "C"
 }
 #endif
 
+#endif
 #endif /* __OCTOPUS_TASK_MANAGER_GPIO_H__ */

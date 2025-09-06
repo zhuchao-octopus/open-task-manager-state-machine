@@ -437,6 +437,16 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
             if (payload->data_len >= sizeof(carinfo_battery_t))
             {
                 memcpy(&lt_carinfo_battery, payload->data, sizeof(carinfo_battery_t));
+                calculate_battery_soc_ex(lt_carinfo_battery.voltage, lt_carinfo_battery.current, system_meter_infor.trip_odo,
+                                         DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
+                                         system_meter_infor.speed_average,
+                                         &lt_carinfo_battery.power, &lt_carinfo_battery.soc,
+                                         &lt_carinfo_battery.range, &lt_carinfo_battery.range_max);
+
+                LOG_LEVEL("voltage=%d,current=%d,trip_odo=%d,power=%d,soc=%d,range=%d,range_max=%d\r\n",
+                          lt_carinfo_battery.voltage, lt_carinfo_battery.current, lt_carinfo_meter.trip_odo,
+                          lt_carinfo_battery.power, lt_carinfo_battery.soc,
+                          lt_carinfo_battery.range, lt_carinfo_battery.range_max);
             }
 
             if (lt_carinfo_battery.abs_charge_state >= 255)

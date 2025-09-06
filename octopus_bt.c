@@ -19,8 +19,13 @@
  * Include the necessary header files for the Octopus platform and BLE functionality.
  */
 #include "octopus_bt.h"
-#include "octopus_flash.h"
-#include "octopus_uart_upf.h" // Include UART protocol header
+#include "octopus_task_manager.h"  // Task Manager: handles scheduling and execution of system tasks
+#include "octopus_tickcounter.h"    // Tick Counter: provides timing and delay utilities
+#include "octopus_message.h"        // Message IDs: defines identifiers for inter-task communication
+#include "octopus_msgqueue.h"       // Message Queue: API for sending/receiving messages between tasks
+#include "octopus_uart_ptl.h"       // UART Protocol Layer: handles protocol-level UART operations
+#include "octopus_uart_upf.h"       // UART Packet Framework: low-level UART packet processing
+
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
@@ -43,6 +48,7 @@ static bt_state_t bt_current_state = BT_STATE_DISCONNECTED;
 bt_device_t selected_best_dev = {0};
 bt_device_t last_best_dev = {0};
 
+upf_module_t upf_module_info_BT_MUSIC = {UPF_MODULE_ID_BT_MUSIC, UPF_CHANNEL_8, UPF_CHANNEL_TYPE_CHAR};
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLEAR
  */
@@ -85,7 +91,7 @@ void task_bt_start_running(void)
 {
 	LOG_LEVEL("task_bt_start_running\r\n");
 #ifdef TASK_MANAGER_STATE_MACHINE_UPF
-	upf_register_module(UPF_MODULE_BT, bt_receive_handler);
+	upf_register_module(upf_module_info_BT_MUSIC, bt_receive_handler);
 #endif
 	OTMS(TASK_MODULE_BT, OTMS_S_ASSERT_RUN);
 	StartTickCounter(&l_t_bt_auto_link_wait_timer);
@@ -449,7 +455,7 @@ void bt_send_at_command(const char *format, ...)
 	{
 		LOG_LEVEL("bt send at cmd: %s\r\n", cmd_buf);
 		// UART1_Send_Buffer((uint8_t *)cmd_buf, length);
-		upf_send_buffer(UPF_MODULE_BT, (uint8_t *)cmd_buf, length);
+		upf_send_buffer(upf_module_info_BT_MUSIC, (uint8_t *)cmd_buf, length);
 	}
 #endif
 }

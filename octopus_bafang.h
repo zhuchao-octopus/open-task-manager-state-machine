@@ -5,9 +5,8 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
+#include "octopus_base.h" //  Base include file for the Octopus project.
+#include "octopus_uart_upf.h" // Include UART protocol header
 
 #ifdef __cplusplus
 extern "C"
@@ -30,5 +29,7 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+extern upf_module_t upf_module_info_BAFANG;
 
 #endif

@@ -423,7 +423,7 @@ void task_car_controller_msg_handler(void)
 // ERROR_CODE_COMMUNICATION_ABNORMALITY = 0X30,                 // 通讯故障
 //  添加错误代码
 
-void task_carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately)
+void carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately)
 {
     if (code_append)
     {

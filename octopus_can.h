@@ -6,6 +6,8 @@
 #ifndef __OCTOPUS_CAN_H__
 #define __OCTOPUS_CAN_H__
 
+#include "octopus_base.h" //  Base include file for the Octopus project.
+
 // Default CAN data length (in bytes)
 #define CAN_DATA_MAX_LENGTH 8
 

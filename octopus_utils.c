@@ -89,9 +89,28 @@ uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec)
 
     return distance_m;
 }
-
-void calculate_battery_soc_ex(uint16_t voltage_mV,
-                              uint16_t capacity_mAh,
+/**
+ * @brief  Calculate battery SOC, remaining and maximum range, and average power
+ *
+ * @param voltage_mV           Input battery voltage in mV (if <1000, assumed 0.1V unit)
+ * @param capacity_mAh         Battery capacity in mAh (if <1000, assumed 0.1Ah unit)
+ * @param trip_odo_m           Trip distance in meters
+ * @param consumption_Wh_per_km   Energy consumption in Wh/km
+ * @param safety_reserve_ratio Fraction of battery reserved for safety (0.0 ~ 0.5)
+ * @param avg_speed_kph        Average speed in km/h for power estimation
+ * @param out_power_w          Pointer to output average power in W
+ * @param out_soc_pct          Pointer to output SOC in percent (%)
+ * @param out_range_100m       Pointer to output remaining range in 100m units
+ * @param out_range_max_100m   Pointer to output theoretical maximum range in 100m units
+ *
+ * Notes:
+ * - The function uses double precision for energy calculation to avoid overflow
+ *   when voltage and capacity are large.
+ * - If voltage_mV or capacity_mAh are in "0.1 units", they are converted automatically.
+ * - All output values are rounded to the nearest integer.
+ */
+void calculate_battery_soc_ex(uint32_t voltage_mV,
+                              uint32_t capacity_mAh,
                               uint32_t trip_odo_m,
                               float consumption_Wh_per_km,
                               float safety_reserve_ratio,
@@ -101,64 +120,79 @@ void calculate_battery_soc_ex(uint16_t voltage_mV,
                               uint16_t *out_range_100m,
                               uint16_t *out_range_max_100m)
 {
+    // 1) Parameter null pointer check
     if (!out_power_w || !out_soc_pct || !out_range_100m || !out_range_max_100m)
         return;
-    if (voltage_mV < 1000)
-        voltage_mV = voltage_mV * 100;
-    if (capacity_mAh < 1000)
-        capacity_mAh = capacity_mAh * 100;
 
-    // å‚æ•°ä¿æŠ¤
+    // 2) Convert input units if they are too small (assume 0.1V / 0.1Ah)
+    if (voltage_mV < 1000)
+        voltage_mV = voltage_mV * 100; // convert 0.1V unit to mV
+    if (capacity_mAh < 1000)
+        capacity_mAh = capacity_mAh * 100; // convert 0.1Ah unit to mAh
+
+    // 3) Parameter safety protection
     if (consumption_Wh_per_km <= 0.01f)
-        consumption_Wh_per_km = 18.0f;
+        consumption_Wh_per_km = 18.0f; // set default consumption if invalid
     if (safety_reserve_ratio < 0.0f)
         safety_reserve_ratio = 0.0f;
     if (safety_reserve_ratio > 0.5f)
         safety_reserve_ratio = 0.5f;
 
-    // 1. ç”µæ± æ€»èƒ½é‡ (Wh)
-    float capacity_Wh = (voltage_mV * capacity_mAh) / 1000000.0f;
+    // 4) Total battery energy (Wh)
+    // formula: capacity_Wh = (voltage in mV * capacity in mAh) / 1,000,000
+    double capacity_Wh = (voltage_mV * capacity_mAh) / 1000000.0;
 
-    // 2. å¯ç”¨èƒ½é‡ (æ‰£é™¤å®‰å…¨ä½™é‡)
-    float usable_Wh = capacity_Wh * (1.0f - safety_reserve_ratio);
+    // 5) Usable energy after removing safety reserve
+    double usable_Wh = capacity_Wh * (1.0 - safety_reserve_ratio);
 
-    // 3. å·²æ¶ˆè€—èƒ½é‡
-    float used_km = trip_odo_m / 1000.0f;
-    float used_Wh = used_km * consumption_Wh_per_km;
+    // 6) Energy already consumed based on trip distance
+    double used_km = trip_odo_m / 1000.0; // convert meters to km
+    double used_Wh = used_km * consumption_Wh_per_km;
 
-    // 4. å‰©ä½™èƒ½é‡
-    float remain_Wh = usable_Wh - used_Wh;
-    if (remain_Wh < 0.0f)
-        remain_Wh = 0.0f;
+    // 7) Remaining energy (Wh)
+    double remain_Wh = usable_Wh - used_Wh;
+    if (remain_Wh < 0.0)
+        remain_Wh = 0.0;
 
-    // 5. SOC (%)
-    float soc_f = (usable_Wh > 0.0f) ? (remain_Wh / usable_Wh) * 100.0f : 0.0f;
-    if (soc_f > 100.0f)
-        soc_f = 100.0f;
+    // 8) Calculate SOC (%)
+    // SOC = remaining energy / usable energy * 100
+    double soc_f = (usable_Wh > 0.0) ? (remain_Wh / usable_Wh) * 100.0 : 0.0;
+    if (soc_f > 100.0)
+        soc_f = 100.0;
 
-    // 6. ç†è®ºæœ€å¤§/å‰©ä½™é‡Œç¨‹
-    float full_range_km = (usable_Wh > 0.0f) ? (usable_Wh / consumption_Wh_per_km) : 0.0f;
-    float remain_range_km = (remain_Wh > 0.0f) ? (remain_Wh / consumption_Wh_per_km) : 0.0f;
+    // 9) Calculate maximum theoretical range and remaining range (km)
+    double full_range_km = (usable_Wh > 0.0) ? (usable_Wh / consumption_Wh_per_km) : 0.0;
+    double remain_range_km = (remain_Wh > 0.0) ? (remain_Wh / consumption_Wh_per_km) : 0.0;
 
-    // 7. å¹³å‡åŠŸçŽ‡ä¼°ç®—
+    // 10) Estimate average power (W) based on avg_speed_kph
     uint16_t power_w = 0;
     if (avg_speed_kph > 0.0f)
     {
-        float p = consumption_Wh_per_km * avg_speed_kph; // Wh/km * km/h = Wh/h = W
-        if (p < 0.0f)
-            p = 0.0f;
-        if (p > 65535.0f)
-            p = 65535.0f;
-        power_w = (uint16_t)(p + 0.5f);
+        // Power (W) = energy consumption per km * speed (km/h)
+        double p = consumption_Wh_per_km * avg_speed_kph;
+        if (p < 0.0)
+            p = 0.0;
+        if (p > 65535.0)
+            p = 65535.0;               // clamp to 16-bit max
+        power_w = (uint16_t)(p + 0.5); // round to nearest integer
     }
 
-    // è¾“å‡º
+    // 11) Output results with rounding
     *out_power_w = power_w;
-    *out_soc_pct = (uint16_t)(soc_f + 0.5f);
-    *out_range_100m = (uint16_t)(remain_range_km * 10.0f + 0.5f);
-    *out_range_max_100m = (uint16_t)(full_range_km * 10.0f + 0.5f);
-}
+    *out_soc_pct = (uint16_t)(soc_f + 0.5); // round SOC
 
+    // Remaining range in 100m units, clamp to 16-bit max
+    uint32_t r100 = (uint32_t)(remain_range_km * 10.0 + 0.5);
+    if (r100 > 65535)
+        r100 = 65535;
+    *out_range_100m = (uint16_t)r100;
+
+    // Maximum theoretical range in 100m units
+    uint32_t rmax100 = (uint32_t)(full_range_km * 10.0 + 0.5);
+    if (rmax100 > 65535)
+        rmax100 = 65535;
+    *out_range_max_100m = (uint16_t)rmax100;
+}
 /*******************************************************************************
  * CRC Calculation
  *******************************************************************************/
@@ -238,20 +272,31 @@ uint8_t get_month_index(const char *month_str)
     }
     return 0; // Invalid month
 }
-
+/**
+ * @brief Parse build date and time
+ * @param year   [out] year
+ * @param month  [out] month (1-12)
+ * @param day    [out] day (1-31)
+ * @param hour   [out] hour (0-23)
+ * @param minute [out] minute (0-59)
+ * @param date_str  Build date string ("Mmm dd yyyy"), e.g., __DATE__
+ * @param time_str  Build time string ("hh:mm:ss"), e.g., __TIME__
+ */
 // Parse build date (__DATE__) and time (__TIME__)
 void parse_build_date_time(uint16_t *year, uint8_t *month, uint8_t *day,
-                           uint8_t *hour, uint8_t *minute)
+                           uint8_t *hour, uint8_t *minute,
+                           const char *date_str,
+                           const char *time_str)
 {
     char month_str[4];
     int y, d, h, m, s;
 
-    sscanf(__DATE__, "%3s %d %d", month_str, &d, &y);
+    sscanf(date_str, "%3s %d %d", month_str, &d, &y);
     *year = (uint16_t)y;
     *month = get_month_index(month_str);
     *day = (uint8_t)d;
 
-    sscanf(__TIME__, "%d:%d:%d", &h, &m, &s);
+    sscanf(time_str, "%d:%d:%d", &h, &m, &s);
     *hour = (uint8_t)h;
     *minute = (uint8_t)m;
 }
@@ -301,20 +346,20 @@ void decode_datetime_version(uint32_t encoded,
 }
 
 // Build encoded version number using current compile time
-uint32_t build_version_code(void)
+uint32_t build_version_code(const char *date_str, const char *time_str)
 {
     uint16_t y;
     uint8_t m, d, h, min;
-    parse_build_date_time(&y, &m, &d, &h, &min);
+    parse_build_date_time(&y, &m, &d, &h, &min, date_str, time_str);
     return encode_datetime_version(y, m, d, h, min, OTMS_VERSION_CODE);
 }
 
 // Format version info as string: YYYYMMDDHHMM_VER
-void build_version_string(char *out_str, size_t max_len)
+void build_version_string(char *out_str, size_t max_len, const char *date_str, const char *time_str)
 {
     uint16_t y;
     uint8_t m, d, h, min;
-    parse_build_date_time(&y, &m, &d, &h, &min);
+    parse_build_date_time(&y, &m, &d, &h, &min, date_str, time_str);
     snprintf(out_str, max_len, "%04u%02u%02u%02u%02u_%03u", y, m, d, h, min, OTMS_VERSION_CODE);
 }
 

@@ -198,22 +198,30 @@ typedef GPIO_TypeDef GPIO_GROUP;
 typedef GPIO_Module GPIO_GROUP;
 
 #define GPIO_POWER_KEY_GROUP GPIOA
-#define GPIO_POWER_KEY_PIN GPIO_Pin_12
+#define GPIO_POWER_KEY_PIN GPIO_PIN_12
 
 #define GPIO_POWER_SWITCH_GROUP GPIOB
-#define GPIO_POWER_SWITCH_PIN GPIO_Pin_4
+#define GPIO_POWER_SWITCH_PIN GPIO_PIN_4
 
 #define GPIO_POWER_ENABLE_GROUP GPIOA
-#define GPIO_POWER_ENABLE_PIN GPIO_Pin_15
+#define GPIO_POWER_ENABLE_PIN GPIO_PIN_15
 
 #else
 
 typedef uint8_t GPIO_GROUP;
+
 #define GPIO_POWER_KEY_GROUP 0
 #define GPIO_POWER_KEY_PIN 0
 
+#define GPIO_POWER_ENABLE_GROUP 0
+#define GPIO_POWER_ENABLE_PIN 0
+
 #define GPIO_POWER_SWITCH_GROUP 0
 #define GPIO_POWER_SWITCH_PIN 0
+
+#define GPIO_PAGE_KEY_GROUP 0
+#define GPIO_PAGE_KEY_PIN 0
+
 #endif
 
 /*********************************************************************

@@ -1,6 +1,6 @@
 
 /*******************************************************************************
- * @file     octopus_task_manager_flash.h
+ * @file     octopus_flash.h
  * @brief    Header file for managing Flash operations in the Octopus project.
  * @details  This file provides function declarations for reading and writing
  *           data to and from Flash memory. It also includes functions for
@@ -98,7 +98,7 @@ typedef enum
     BANK_SLOT_LOADER = 0, // Bootloader bank (reserved for the loader)
     BANK_SLOT_A,          // Application Slot A
     BANK_SLOT_B,          // Application Slot B
-    BANK_SLOT_INVALID,    // Invalid bank (used for error conditions)
+    BANK_SLOT_INVALID,    // Invalid bank or No bank mode
 } boot_bank_t;
 
 typedef enum
@@ -196,7 +196,7 @@ extern system_meter_infor_t system_meter_infor;
 // #define MAIN_APP_END_ADDR (MAIN_APP_START_ADDR + MAIN_APP_SIZE)
 
 #ifdef BOOTLOADER_LOCATION_TAIL
-#define MAIN_APP_SLOT_A_START_ADDR (0x08000000)                                 // Main Application start address
+#define MAIN_APP_SLOT_A_START_ADDR (0x08000000)                                                    // Main Application start address
 #define MAIN_APP_SLOT_B_START_ADDR (MAIN_APP_SLOT_A_START_ADDR + MAIN_APP_SIZE + FLASH_BLOCK_SIZE) // Main Application start address
 #else
 #define MAIN_APP_SLOT_A_START_ADDR (BOOTLOADER_END_ADDR)                        // Main Application start address
@@ -233,7 +233,8 @@ extern "C"
     extern void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length);
 
     void otsm_flash_init(void);
-    void boot_loader_active_user_app(void);
+    void flash_init_version(const char *date_str, const char *time_str);
+    void boot_loader_active_user_app(uint8_t bank_slot, const char *date_str, const char *time_str);
 
     void flash_JumpToApplication(uint32_t app_address);
     void flash_vector_table_config(uint8_t bank_slot, bool mapping_vector);
@@ -246,7 +247,7 @@ extern "C"
     uint32_t flash_get_bank_offset_address(uint8_t bank_type);
     uint32_t flash_erase_user_app_bank(void);
 
-    bool flash_decode_active_version(char *out_str, size_t max_len);
+    bool flash_decode_active_version(uint8_t bank_slot, char *out_str, size_t max_len, const char *date_str, const char *time_str);
     bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);
     bool flash_is_meta_infor_valid(void);
     bool flash_is_allow_update_bank(uint8_t bank_type);
