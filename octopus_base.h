@@ -37,8 +37,8 @@
 #include <time.h>    /**< Time manipulation functions (time_t, clock, etc.) */
 #include <ctype.h>   /**< Character classification and conversion functions */
 
-#include "octopus_log.h" // Include logging functions for debugging
 #include "octopus_configuration.h"
+#include "octopus_log.h" // Include logging functions for debugging
 /***********************************************************************************
  * Project-wide Macros (Optional)
  * Define any global macros that may be required across multiple modules here.

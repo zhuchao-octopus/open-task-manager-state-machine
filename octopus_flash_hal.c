@@ -12,6 +12,7 @@
  * INCLUDES
  */
 #include "octopus_flash_hal.h"
+#include "octopus_platform.h"
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x00000400) /* FLASH Page Size 1KB*/
 

@@ -29,7 +29,7 @@
  * task manager. These macros are generally defined for debugging purposes
  * during development.
  */
-#if 1 // def TASK_MANAGER_STATE_MACHINE_UPDATE
+#ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
 /*******************************************************************************
  * MACROS
  *
