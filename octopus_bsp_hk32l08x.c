@@ -3,11 +3,19 @@
 #include "octopus_platform.h"
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
+#include <string.h>	  // Include string functions for string manipulation
+#include "hk32l0xx.h" // Include the HK32L0xx library for MCU-specific definitions and functions
+#include "octopus_bsp_hk32l08x.h"
+
 #include "octopus_uart_hal.h"
+#include "octopus_log.h"
+#include "octopus_gpio_hal.h"
+#include "octopus_system.h"
+#include "octopus_flash.h"
+#include "octopus_uart_upf.h"
 #include "octopus_ling_hui_liion2.h"
-#include "octopus_4g.h"
-#include "octopus_bt.h"
 #include "octopus_bafang.h"
+#include "octopus_bt.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -237,13 +245,13 @@ void SYS_Config(void)
 {
 	// Configure SysTick timer to interrupt every 1 ms
 	SysTick->LOAD = (SystemCoreClock / 1000) - 1; // Set reload register for 1ms interval
-	SysTick->VAL = 0;							  // Clear current value
+	SysTick->VAL = 0;							  							// Clear current value
 	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk |  // Use processor clock
-					SysTick_CTRL_TICKINT_Msk |	  // Enable SysTick interrupt
-					SysTick_CTRL_ENABLE_Msk;	  // Enable SysTick timer
+					SysTick_CTRL_TICKINT_Msk |	  				// Enable SysTick interrupt
+					SysTick_CTRL_ENABLE_Msk;	  					// Enable SysTick timer
 
 	// Set the priority of the SysTick interrupt
-	NVIC_SetPriority(SysTick_IRQn, 0x3); // 0x0 is the highest priority
+	NVIC_SetPriority(SysTick_IRQn, 0x3); 					// 0x0 is the highest priority
 }
 /**
  * @brief  Configures GPIO pins for USART1 and USART2.
@@ -330,7 +338,6 @@ void GPIO_Config(void)
 	GPIO_PinAFConfig(LPUARTx_TXIO_PORT, LPUARTx_AF_TX_PIN, LPUARTx_AF_SELECT);
 	GPIO_PinAFConfig(LPUARTx_RXIO_PORT, LPUARTx_AF_RX_PIN, LPUARTx_AF_SELECT);
 
-
 	///////////////////////////////////////////////////////////////////////////
 	// CAN Bus Configuration: PA6 (CAN_RX), PA7 (CAN_TX)
 	///////////////////////////////////////////////////////////////////////////
@@ -367,6 +374,9 @@ void GPIO_Config(void)
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	// hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
 
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	///////////////////////////////////////////////////////////////////////////
 	// BL_EN_PWM1 (PB1): Backlight enable or PWM control
 	// NOTE: If using PWM, reconfigure as alternate function and assign TIMx
@@ -1593,6 +1603,7 @@ void ADC_DMA_Config(void)
     ADC_StartOfConversion(ADC);
 }
 #endif
+
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
 /////////////////////////////////////////////////////////////////////////////
 void CAN_Config(void)
@@ -1601,26 +1612,24 @@ void CAN_Config(void)
 	NVIC_InitTypeDef NVIC_InitStructure;
 	CAN_InitTypeDef CAN_InitStructure;
 	CAN_FilterInitTypeDef CAN_FilterInitStructure;
-
-	/* CAN GPIOs configuration **************************************************/
-
 	/* Enable GPIO clock */
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-#if 1
-	/* Connect CAN pins to AF4 */
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource11, GPIO_AF_4);
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource12, GPIO_AF_4);
-
-	/* Configure CAN RX and TX pins */
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 | GPIO_Pin_12;
-#else
+    memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
+	/* CAN GPIOs configuration **************************************************/
 	/* Connect CAN pins to AF4 */
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_4);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_4);
-
 	/* Configure CAN RX and TX pins */
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+
+#if 0 //def HK_DEMO_BORAD_TEST
+	/* Connect CAN pins to AF4 */
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource11, GPIO_AF_4);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource12, GPIO_AF_4);
+	/* Configure CAN RX and TX pins */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 | GPIO_Pin_12;
 #endif
+
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
@@ -1661,8 +1670,8 @@ void CAN_Config(void)
 	/* CAN Baudrate = 500bps (CAN clocked at 48 MHz) */
 	CAN_InitStructure.CAN_BS1 = CAN_BS1_10tq;
 	CAN_InitStructure.CAN_BS2 = CAN_BS2_5tq;
-	//CAN_InitStructure.CAN_Prescaler = 6;//500bps
-	CAN_InitStructure.CAN_Prescaler = 12;//250bps
+	CAN_InitStructure.CAN_Prescaler = 6;//500bps
+	//CAN_InitStructure.CAN_Prescaler = 12;//250bps
 #endif
 	CAN_Init(&CAN_InitStructure);
 
@@ -1678,8 +1687,14 @@ void CAN_Config(void)
 	CAN_FilterInitStructure.CAN_FilterActivation = ENABLE;
 	CAN_FilterInit(&CAN_FilterInitStructure);
 
-	/* Enable FIFO 0 message pending Interrupt */
-	CAN_ITConfig(CAN_IT_FMP0, ENABLE);
+	/* Enable FIFO 0 full Interrupt */
+	CAN_ITConfig(CAN_IT_FF0, ENABLE);
+
+	/* Enable FIFO 1 full Interrupt */
+	CAN_ITConfig(CAN_IT_FF1, ENABLE);	
+	
+	//uint8_t TxMessages[8] = { 0, 1, 2, 3, 4, 5, 6, 7};
+	//CAN_Send_Data(0,CAN_ID_STD,TxMessages,8);	
 }
 
 /**
@@ -1690,14 +1705,23 @@ void LCD_CAN_IRQHandler(void)
 {
 	CAN_Receive(CAN_FIFO0, &CanRxMessage);
 
-	LOG_BUFF_LEVEL((const uint8_t *)&CanRxMessage, sizeof(CanRxMsg));
-
-	// if ((CanRxMessage.StdId == 0x321) && (CanRxMessage.IDE == CAN_ID_STD) && (CanRxMessage.DLC == CAN_DATA_LENGTH))
+	if(system_get_mb_state() == MB_POWER_ST_ON)
 	{
+	  // LOG_BUFF_LEVEL((const uint8_t *)&CanRxMessage, sizeof(CanRxMsg));
 		// LED_Display(CanRxMessage.Data[0]);
 		// KeyNumber = CanRxMessage.Data[0];
-		CAN_Message_t parsed_msg = *(CAN_Message_t *)&CanRxMessage;
-		can_message_receiver(&parsed_msg);
+		CAN_Message_t CAN_Message;// = *(CAN_Message_t *)&CanRxMessage;
+		CAN_Message.StdId = CanRxMessage.StdId;
+		CAN_Message.ExtId = CanRxMessage.ExtId;
+		CAN_Message.IDE = CanRxMessage.IDE;
+		CAN_Message.RTR = CanRxMessage.RTR;
+		CAN_Message.DLC = CanRxMessage.DLC;
+		CAN_Message.FMI = CanRxMessage.FMI;
+		for (uint8_t i = 0; i < CAN_Message.DLC; i++)
+    {
+       CAN_Message.Data[i] = CanRxMessage.Data[i];
+    }
+		can_message_receiver(&CAN_Message);
 	}
 }
 
@@ -1742,7 +1766,7 @@ CAN_Status_t CAN_Send_Data(uint32_t id, uint8_t ide, const uint8_t *buffer, uint
 
 	// 发送
 	uint8_t mailbox = CAN_Transmit(&CanTxMessage);
-	if (mailbox > 2)
+	if (mailbox >= CAN_TxStatus_NoMailBox)
 	{ // 假设只有三个邮箱 0~2
 		return CAN_ERR_TRANSMIT;
 	}

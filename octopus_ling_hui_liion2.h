@@ -2,6 +2,7 @@
 /*******************************************************************************
  * INCLUDES
  */
+#include "octopus_base.h" //  Base include file for the Octopus project.
 #include "octopus_uart_upf.h" // Include UART protocol header
 /*******************************************************************************
  * DEBUG SWITCH MACROS
@@ -16,9 +17,9 @@
  */
 typedef enum
 {
-    DRIVE_MOD_REAR = 0, // ����
-    DRIVE_MOD_DOUBLE,   // ˫��
-    DRIVE_MOD_FRONT,    // ǰ��
+    DRIVE_MOD_REAR = 0, // 后驱
+    DRIVE_MOD_DOUBLE,   // 双驱
+    DRIVE_MOD_FRONT,    // 前驱
 } drive_mode_;
 /*******************************************************************************
  * CONSTANTS

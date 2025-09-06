@@ -15,7 +15,6 @@
 #ifndef __OCTOPUS_TASK_MANAGER_BMS_H__
 #define __OCTOPUS_TASK_MANAGER_BMS_H__
 
-#include "octopus_platform.h" ///< Include platform-specific configurations
 #include "octopus_gpio_hal.h" ///< Include GPIO Hardware Abstraction Layer for low-level pin control
 #include "octopus_gpio.h"     ///< Include GPIO header for GPIO-related operations
 

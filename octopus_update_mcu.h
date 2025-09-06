@@ -15,13 +15,8 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
+#include "octopus_base.h" //  Base include file for the Octopus project.
+#include "octopus_utils.h"
 /**
  * \defgroup APP_SETTING Application: MCU Update Task Manager
  * @{
@@ -35,75 +30,80 @@ extern "C"
  * during development.
  */
 #ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
-  /*******************************************************************************
-   * MACROS
-   *
-   * Define any general macros required for the MCU update task manager.
-   * These can include constants, helper macros, or flags.
-   */
+/*******************************************************************************
+ * MACROS
+ *
+ * Define any general macros required for the MCU update task manager.
+ * These can include constants, helper macros, or flags.
+ */
 
-  /*******************************************************************************
-   * TYPEDEFS
-   *
-   * Define data types specific to the MCU update task manager. These can include
-   * enumerations, structures, or aliases for existing types.
-   */
-  typedef enum
-  {
-    MCU_ERROR_CODE_OK = 0,
-    MCU_ERROR_CODE_BANK_MODE,
-    MCU_ERROR_CODE_ADDRESS,
-    MCU_ERROR_CODE_CRC,
-    MCU_ERROR_CODE_FRAME,
-    MCU_ERROR_CODE_FILE,
-    MCU_ERROR_CODE_UNKNOW_FILE,
-    MCU_ERROR_CODE_OPEN_FILE,
+/*******************************************************************************
+ * TYPEDEFS
+ *
+ * Define data types specific to the MCU update task manager. These can include
+ * enumerations, structures, or aliases for existing types.
+ */
+typedef enum
+{
+  MCU_ERROR_CODE_OK = 0,
+  MCU_ERROR_CODE_BANK_MODE,
+  MCU_ERROR_CODE_ADDRESS,
+  MCU_ERROR_CODE_CRC,
+  MCU_ERROR_CODE_FRAME,
+  MCU_ERROR_CODE_FILE,
+  MCU_ERROR_CODE_UNKNOW_FILE,
+  MCU_ERROR_CODE_OPEN_FILE,
 
-  } mcu_error_code_t;
+} mcu_error_code_t;
 
-  typedef struct
-  {
-    uint32_t s_length;
-    uint32_t s_total_length;
-    uint8_t error_code;
-  } mcu_update_progress_t;
+typedef struct
+{
+  uint32_t s_length;
+  uint32_t s_total_length;
+  uint8_t error_code;
+} mcu_update_progress_t;
 
-  typedef struct
-  {
-    file_info_t file_info;
-    long file_offset;
-    uint32_t s_length;
-    uint16_t f_counter; // frame counter
-    uint8_t error_code;
-    uint32_t start_time;
-  } mcu_update_progress_status_t;
+typedef struct
+{
+  file_info_t file_info;
+  long file_offset;
+  uint32_t s_length;
+  uint16_t f_counter; // frame counter
+  uint8_t error_code;
+  uint32_t start_time;
+} mcu_update_progress_status_t;
 
-  /*******************************************************************************
-   * CONSTANTS
-   *
-   * Define any constant values used in the MCU update task manager.
-   * These may include default settings or configuration parameters.
-   */
+/*******************************************************************************
+ * CONSTANTS
+ *
+ * Define any constant values used in the MCU update task manager.
+ * These may include default settings or configuration parameters.
+ */
 
-  /*******************************************************************************
-   * GLOBAL VARIABLES DECLARATION
-   *
-   * Declare any global variables that are required for the MCU update
-   * task manager. These variables will be defined in the implementation file.
-   */
-  // extern mcu_update_progress_status_t mcu_update_status;
-  /*******************************************************************************
-   * GLOBAL FUNCTIONS DECLARATION
-   *
-   * Declare the functions used to manage the lifecycle of the MCU update task.
-   */
+/*******************************************************************************
+ * GLOBAL VARIABLES DECLARATION
+ *
+ * Declare any global variables that are required for the MCU update
+ * task manager. These variables will be defined in the implementation file.
+ */
+// extern mcu_update_progress_status_t mcu_update_status;
+/*******************************************************************************
+ * GLOBAL FUNCTIONS DECLARATION
+ *
+ * Declare the functions used to manage the lifecycle of the MCU update task.
+ */
 
-  /**
-   * @brief Initialize the MCU update task.
-   *
-   * This function is called during system initialization to prepare
-   * the MCU update task for execution.
-   */
+/**
+ * @brief Initialize the MCU update task.
+ *
+ * This function is called during system initialization to prepare
+ * the MCU update task for execution.
+ */
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
   void task_update_init_running(void);
 
   /**

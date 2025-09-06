@@ -3,7 +3,7 @@
 #ifndef __CAN_HAL_H__
 #define __CAN_HAL_H__
 
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 #ifdef __cplusplus
 extern "C"

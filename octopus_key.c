@@ -2,18 +2,24 @@
 /*****************************************************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_flash.h"
 #include "octopus_key.h"
-#include "octopus_gpio.h"     // Include GPIO HAL for hardware-specific functionality
+#include "octopus_gpio.h" // Include GPIO HAL for hardware-specific functionality
+
+#include "octopus_uart_ptl.h"    // Include UART protocol header
+#include "octopus_uart_upf.h"    // Include UART protocol header
+#include "octopus_tickcounter.h" // Include tick counter for timing operations
+#include "octopus_msgqueue.h"    // Include message queue header for task communication
+#include "octopus_message.h"     // Include message id for inter-task communication
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
 #include "octopus_vehicle.h"
 #endif
+
 /*****************************************************************************************************************
  * DEBUG SWITCH MACROS
  */
 
-//#define ADDR_OTA_FLAG 0x1FFF18FC
+// #define ADDR_OTA_FLAG 0x1FFF18FC
 
 #ifdef TASK_MANAGER_STATE_MACHINE_KEY
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -117,6 +123,7 @@ static void task_key_action_handler(void)
     if (msg->msg_id == NO_MSG)
         return;
 
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     uint16_t key = msg->param1;
     GPIO_KEY_STATUS *key_status = NULL;
     GPIO_STATUS *gpio_status = NULL;
@@ -140,11 +147,11 @@ static void task_key_action_handler(void)
         // LOG_LEVEL("key %d pressed key_status=%d\r\n",key,msg->param2);
         switch (key)
         {
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+
         case OCTOPUS_KEY_POWER:
             task_key_power_handler(key_status);
             break;
-#endif
+
         case OCTOPUS_KEY_PLUS:
         case OCTOPUS_KEY_SUBT:
         default:
@@ -159,11 +166,11 @@ static void task_key_action_handler(void)
         // LOG_LEVEL("key %d release key_status=%d\r\n",key,msg->param2);
         switch (key)
         {
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+
         case OCTOPUS_KEY_POWER:
             task_key_power_handler(key_status);
             break;
-#endif
+
         case OCTOPUS_KEY_PLUS:
         case OCTOPUS_KEY_SUBT:
         default:
@@ -172,11 +179,12 @@ static void task_key_action_handler(void)
         }
         break;
     }
+#endif
 }
 
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
 void task_key_power_handler(GPIO_KEY_STATUS *key_status)
 {
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     static uint32_t power_key_wait_timer;
     if (key_status == NULL)
         return;
@@ -241,8 +249,8 @@ void task_key_power_handler(GPIO_KEY_STATUS *key_status)
         power_key_password_index = 0;
         break;
     }
-}
 #endif
+}
 
 void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status)
 {
@@ -472,4 +480,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
         break;
     }
 }
+#else
+GPIO_STATUS *gpio_array[] = {NULL};
+GPIO_KEY_STATUS *gpio_key_array[] = {NULL};
 #endif

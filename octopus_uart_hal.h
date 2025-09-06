@@ -16,13 +16,7 @@
 /*********************************************************************
  * INCLUDES
  */
-
-#include "octopus_platform.h" // Include custom types (likely custom data types or hardware-specific definitions)
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 /*******************************************************************************
  * GENERAL MACROS
@@ -46,20 +40,21 @@ extern "C"
 #define PROTOCOL_UART_GPIO_TX CFG_GPIO_UART2_TX   // GPIO pin for UART TX (transmit)
 #endif
 
-    // If the platform is CST OSAL RTOS, define the UART data buffer structure
-    // #ifdef PLATFORM_CST_OSAL_RTOS
-    typedef struct
-    {
-        uint16_t wr;                      // Write index for data buffer
-        uint16_t rd;                      // Read index for data buffer
-        uint8_t data[UART_BUFF_MAX_SIZE]; // Data buffer
-    } com_uart_data_buff_t;
-    // #endif
+typedef struct
+{
+    uint16_t wr;                      // Write index for data buffer
+    uint16_t rd;                      // Read index for data buffer
+    uint8_t data[UART_BUFF_MAX_SIZE]; // Data buffer
+} com_uart_data_buff_t;
 
-    /*******************************************************************************
-     * FUNCTIONS
-     * Function prototypes for UART communication and protocol handling.
-     */
+/*******************************************************************************
+ * FUNCTIONS
+ * Function prototypes for UART communication and protocol handling.
+ */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
     void otsm_uart_init(void);
     // Initializes the UART protocol (e.g., UART configuration, GPIO, etc.)
     void hal_uart_init(uint8_t task_id);

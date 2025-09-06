@@ -21,31 +21,29 @@
  * INCLUDES
  * Include necessary headers for BLE management.
  *******************************************************************************/
-#include "octopus_platform.h" // Platform-specific definitions and utilities
-#include "octopus_system.h"
+#include "octopus_base.h" //  Base include file for the Octopus project.
+#include "octopus_uart_upf.h" // Include UART protocol header
+/*******************************************************************************
+ * DEBUG SWITCH MACROS
+ */
+#ifdef TASK_MANAGER_STATE_MACHINE_LOT4G
+/*******************************************************************************
+ * MACROS
+ * Define commonly used macros for this module.
+ *******************************************************************************/
+/*******************************************************************************
+ * TYPEDEFS
+ * Define types used in the BLE management process.
+ *******************************************************************************/
+
+/*******************************************************************************
+ * GLOBAL FUNCTIONS DECLARATION
+ * Declare the public functions provided by this module.
+ *******************************************************************************/
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-/*******************************************************************************
- * DEBUG SWITCH MACROS
- */
-#ifdef TASK_MANAGER_STATE_MACHINE_4G
-    /*******************************************************************************
-     * MACROS
-     * Define commonly used macros for this module.
-     *******************************************************************************/
-    /*******************************************************************************
-     * TYPEDEFS
-     * Define types used in the BLE management process.
-     *******************************************************************************/
-
-    /*******************************************************************************
-     * GLOBAL FUNCTIONS DECLARATION
-     * Declare the public functions provided by this module.
-     *******************************************************************************/
-
     /**
      * @brief Initialize BLE functionality.
      */
@@ -79,6 +77,8 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+extern upf_module_t upf_module_info_LOT4G;
 
 #endif
 

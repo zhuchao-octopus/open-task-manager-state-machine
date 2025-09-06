@@ -2,9 +2,14 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_ling_hui_liion2.h"
-#include "octopus_uart_hal.h"
+#include "octopus_task_manager.h"   // Task Manager: handles scheduling and execution of system tasks
+#include "octopus_tickcounter.h"    // Tick Counter: provides timing and delay utilities
+#include "octopus_message.h"        // Message IDs: defines identifiers for inter-task communication
+#include "octopus_msgqueue.h"       // Message Queue: API for sending/receiving messages between tasks
+#include "octopus_uart_ptl.h"       // UART Protocol Layer: handles protocol-level UART operations
+#include "octopus_uart_upf.h"       // UART Packet Framework: low-level UART packet processing
+
 #include "octopus_vehicle.h"
 
 /*******************************************************************************
@@ -41,7 +46,7 @@ void lhl2_ptl_test_carinfo_indicator(void);
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-upf_module_t upf_module_info_LING_HUI_LIION2 = {UPF_MODULE_NUMBER_LING_HUI_LIION2, UPF_CHANNEL_8, UPF_CHANNEL_TYPE_BYTE};
+upf_module_t upf_module_info_LING_HUI_LIION2 = {UPF_MODULE_ID_LING_HUI_LIION2, UPF_CHANNEL_8, UPF_CHANNEL_TYPE_BYTE};
 /*******************************************************************************
  * STATIC VARIABLES
  */
@@ -505,40 +510,40 @@ void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length) // RX
     // mingnuo_4chin
     if (((state1 & BIT_6) == 0) && ((state1 & BIT_5) == 0) && ((state1 & BIT_4) == 0) && ((state1 & BIT_3) == 0) && ((state1 & BIT_0) == 0) && ((state2 & BIT_6) == 0) && ((state2 & BIT_4) == 0))
     {
-        task_carinfo_add_error_code(ERROR_CODE_NORMAL, true, false);
+        carinfo_add_error_code(ERROR_CODE_NORMAL, true, false);
         return;
     }
 
     if (state1 & BIT_6) // 霍尔传感器状态
-        task_carinfo_add_error_code(ERROR_CODE_HALLSENSOR_ABNORMALITY, state1 & BIT_6, false);
+        carinfo_add_error_code(ERROR_CODE_HALLSENSOR_ABNORMALITY, state1 & BIT_6, false);
 
     // 转把故障状态
     if (state1 & BIT_5)
-        task_carinfo_add_error_code(ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY, state1 & BIT_5, false);
+        carinfo_add_error_code(ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY, state1 & BIT_5, false);
 
     // 控制器故障状态
     if (state1 & BIT_4)
-        task_carinfo_add_error_code(ERROR_CODE_CONTROLLER_ABNORMALITY, state1 & BIT_4, false);
+        carinfo_add_error_code(ERROR_CODE_CONTROLLER_ABNORMALITY, state1 & BIT_4, false);
 
     // 欠压保护状态
     if (state1 & BIT_3)
-        task_carinfo_add_error_code(ERROR_CODE_LOW_VOLTAGE_PROTECTION, state1 & BIT_3, false);
+        carinfo_add_error_code(ERROR_CODE_LOW_VOLTAGE_PROTECTION, state1 & BIT_3, false);
 
     // 电机缺相
     if (state1 & BIT_0)
-        task_carinfo_add_error_code(ERROR_CODE_MOTOR_ABNORMALITY, state1 & BIT_0, false);
+        carinfo_add_error_code(ERROR_CODE_MOTOR_ABNORMALITY, state1 & BIT_0, false);
 
     // 助力传感器状态
     if (state2 & BIT_6)
     {
         if (lt_carinfo_error.fault_sensor)
-            task_carinfo_add_error_code(ERROR_CODE_ASSIST_POWER_SENSOR_ABNORMALITY, state2 & BIT_6, false);
+            carinfo_add_error_code(ERROR_CODE_ASSIST_POWER_SENSOR_ABNORMALITY, state2 & BIT_6, false);
     }
 
     // 通讯故障
     if (state2 & BIT_4)
     {
-        task_carinfo_add_error_code(ERROR_CODE_BMS_ABNORMALITY, state2 & BIT_4, false);
+        carinfo_add_error_code(ERROR_CODE_BMS_ABNORMALITY, state2 & BIT_4, false);
     }
 }
 

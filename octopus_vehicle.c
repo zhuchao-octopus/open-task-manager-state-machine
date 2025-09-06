@@ -29,16 +29,21 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_vehicle.h"
+#include "octopus_utils.h"
 #include "octopus_sif.h"
 #include "octopus_ipc.h"
 #include "octopus_flash.h"
+#include "octopus_uart_ptl.h"    // Include UART protocol header
+#include "octopus_uart_upf.h"    // Include UART protocol header
+#include "octopus_tickcounter.h" // Include tick counter for timing operations
+#include "octopus_msgqueue.h"    // Include message queue header for task communication
+#include "octopus_message.h"     // Include message id for inter-task communication
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
 /// #define CARINFOR_PTL_ACK
-///  #define TEST_LOG_DEBUG_SIF  // Uncomment to enable debug logging for SIF module
+/// #define TEST_LOG_DEBUG_SIF  // Uncomment to enable debug logging for SIF module
 
 /*******************************************************************************
  * MACROS
@@ -238,6 +243,7 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
 {
     MY_ASSERT(payload); // Ensure the payload pointer is valid
     MY_ASSERT(ackbuff); // Ensure the ack buffer pointer is valid
+
     // Handle M2A (Module to Application) frames — actual data updates
     // LOG_LEVEL("payload->frame_type=%d payload->data_len=%d\r\n",payload->frame_type, payload->data_len);
     if (MCU_TO_SOC_MOD_CARINFOR == payload->frame_type)
@@ -301,100 +307,6 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
- * @brief Calculate the distance traveled based on speed and time.
- *
- * @param speedKmh Speed in kilometers per hour (km/h)
- * @param timeSec Time in seconds (s)
- * @return double Distance traveled in meters (m)
- */
-uint32_t calculateTotalDistance(uint32_t speed_kmh, uint32_t time_sec)
-{
-    // speed_kmh is in km/h, time_sec is in seconds
-    // Convert speed to m/s (1 km/h = 1000 m / 3600 s)
-    // uint32_t speed_ms = (speed_kmh * 1000) / 3600;
-
-    // speed_kmh_x10: speed in 0.1 km/h units
-    // Convert to m/s: (speed * 100) / 3600 = speed / 36
-    uint32_t speed_ms = speed_kmh / 36; // 0.1dkm/h
-
-    // Calculate distance in meters
-    uint32_t distance_m = speed_ms * time_sec;
-
-    return distance_m;
-}
-
-static const float DEFAULT_CONSUMPTION_WH_PER_KM = 10.0f; // 经验值：Wh/km，可按实际调整
-static const float DEFAULT_SAFETY_RESERVE_RATIO = 0.10f;  // 预留 10% 容量为安全余量（可设0）
-
-void calculate_battery_soc_ex(uint16_t voltage_mV,
-                              uint16_t capacity_mAh,
-                              uint32_t trip_odo_m,
-                              float consumption_Wh_per_km, // 例如 18.0
-                              float safety_reserve_ratio,  // 例如 0.10 = 10%
-                              float avg_speed_kph,         // 用于功率估算；若未知传 0
-                              uint16_t *out_power_w,
-                              uint16_t *out_soc_pct,
-                              uint16_t *out_range_100m,
-                              uint16_t *out_range_max_100m)
-{
-    if (!out_power_w || !out_soc_pct || !out_range_100m || !out_range_max_100m)
-        return;
-    if (voltage_mV < 1000)
-        voltage_mV = voltage_mV * 100;
-    if (capacity_mAh < 1000)
-        capacity_mAh = capacity_mAh * 100;
-
-    // 参数保护
-    if (consumption_Wh_per_km <= 0.01f)
-        consumption_Wh_per_km = 18.0f;
-    if (safety_reserve_ratio < 0.0f)
-        safety_reserve_ratio = 0.0f;
-    if (safety_reserve_ratio > 0.5f)
-        safety_reserve_ratio = 0.5f;
-
-    // 1. 电池总能量 (Wh)
-    float capacity_Wh = (voltage_mV * capacity_mAh) / 1000000.0f;
-
-    // 2. 可用能量 (扣除安全余量)
-    float usable_Wh = capacity_Wh * (1.0f - safety_reserve_ratio);
-
-    // 3. 已消耗能量
-    float used_km = trip_odo_m / 1000.0f;
-    float used_Wh = used_km * consumption_Wh_per_km;
-
-    // 4. 剩余能量
-    float remain_Wh = usable_Wh - used_Wh;
-    if (remain_Wh < 0.0f)
-        remain_Wh = 0.0f;
-
-    // 5. SOC (%)
-    float soc_f = (usable_Wh > 0.0f) ? (remain_Wh / usable_Wh) * 100.0f : 0.0f;
-    if (soc_f > 100.0f)
-        soc_f = 100.0f;
-
-    // 6. 理论最大/剩余里程
-    float full_range_km = (usable_Wh > 0.0f) ? (usable_Wh / consumption_Wh_per_km) : 0.0f;
-    float remain_range_km = (remain_Wh > 0.0f) ? (remain_Wh / consumption_Wh_per_km) : 0.0f;
-
-    // 7. 平均功率估算
-    uint16_t power_w = 0;
-    if (avg_speed_kph > 0.0f)
-    {
-        float p = consumption_Wh_per_km * avg_speed_kph; // Wh/km * km/h = Wh/h = W
-        if (p < 0.0f)
-            p = 0.0f;
-        if (p > 65535.0f)
-            p = 65535.0f;
-        power_w = (uint16_t)(p + 0.5f);
-    }
-
-    // 输出
-    *out_power_w = power_w;
-    *out_soc_pct = (uint16_t)(soc_f + 0.5f);
-    *out_range_100m = (uint16_t)(remain_range_km * 10.0f + 0.5f);
-    *out_range_max_100m = (uint16_t)(full_range_km * 10.0f + 0.5f);
-}
 
 void task_car_controller_msg_handler(void)
 {
@@ -511,7 +423,7 @@ void task_car_controller_msg_handler(void)
 // ERROR_CODE_COMMUNICATION_ABNORMALITY = 0X30,                 // 通讯故障
 //  添加错误代码
 
-void task_carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately)
+void carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately)
 {
     if (code_append)
     {

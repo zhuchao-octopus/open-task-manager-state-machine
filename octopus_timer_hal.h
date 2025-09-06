@@ -17,7 +17,7 @@
 #ifndef __OCTOPUS_TASK_MANAGER_TIMER_HAL_H__
 #define __OCTOPUS_TASK_MANAGER_TIMER_HAL_H__
 
-#include "octopus_platform.h" // Include platform-specific configurations and definitions
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 #ifdef __cplusplus
 extern "C"

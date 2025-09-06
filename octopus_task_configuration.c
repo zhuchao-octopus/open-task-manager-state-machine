@@ -21,23 +21,38 @@
 /******************************************************************************
  * INCLUDES
  */
-#include "octopus_task_manager.h" // Include task manager for scheduling tasks
-#include "octopus_system.h"
-#include "octopus_gpio.h"
-#include "octopus_key.h"
+/********************************************************************************
+ * Core System Modules
+ ********************************************************************************/
+#include "octopus_task_manager.h"  // Task Manager: handles scheduling and execution of system tasks
+#include "octopus_configuration.h" // Project configuration macros and system-wide constants
+#include "octopus_system.h"        // System services: initialization, state management, and utilities
+#include "octopus_gpio.h"          // GPIO abstraction and hardware control
+#include "octopus_key.h"           // Key input handling and debouncing
+#include "octopus_update_mcu.h"    // MCU firmware update and OTA handler
 
-#include "octopus_vehicle.h"
-#include "octopus_ble.h"
-#include "octopus_4g.h"
-#include "octopus_bt.h"
-#include "octopus_ling_hui_liion2.h"
+/********************************************************************************
+ * Vehicle and Communication Modules
+ ********************************************************************************/
+#include "octopus_vehicle.h"       // Vehicle data processing and control interfaces
+#include "octopus_ble.h"           // BLE communication module
+#include "octopus_4g.h"            // 4G network communication module
+#include "octopus_bt.h"            // Classic Bluetooth communication module
+#include "octopus_ling_hui_liion2.h" // Ling Hui Li-ion battery management
+#include "octopus_bafang.h"        // Bafang motor control and communication
 
-#include "octopus_update_mcu.h"
-#include "octopus_ipc.h"
-#include "octopus_can.h"
-#include "octopus_bafang.h"
-#include "octopus_uart_ptl.h" // Include UART protocol header
-#include "octopus_uart_upf.h" // Include UART protocol header
+/********************************************************************************
+ * Update, IPC, and CAN Modules
+ ********************************************************************************/
+
+#include "octopus_ipc.h"           // Inter-process / inter-task communication
+#include "octopus_can.h"           // CAN bus interface and message processing
+
+/********************************************************************************
+ * UART Modules
+ ********************************************************************************/
+#include "octopus_uart_ptl.h"      // UART Protocol Layer: handles protocol-level UART operations
+#include "octopus_uart_upf.h"      // UART Packet Framework: low-level UART packet processing
 
 /*******************************************************************************
  * CONSTANTS
@@ -162,7 +177,7 @@ const otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
     },
 #endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_4G
+#ifdef TASK_MANAGER_STATE_MACHINE_LOT4G
     [TASK_MODULE_4G] = {
         .func = {
             [OTMS_S_INIT] = task_4g_init_running,
@@ -228,5 +243,26 @@ const otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
 #endif
 };
 
-upf_module_info_t upf_module_info[_UPF_MODULE_MAX_];
+/**
+ * @brief Array holding information for all UPF (UART Packet Framework) modules.
+ *
+ * @details
+ *   This array stores runtime metadata for each UPF module in the system. Each
+ *   element of the array corresponds to a specific module and contains relevant
+ *   configuration, status, and operational data necessary for UART packet
+ *   processing.
+ *
+ *   Typical usage includes:
+ *     - Tracking module initialization state
+ *     - Storing current configuration parameters
+ *     - Maintaining runtime statistics (e.g., number of packets sent/received)
+ *
+ * @note
+ *   - The maximum number of supported modules is defined by `_UPF_MODULE_MAX_`.
+ *   - All modules must be initialized before use to ensure proper operation.
+ */
+#ifdef TASK_MANAGER_STATE_MACHINE_UPF
+upf_module_info_t upf_module_array[_UPF_MODULE_MAX_];
+#endif
+
 

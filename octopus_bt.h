@@ -21,20 +21,17 @@
  * INCLUDES
  * Include necessary headers for BLE management.
  *******************************************************************************/
-#include "octopus_platform.h" // Platform-specific definitions and utilities
-#include "octopus_system.h"
-#include "octopus_uart_upf.h" // Include UART protocol header
+#include "octopus_base.h"
+#include "octopus_uart_upf.h"
 
 #define MAX_BT_DEVICES 10
-
-extern upf_module_t upf_module_info_BT_MUSIC;
 
 typedef struct
 {
 	char name[32];	  // Bluetooth device name
 	char address[13]; // 12 hex digits, no colon, e.g. "00755810FD4F"
 	int type;
-	int rssi; 				// Signal strength in dBm
+	int rssi; // Signal strength in dBm
 	char class_str[8];
 } bt_device_t;
 
@@ -107,6 +104,8 @@ typedef enum
 #define AT_CTL_HANGUP "CHUP\r\n"
 #define AT_CTL_DTMF(num) "DTMF=" num "\r\n"
 
+#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -115,7 +114,7 @@ extern "C"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
-#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
+
 	/*******************************************************************************
 	 * MACROS
 	 * Define commonly used macros for this module.
@@ -171,6 +170,7 @@ extern "C"
 }
 #endif
 
-#endif
+extern upf_module_t upf_module_info_BT_MUSIC;
+#endif //#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
 
 #endif // __OCTOPUS_TASK_MANAGER_BLE_H__

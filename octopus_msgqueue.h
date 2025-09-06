@@ -26,43 +26,43 @@
 /*******************************************************************************
  * INCLUDES
  */
+#include "octopus_base.h"         //  Base include file for the Octopus project.
+#include "octopus_task_manager.h" // Include task manager for scheduling tasks
+/*******************************************************************************
+ * DEFINITIONS AND MACROS
+ */
 
-#include "octopus_platform.h" // General Octopus definitions
+#define QUEUE_LENGTH 50 // Maximum size of the message queue
+#define NO_MSG 0xFF     // Constant for indicating no message
+
+/*******************************************************************************
+ * MESSAGE STRUCTURE
+ * Represents a message with an ID and two parameters.
+ */
+#pragma pack(1)
+typedef struct
+{
+    uint16_t msg_id; // The message identifier
+    uint16_t param1; // First parameter for the message
+    uint16_t param2; // Second parameter for the message
+} Msg_t;
+
+/*******************************************************************************
+ * MESSAGE QUEUE STRUCTURE
+ * Represents the message queue for a specific task module.
+ */
+typedef struct
+{
+    uint8_t nEnque;            // Index for the next message to be enqueued
+    uint8_t nDeque;            // Index for the next message to be dequeued
+    Msg_t queue[QUEUE_LENGTH]; // Array to store messages in the queue
+} MsgQueue_t;
+#pragma pack()
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-    /*******************************************************************************
-     * DEFINITIONS AND MACROS
-     */
-
-#define QUEUE_LENGTH 50 // Maximum size of the message queue
-#define NO_MSG 0xFF     // Constant for indicating no message
-
-    /*******************************************************************************
-     * MESSAGE STRUCTURE
-     * Represents a message with an ID and two parameters.
-     */
-#pragma pack(1)
-    typedef struct
-    {
-        uint16_t msg_id; // The message identifier
-        uint16_t param1; // First parameter for the message
-        uint16_t param2; // Second parameter for the message
-    } Msg_t;
-
-    /*******************************************************************************
-     * MESSAGE QUEUE STRUCTURE
-     * Represents the message queue for a specific task module.
-     */
-    typedef struct
-    {
-        uint8_t nEnque;            // Index for the next message to be enqueued
-        uint8_t nDeque;            // Index for the next message to be dequeued
-        Msg_t queue[QUEUE_LENGTH]; // Array to store messages in the queue
-    } MsgQueue_t;
-#pragma pack()
     /*******************************************************************************
      * FUNCTION PROTOTYPES
      * Functions for managing the message queues

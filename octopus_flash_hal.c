@@ -11,11 +11,10 @@
 /*********************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h"
 #include "octopus_flash_hal.h"
+#include "octopus_platform.h"
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x00000400) /* FLASH Page Size 1KB*/
-
 
 void hal_flash_init(uint8_t task_id)
 {
@@ -42,8 +41,27 @@ uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
 {
     return 0;
 }
+#elif defined(PLATFORM_NATION_RTOS)
 
-#else
+uint32_t hal_flash_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
+{
+    return 0;
+}
+uint32_t hal_flash_erase_page_(uint32_t startaddr, uint8_t page_count)
+{
+    return 0;
+}
+uint32_t hal_flash_erase_area_(uint32_t startaddr, uint32_t endaddr)
+{
+    return 0;
+}
+
+uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
+{
+    return 0;
+}
+
+#elif defined(PLATFORM_STM32_RTOS)
 
 uint32_t hal_flash_erase_page_(uint32_t startaddr, uint8_t page_count)
 {
@@ -164,6 +182,24 @@ uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
     /* Lock the Flash after writing */
     FLASH_Lock();
     return written_bytes; // Return the number of bytes written
+}
+#else
+uint32_t hal_flash_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
+{
+    return 0;
+}
+uint32_t hal_flash_erase_page_(uint32_t startaddr, uint8_t page_count)
+{
+    return 0;
+}
+uint32_t hal_flash_erase_area_(uint32_t startaddr, uint32_t endaddr)
+{
+    return 0;
+}
+
+uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
+{
+    return 0;
 }
 #endif
 

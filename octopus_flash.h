@@ -1,6 +1,6 @@
 
 /*******************************************************************************
- * @file     octopus_task_manager_flash.h
+ * @file     octopus_flash.h
  * @brief    Header file for managing Flash operations in the Octopus project.
  * @details  This file provides function declarations for reading and writing
  *           data to and from Flash memory. It also includes functions for
@@ -13,7 +13,7 @@
 #define __OCTOPUS_TASK_MANAGER_FLASH_H__
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
-#include "octopus_platform.h"  ///< Include platform-specific configurations
+#include "octopus_base.h"      //  Base include file for the Octopus project.
 #include "octopus_flash_hal.h" ///< Include Flash Hardware Abstraction Layer (HAL) for low-level operations
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -98,8 +98,7 @@ typedef enum
     BANK_SLOT_LOADER = 0, // Bootloader bank (reserved for the loader)
     BANK_SLOT_A,          // Application Slot A
     BANK_SLOT_B,          // Application Slot B
-    BANK_SLOT_AUTO,       // Automatically choose between Slot A or B
-    BANK_SLOT_INVALID,    // Invalid bank (used for error conditions)
+    BANK_SLOT_INVALID,    // Invalid bank or No bank mode
 } boot_bank_t;
 
 typedef enum
@@ -148,10 +147,10 @@ typedef struct
     uint16_t speed_average; // Displayed vehicle speed (unit: 0.1 km/h)
     uint16_t speed_actual;  // Actual wheel speed (unit: 0.1 km/h)
     uint16_t speed_max;
-    uint16_t speed_limit; // Speed limit setting; 0 = OFF, range: 10¨C90 km/h
+    uint16_t speed_limit; // Speed limit setting; 0 = OFF, range: 10ï¿½C90 km/h
 
     uint16_t rpm;           // Motor RPM (raw value, offset by -20000)
-    uint8_t gear;           // Current gear level (0 = Neutral, 1¨CN)
+    uint8_t gear;           // Current gear level (0 = Neutral, 1ï¿½CN)
     uint8_t gear_level_max; // Maximum selectable gear level
     uint8_t wheel_diameter; // Wheel diameter (unit: inch)
     uint8_t reserve;
@@ -166,7 +165,7 @@ extern system_meter_infor_t system_meter_infor;
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #define FLASH_BLOCK_SIZE (1024)                                 // 0x00000400  /* FLASH Page Size 1KB(1024)*/
-#define FLASH_TOTAL_BLOCK (128)                                 // 128K 0x20000                   // Total Flash size: 128KB
+#define FLASH_TOTAL_BLOCK (128 - 2)                             // 128K 0x20000 Total Flash size: 128KB
 #define FLASH_TOTAL_SIZE (FLASH_TOTAL_BLOCK * FLASH_BLOCK_SIZE) // Total Flash size: 128KB
 
 #define FLASH_BASE_START_ADDR (0x08000000)
@@ -197,8 +196,8 @@ extern system_meter_infor_t system_meter_infor;
 // #define MAIN_APP_END_ADDR (MAIN_APP_START_ADDR + MAIN_APP_SIZE)
 
 #ifdef BOOTLOADER_LOCATION_TAIL
-#define MAIN_APP_SLOT_A_START_ADDR (0x08000000)                                 // Main Application start address
-#define MAIN_APP_SLOT_B_START_ADDR (MAIN_APP_SLOT_A_START_ADDR + MAIN_APP_SIZE) // Main Application start address
+#define MAIN_APP_SLOT_A_START_ADDR (0x08000000)                                                    // Main Application start address
+#define MAIN_APP_SLOT_B_START_ADDR (MAIN_APP_SLOT_A_START_ADDR + MAIN_APP_SIZE + FLASH_BLOCK_SIZE) // Main Application start address
 #else
 #define MAIN_APP_SLOT_A_START_ADDR (BOOTLOADER_END_ADDR)                        // Main Application start address
 #define MAIN_APP_SLOT_B_START_ADDR (MAIN_APP_SLOT_A_START_ADDR + MAIN_APP_SIZE) // Main Application start address
@@ -233,8 +232,9 @@ extern "C"
     extern void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length);
     extern void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length);
 
-    void boot_loader_active_user_app(void);
     void otsm_flash_init(void);
+    void flash_init_version(const char *date_str, const char *time_str);
+    void boot_loader_active_user_app(uint8_t bank_slot, const char *date_str, const char *time_str);
 
     void flash_JumpToApplication(uint32_t app_address);
     void flash_vector_table_config(uint8_t bank_slot, bool mapping_vector);
@@ -247,8 +247,9 @@ extern "C"
     uint32_t flash_get_bank_offset_address(uint8_t bank_type);
     uint32_t flash_erase_user_app_bank(void);
 
-    bool flash_decode_active_version(char *out_str, size_t max_len);
+    bool flash_decode_active_version(uint8_t bank_slot, char *out_str, size_t max_len, const char *date_str, const char *time_str);
     bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);
+    void flash_print_mcu_meta_infor(void);
     bool flash_is_meta_infor_valid(void);
     bool flash_is_allow_update_bank(uint8_t bank_type);
     const char *flash_get_current_bank_name(void);

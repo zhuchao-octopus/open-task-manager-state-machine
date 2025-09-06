@@ -2,10 +2,13 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_platform.h" // Include platform-specific header for hardware platform details
 #include "octopus_bafang.h"
-#include "octopus_uart_hal.h"
-#include "octopus_uart_upf.h" // Include UART protocol header
+#include "octopus_task_manager.h"   // Task Manager: handles scheduling and execution of system tasks
+#include "octopus_tickcounter.h"    // Tick Counter: provides timing and delay utilities
+#include "octopus_message.h"        // Message IDs: defines identifiers for inter-task communication
+#include "octopus_msgqueue.h"       // Message Queue: API for sending/receiving messages between tasks
+#include "octopus_uart_ptl.h"       // UART Protocol Layer: handles protocol-level UART operations
+#include "octopus_uart_upf.h"       // UART Packet Framework: low-level UART packet processing
 #include "octopus_vehicle.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
@@ -56,7 +59,7 @@ typedef struct UartSendProtocolCmdCtrl
 /*******************************************************************************
  * CONSTANTS
  */
-upf_module_t upf_module_info_BAFANG = {UPF_MODULE_NUMBER_BAFANG, UPF_CHANNEL_8, UPF_CHANNEL_TYPE_BYTE};
+upf_module_t upf_module_info_BAFANG = {UPF_MODULE_ID_BAFANG, UPF_CHANNEL_8, UPF_CHANNEL_TYPE_BYTE};
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLEAR
  */
@@ -630,9 +633,8 @@ bool proc_protocol_frame_system_state(uint8_t *buff, int count)
             else
             {
                 send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR); // FRAME_CMD__CARINFOR_INDICATOR
-                task_carinfo_add_error_code(code, true, true);
+                carinfo_add_error_code(code, true, true);
             }
-
             return true;
         }
     }
