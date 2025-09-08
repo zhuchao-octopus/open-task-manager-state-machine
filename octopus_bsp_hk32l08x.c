@@ -337,10 +337,14 @@ void GPIO_Config(void)
 	/* Connect PXx to LPUART1 Tx Rx */
 	GPIO_PinAFConfig(LPUARTx_TXIO_PORT, LPUARTx_AF_TX_PIN, LPUARTx_AF_SELECT);
 	GPIO_PinAFConfig(LPUARTx_RXIO_PORT, LPUARTx_AF_RX_PIN, LPUARTx_AF_SELECT);
-
+#endif
 	///////////////////////////////////////////////////////////////////////////
 	// CAN Bus Configuration: PA6 (CAN_RX), PA7 (CAN_TX)
 	///////////////////////////////////////////////////////////////////////////
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6; // PA6 - CAN RX
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_4); // AF4 for CAN RX
@@ -348,7 +352,7 @@ void GPIO_Config(void)
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7; // PA7 - CAN TX
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_4); // AF4 for CAN TX
-#endif
+
 	///////////////////////////////////////////////////////////////////////////
 	// Output Pins: Power enable/control GPIOs
 	///////////////////////////////////////////////////////////////////////////
@@ -427,11 +431,15 @@ void RCC_Config(void)
 	// Enable the clock for USART1 (on APB2)
 	// USART1 is used for debugging purposes, e.g., via UART over USB or serial communication
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE); // Enable USART1 clock (Debug UART)
-
-	// Enable the clock for USART2 and UART3 (both on APB1)
+	
+	// Enable the clock for USART2 (both on APB1)
 	// USART2 is used for communication with F133 (e.g., for data transmission)
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+	
+	// Enable the clock for UART3 (both on APB1)
 	// UART3 is used for communication with BLE module (Bluetooth Low Energy communication)
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2 | RCC_APB1Periph_UART3, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART3, ENABLE);
+	
 	// Enable the clock for UART4 (on APB1)
 	// UART4 is used for communication with GPS module
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART4, ENABLE); // Enable UART4 clock (GPS)
@@ -1608,34 +1616,36 @@ void ADC_DMA_Config(void)
 /////////////////////////////////////////////////////////////////////////////
 void CAN_Config(void)
 {
-	GPIO_InitTypeDef GPIO_InitStructure;
+
 	NVIC_InitTypeDef NVIC_InitStructure;
 	CAN_InitTypeDef CAN_InitStructure;
 	CAN_FilterInitTypeDef CAN_FilterInitStructure;
-	/* Enable GPIO clock */
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-    memset(&GPIO_InitStructure, 0, sizeof(GPIO_InitStructure));
-	/* CAN GPIOs configuration **************************************************/
-	/* Connect CAN pins to AF4 */
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_4);
-	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_4);
-	/* Configure CAN RX and TX pins */
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
 
 #if 0 //def HK_DEMO_BORAD_TEST
+	GPIO_InitTypeDef GPIO_InitStructure;
 	/* Connect CAN pins to AF4 */
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource11, GPIO_AF_4);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource12, GPIO_AF_4);
 	/* Configure CAN RX and TX pins */
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11 | GPIO_Pin_12;
-#endif
-
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
+#endif
+	GPIO_InitTypeDef GPIO_InitStructure;
+	/* Connect CAN pins to AF4 */
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_4);
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_4);
+	/* Configure CAN RX and TX pins */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	
 	/* NVIC configuration *******************************************************/
 	NVIC_InitStructure.NVIC_IRQChannel = LCD_CAN_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPriority = 0x0;
@@ -1643,10 +1653,6 @@ void CAN_Config(void)
 	NVIC_Init(&NVIC_InitStructure);
 
 	/* CAN configuration ********************************************************/
-
-	/* Enable CAN clock */
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_CAN, ENABLE);
-
 	/* CAN register init */
 	CAN_DeInit();
 	CAN_StructInit(&CAN_InitStructure);
@@ -1787,6 +1793,7 @@ CAN_Status_t CAN_Send_Data(uint32_t id, uint8_t ide, const uint8_t *buffer, uint
 // TIM3 PWM Backlight Initialization
 // pwm_freq: Target PWM frequency in Hz (e.g., 1000 for 1kHz)
 // duty_cycle: Initial duty cycle in percentage (0~100)
+#if 0
 void TIM3_PWM_Backlight_Init(uint16_t pwm_freq, uint8_t duty_cycle)
 {
 	// Ensure duty cycle is in 0~100 range
@@ -1799,12 +1806,12 @@ void TIM3_PWM_Backlight_Init(uint16_t pwm_freq, uint8_t duty_cycle)
 
 	// Configure GPIO for TIM3 CHx (Assume PA6 as TIM3_CH1, change to match your board)
 	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
+	//GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_3;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	//GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	// Connect TIM3_CH2 to PB1
 	GPIO_PinAFConfig(GPIOB, GPIO_PinSource1, GPIO_AF_2); // AF2 for TIM3 (CH2)
@@ -1835,7 +1842,7 @@ void TIM3_PWM_Backlight_Init(uint16_t pwm_freq, uint8_t duty_cycle)
 	TIM_ARRPreloadConfig(TIM3, ENABLE);
 	TIM_Cmd(TIM3, ENABLE);
 }
-
+#endif
 // Function to change PWM duty cycle dynamically
 void Set_Backlight_Brightness(uint8_t duty_cycle)
 {

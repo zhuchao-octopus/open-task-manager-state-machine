@@ -64,10 +64,9 @@
 #define TASK_MANAGER_STATE_MACHINE_GPIO     1   /**< GPIO handling */
 #define TASK_MANAGER_STATE_MACHINE_FLASH    1   /**< Flash memory handling */
 #define TASK_MANAGER_STATE_MACHINE_SYSTEM 1 /**< System-level state machine */
-#define TASK_MANAGER_STATE_MACHINE_KEY 1    /**< Key input handling */
-
-#define TASK_MANAGER_STATE_MACHINE_CARINFOR 1 /**< Car information processing */
 #define TASK_MANAGER_STATE_MACHINE_UPDATE 1   /**< OTA / Firmware update */
+#define TASK_MANAGER_STATE_MACHINE_KEY 1    /**< Key input handling */
+#define TASK_MANAGER_STATE_MACHINE_CARINFOR 1 /**< Car information processing */
 
 #define TASK_MANAGER_STATE_MACHINE_PTL 1 /**< PTL protocol handler */
 #define TASK_MANAGER_STATE_MACHINE_UPF       1   /**< UART Packet Framework */
