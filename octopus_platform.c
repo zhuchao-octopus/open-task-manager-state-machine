@@ -40,9 +40,9 @@
 
  ******************************************************************************/
 
-#include "octopus_platform.h"   ///< Platform-specific settings (e.g. clock, GPIO defs)
+#include "octopus_platform.h" ///< Platform-specific settings (e.g. clock, GPIO defs)
 
-#define MCU_CPU_CLOCK_MHZ       64// Modify for your MCU clock speed (e.g., 168MHz for STM32F4)
+// #define MCU_CPU_CLOCK_MHZ       64// Modify for your MCU clock speed (e.g., 168MHz for STM32F4)
 
 // Initialize DWT cycle counter for microsecond resolution
 void platform_dwt_init(void)
@@ -51,17 +51,16 @@ void platform_dwt_init(void)
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
-uint32_t platform_dwt_get_us(void) {
-    return DWT->CYCCNT / MCU_CPU_CLOCK_MHZ;
-}
-
+// uint32_t platform_dwt_get_us(void) {
+//     return DWT->CYCCNT / MCU_CPU_CLOCK_MHZ;
+// }
 void dwt_delay_us(uint32_t us)
 {
     uint32_t start = DWT->CYCCNT;
     uint32_t ticks = us * (SystemCoreClock / 1000000);
-    while ((DWT->CYCCNT - start) < ticks);
+    while ((DWT->CYCCNT - start) < ticks)
+        ;
 }
-
 // Delay Function ---
 // Platform-specific delay using DWT if available
 // Delay Wrapper
@@ -71,14 +70,15 @@ void delay_us(uint32_t us)
     dwt_delay_us(us);
 #else
     volatile uint32_t i;
-    while (us--) {
-        for (i = 0; i < 10; i++) __asm("nop");
+    while (us--)
+    {
+        for (i = 0; i < 10; i++)
+            __asm("nop");
     }
 #endif
-}		
-	
-void delay_ms(uint32_t ms)
-{
-	delay_us(ms*1000);
 }
 
+void delay_ms(uint32_t ms)
+{
+    delay_us(ms * 1000);
+}

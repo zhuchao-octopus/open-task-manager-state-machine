@@ -25,7 +25,6 @@
 #include "hk32l0xx.h"
 #include "hk32l0xx_eeprom.h"
 
-
 #ifdef __cplusplus
 extern "C"
 {

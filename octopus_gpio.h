@@ -50,7 +50,6 @@ typedef struct
 
   uint32_t start_tick_count;
   uint32_t press_duration; ///< Duration for long-press detection.
-                           // uint16_t press_count; ///< Counter for tracking press actions.
 } GPIO_KEY_STATUS;
 
 /*******************************************************************************

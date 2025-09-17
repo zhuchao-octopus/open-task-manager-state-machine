@@ -29,6 +29,13 @@
  */
 typedef enum
 {
+  GPIO_MODE_OUTPUT = 0,
+  GPIO_MODE_INPUT,
+} GIIO_MODE_T;
+ 
+ 
+typedef enum
+{
     BIT_RESET = 0,
     BIT_SET
 } Bit_Action_T;
@@ -206,6 +213,11 @@ typedef GPIO_Module GPIO_GROUP;
 #define GPIO_POWER_ENABLE_GROUP GPIOA
 #define GPIO_POWER_ENABLE_PIN GPIO_PIN_15
 
+#define GPIO_MUTE_GRP       GPIOB
+#define GPIO_MUTE_PIN       GPIO_PIN_9
+#define AUDIO_DSP_MUTE       GPIO_SetBits(GPIO_MUTE_GRP, GPIO_MUTE_PIN);
+#define AUDIO_DSP_UNMUTE     GPIO_ResetBits(GPIO_MUTE_GRP, GPIO_MUTE_PIN);
+
 #else
 
 typedef uint8_t GPIO_GROUP;
@@ -232,10 +244,12 @@ extern "C"
 {
 #endif
     // Function to initialize GPIOs for the task
+		
     void hal_gpio_init(uint8_t task_id);
+		void hal_gpio_set_mode(GPIO_GROUP *gpiox, uint16_t pin, uint8_t io_mode);
     bool hal_gpio_read(GPIO_GROUP *gpiox, uint16_t pin);
     bool hal_gpio_write(GPIO_GROUP *gpiox, uint16_t pin, uint8_t value);
-
+    
     void hal_gpio_power_on(void);
 #ifdef __cplusplus
 }

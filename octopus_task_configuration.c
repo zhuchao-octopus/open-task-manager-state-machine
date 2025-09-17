@@ -29,6 +29,7 @@
 #include "octopus_system.h"        // System services: initialization, state management, and utilities
 #include "octopus_gpio.h"          // GPIO abstraction and hardware control
 #include "octopus_key.h"           // Key input handling and debouncing
+#include "octopus_adc.h" 
 #include "octopus_update_mcu.h"    // MCU firmware update and OTA handler
 
 /********************************************************************************
@@ -86,6 +87,19 @@ const otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
     },
 #endif
 
+#ifdef TASK_MANAGER_STATE_MACHINE_ADC
+    [TASK_MODULE_ADC] = {
+        .func = {
+            [OTMS_S_INIT] = task_adc_init_running,
+            [OTMS_S_START] = task_adc_start_running,
+            [OTMS_S_ASSERT_RUN] = task_adc_assert_running,
+            [OTMS_S_RUNNING] = task_adc_running,
+            [OTMS_S_POST_RUN] = task_adc_post_running,
+            [OTMS_S_STOP] = task_adc_stop_running,
+        },
+    },
+#endif
+		
 #ifdef TASK_MANAGER_STATE_MACHINE_PTL
     [TASK_MODULE_PTL_1] = {
         .func = {

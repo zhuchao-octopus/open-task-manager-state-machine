@@ -62,16 +62,19 @@
 ///////////////////////////////////////////////////////////////////////////////////
 
 #define TASK_MANAGER_STATE_MACHINE_GPIO     1   /**< GPIO handling */
+#define TASK_MANAGER_STATE_MACHINE_ADC     1
 #define TASK_MANAGER_STATE_MACHINE_FLASH    1   /**< Flash memory handling */
 #define TASK_MANAGER_STATE_MACHINE_SYSTEM 1 /**< System-level state machine */
-//#define TASK_MANAGER_STATE_MACHINE_KEY 1    /**< Key input handling */
-
-#define TASK_MANAGER_STATE_MACHINE_CARINFOR 1 /**< Car information processing */
 #define TASK_MANAGER_STATE_MACHINE_UPDATE 1   /**< OTA / Firmware update */
+
+#define TASK_MANAGER_STATE_MACHINE_KEY 1    /**< Key input handling */
+#define TASK_MANAGER_STATE_MACHINE_CARINFOR 1 /**< Car information processing */
+
 
 #define TASK_MANAGER_STATE_MACHINE_PTL 1 /**< PTL protocol handler */
 #define TASK_MANAGER_STATE_MACHINE_UPF       1   /**< UART Packet Framework */
 #define TASK_MANAGER_STATE_MACHINE_IPC 1 /**< Inter-process communication */
+#define TASK_MANAGER_STATE_MACHINE_I2C 1
 
 //#define TASK_MANAGER_STATE_MACHINE_CAN       1   /**< CAN bus protocol */
 //#define TASK_MANAGER_STATE_MACHINE_BAFANG    1   /**< Bafang system support */
@@ -80,9 +83,11 @@
 //#define TASK_MANAGER_STATE_MACHINE_LOT4G        1   /**< 4G module handler */
 //#define TASK_MANAGER_STATE_MACHINE_BT_MUSIC     1   /**< Classic Bluetooth */
 
-// #define TASK_MANAGER_STATE_MACHINE_SIF       1   /**< SIF protocol handler */
-// #define TASK_MANAGER_STATE_MACHINE_BLE       1   /**< Bluetooth Low Energy */
-// #define TASK_MANAGER_STATE_MACHINE_BMS       1   /**< Battery Management System */
+//#define TASK_MANAGER_STATE_MACHINE_SIF       1   /**< SIF protocol handler */
+//#define TASK_MANAGER_STATE_MACHINE_BLE       1   /**< Bluetooth Low Energy */
+//#define TASK_MANAGER_STATE_MACHINE_BMS       1   /**< Battery Management System */
+
+#define TASK_MANAGER_STATE_MACHINE_AUDIO 1
 
 #define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 3
 ///////////////////////////////////////////////////////////////////////////////////
@@ -104,5 +109,47 @@
 #define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_INVALID /**< Select Flash bank slot */
 #endif
 
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/**********************************************************************************
+ * Audio Processor Configuration
+ * 支持 ASP + DSP 型号选择
+ *********************************************************************************/
 
+// === ASP 芯片 ID ===
+#define ASP_BD37534      1
+#define ASP_BD37544      2
+#define ASP_TDA7419      3
+#define ASP_BD34602      4
+#define ASP_LC75341      5
+#define ASP_BU32107      6
+
+// === DSP 芯片 ID ===
+#define DSP_ADAU1701     101
+#define DSP_ADAU1452     102
+#define DSP_TMS320C55X   103
+#define DSP_CS48L10      104
+
+// === 用户配置 ===
+
+#define AUDIO_ASP_DSP_MODEL   ASP_BD37534   // 默认 ASP
+
+#define VOLUME_CUT_WHEN_NAVI_MIX        9
+#define DFT_NAVI_AUDIO_CH   NAVI_AUDIO_LEFT_CH//ռڽעʹʱĬɏ.ш
+#ifdef CUSTOM_S217
+#define A_SRC_RADIO_EXTRA_GAIN_ATTEN        1
+#define A_SRC_HOST_EXTRA_GAIN_ATTEN     7
+#define A_SRC_BT_MODULE_EXTRA_GAIN_ATTEN        10
+#else
+#define A_SRC_RADIO_EXTRA_GAIN_ATTEN        0
+#define A_SRC_HOST_EXTRA_GAIN_ATTEN     4
+#define A_SRC_BT_MODULE_EXTRA_GAIN_ATTEN        -3
+#endif
+#define A_SRC_DVD_EXTRA_GAIN_ATTEN      -4
+#define A_SRC_AUXIN_EXTRA_GAIN_ATTEN        -7
+#define A_SRC_TV_EXTRA_GAIN_ATTEN       0
+#define A_NAVI_MIX_EXTRA_DB 9
+#define A_BT_PHONE_EXTRA_DB 12
+#define A_ALL_EXTRA_DB          3
+#define CONFIG_LOUDNESS_DB  6
 #endif /* __OCTOPUS_CONFIGURATION_H__ */

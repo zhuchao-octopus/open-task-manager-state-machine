@@ -2,65 +2,64 @@
 #ifndef _AUDIO_DRIVER_H_
 #define _AUDIO_DRIVER_H_
 
-#include "octopus_platform.h"
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
-#define MIN_VOLUME            0
-#define MAX_VOLUME            40
-#define DEFAULT_VOLUME        12
-#define DEFAULT_BT_VOLUME		15
+#define MIN_VOLUME 0
+#define MAX_VOLUME 40
+#define DEFAULT_VOLUME 12
+#define DEFAULT_BT_VOLUME 15
 
-#define MIN_LOUDNESS           0
-#define MAX_LOUDNESS           4
-#define DEFAULT_LOUDNESS       0
-#define MIN_SUBWOOFER_LVL           0
+#define MIN_LOUDNESS 0
+#define MAX_LOUDNESS 4
+#define DEFAULT_LOUDNESS 0
+#define MIN_SUBWOOFER_LVL 0
 
-
-#if 0 // ASP_MODEL==ASP_BU32107
-#define MAX_SUBWOOFER_LVL           15
+#if AUDIO_ASP_DSP_MODEL == ASP_BU32107
+#define MAX_SUBWOOFER_LVL 15
 #else
-#define MAX_SUBWOOFER_LVL           14
+#define MAX_SUBWOOFER_LVL 14
 #endif
 
-#define DEFAULT_SUBWOOFER_LVL       9
-#define MIN_FIELD_LEVEL           0
-#define MAX_FIELD_LEVEL           14
-#define DEFAULT_FIELD_LEVEL       7
+#define DEFAULT_SUBWOOFER_LVL 9
+#define MIN_FIELD_LEVEL 0
+#define MAX_FIELD_LEVEL 14
+#define DEFAULT_FIELD_LEVEL 7
 
-#define MIN_EQ_LEVEL           0
-#define MAX_EQ_LEVEL           20
-#define DEFAULT_EQ_LEVEL       10
+#define MIN_EQ_LEVEL 0
+#define MAX_EQ_LEVEL 20
+#define DEFAULT_EQ_LEVEL 10
 
-#define NAVI_BREAK_DIRECT		0xE0
+#define NAVI_BREAK_DIRECT 0xE0
 
-#define SPECTRUM_NUMS	16
+#define SPECTRUM_NUMS 16
 
-#define DSP_SPK_GAIN_MAX	12
-#define DSP_SPK_GAIN_MIN	0
+#define DSP_SPK_GAIN_MAX 12
+#define DSP_SPK_GAIN_MIN 0
 
 typedef enum
 {
-	SOURCE_TUNER=0,	//HD Radio
-	SOURCE_DVD=1,		
-	SOURCE_DVDC=2,	//CDC
-	SOURCE_TV=3,
-	SOURCE_NAVI=4,
-	SOURCE_AUX=5,		//AUX IN 1
-	SOURCE_DTV=6,
-	SOURCE_SD=7,
-	SOURCE_XM=8,		//SERIUS
-	SOURCE_IPOD=9,
-	SOURCE_USB=10,
-	SOURCE_CAMERA=11,
-	SOURCE_FRONT_AUX=12,	//AUX IN 2
-	SOURCE_BT=13,
-	SOURCE_HDMI=14,
-	SOURCE_HDRADIO=15,
-	SOURCE_AVOFF=16,		//source off
-	SOURCE_3G=17,	
-	SOURCE_IPOD_USB=18,		
-	NUM_OF_SOURCE=19,
+	SOURCE_TUNER = 0, // HD Radio
+	SOURCE_DVD = 1,
+	SOURCE_DVDC = 2, // CDC
+	SOURCE_TV = 3,
+	SOURCE_NAVI = 4,
+	SOURCE_AUX = 5, // AUX IN 1
+	SOURCE_DTV = 6,
+	SOURCE_SD = 7,
+	SOURCE_XM = 8, // SERIUS
+	SOURCE_IPOD = 9,
+	SOURCE_USB = 10,
+	SOURCE_CAMERA = 11,
+	SOURCE_FRONT_AUX = 12, // AUX IN 2
+	SOURCE_BT = 13,
+	SOURCE_HDMI = 14,
+	SOURCE_HDRADIO = 15,
+	SOURCE_AVOFF = 16, // source off
+	SOURCE_3G = 17,
+	SOURCE_IPOD_USB = 18,
+	NUM_OF_SOURCE = 19,
 	SOURCE_FOLLOW_FRONT = 0xFE
-}audio_source_t;
+} audio_source_t;
 
 typedef enum
 {
@@ -74,10 +73,9 @@ typedef enum
 	AUDIO_SRC_HDMI,
 	AUDIO_SRC_VTR,
 	AUDIO_SRC_NUMS
-}audio_driver_source_t;
+} audio_driver_source_t;
 
-
-#if 0// (ASP_MODEL==ASP_BU32107)
+#if (AUDIO_ASP_DSP_MODEL == ASP_BU32107)
 typedef enum
 {
 	EQ_MODE_CUSTOM = 0,
@@ -94,11 +92,11 @@ typedef enum
 	EQ_MODE_CUSTOM_4 = 0x13,
 	EQ_MODE_CUSTOM_5 = 0x14,
 	EQ_MODE_CUSTOM_6 = 0x15
-}EQ_MODE;
+} EQ_MODE;
 
 typedef enum
 {
-	EQ_FREQ_80HZ=0,
+	EQ_FREQ_80HZ = 0,
 	EQ_FREQ_125HZ,
 	EQ_FREQ_200HZ_FAKE,
 	EQ_FREQ_200HZ,
@@ -114,8 +112,8 @@ typedef enum
 	EQ_FREQ_8KHZ,
 	EQ_FREQ_12K5HZ,
 
-	EQ_FREQ_NUMS	
-}EQ_FREQ;
+	EQ_FREQ_NUMS
+} EQ_FREQ;
 
 #else
 
@@ -133,12 +131,12 @@ typedef enum
 	EQ_MODE_FILM,
 	EQ_MODE_MIDI,
 	EQ_MODE_NUMS
-}EQ_MODE;
+} EQ_MODE;
 
 typedef enum
 {
 	/* bass */
-	EQ_FREQ_60HZ=0,
+	EQ_FREQ_60HZ = 0,
 	EQ_FREQ_100HZ,
 	EQ_FREQ_120HZ,
 	/* middle */
@@ -150,8 +148,8 @@ typedef enum
 	EQ_FREQ_12K5HZ,
 	EQ_FREQ_15KHZ,
 
-	EQ_FREQ_NUMS	
-}EQ_FREQ;
+	EQ_FREQ_NUMS
+} EQ_FREQ;
 
 #endif
 
@@ -159,9 +157,9 @@ typedef enum
 {
 	BEEP_STATE_PWR_DOWN = 0,
 	BEEP_STATE_IDLE,
-	BEEP_STATE_BEEP_ING,	
+	BEEP_STATE_BEEP_ING,
 	BEEP_STATE_NUMS
-}BEEP_STATE;
+} BEEP_STATE;
 
 typedef enum
 {
@@ -170,7 +168,7 @@ typedef enum
 	BEEP_MODE_DOUBLE,
 	BEEP_MODE_LONG,
 	BEEP_MODE_NUMS
-}BEEP_MODE;
+} BEEP_MODE;
 
 typedef enum
 {
@@ -182,7 +180,7 @@ typedef enum
 	AUDIO_MUTE_RADIO = 0x10,
 	AUDIO_MUTE_TEMP = 0x20,
 	AUDIO_MUTE_EXT_FORCE = 0x40
-}AUDIO_MUTE_FLAG;
+} AUDIO_MUTE_FLAG;
 
 typedef enum
 {
@@ -192,7 +190,7 @@ typedef enum
 	AUDIO_STATE_INIT_ING,
 	AUDIO_STATE_IDLE,
 	AUDIO_STATE_NUMS
-}AUDIO_STATE;
+} AUDIO_STATE;
 
 typedef enum
 {
@@ -201,7 +199,7 @@ typedef enum
 	AUDIO_EVT_OUTPUT_TYPE,
 	AUDIO_EVT_ADJ_CH_VOL,
 	AUDIO_EVT_NUMS
-}AUDIO_EVENT;
+} AUDIO_EVENT;
 
 typedef enum
 {
@@ -209,7 +207,7 @@ typedef enum
 	AUDIO_SRC_SW_STATE_PREPARE,
 	AUDIO_SRC_SW_STATE_READY,
 	AUDIO_SRC_SW_STATE_NUMS
-}AUDIO_SOURCE_SWITCH_STATE;
+} AUDIO_SOURCE_SWITCH_STATE;
 
 typedef enum
 {
@@ -220,7 +218,7 @@ typedef enum
 	AUDIO_OUTPUT_N_12DB,
 	AUDIO_OUTPUT_N_15DB,
 	AUDIO_OUTPUT_TYPE_NUMS
-}AUDIO_OUTPUT_TYPE;
+} AUDIO_OUTPUT_TYPE;
 
 typedef enum
 {
@@ -231,7 +229,7 @@ typedef enum
 	AUDIO_SF_MODE_RR,
 	AUDIO_SF_MODE_USER,
 	AUDIO_SF_MODE_NUMS
-}AUDIO_SF_MODE;
+} AUDIO_SF_MODE;
 
 typedef enum
 {
@@ -242,7 +240,7 @@ typedef enum
 	AUDIO_SR_MODE_MOVIE,
 	AUDIO_SR_MODE_DRAMA,
 	AUDIO_SR_MODE_NUMS
-}AUDIO_SR_MODE;
+} AUDIO_SR_MODE;
 
 typedef enum
 {
@@ -251,7 +249,7 @@ typedef enum
 	AUDIO_SPK_RL,
 	AUDIO_SPK_RR,
 	AUDIO_SPK_NUMS
-}AUDIO_SPK;
+} AUDIO_SPK;
 
 typedef struct
 {
@@ -281,18 +279,18 @@ typedef struct
 	ans no navi mix, but break directly. */
 	/* 0x01~0xFF: means navi mix, and the mix extra gain is  */
 	/* -127dB ~ 127dB, which 0x80 is 0dB, 0x7F is -1dB, 0x81 is +1dB and etc. */
-	uint8_t navi_mix_extra_gain;	
+	uint8_t navi_mix_extra_gain;
 	bool rds_ta_break_on;
 	bool app_3rd_break_on;
 	bool reverse_on;
-	uint8_t fader;	/* 0->14: front->rear */
-	uint8_t balance;	/* 0->14: left->right */
+	uint8_t fader;	 /* 0->14: front->rear */
+	uint8_t balance; /* 0->14: left->right */
 	uint8_t loudness;
 	uint8_t subwoofer;
 	uint8_t pwr_timer;
 	uint16_t bt_phone_timer;
-	uint16_t temp_mute_timer;	/* in ms unit */
-	uint16_t temp_mute_timer2;	/* in ms unit */
+	uint16_t temp_mute_timer;  /* in ms unit */
+	uint16_t temp_mute_timer2; /* in ms unit */
 	AUDIO_SOURCE_SWITCH_STATE src_sw_state;
 	bool android_snd_on;
 
@@ -302,7 +300,7 @@ typedef struct
 	bool carplay_phone_on;
 
 	uint8_t output_type;
-  //	bool overheat;
+	//	bool overheat;
 	uint8_t ext_force_mute_timer;
 
 	bool loud_on;
@@ -335,18 +333,18 @@ typedef struct
 	uint8_t core_gain;
 	bool space_en;
 	uint8_t space_gain;
-	AUDIO_SF_MODE sf_mode;	/* sound field mode */
+	AUDIO_SF_MODE sf_mode; /* sound field mode */
 	bool spk_on[AUDIO_SPK_NUMS];
 	uint8_t spk_gain[AUDIO_SPK_NUMS];
 	uint8_t spk_delay[AUDIO_SPK_NUMS];
 	bool spk_user_on[AUDIO_SPK_NUMS];
 	uint8_t spk_user_gain[AUDIO_SPK_NUMS];
 	uint8_t spk_user_delay[AUDIO_SPK_NUMS];
-	AUDIO_SR_MODE surround_mode;	/* surround mode */
+	AUDIO_SR_MODE surround_mode; /* surround mode */
 	uint8_t soundfield_expert_mode;
 
 	bool disabled_soundfield;
-}AUDIO_INFO;
+} AUDIO_INFO;
 
 typedef struct
 {
@@ -354,49 +352,52 @@ typedef struct
 	uint16_t timer;
 	BEEP_STATE state;
 	BEEP_MODE mode;
-}audio_beep_infor_t;
-		
-typedef struct {
+} audio_beep_infor_t;
+
+typedef struct
+{
 	uint8_t audio_output_type;
 	uint8_t audio_navi_mix_extra_gain;
 	uint8_t audio_vol_ctrl_when_reverse;
 	uint8_t audio_front_source;
 	audio_beep_infor_t audio_beep_infor;
 } audio_mata_infor_t;
-		
-#define IS_VALID_VOLUME(vol)	(/*(vol>=MIN_VOLUME)&&*/(vol<=MAX_VOLUME))
-#if 0 // ASP_MODEL==ASP_BU32107
-#define IS_VALID_EQ_MODE(mode) ((mode<EQ_MODE_NUMS) || ((mode>=EQ_MODE_CUSTOM_1)&&(mode<=EQ_MODE_CUSTOM_6)))
+
+#define IS_VALID_VOLUME(vol) (/*(vol>=MIN_VOLUME)&&*/ (vol <= MAX_VOLUME))
+#if AUDIO_ASP_DSP_MODEL == ASP_BU32107
+#define IS_VALID_EQ_MODE(mode) ((mode < EQ_MODE_NUMS) || ((mode >= EQ_MODE_CUSTOM_1) && (mode <= EQ_MODE_CUSTOM_6)))
 #else
-#define IS_VALID_EQ_MODE(mode) (mode<EQ_MODE_NUMS)
+#define IS_VALID_EQ_MODE(mode) (mode < EQ_MODE_NUMS)
 #endif
 
-#define IS_VALID_EQ_FREQ(freq) (freq<EQ_FREQ_NUMS)
-#define IS_VALID_FAD_BAL_LEVEL(lvl) ((lvl>=MIN_FIELD_LEVEL)&&(lvl<=MAX_FIELD_LEVEL))
-#define IS_VALID_LOUDNESS_LEVEL(lvl) ((lvl>=MIN_LOUDNESS)&&(lvl<=MAX_LOUDNESS))
-#define IS_VALID_SUBWOOFER_LEVEL(lvl) ((lvl>=MIN_SUBWOOFER_LVL)&&(lvl<=MAX_SUBWOOFER_LVL))
+#define IS_VALID_EQ_FREQ(freq) (freq < EQ_FREQ_NUMS)
+#define IS_VALID_FAD_BAL_LEVEL(lvl) ((lvl >= MIN_FIELD_LEVEL) && (lvl <= MAX_FIELD_LEVEL))
+#define IS_VALID_LOUDNESS_LEVEL(lvl) ((lvl >= MIN_LOUDNESS) && (lvl <= MAX_LOUDNESS))
+#define IS_VALID_SUBWOOFER_LEVEL(lvl) ((lvl >= MIN_SUBWOOFER_LVL) && (lvl <= MAX_SUBWOOFER_LVL))
 
-#define EQ3_U8_TO_S8(u, s)	do {		\
-		s = (int8_t)((int8_t)u-(int8_t)DEFAULT_EQ_LEVEL);	\
-	} while(0);
+#define EQ3_U8_TO_S8(u, s)                                  \
+	do                                                      \
+	{                                                       \
+		s = (int8_t)((int8_t)u - (int8_t)DEFAULT_EQ_LEVEL); \
+	} while (0);
 
 /***************************************
-* our varible
-**************************************/
-extern AUDIO_INFO g_audio_info;	// do not write any member outside audio_driver.c, just read only.
+ * our varible
+ **************************************/
+extern AUDIO_INFO g_audio_info; // do not write any member outside audio_driver.c, just read only.
 extern audio_mata_infor_t audio_mata_infor;
 /*******************************************************
-*   interface for system
-*******************************************************/
+ *   interface for system
+ *******************************************************/
 void audio_init(void);
-	
+
 void audio_main(void);
 void audio_set_source(audio_source_t av_src);
 void audio_set_volume(uint8_t ch, uint8_t vol);
 uint8_t audio_get_volume(void);
 uint8_t audio_volume_up(void);
 uint8_t audio_volume_down(void);
-	
+
 void audio_set_vol_ctrl_when_reverse(uint8_t val);
 void audio_set_mute(AUDIO_MUTE_FLAG flag, bool mute);
 void audio_set_soft_mute(bool mute);
@@ -436,24 +437,24 @@ void audio_set_dsp_sf_expert_mode(uint8_t mode);
 void audio_soundfield_ctrl(uint8_t disabled);
 
 /*******************************************************
-*   interface for eq
-*******************************************************/
+ *   interface for eq
+ *******************************************************/
 void audio_eq_init(void);
 void audio_eq_update_mode(EQ_MODE mode);
 void audio_eq_update_level(EQ_FREQ freq, uint8_t level);
 
 /*******************************************************
-*   interface for physical audio device
-*******************************************************/
+ *   interface for physical audio device
+ *******************************************************/
 bool audio_dev_init(void);
 void audio_dev_deinit(void);
-void audio_dev_update_source(audio_driver_source_t src,uint8_t front_source);
+void audio_dev_update_source(audio_driver_source_t src, uint8_t front_source);
 void audio_dev_update_volume(uint8_t vol);
-void audio_dev_update_navi_mix(bool on_off,uint8_t vol_ctrl_when_reverse);
-void audio_dev_update_navi_mix_vol(uint8_t vol,uint8_t vol_ctrl_when_reverse);
-void audio_dev_update_eq(void);	// update EQ settings according to the AUDIO_INFO's eq_cur_freq & eq_cur_level member
-void audio_dev_update_fader_balance(uint8_t fad, uint8_t bal,uint8_t front_source);
-void audio_dev_update_loudness(uint8_t loud,uint8_t front_source);
+void audio_dev_update_navi_mix(bool on_off, uint8_t vol_ctrl_when_reverse);
+void audio_dev_update_navi_mix_vol(uint8_t vol, uint8_t vol_ctrl_when_reverse);
+void audio_dev_update_eq(void); // update EQ settings according to the AUDIO_INFO's eq_cur_freq & eq_cur_level member
+void audio_dev_update_fader_balance(uint8_t fad, uint8_t bal, uint8_t front_source);
+void audio_dev_update_loudness(uint8_t loud, uint8_t front_source);
 void audio_dev_update_subwoofer(uint8_t subwoofer);
 void audio_dev_update_dsp_settings_1(void);
 void audio_dev_update_dsp_settings_2(void);
@@ -461,4 +462,3 @@ void audio_dev_update_spectrum_data(void);
 void audio_dev_set_soft_mute(bool on);
 
 #endif /* _AUDIO_DRIVER_H_ */
-
