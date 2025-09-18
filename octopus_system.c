@@ -49,6 +49,7 @@ void system_power_onoff(bool onoff);
 bool system_is_power_on(void);
 void system_mcu_initate_remote_soc(void);
 void system_soc_request_mata_infor(void);
+void system_mcu_goto_lowpower(void);
 /*******************************************************************************
  * Global Variables
  * Define variables accessible across multiple files if needed.
@@ -345,15 +346,9 @@ void system_event_handler(void)
     }
     else if (lt_mb_state == MB_POWER_ST_LOWPOWER)
     {
-        if (GetTickCounter(&l_t_msg_lowpower_wait_timer) > 8000)
+        if (GetTickCounter(&l_t_msg_lowpower_wait_timer) >1000 * 60)
         {
-            otms_task_manager_stop();
-            native_enter_sleep_mode();
-            lt_mb_state = MB_POWER_ST_BOOTING;
-            StartTickCounter(&l_t_msg_booting_wait_timer);
-            otms_task_manager_start();
-            system_power_onoff(true);
-            StopTickCounter(&l_t_msg_lowpower_wait_timer);
+           system_mcu_goto_lowpower();
         }
     }
 #endif
@@ -507,6 +502,9 @@ void system_power_onoff(bool onoff)
         {
             lt_mb_state = MB_POWER_ST_ON;
             LOG_LEVEL("Power on soc succesfully\r\n");
+						#ifdef TASK_MANAGER_STATE_MACHINE_CAN
+						CAN_Config();
+						#endif
         }
     }
     else
@@ -520,9 +518,24 @@ void system_power_onoff(bool onoff)
             LOG_LEVEL("Power down SOC succesfully\r\n");
             lt_mb_state = MB_POWER_ST_LOWPOWER;
             StartTickCounter(&l_t_msg_lowpower_wait_timer); // time out goto sleep
+					  system_mcu_goto_lowpower();
         }
     }
 #endif
+}
+
+void system_mcu_goto_lowpower(void)
+{
+	  if (!gpio_is_power_on())
+		{
+		otms_task_manager_stop();
+		native_enter_sleep_mode();
+		lt_mb_state = MB_POWER_ST_BOOTING;
+		StartTickCounter(&l_t_msg_booting_wait_timer);
+		otms_task_manager_start();
+		//system_power_onoff(true);
+		StopTickCounter(&l_t_msg_lowpower_wait_timer);
+		}
 }
 
 bool system_is_power_on(void)

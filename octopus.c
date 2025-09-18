@@ -307,6 +307,7 @@ void TaskManagerStateEventLoop(void *arg)
 
 void TaskManagerStateStartRunning(void)
 {
+	
 }
 
 #endif

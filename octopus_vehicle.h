@@ -43,6 +43,13 @@
 /*******************************************************************************
  * TYPEDEFS
  */
+typedef enum
+{
+    DRIVE_MOD_REAR = 0, // 后驱
+    DRIVE_MOD_FRONT,    // 前驱
+	  DRIVE_MOD_DOUBLE,   // 双驱
+} drive_mode_;
+
 // 故障-故障信息
 typedef enum __attribute__((packed))
 {
@@ -220,8 +227,8 @@ typedef struct
 
 typedef struct
 {
-    uint16_t voltage;      // Battery voltage (unit: millivolts or volts depending on context)
-    uint16_t current;      // Battery or motor current (unit: milliamps or amps)
+    uint16_t voltage;      // Battery voltage (unit: millivolts or volts depending on context  0.1V unit)
+    uint16_t current;      // Battery or motor current (unit: milliamps or amps  0.1Ah unit)
     uint16_t power;        // Instantaneous power output (unit: watts)
     uint16_t soc;          // State of Charge, 0–100% (based on voltage/SOC curve)
     uint16_t range;        // Estimated remaining range (unit: 100 meters)

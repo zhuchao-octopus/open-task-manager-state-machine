@@ -50,22 +50,41 @@
  * Define macros for setting, clearing, toggling, and extracting bit values.
  ******************************************************************************/
 
-#define BIT_0 0x01 // Bit mask for bit 0
-#define BIT_1 0x02 // Bit mask for bit 1
-#define BIT_2 0x04 // Bit mask for bit 2
-#define BIT_3 0x08 // Bit mask for bit 3
-#define BIT_4 0x10 // Bit mask for bit 4
-#define BIT_5 0x20 // Bit mask for bit 5
-#define BIT_6 0x40 // Bit mask for bit 6
-#define BIT_7 0x80 // Bit mask for bit 7
+/* --- 单 bit 掩码定义 --- */
+#define BIT_0   (1UL << 0)
+#define BIT_1   (1UL << 1)
+#define BIT_2   (1UL << 2)
+#define BIT_3   (1UL << 3)
+#define BIT_4   (1UL << 4)
+#define BIT_5   (1UL << 5)
+#define BIT_6   (1UL << 6)
+#define BIT_7   (1UL << 7)
+#define BIT_8   (1UL << 8)
 
-// Macros for setting, clearing, toggling, and checking bits
-#define SetBit(VAR, Place) ((VAR) |= (1 << (Place)))          // Set specified bit
-#define ClrBit(VAR, Place) ((VAR) &= ~(1 << (Place)))         // Clear specified bit
-#define ValBit(VAR, Place) ((VAR) & (1 << (Place)))           // Get value of specified bit
-#define ChgBit(VAR, Place) ((VAR) ^= (1 << (Place)))          // Toggle specified bit
-#define GetBit(VAR, Place) (((VAR) & (1 << (Place))) ? 1 : 0) // Check bit state
+/* --- 单 bit 操作 --- */
+#define SETBIT(VAR, POS)      ((VAR) |=  (1UL << (POS)))         // 置位
+#define CLRBIT(VAR, POS)      ((VAR) &= ~(1UL << (POS)))         // 清零
+#define TOGBIT(VAR, POS)      ((VAR) ^=  (1UL << (POS)))         // 翻转
+#define GETBIT(VAR, POS)      (((VAR) >> (POS)) & 0x1UL)         // 获取 0/1
 
+/* --- 多 bit 操作 --- */
+#define SETBITS(VAR, MASK)    ((VAR) |=  (MASK))                 // 置多个位
+#define CLRBITS(VAR, MASK)    ((VAR) &= ~(MASK))                 // 清多个位
+#define TOGBITS(VAR, MASK)    ((VAR) ^=  (MASK))                 // 翻转多个位
+#define GETBITS(VAR, MASK)    ((VAR) &   (MASK))                 // 获取多个位的原值（带掩码）
+
+/* --- 多 bit 取值（字段提取）--- 
+ * 例如：VAL = GETBITS_VALUE(REG, 4, 3); // 从第3位起，取4位
+ */
+#define GETBITS_VALUE(VAR, WIDTH, POS)   (((VAR) >> (POS)) & ((1UL << (WIDTH)) - 1UL))
+// 清除并写入 VAR[POS+WIDTH-1 : POS] = VALUE
+#define SETBITS_VALUE(VAR, WIDTH, POS, VALUE) \
+    do { \
+        (VAR) = ((VAR) & ~(((1UL << (WIDTH)) - 1UL) << (POS))) | \
+                (((VALUE) & ((1UL << (WIDTH)) - 1UL)) << (POS)); \
+    } while(0)
+///////////////////////////////////////////////////////////////////////////////////	
+///////////////////////////////////////////////////////////////////////////////////	
 // Macros for byte and word manipulation
 #define LSB_BIT(BYTE) ((BYTE) & 0x0F)        // Extract least significant nibble
 #define MSB_BIT(BYTE) (((BYTE) >> 4) & 0x0F) // Extract most significant nibble

@@ -423,6 +423,7 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
             if (payload->data_len >= sizeof(carinfo_indicator_t))
             {
                 memcpy(&lt_carinfo_indicator, payload->data, sizeof(carinfo_indicator_t));
+							  //LOG_BUFF_LEVEL((uint8_t *)&lt_carinfo_indicator, sizeof(carinfo_indicator_t));
             }
             return false;
 

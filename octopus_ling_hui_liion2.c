@@ -202,10 +202,11 @@ void lhl2_ptl_tx_process(void)
         flag |= BIT_7;
     }
 
-    if (lt_carinfo_indicator.start_mode)
+    if (GETBIT(lt_carinfo_indicator.start_mode,7))
     {
         flag |= BIT_6;
     }
+		
     if (lt_carinfo_indicator.high_beam)
     {
         flag |= BIT_5;
@@ -252,7 +253,7 @@ void lhl2_ptl_tx_process(void)
     lu_tx_buff[9] = lt_carinfo_indicator.start_poles; // 1
 
     // 助力启动强度
-    lu_tx_buff[10] = lt_carinfo_indicator.start_mode;
+    lu_tx_buff[10] = GETBITS_VALUE(lt_carinfo_indicator.start_mode,3,0);
 
     // 内测速磁钢数
     lu_tx_buff[11] = 0;
@@ -280,10 +281,10 @@ void lhl2_ptl_tx_process(void)
         flag |= BIT_6;
     } // 巡航状态
 
-    if (lt_carinfo_indicator.drive_mode)
-    {
-        flag |= BIT_4;
-    } // 0:后驱；1：双驱
+    ///if (lt_carinfo_indicator.drive_mode)
+    ///{
+    ///    flag |= BIT_4;
+    ///} // 0:后驱；1：双驱
 
     lu_tx_buff[18] = flag | 0x06; // 助力磁钢数：6
 

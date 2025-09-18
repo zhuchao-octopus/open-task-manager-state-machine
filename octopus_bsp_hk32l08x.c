@@ -378,6 +378,7 @@ void GPIO_Config(void)
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	// hal_gpio_write(GPIO_POWER_SWITCH_GROUP, GPIO_POWER_SWITCH_PIN, BIT_SET);
 
+	// PB5 - CAN standby control (MCU_CTL_CAN_STBY)
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
@@ -392,9 +393,6 @@ void GPIO_Config(void)
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-	// PB5 - CAN standby control (MCU_CTL_CAN_STBY)
-	// GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
-	// GPIO_Init(GPIOB, &GPIO_InitStructure);
 	///////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////
 	// BAT_DET (PA8): Battery voltage detect input (ADC channel)
@@ -537,6 +535,9 @@ void native_enter_sleep_mode(void)
 	UART3_Config_IRQ();
 	UART4_Config_IRQ();
 	LPUART_WakeStop_Config();
+#ifdef TASK_MANAGER_STATE_MACHINE_CAN
+	CAN_Config();
+#endif
 	LOG_NONE("\r\n");
 	LOG_LEVEL("SYSTEM & TASK MANAGER SCADULER EXIT SLEEP MODE.\r\n");
 	// NVIC_SystemReset();
@@ -1616,7 +1617,6 @@ void ADC_DMA_Config(void)
 /////////////////////////////////////////////////////////////////////////////
 void CAN_Config(void)
 {
-
 	NVIC_InitTypeDef NVIC_InitStructure;
 	CAN_InitTypeDef CAN_InitStructure;
 	CAN_FilterInitTypeDef CAN_FilterInitStructure;
