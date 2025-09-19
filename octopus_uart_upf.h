@@ -128,6 +128,7 @@ typedef struct
 extern "C"
 {
 #endif
+
 	void task_upf_init_running(void);
 	void task_upf_start_running(void);
 	void task_upf_assert_running(void);

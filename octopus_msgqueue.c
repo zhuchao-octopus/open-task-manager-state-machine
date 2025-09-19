@@ -89,7 +89,7 @@ void send_message(TaskModule_t task_module, uint16_t msg_id, uint16_t param1, ui
     // Update the full flag in the enqueue index
     if (full == true)
     {
-        SetBit(enque, 7); // Set the most significant bit to indicate that the queue is full
+        SETBIT(enque, 7); // Set the most significant bit to indicate that the queue is full
     }
 
     // Update the message queue's enqueue and dequeue indices
@@ -138,7 +138,7 @@ Msg_t *get_message(TaskModule_t task_module)
     // If the queue is empty, set the empty flag in the dequeue index
     if (empty == true)
     {
-        SetBit(deque, 7); // Set the most significant bit to indicate that the queue is empty
+        SETBIT(deque, 7); // Set the most significant bit to indicate that the queue is empty
     }
 
     // Update the message queue's enqueue and dequeue indices
