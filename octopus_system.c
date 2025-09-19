@@ -44,7 +44,7 @@
 static bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
 
-void system_event_handler(void);
+void system_event_message_handler(void);
 void system_power_onoff(bool onoff);
 bool system_is_power_on(void);
 void system_mcu_initate_remote_soc(void);
@@ -59,9 +59,9 @@ void system_mcu_goto_lowpower(void);
  * Local Variables
  * Define static variables used only within this file.
  ******************************************************************************/
-static mb_state_t lt_mb_state = MB_POWER_ST_INIT; // Current state of the system
-static uint8_t l_u8_mpu_status = 0;               // Tracks the status of the MPU
-static uint8_t l_u8_power_off_req = 0;            // Tracks if a power-off request is pending
+static mcu_state_t g_mcu_state = MCU_POWER_ST_INIT; // Current state of the system
+//static uint8_t l_u8_mpu_status = 0;               // Tracks the status of the MPU
+//static uint8_t l_u8_power_off_req = 0;            // Tracks if a power-off request is pending
 static uint32_t l_t_msg_wait_10_timer;            // Timer for 10 ms message waiting period
 static uint32_t l_t_msg_lowpower_wait_timer;
 
@@ -137,7 +137,7 @@ void task_system_running(void)
         return;
     StartTickCounter(&l_t_msg_wait_10_timer);
 
-    system_event_handler();
+    system_event_message_handler();
 }
 
 void task_system_post_running(void)
@@ -333,18 +333,18 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
     return false; // Command not processed
 }
 
-void system_event_handler(void)
+void system_event_message_handler(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    if (lt_mb_state == MB_POWER_ST_BOOTING)
+    if (g_mcu_state == MCU_POWER_ST_BOOTING)
     {
         if (GetTickCounter(&l_t_msg_booting_wait_timer) > 3000)
         {
             StopTickCounter(&l_t_msg_booting_wait_timer);
-            lt_mb_state = MB_POWER_ST_ON;
+            g_mcu_state = MCU_POWER_ST_ON;
         }
     }
-    else if (lt_mb_state == MB_POWER_ST_LOWPOWER)
+    else if (g_mcu_state == MCU_POWER_ST_LOWPOWER)
     {
         if (GetTickCounter(&l_t_msg_lowpower_wait_timer) >1000 * 60)
         {
@@ -392,7 +392,7 @@ void system_handshake_with_mcu(void)
 {
     LOG_LEVEL("task system send handshake data to xxx\r\n");
     send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, 0);
-    // send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
+    //send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
 }
 
 /*******************************************************************************
@@ -407,66 +407,14 @@ void system_handshake_with_app(void)
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, 0);
 }
 
-/*******************************************************************************
- * FUNCTION: system_set_mpu_status
- *
- * DESCRIPTION:
- * Sets the MPU status and sends an application state update message.
- *
- * PARAMETERS:
- * - status: The status value to set for the MPU.
- ******************************************************************************/
-void system_set_mpu_status(uint8_t status)
+void system_set_mcu_status(mcu_state_t mcu_state)
 {
-    LOG_LEVEL("Send mpu status=%d \r\n", status);
-    l_u8_mpu_status = status;
+    g_mcu_state = mcu_state;
 }
 
-/*******************************************************************************
- * FUNCTION: system_get_mpu_status
- *
- * DESCRIPTION:
- * Retrieves the current MPU status.
- *
- * RETURNS:
- * - The current MPU status value.
- ******************************************************************************/
-uint8_t system_get_mpu_status(void)
+mcu_state_t system_get_mcu_status(void)
 {
-    return l_u8_mpu_status;
-}
-
-/*******************************************************************************
- * FUNCTION: system_get_power_off_req
- *
- * DESCRIPTION:
- * Checks if a power off request has been made.
- *
- * RETURNS:
- * - true if power off is requested, false otherwise.
- ******************************************************************************/
-bool system_get_power_off_req(void)
-{
-    return l_u8_power_off_req;
-}
-
-/*******************************************************************************
- * FUNCTION: system_get_mb_state
- *
- * DESCRIPTION:
- * Retrieves the current ModBus state.
- *
- * RETURNS:
- * - The current ModBus state value.
- ******************************************************************************/
-mb_state_t system_get_mb_state(void)
-{
-    return lt_mb_state;
-}
-
-void system_set_mb_state(mb_state_t status)
-{
-    lt_mb_state = status;
+    return g_mcu_state;
 }
 
 void system_reboot_soc(void)
@@ -500,7 +448,7 @@ void system_power_onoff(bool onoff)
         gpio_power_on_off(true);
         if (gpio_is_power_on())
         {
-            lt_mb_state = MB_POWER_ST_ON;
+            g_mcu_state = MCU_POWER_ST_ON;
             LOG_LEVEL("Power on soc succesfully\r\n");
 						#ifdef TASK_MANAGER_STATE_MACHINE_CAN
 						CAN_Config();
@@ -516,7 +464,7 @@ void system_power_onoff(bool onoff)
         if (!gpio_is_power_on())
         {
             LOG_LEVEL("Power down SOC succesfully\r\n");
-            lt_mb_state = MB_POWER_ST_LOWPOWER;
+            g_mcu_state = MCU_POWER_ST_LOWPOWER;
             StartTickCounter(&l_t_msg_lowpower_wait_timer); // time out goto sleep
 					  system_mcu_goto_lowpower();
         }
@@ -530,7 +478,7 @@ void system_mcu_goto_lowpower(void)
 		{
 		otms_task_manager_stop();
 		native_enter_sleep_mode();
-		lt_mb_state = MB_POWER_ST_BOOTING;
+		g_mcu_state = MCU_POWER_ST_BOOTING;
 		StartTickCounter(&l_t_msg_booting_wait_timer);
 		otms_task_manager_start();
 		//system_power_onoff(true);
@@ -574,4 +522,5 @@ void system_soc_request_mata_infor(void)
     }
 #endif
 }
+
 #endif

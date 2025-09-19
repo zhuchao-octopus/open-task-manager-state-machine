@@ -1865,5 +1865,322 @@ void PTL_1_UART_Send_Buffer(const uint8_t *buffer, uint16_t length)
 	UART3_Send_Buffer(buffer, length);
 #endif
 }
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+#define BSP_I2C1                         I2C1
+#define BSP_I2C1_CLK                     RCC_APB1Periph_I2C1
 
+#define BSP_I2C1_SCL_PIN                 GPIO_Pin_6                  /* PB.06 */
+#define BSP_I2C1_SCL_GPIO_PORT           GPIOB                       /* GPIOB */
+#define BSP_I2C1_SCL_GPIO_CLK            RCC_AHBPeriph_GPIOB
+#define BSP_I2C1_SCL_SOURCE              GPIO_PinSource6
+#define BSP_I2C1_SCL_AF                  GPIO_AF_1
+
+#define BSP_I2C1_SDA_PIN                 GPIO_Pin_7                  /* PB.07 */
+#define BSP_I2C1_SDA_GPIO_PORT           GPIOB                       /* GPIOB */
+#define BSP_I2C1_SDA_GPIO_CLK            RCC_AHBPeriph_GPIOB
+#define BSP_I2C1_SDA_SOURCE              GPIO_PinSource7
+#define BSP_I2C1_SDA_AF                  GPIO_AF_1
+
+#define BSP_I2C1_SMBUSALERT_PIN          GPIO_Pin_5                  /* PB.05 */
+#define BSP_I2C1_SMBUSALERT_GPIO_PORT    GPIOB                       /* GPIOB */
+#define BSP_I2C1_SMBUSALERT_GPIO_CLK     RCC_AHBPeriph_GPIOB
+#define BSP_I2C1_SMBUSALERT_SOURCE       GPIO_PinSource5
+#define BSP_I2C1_SMBUSALERT_AF           GPIO_AF_3
+
+#define BSP_I2C1_TIMING     0x1045061D
+#define BSP_I2C1_FLAG_TIMEOUT         ((uint32_t)0x1000)
+#define BSP_I2C1_LONG_TIMEOUT         ((uint32_t)(10 * BSP_I2C1_FLAG_TIMEOUT))
+
+void BSP_IIC1_GPIO_Config(void)
+{
+    GPIO_InitTypeDef  GPIO_InitStructure;
+
+    /* LM75_I2C Periph clock enable */
+    RCC_APB1PeriphClockCmd(BSP_I2C1_CLK, ENABLE);
+
+    /* Configure the I2C clock source. The clock is derived from the HSI */
+    RCC_I2C1CLKConfig(RCC_I2C1CLK_HSI8M);
+    /* LM75_I2C_SCL_GPIO_CLK, LM75_I2C_SDA_GPIO_CLK
+         and LM75_I2C_SMBUSALERT_GPIO_CLK Periph clock enable */
+    RCC_AHBPeriphClockCmd(BSP_I2C1_SCL_GPIO_CLK | BSP_I2C1_SDA_GPIO_CLK |
+                          BSP_I2C1_SMBUSALERT_GPIO_CLK, ENABLE);
+
+    /* Connect PXx to I2C_SCL */
+    GPIO_PinAFConfig(BSP_I2C1_SCL_GPIO_PORT, BSP_I2C1_SCL_SOURCE, BSP_I2C1_SCL_AF);
+
+    /* Connect PXx to I2C_SDA */
+    GPIO_PinAFConfig(BSP_I2C1_SDA_GPIO_PORT, BSP_I2C1_SDA_SOURCE,BSP_I2C1_SDA_AF);
+
+    /* Connect PXx to I2C_SMBUSALER */
+    GPIO_PinAFConfig(BSP_I2C1_SMBUSALERT_GPIO_PORT, BSP_I2C1_SMBUSALERT_SOURCE, BSP_I2C1_SMBUSALERT_AF);
+
+    /* Configure LM75_I2C pins: SCL */
+    GPIO_InitStructure.GPIO_Pin = BSP_I2C1_SCL_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+    GPIO_Init(BSP_I2C1_SCL_GPIO_PORT, &GPIO_InitStructure);
+
+    /* Configure LM75_I2C pins: SDA */
+    GPIO_InitStructure.GPIO_Pin = BSP_I2C1_SDA_PIN;
+    GPIO_Init(BSP_I2C1_SDA_GPIO_PORT, &GPIO_InitStructure);
+
+    /* Configure LM75_I2C pin: SMBUS ALERT */
+    GPIO_InitStructure.GPIO_Pin = BSP_I2C1_SMBUSALERT_PIN;
+    GPIO_Init(BSP_I2C1_SMBUSALERT_GPIO_PORT, &GPIO_InitStructure);
+}
+
+void BSP_IIC1_Config(void)
+{
+    I2C_InitTypeDef  I2C_InitStructure;
+    BSP_IIC1_GPIO_Config();
+
+    /* LM75_I2C configuration */
+    I2C_InitStructure.I2C_Mode = I2C_Mode_I2C;//I2C_Mode_SMBusHost;
+    I2C_InitStructure.I2C_AnalogFilter = I2C_AnalogFilter_Enable;
+    I2C_InitStructure.I2C_DigitalFilter = 0x00;
+    I2C_InitStructure.I2C_OwnAddress1 = 0x00;
+    I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;
+    I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+    I2C_InitStructure.I2C_Timing = BSP_I2C1_TIMING;
+
+    /* Apply LM75_I2C configuration after enabling it */
+    I2C_Init(BSP_I2C1, &I2C_InitStructure);
+
+    /* LM75_I2C Peripheral Enable */
+    I2C_Cmd(BSP_I2C1, ENABLE);
+}
+
+
+/******************************************************************************/
+/*                 HK32L0xx Peripherals Interrupt Handlers                   */
+/*  Add here the Interrupt Handler for the used peripheral(s) (PPP), for the  */
+/*  available peripheral interrupt handler's name please refer to the startup */
+/*  file (KEIL_Startup_hk32l0xx.s).                                               */
+/******************************************************************************/
+/**
+  * @brief  This function handles I2C1 Error interrupt request.
+  * @param  None
+  * @retval None
+  */
+void I2C1_IRQHandler(void)
+{
+    /* Check on I2C1 SMBALERT flag and clear it */
+    if (I2C_GetITStatus(I2C1, I2C_IT_ALERT))
+    {
+        I2C_ClearITPendingBit(I2C1, I2C_IT_ALERT);
+        //SMbusAlertOccurred++;
+    }
+
+    /* Check on I2C1 Time out flag and clear it */
+    if (I2C_GetITStatus(I2C1, I2C_IT_TIMEOUT))
+    {
+        I2C_ClearITPendingBit(I2C1, I2C_IT_TIMEOUT);
+    }
+
+    /* Check on I2C1 Arbitration Lost flag and clear it */
+    if (I2C_GetITStatus(I2C1, I2C_IT_ARLO))
+    {
+        I2C_ClearITPendingBit(I2C1, I2C_IT_ARLO);
+    }
+
+    /* Check on I2C1 PEC error flag and clear it */
+    if (I2C_GetITStatus(I2C1, I2C_IT_PECERR))
+    {
+        I2C_ClearITPendingBit(I2C1, I2C_IT_PECERR);
+    }
+
+    /* Check on I2C1 Overrun/Underrun error flag and clear it */
+    if (I2C_GetITStatus(I2C1, I2C_IT_OVR))
+    {
+        I2C_ClearITPendingBit(I2C1, I2C_IT_OVR);
+    }
+
+    /* Check on I2C1 Acknowledge failure error flag and clear it */
+    if (I2C_GetITStatus(I2C1, I2C_IT_NACKF))
+    {
+        I2C_ClearITPendingBit(I2C1, I2C_IT_NACKF);
+    }
+
+    /* Check on I2C1 Bus error flag and clear it */
+    if (I2C_GetITStatus(I2C1, I2C_IT_BERR))
+    {
+        I2C_ClearITPendingBit(I2C1, I2C_IT_BERR);
+    }
+}
+
+uint8_t BSP_IIC1_Write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+{
+		uint8_t DataNum = 0;
+		__IO uint32_t  LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+		/* Test on BUSY Flag */
+		LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+
+    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_BUSY) != RESET)
+    {
+        if ((LM75Timeout--) == 0)
+        {
+            return 1;
+        }
+    }
+
+    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
+    I2C_TransferHandling(BSP_I2C1, dev_address, 1, I2C_Reload_Mode, I2C_Generate_Start_Write);
+
+    /* Wait until TXIS flag is set */
+    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+
+    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TXIS) == RESET)
+    {
+        if ((LM75Timeout--) == 0)
+        {
+            return 2;
+        }
+    }
+
+    /* Send Register address */
+    I2C_SendData(BSP_I2C1, (uint8_t)reg_address);
+
+    /* Wait until TCR flag is set */
+    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+
+    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TCR) == RESET)
+    {
+        if ((LM75Timeout--) == 0)
+        {
+            return 3;
+        }
+    }
+
+    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
+    I2C_TransferHandling(BSP_I2C1, dev_address, 2, I2C_AutoEnd_Mode, I2C_No_StartStop);
+
+    while (DataNum != length)
+    {
+        /* Wait until TXIS flag is set */
+        LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+
+        while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TXIS) == RESET)
+        {
+            if ((LM75Timeout--) == 0)
+            {
+                return 4;
+            }
+        }
+
+        /* Write data to TXDR */
+        I2C_SendData(BSP_I2C1, (uint8_t)(buffer[DataNum]));
+
+        /* Update number of transmitted data */
+        DataNum++;
+    }
+
+    /* Wait until STOPF flag is set */
+    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+
+    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_STOPF) == RESET)
+    {
+        if ((LM75Timeout--) == 0)
+        {
+            return 5;
+        }
+    }
+
+    /* Clear STOPF flag */
+    I2C_ClearFlag(BSP_I2C1, I2C_ICR_STOPCF);
+    return 0;	
+}
+
+uint8_t BSP_IIC1_Read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+{
+	  __IO uint32_t  LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+	  //uint8_t LM75_BufferRX[2] = {0, 0};
+    //uint16_t tmp = 0;
+    uint32_t DataNum = 0;
+
+    /* Test on BUSY Flag */
+    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+
+    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_BUSY) != RESET)
+    {
+        if ((LM75Timeout--) == 0)
+        {
+            return 1;
+        }
+    }
+
+    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
+    I2C_TransferHandling(BSP_I2C1, dev_address, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
+
+    /* Wait until TXIS flag is set */
+    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+
+    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TXIS) == RESET)
+    {
+        if ((LM75Timeout--) == 0)
+        {
+            return 2;
+        }
+    }
+
+    /* Send Register address */
+    I2C_SendData(BSP_I2C1, (uint8_t)reg_address);
+
+    /* Wait until TC flag is set */
+    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+
+    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TC) == RESET)
+    {
+        if ((LM75Timeout--) == 0)
+        {
+            return 3;
+        }
+    }
+
+    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
+    I2C_TransferHandling(BSP_I2C1, dev_address, 2, I2C_AutoEnd_Mode, I2C_Generate_Start_Read);
+
+    /* Reset local variable */
+    DataNum = 0;
+
+    /* Wait until all data are received */
+    while (DataNum != length)
+    {
+        /* Wait until RXNE flag is set */
+        LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+
+        while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_RXNE) == RESET)
+        {
+            if ((LM75Timeout--) == 0)
+            {
+                return 4;
+            }
+        }
+
+        /* Read data from RXDR */
+        buffer[DataNum] = I2C_ReceiveData(BSP_I2C1);
+
+        /* Update number of received data */
+        DataNum++;
+    }
+
+    /* Wait until STOPF flag is set */
+    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+
+    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_STOPF) == RESET)
+    {
+        if ((LM75Timeout--) == 0)
+        {
+            return 5;
+        }
+    }
+
+    /* Clear STOPF flag */
+    I2C_ClearFlag(BSP_I2C1, I2C_ICR_STOPCF);
+
+    return length;
+}
 #endif

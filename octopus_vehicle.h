@@ -47,7 +47,7 @@ typedef enum
 {
     DRIVE_MOD_REAR = 0, // 后驱
     DRIVE_MOD_FRONT,    // 前驱
-	  DRIVE_MOD_DOUBLE,   // 双驱
+	DRIVE_MOD_DOUBLE,   // 双驱
 } drive_mode_;
 
 // 故障-故障信息

@@ -49,8 +49,7 @@
  * BIT MANIPULATION MACROS
  * Define macros for setting, clearing, toggling, and extracting bit values.
  ******************************************************************************/
-
-/* --- 单 bit 掩码定义 --- */
+/* --- Single bit masks --- */
 #define BIT_0   (1UL << 0)
 #define BIT_1   (1UL << 1)
 #define BIT_2   (1UL << 2)
@@ -61,28 +60,33 @@
 #define BIT_7   (1UL << 7)
 #define BIT_8   (1UL << 8)
 
-/* --- 单 bit 操作 --- */
-#define SETBIT(VAR, POS)      ((VAR) |=  (1UL << (POS)))         // 置位
-#define CLRBIT(VAR, POS)      ((VAR) &= ~(1UL << (POS)))         // 清零
-#define TOGBIT(VAR, POS)      ((VAR) ^=  (1UL << (POS)))         // 翻转
-#define GETBIT(VAR, POS)      (((VAR) >> (POS)) & 0x1UL)         // 获取 0/1
+/* --- Single bit operations --- */
+#define SETBIT(VAR, POS)      ((VAR) |=  (1UL << (POS)))         // Set bit at position POS
+#define CLRBIT(VAR, POS)      ((VAR) &= ~(1UL << (POS)))         // Clear bit at position POS
+#define TOGBIT(VAR, POS)      ((VAR) ^=  (1UL << (POS)))         // Toggle bit at position POS
+#define GETBIT(VAR, POS)      (((VAR) >> (POS)) & 0x1UL)         // Get bit value (0 or 1) at position POS
 
-/* --- 多 bit 操作 --- */
-#define SETBITS(VAR, MASK)    ((VAR) |=  (MASK))                 // 置多个位
-#define CLRBITS(VAR, MASK)    ((VAR) &= ~(MASK))                 // 清多个位
-#define TOGBITS(VAR, MASK)    ((VAR) ^=  (MASK))                 // 翻转多个位
-#define GETBITS(VAR, MASK)    ((VAR) &   (MASK))                 // 获取多个位的原值（带掩码）
+/* --- Multi-bit operations --- */
+#define SETBITS(VAR, MASK)    ((VAR) |=  (MASK))                 // Set multiple bits defined by MASK
+#define CLRBITS(VAR, MASK)    ((VAR) &= ~(MASK))                 // Clear multiple bits defined by MASK
+#define TOGBITS(VAR, MASK)    ((VAR) ^=  (MASK))                 // Toggle multiple bits defined by MASK
+#define GETBITS(VAR, MASK)    ((VAR) &   (MASK))                 // Get raw masked value of multiple bits
 
-/* --- 多 bit 取值（字段提取）--- 
- * 例如：VAL = GETBITS_VALUE(REG, 4, 3); // 从第3位起，取4位
+/* --- Multi-bit value extraction and assignment ---
+ * Example:
+ *   val = GETBITS_VALUE(REG, 4, 3); // Extract 4 bits starting from position 3
  */
 #define GETBITS_VALUE(VAR, WIDTH, POS)   (((VAR) >> (POS)) & ((1UL << (WIDTH)) - 1UL))
-// 清除并写入 VAR[POS+WIDTH-1 : POS] = VALUE
+
+/* Assign a value to a specific bit field:
+ *   Updates bits [POS + WIDTH - 1 : POS] of VAR with VALUE.
+ */
 #define SETBITS_VALUE(VAR, WIDTH, POS, VALUE) \
     do { \
         (VAR) = ((VAR) & ~(((1UL << (WIDTH)) - 1UL) << (POS))) | \
                 (((VALUE) & ((1UL << (WIDTH)) - 1UL)) << (POS)); \
     } while(0)
+
 ///////////////////////////////////////////////////////////////////////////////////	
 ///////////////////////////////////////////////////////////////////////////////////	
 // Macros for byte and word manipulation

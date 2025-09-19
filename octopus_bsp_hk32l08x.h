@@ -73,6 +73,10 @@ extern "C"
 
   CAN_Status_t CAN_Send_Data(uint32_t id, uint8_t ide, const uint8_t *buffer, uint8_t length);
 
+	uint8_t BSP_IIC1_Write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length);
+	uint8_t BSP_IIC1_Read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length);
+	
+	
 #ifdef __cplusplus
 }
 #endif
