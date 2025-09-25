@@ -100,7 +100,7 @@ void TaskManagerStateMachineInit(void)
 #ifdef PLATFORM_CST_OSAL_RTOS
     TaskManagerStateMachine_Id_ = task_id; // Store the task ID in the global variable
 #endif
-	LOG_NONE("\r\n");
+		LOG_NONE("\r\n");
     /// LOG_NONE("\r\n\r\n");//[1B blob data]
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     /// LOG_NONE("\r\n######################################BOOT  START######################################\r\n");
@@ -224,12 +224,15 @@ uint16_t TaskManagerStateEventLoop(uint8 task_id, uint16 events)
 
     return 0; // Return 0 if no events were handled
 }
+
 void TaskManagerStateStartRunning(void)
 {
 }
+
 void TaskManagerStateStopRunning(void)
 {
 }
+
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
 /**
  * @brief Task manager state machine event loop for ITE Open RTOS.
@@ -307,7 +310,7 @@ void TaskManagerStateEventLoop(void *arg)
 
 void TaskManagerStateStartRunning(void)
 {
-	
+	  
 }
 
 #endif

@@ -8,7 +8,7 @@
 #include "octopus_tickcounter.h"
 #include "octopus_vehicle.h"
 
-#ifdef TASK_MANAGER_STATE_MACHINE_CAN
+#ifdef CUSTOMER_MODEL_CA_500
 // -------- BMS --------
 #pragma pack(push, 1)
 typedef struct
@@ -37,48 +37,51 @@ typedef struct
     // 控制器工作信息 (Byte2~3)
     __packed union
     {
-        uint16_t raw;
+        uint32_t raw;
         __packed struct
         {
-            uint16_t pReady : 1;      // 待机状态
-            uint16_t sideStand : 1;   // 边撑状态
-            uint16_t cruise : 1;      // 巡航状态
-            uint16_t charge : 1;      // 充电状态
-            uint16_t forwardGear : 2; // 前进档位 (00无档 01低档 10高档)
-            uint16_t antiRob : 1;     // 防盗状态
-            uint16_t brake : 1;       // 制动状态
+            uint32_t pReady : 1;      // 待机状态
+            uint32_t sideStand : 1;   // 边撑状态
+            uint32_t cruise : 1;      // 巡航状态
+            uint32_t charge : 1;      // 充电状态
+            uint32_t forwardGear : 2; // 前进档位 (00无档 01低档 10高档)
+            uint32_t antiRob : 1;     // 防盗状态
+            uint32_t brake : 1;       // 制动状态
 
-            uint16_t ebs : 1;      // EBS能量回馈
-            uint16_t seat : 1;     // 座桶状态
-            uint16_t comm : 1;     // 通信状态
-            uint16_t workMode : 2; // 工作模式 (00转矩 01转速 10PWM)
-            uint16_t pwmState : 1; // PWM波状态
-            uint16_t reserved : 2; // 保留
+            uint32_t ebs : 1;      // EBS能量回馈
+            uint32_t seat : 1;     // 座桶状态
+					  uint32_t boost : 1;     // 座桶状态
+            uint32_t comm : 1;     // 通信状态
+            uint32_t workMode : 4; // 工作模式 (00转矩 01转速 10PWM)
+					
+            uint32_t pwmState : 8; // PWM波状态
+            uint32_t reserved : 8; // 保留
         } bits;
     } info; // Byte2~3
 
     // 故障状态 (Byte4~7)
     __packed union
     {
-        uint32_t raw;
+        uint16_t raw;
         __packed struct
         {
-            uint32_t mosFault : 1;       // MOS故障
-            uint32_t overCurrent : 1;    // 过流
-            uint32_t overVoltage : 1;    // 过压
-            uint32_t underVoltage : 1;   // 欠压
-            uint32_t throttleFault : 1;  // 转把故障
-            uint32_t pLockFault : 1;     // 电机堵转
-            uint32_t motorHallFault : 1; // 电机霍尔故障
-            uint32_t angleFault : 1;     // 角度传感器故障
+            uint16_t mosFault : 1;       // MOS故障
+            uint16_t overCurrent : 1;    // 过流
+            uint16_t overVoltage : 1;    // 过压
+            uint16_t underVoltage : 1;   // 欠压
+            uint16_t throttleFault : 1;  // 转把故障
+            uint16_t pLockFault : 1;     // 电机堵转
+            uint16_t motorHallFault : 1; // 电机霍尔故障
+            uint16_t angleFault : 1;     // 角度传感器故障
 
-            uint32_t otherFault : 1;     // 其它故障
-            uint32_t derating : 1;       // 降额状态
-            uint32_t mcuOverTemp1 : 1;   // MCU过温1
-            uint32_t mcuOverTemp2 : 1;   // MCU过温2
-            uint32_t motorOverTemp1 : 1; // 电机过温1
-            uint32_t motorOverTemp2 : 1; // 电机过温2
-            uint32_t reserved : 18;      // 保留
+					  uint16_t reserved : 2;      // 保留
+            uint16_t otherFault : 1;     // 其它故障
+            uint16_t derating : 1;       // 降额状态
+            uint16_t mcuOverTemp1 : 1;   // MCU过温1
+            uint16_t mcuOverTemp2 : 1;   // MCU过温2
+            uint16_t motorOverTemp1 : 1; // 电机过温1
+            uint16_t motorOverTemp2 : 1; // 电机过温2
+            
         } bits;
     } fault_state; // Byte4~7
 
@@ -86,13 +89,13 @@ typedef struct
 
 typedef struct
 {
-    int8_t mcu_temp;       // 控制器温度 [°C] (raw-40)
-    int8_t motor_temp;     // 电机温度 [°C] (raw-40)
-    int16_t bus_current;   // 母线电流 [0.1A] (raw-1950)
-    int16_t phase_current; // 相电流 [0.1A] (raw-4000)
-    uint8_t bus_voltage;   // 母线电压 [V]
-    uint8_t throttle_volt; // 油门电压 [0.5V/bit]
-} MCU_Task_H_002_t;        // 0x171 报文
+    int16_t mcu_temp;       // 控制器温度 [°C] = raw - 40
+    int16_t motor_temp;     // 电机温度 [°C] = raw - 40
+    int16_t bus_current;    // 母线电流 [0.1A] = raw*0.1 - 1950
+    int16_t phase_current;  // 相电流 [0.1A] = raw*0.1 - 4000
+    uint8_t bus_voltage;    // 母线电压 [V]   = raw
+    uint8_t throttle_volt;  // 油门电压 [0.02V] = raw*0.02
+} MCU_Task_H_002_t;  // 对应 0x171 报文
 
 // -------- VCU --------
 typedef struct
@@ -256,8 +259,8 @@ void CAN_Parse_EBS_Level(const CanQueueMsg_t *msg);
  * @this function may be used for routing logic in receive ISR or task.
  * @param msg Pointer to a CAN_Message_t structure.
  */
-void can_message_dispatcher(const CanQueueMsg_t *queue_msg);
-void can_message_sender(const uint16_t message_id);
+bool can_message_dispatcher(const CanQueueMsg_t *queue_msg);
+bool can_message_sender(const uint16_t message_id);
 
 #endif
 #endif //__OCTOPUS_CAN_FUNCTION_2E006__

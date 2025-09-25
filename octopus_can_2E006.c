@@ -6,8 +6,9 @@
 #include "octopus_message.h"     // Message IDs: defines identifiers for inter-task communication
 #include "octopus_msgqueue.h"    // Message Queue: API for sending/receiving messages between tasks
 #include "octopus_uart_ptl.h"    // UART Protocol Layer: handles protocol-level UART operations
+#include "octopus_uart_upf.h"
 
-#ifdef TASK_MANAGER_STATE_MACHINE_CAN
+#ifdef CUSTOMER_MODEL_CA_500
 
 static BMS_Task_H_001_t g_bms1;
 static BMS_Task_H_002_t g_bms2;
@@ -25,13 +26,13 @@ static Charger_Task_L_001_t g_chg1;
 static Charger_Task_L_002_t g_chg2;
 
 static void CAN_update_vehicle_infor(const CanQueueMsg_t *msg);
-static float Calculate_Speed_From_RPM(uint16_t rpm, uint16_t tire_diameter_mm, uint8_t gear_ratio);
+static float Calculate_Speed_From_RPM(uint32_t rpm, uint16_t tire_radius_mm, uint8_t gear_ratio);
 /**
  * @brief Dispatch a CAN message to appropriate handler based on its ID.
  *        This function may be used for routing logic in receive ISR or task.
  * @param msg Pointer to a CAN_Message_t structure.
  */
-void can_message_dispatcher(const CanQueueMsg_t *queue_msg)
+bool can_message_dispatcher(const CanQueueMsg_t *queue_msg)
 {
     // LOG_BUFF_LEVEL((uint8_t *)queue_msg, sizeof(CanQueueMsg_t));
     bool updated = false;
@@ -56,9 +57,9 @@ void can_message_dispatcher(const CanQueueMsg_t *queue_msg)
         updated = CAN_Parse_MCU_Task_H_001(queue_msg);
         if (updated)
         {
-            LOG_LEVEL("g_mcu1.motor_speed_rpm: %d\n", g_mcu1.motor_speed_rpm);
-            LOG_LEVEL("g_mcu1.info           : %d\n", g_mcu1.info.raw);
-            LOG_LEVEL("g_mcu1.fault_state    : %d\n", g_mcu1.fault_state.raw);
+            //LOG_LEVEL("g_mcu1.motor_speed_rpm: %d\n", g_mcu1.motor_speed_rpm);
+            //LOG_LEVEL("g_mcu1.info           : %d\n", g_mcu1.info.raw);
+            //LOG_LEVEL("g_mcu1.fault_state    : %d\n", g_mcu1.fault_state.raw);
             CAN_update_vehicle_infor(queue_msg);
         }
 
@@ -88,9 +89,11 @@ void can_message_dispatcher(const CanQueueMsg_t *queue_msg)
     default:
         break; // unknown ID
     }
+		
+		return updated;
 }
 
-void can_message_sender(const uint16_t message_id)
+bool can_message_sender(const uint16_t message_id)
 {
     switch (message_id)
     {
@@ -140,6 +143,8 @@ void can_message_sender(const uint16_t message_id)
         // 未知消息ID，可添加错误处理或日志
         break;
     }
+		
+		return false;
 }
 
 // -------- BMS --------
@@ -187,14 +192,20 @@ void CAN_Parse_VCU_Task_L_002(const CanQueueMsg_t *msg)
 bool CAN_Parse_MCU_Task_H_001(const CanQueueMsg_t *msg)
 {
     bool b_ret = false;
+	  uint16_t motor_speed_rpm; 
+	  MCU_Task_H_001_t g_mcu1_new;
+	
     if (msg->data_len != 8)
         return false;
 
-    MCU_Task_H_001_t g_mcu1_new;
-    g_mcu1_new.motor_speed_rpm = (uint16_t)(msg->data[0] | (msg->data[1] << 8));
-    g_mcu1_new.info.raw = (uint16_t)(msg->data[2] | (msg->data[3] << 8));
-    g_mcu1_new.fault_state.raw = (uint32_t)(msg->data[4] | (msg->data[5] << 8) |
-                                            (msg->data[6] << 16) | (msg->data[7] << 24));
+		motor_speed_rpm = (uint16_t)(msg->data[0] | (msg->data[1] << 8));
+		//if(motor_speed_rpm <= 0) motor_speed_rpm = 0;		
+    g_mcu1_new.motor_speed_rpm = motor_speed_rpm - 8000;
+		
+		//LOG_LEVEL("g_mcu1_new.motor_speed_rpm:%d, motor_speed_rpm:%d\n", g_mcu1_new.motor_speed_rpm, motor_speed_rpm);
+		
+    g_mcu1_new.info.raw = (uint32_t)(msg->data[2] | (msg->data[3] << 8) | (msg->data[4] << 16) | (msg->data[5] << 24));
+    g_mcu1_new.fault_state.raw = (uint16_t)(msg->data[6] | (msg->data[7] << 8));
 
     if (g_mcu1_new.motor_speed_rpm != g_mcu1.motor_speed_rpm)
         b_ret = true;
@@ -232,18 +243,18 @@ bool CAN_Parse_MCU_Task_H_002(const CanQueueMsg_t *msg)
     new_frame.motor_temp = (int8_t)msg->data[1] - 40;
 
     /* 3) Bus Current (Byte2-3, 小端, 0.1A/bit, 偏移 -1950) */
-    uint16_t raw_bus_cur = (uint16_t)(msg->data[2] | (msg->data[3] << 8));
-    new_frame.bus_current = (int16_t)raw_bus_cur - 1950;
+    uint16_t raw_bus_cur = (uint16_t)(msg->data[2] | ((msg->data[3] & 0x07) << 8));
+    new_frame.bus_current = (int16_t)raw_bus_cur - 97;
 
     /* 4) Phase Current (Byte4-5, 小端, 0.1A/bit, 偏移 -4000) */
-    uint16_t raw_phase_cur = (uint16_t)(msg->data[4] | (msg->data[5] << 8));
+    uint16_t raw_phase_cur = (uint16_t)(msg->data[4] << 5 | (msg->data[3] & 0x01F));
     new_frame.phase_current = (int16_t)raw_phase_cur - 4000;
 
     /* 5) Bus Voltage (Byte6, 1V/bit) */
-    new_frame.bus_voltage = msg->data[6];
+    new_frame.bus_voltage = msg->data[5];
 
     /* 6) Throttle Voltage (Byte7, 0.5V/bit) */
-    new_frame.throttle_volt = msg->data[7];
+    new_frame.throttle_volt = msg->data[6];
 
     if (new_frame.mcu_temp != g_mcu2.mcu_temp)
         b_ret = true;
@@ -312,6 +323,39 @@ void CAN_Parse_EBS_Level(const CanQueueMsg_t *msg)
         return;
     g_ebs.ebs_state = msg->data[0];
 }
+
+uint16_t get_wheel_radius_mm(void)
+{
+    if (lt_carinfo_meter.wheel_diameter >= SETTING_WHEEL_MAX)
+    {
+		   return lt_carinfo_meter.wheel_diameter * 25.4;
+    }
+		
+    switch (lt_carinfo_meter.wheel_diameter)
+    {
+    case SETTING_WHEEL_16_Inch:
+        return 203;
+    case SETTING_WHEEL_18_Inch:
+        return 229;
+    case SETTING_WHEEL_20_Inch:
+        return 254;
+    case SETTING_WHEEL_22_Inch:
+        return 279;
+    case SETTING_WHEEL_24_Inch:
+        return 305;
+    case SETTING_WHEEL_26_Inch:
+        return 330;
+    case SETTING_WHEEL_27_Inch:
+        return 343;
+    case SETTING_WHEEL_27_5_Inch:
+        return 349;
+    case SETTING_WHEEL_28_Inch:
+        return 356;
+    case SETTING_WHEEL_29_Inch:
+        return 368;
+    }
+    return 1000;
+}
 // ERROR_CODE_IDLE = 0X00,                                      // 无动作
 // ERROR_CODE_NORMAL = 0X01,                                    // 正常状态
 // ERROR_CODE_BRAKE = 0X03,                                     // 已刹车
@@ -348,7 +392,7 @@ void CAN_update_vehicle_infor(const CanQueueMsg_t *msg)
 
     case CAN_ID_MCU_TASK_H_001:
         lt_carinfo_meter.rpm = g_mcu1.motor_speed_rpm;
-        lt_carinfo_meter.speed_actual = Calculate_Speed_From_RPM(g_mcu1.motor_speed_rpm, lt_carinfo_meter.wheel_diameter, 10);
+        lt_carinfo_meter.speed_actual = Calculate_Speed_From_RPM(g_mcu1.motor_speed_rpm, get_wheel_radius_mm(), 1);
         lt_carinfo_meter.gear = g_mcu1.info.bits.forwardGear;
         lt_carinfo_indicator.brake = g_mcu1.info.bits.brake;
         lt_carinfo_indicator.cruise_control = g_mcu1.info.bits.cruise;
@@ -365,11 +409,16 @@ void CAN_update_vehicle_infor(const CanQueueMsg_t *msg)
         carinfo_add_error_code(ERROR_CODE_CONTROLLER_ABNORMALITY, g_mcu1.fault_state.bits.angleFault, false);
         carinfo_add_error_code(ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY, g_mcu1.fault_state.bits.motorOverTemp1, false);
         carinfo_add_error_code(ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY, g_mcu1.fault_state.bits.motorOverTemp2, true);
+		
+		    //LOG_LEVEL("lt_carinfo_meter.speed_actual: %d\n", lt_carinfo_meter.speed_actual);
+		    send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR);
+				send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, FRAME_CMD_CARINFOR_METER);
         break;
 
     case CAN_ID_MCU_TASK_H_002:
-        lt_carinfo_battery.current = g_mcu2.bus_current;
-        lt_carinfo_battery.voltage = g_mcu2.bus_voltage;
+        lt_carinfo_battery.current = g_mcu2.bus_current * 10;
+        lt_carinfo_battery.voltage = g_mcu2.bus_voltage * 10;
+		    //LOG_LEVEL("lt_carinfo_battery.voltage=%d lt_carinfo_battery.current=%d\n", lt_carinfo_battery.voltage,lt_carinfo_battery.current);
         send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, FRAME_CMD_CARINFOR_BATTERY);
         break;
 
@@ -386,18 +435,43 @@ void CAN_update_vehicle_infor(const CanQueueMsg_t *msg)
     }
 }
 
-// 根据电机转速和轮胎直径计算速度 (km/h)
-float Calculate_Speed_From_RPM(uint16_t rpm, uint16_t tire_diameter_mm, uint8_t gear_ratio)
+/**
+ * @brief  根据电机转速 (RPM)、轮胎直径和减速比，计算车辆的行驶速度 (km/h)。
+ *
+ * @param  rpm                电机转速，单位：RPM (revolutions per minute, 转/分钟)
+ * @param  tire_diameter_mm   轮胎直径，单位：mm
+ * @param  gear_ratio         减速比 (电机转速 : 车轮转速)，例如减速比=10 表示车轮转一圈电机转10圈
+ *
+ * @return 车速，单位：km/h
+ *
+ * 计算公式推导：
+ * 1. 轮胎直径 D (米) = tire_diameter_mm / 1000
+ * 2. 轮胎周长 C (米) = π * D
+ * 3. 电机转速 rpm (转/分钟)，车轮转速 wheel_rpm = rpm / gear_ratio
+ * 4. 车轮每分钟行驶距离 (米/分钟) = wheel_rpm * C
+ * 5. 换算成 km/h：
+ *        speed(km/h) = (wheel_rpm * C [米/分钟]) × (60 [分钟/小时]) / 1000 [米/公里]
+ *                    = wheel_rpm * π * D * (60 / 1000)
+ * 6. 再整理常数：
+ *        (60 / 1000) = 0.06
+ *
+ * 因此最终公式：
+ *        speed_kmh = wheel_rpm * π * D * 0.06
+ */
+float Calculate_Speed_From_RPM(uint32_t rpm, uint16_t tire_radius_mm, uint8_t gear_ratio)
 {
-    // 轮胎直径 (m)
-    float D_m = tire_diameter_mm / 1000.0f;
+	  //LOG_LEVEL("tire_diameter_mm: %d\n", tire_radius_mm);
+	
+    // 1. 轮胎直径 (m)
+    double D_m = (tire_radius_mm*2) / 1000.0f;
 
-    // 实际车轮转速 = 电机转速 / 减速比
-    float wheel_rpm = (float)rpm / (float)gear_ratio;
+    // 2. 车轮转速 (RPM)，由电机转速除以减速比得到
+    double wheel_rpm = (float)rpm / (float)gear_ratio;
 
-    // 计算车速 km/h
-    float speed_kmh = wheel_rpm * D_m * (float)PI_FLOAT * 0.06f; // 0.06 = (60/1000)*3.6
+    // 3. 根据公式计算车速 (km/h)
+    double speed_kmh = wheel_rpm * D_m * (float)PI_FLOAT * 0.06f;
 
-    return speed_kmh;
+    return speed_kmh * 10;
 }
+
 #endif

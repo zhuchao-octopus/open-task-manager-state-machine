@@ -560,9 +560,9 @@ uint8_t lhl2_ptl_checksum(uint8_t *data, uint8_t len)
 
 uint16_t get_wheel_radius_inch(void)
 {
-    if (lt_carinfo_meter.wheel_diameter >= 100)
+    if (lt_carinfo_meter.wheel_diameter >= SETTING_WHEEL_MAX)
     {
-        return lt_carinfo_meter.wheel_diameter;
+        return lt_carinfo_meter.wheel_diameter * 10;
     }
 
     switch (lt_carinfo_meter.wheel_diameter)

@@ -397,6 +397,10 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
             else
                 bafang_lamp_on_off(false);
             return false;
+#else
+				    if(payload->data_len > 0)
+				      lt_carinfo_indicator.high_beam = payload->data[0];
+				    return false;
 #endif
         case FRAME_CMD_CAR_SET_GEAR_LEVEL:
             if (payload->data_len >= 1)
@@ -431,6 +435,7 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
             if (payload->data_len >= sizeof(carinfo_meter_t))
             {
                 memcpy(&lt_carinfo_meter, payload->data, sizeof(carinfo_meter_t));
+							  //LOG_BUFF_LEVEL((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
             }
             return false;
 
@@ -440,7 +445,7 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
                 memcpy(&lt_carinfo_battery, payload->data, sizeof(carinfo_battery_t));
                 calculate_battery_soc_ex(lt_carinfo_battery.voltage, lt_carinfo_battery.current, system_meter_infor.trip_odo,
                                          DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
-                                         system_meter_infor.speed_average,
+                                         lt_carinfo_meter.speed_average,
                                          &lt_carinfo_battery.power, &lt_carinfo_battery.soc,
                                          &lt_carinfo_battery.range, &lt_carinfo_battery.range_max);
 

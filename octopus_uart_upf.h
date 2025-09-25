@@ -35,7 +35,7 @@
  *******************************************************************************/
 typedef enum
 {
-	SETTING_WHEEL_16_Inch,
+	SETTING_WHEEL_16_Inch = 0,
 	SETTING_WHEEL_18_Inch,
 	SETTING_WHEEL_20_Inch,
 	SETTING_WHEEL_22_Inch,
@@ -45,6 +45,7 @@ typedef enum
 	SETTING_WHEEL_27_5_Inch,
 	SETTING_WHEEL_28_Inch,
 	SETTING_WHEEL_29_Inch,
+	SETTING_WHEEL_MAX,
 } SETTING_WHEEL;
 
 typedef enum

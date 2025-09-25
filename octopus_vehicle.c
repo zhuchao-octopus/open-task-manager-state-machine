@@ -48,7 +48,7 @@
 /*******************************************************************************
  * MACROS
  */
-
+//#define TEST_LOG_DEBUG_VEHICLE
 /*******************************************************************************
  * TYPEDEFS
  */
@@ -94,6 +94,7 @@ carinfo_meter_t lt_carinfo_meter = {0};         // Local meter data structure
 carinfo_indicator_t lt_carinfo_indicator = {0}; // Local indicator data structure
 carinfo_battery_t lt_carinfo_battery = {0};
 carinfo_error_t lt_carinfo_error;
+CarErrorCodeFlags_t CarErrorCodeFlags;
 // static carinfo_drivinfo_t lt_drivinfo = {0};   // Local drivetrain information
 
 // Timer variables
@@ -123,6 +124,8 @@ void task_vehicle_init_running(void)
     lt_carinfo_meter.speed_actual = 0;
     lt_carinfo_meter.speed_max = 0;
     lt_carinfo_meter.speed_average = 0;
+	  lt_carinfo_indicator.width_lamp = 0;
+	  //lt_carinfo_meter.wheel_diameter = SETTING_WHEEL_27_Inch;
 }
 
 void task_vehicle_start_running(void)
@@ -213,21 +216,32 @@ bool meter_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uin
         switch (param1)
         {
         case FRAME_CMD_CARINFOR_INDICATOR:
+					  #ifdef TEST_LOG_DEBUG_VEHICLE
+					  LOG_LEVEL("lt_carinfo_indicator.ready=%d\r\n",lt_carinfo_indicator.ready);
+				    #endif
             ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, (uint8_t *)&lt_carinfo_indicator, sizeof(carinfo_indicator_t), buff);
             return true;
 
         case FRAME_CMD_CARINFOR_METER:
-            // LOG_LEVEL("lt_meter.speed=%d\r\n",lt_carinfo_meter.speed);
+					  #ifdef TEST_LOG_DEBUG_VEHICLE
+            LOG_LEVEL("lt_meter.speed_actual=%d\r\n",lt_carinfo_meter.speed_actual);
+				    #endif
             ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, (uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t), buff);
             return true;
 
         case FRAME_CMD_CARINFOR_BATTERY:
+					  #ifdef TEST_LOG_DEBUG_VEHICLE
+					  LOG_LEVEL("lt_carinfo_battery.voltage=%d lt_carinfo_battery.current=%d\n", lt_carinfo_battery.voltage,lt_carinfo_battery.current);
+				    #endif
             ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, (uint8_t *)&lt_carinfo_battery, sizeof(carinfo_battery_t), buff);
             return true;
 
         case FRAME_CMD_CARINFOR_ERROR:
             // memcpy(tmp, &lt_carinfo_error, sizeof(carinfo_error_t));
             // LOG_LEVEL("(uint8_t *)&lt_carinfo_error size=%d\r\n", sizeof(carinfo_error_t));
+				    #ifdef TEST_LOG_DEBUG_VEHICLE
+				    LOG_LEVEL("lt_carinfo_error.fault_battery=%d\r\n",lt_carinfo_error.fault_battery);
+				    #endif
             ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_ERROR, (uint8_t *)&lt_carinfo_error, sizeof(carinfo_error_t), buff);
             return true;
         default:
@@ -351,7 +365,7 @@ void task_car_controller_msg_handler(void)
 
             calculate_battery_soc_ex(lt_carinfo_battery.voltage, lt_carinfo_battery.current, system_meter_infor.trip_odo,
                                      DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
-                                     system_meter_infor.speed_average,
+                                     lt_carinfo_meter.speed_average,
                                      &lt_carinfo_battery.power, &lt_carinfo_battery.soc,
                                      &lt_carinfo_battery.range, &lt_carinfo_battery.range_max);
             RestartTickCounter(&l_t_msg_car_trip_timer);
@@ -360,6 +374,7 @@ void task_car_controller_msg_handler(void)
         if (trip_saving_timer > 60000 * 5 && delta_distance > 0)
         {
             flash_save_carinfor_meter();
+					  
             RestartTickCounter(&l_t_trip_saving_timer);
         }
 
@@ -367,9 +382,10 @@ void task_car_controller_msg_handler(void)
         {
             calculate_battery_soc_ex(lt_carinfo_battery.voltage, lt_carinfo_battery.current, system_meter_infor.trip_odo,
                                      DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
-                                     system_meter_infor.speed_average,
+                                     lt_carinfo_meter.speed_average,
                                      &lt_carinfo_battery.power, &lt_carinfo_battery.soc,
                                      &lt_carinfo_battery.range, &lt_carinfo_battery.range_max);
+					 //send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
         }
 
         return;
@@ -657,4 +673,37 @@ void log_sif_data(uint8_t *data, uint8_t maxlen)
     LOG_("\r\n");
 }
 #endif
+
+/**
+ * @brief 获取当前发生的所有错误码
+ * @param err_struct  错误位字段结构
+ * @param out_codes   输出数组，用于存放错误码
+ * @param max_count   输出数组最大长度
+ * @return 实际写入的错误码数量
+ */
+ 
+#if 0 
+static inline size_t GET_ERROR_CODES(const ErrorCodeFlags_t *err_struct, uint8_t *out_codes, size_t max_count) {
+    size_t count = 0;
+
+    for (uint8_t byte_idx = 0; byte_idx < ERROR_FLAG_BYTES; byte_idx++) {
+        uint8_t byte = err_struct->flags[byte_idx];
+        if (byte == 0) continue;
+
+        for (uint8_t bit = 0; bit < 8; bit++) {
+            if (byte & (1 << bit)) {
+                uint8_t code = byte_idx * 8 + bit;
+                if (count < max_count) {
+                    out_codes[count++] = code;
+                } else {
+                    return count; // 数组满了
+                }
+            }
+        }
+    }
+
+    return count;
+}
+#endif
+
 #endif

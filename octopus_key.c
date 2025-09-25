@@ -492,6 +492,9 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
     case OCTOPUS_KEY_PAGE:
         send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_KEY, key, key_status);
         break;
+		
+		case OCTOPUS_KEY_POWER:      
+		    break;
     }
 }
 #else

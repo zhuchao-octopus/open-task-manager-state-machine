@@ -158,6 +158,42 @@ void UART2_Config_IRQ_STOP_Mode(void);
 extern void hal_timer_interrupt_callback(uint8_t event);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Initialize DWT cycle counter for microsecond resolution
+void platform_dwt_init(void)
+{
+    //CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    //DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+}
+
+// uint32_t platform_dwt_get_us(void) {
+//     return DWT->CYCCNT / MCU_CPU_CLOCK_MHZ;
+// }
+void dwt_delay_us(uint32_t us)
+{
+    //uint32_t start = DWT->CYCCNT;
+    //uint32_t ticks = us * (SystemCoreClock / 1000000);
+    //while ((DWT->CYCCNT - start) < ticks)
+    //    ;
+}
+
+// Delay Function ---
+// Platform-specific delay using DWT if available
+// Delay Wrapper
+void platform_delay_us(uint32_t us)
+{
+	
+#ifdef DWT_DELAY_FUNCTION
+   dwt_delay_us(us);
+#else
+	  
+#endif
+}
+
+void platform_delay_ms(uint32_t ms)
+{
+    platform_delay_us(ms * 1000);
+}
 /**
   * @brief  This function handles SysTick Handler.
   * @retval None
@@ -1711,7 +1747,7 @@ void LCD_CAN_IRQHandler(void)
 {
 	CAN_Receive(CAN_FIFO0, &CanRxMessage);
 
-	if(system_get_mb_state() == MB_POWER_ST_ON)
+	if(system_get_mcu_status() == MB_POWER_ST_ON)
 	{
 	  // LOG_BUFF_LEVEL((const uint8_t *)&CanRxMessage, sizeof(CanRxMsg));
 		// LED_Display(CanRxMessage.Data[0]);
@@ -2012,7 +2048,7 @@ void I2C1_IRQHandler(void)
     }
 }
 
-uint8_t BSP_IIC1_Write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+uint8_t hal_iic1_write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
 		uint8_t DataNum = 0;
 		__IO uint32_t  LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
@@ -2093,8 +2129,31 @@ uint8_t BSP_IIC1_Write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer
     I2C_ClearFlag(BSP_I2C1, I2C_ICR_STOPCF);
     return 0;	
 }
+uint8_t hal_iic2_write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+{
+	 return 0;
+}
+uint8_t hal_iic3_write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+{
+	 return 0;
+}
 
-uint8_t BSP_IIC1_Read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+uint8_t hal_iic4_write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+{
+   return 0;	
+}
+
+uint8_t hal_iic5_write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+{
+	 return 0;
+}
+
+uint8_t hal_iic6_write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+{
+   return 0;	
+}
+
+uint8_t hal_iic1_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
 	  __IO uint32_t  LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
 	  //uint8_t LM75_BufferRX[2] = {0, 0};
@@ -2182,5 +2241,30 @@ uint8_t BSP_IIC1_Read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer,
     I2C_ClearFlag(BSP_I2C1, I2C_ICR_STOPCF);
 
     return length;
+}
+
+uint8_t hal_iic2_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+{
+ return 0;	
+}
+
+uint8_t hal_iic3_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+{
+ return 0;	
+}
+
+uint8_t hal_iic4_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+{
+ return 0;	
+}
+
+uint8_t hal_iic5_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+{
+ return 0;	
+}
+
+uint8_t hal_iic6_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
+{
+ return 0;	
 }
 #endif
