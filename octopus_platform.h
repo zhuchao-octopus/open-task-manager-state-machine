@@ -44,6 +44,9 @@
 #define ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
 
 ///////////////////////////////////////////////////////////////////////////////////
+#define OTMS_VERSION_CODE (001)
+#define OTMS_VERSION_NAME "0.0.1"
+
 ///////////////////////////////////////////////////////////////////////////////////
 /*******************************************************************************
  * PROJECT SWITCH MACROS
@@ -54,7 +57,6 @@
 // #define PLATFORM_X86_WIND_RTOS   // Uncomment to use XB6 platform with WIND RTOS
 //#define PLATFORM_STM32_RTOS
 // #define PLATFORM_LINUX_RISC         // X86 ARM linux
-
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
@@ -68,25 +70,31 @@
 ///////////////////////////////////////////////////////////////////////////////////
  /* @brief Task Manager state machine modules.
  */
- 
+#define TASK_MANAGER_STATE_MACHINE_GPIO 1  
 #define TASK_MANAGER_STATE_MACHINE_FLASH 1 
-//#define TASK_MANAGER_STATE_MACHINE_KEY 1 
-//#define TASK_MANAGER_STATE_MACHINE_GPIO 1 
-//#define TASK_MANAGER_STATE_MACHINE_SIF 1 /**< Secondary interface mode. */
-#define TASK_MANAGER_STATE_MACHINE_BLE 1 
-//#define TASK_MANAGER_STATE_MACHINE_BMS 1 
-//#define TASK_MANAGER_STATE_MACHINE_UPDATE 1 
+#define TASK_MANAGER_STATE_MACHINE_SYSTEM 1  
+#define TASK_MANAGER_STATE_MACHINE_KEY 1 
+
+//#define TASK_MANAGER_STATE_MACHINE_IPC 1 
+//#define TASK_MANAGER_STATE_MACHINE_PTL2 1 
 
 //#define TASK_MANAGER_STATE_MACHINE_CARINFOR 1
-
 //#define TASK_MANAGER_STATE_MACHINE_CAN 1 
-//#define TASK_MANAGER_STATE_MACHINE_PTL2 1 
+
 //#define TASK_MANAGER_STATE_MACHINE_BAFANG 1 
-//#define TASK_MANAGER_STATE_MACHINE_IPC_SOCKET 1 
+//#define TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2 1
+//#define TASK_MANAGER_STATE_MACHINE_SIF 1 
+#define TASK_MANAGER_STATE_MACHINE_BLE 1 
+//#define TASK_MANAGER_STATE_MACHINE_BMS 1 
+//#define TASK_MANAGER_STATE_MACHINE_4G 1 
+//#define TASK_MANAGER_STATE_MACHINE_BT_MUSIC_MUSIC 1
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
-//#define USE_EEROM_FOR_DATA_SAVING
+//#define FLASH_USE_EEROM_FOR_DATA_SAVING
+//#define FLASH_MAPPING_VECT_TABLE_TO_SRAM
+
+//#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A
 /***********************************************************************************
  * BASE INCLUDE FILES
  * Include necessary standard libraries and platform-specific headers.
@@ -100,7 +108,7 @@
 #include <string.h>  // String manipulation functions
 #include <assert.h>  // Debugging support for assertions
 #include <time.h>    // Time manipulation functions
-#include <stdlib.h>  // for rand()
+#include <ctype.h>
 
 /****************************************************************************************
  * OCTOPUS INCLUDES
@@ -111,6 +119,7 @@
 #include "octopus_tickcounter.h"  // Include tick counter for timing operations
 #include "octopus_msgqueue.h"     // Include message queue header for task communication
 #include "octopus_message.h"      // Include message id for inter-task communication
+#include "octopus_utils.h"
 
 #ifdef PLATFORM_ITE_OPEN_RTOS
 #include <sys/ioctl.h>         // System I/O control definitions
@@ -158,13 +167,14 @@
 #elif defined(PLATFORM_LINUX_RISC)
 #include <pthread.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <fnmatch.h>
 #include "../HAL/octopus_serialport_c.h"
 
 #elif defined(PLATFORM_STM32_RTOS)
-#include "../src/native_devices.h"
-
-#else 
-
+#include "octopus_bsp.h"
+#else
+#include "octopus_bsp.h"
 #endif
 
 #ifdef __cplusplus
@@ -181,16 +191,22 @@ extern "C"
  * GENERAL MACROS
  * Define common bit manipulation macros and constants.
  ******************************************************************************/
+ 
 #ifdef PLATFORM_CST_OSAL_RTOS
+
 #define GET_SYSTEM_TICK_COUNT (hal_systick() * 625 / 1000) // Convert system ticks to milliseconds
 #define DELAY_US(us) (WaitUs(us))                          // Introduce delay in microseconds
+#define DISABLE_IRQ (__disable_irq())
+#define ENABLE_IRQ (__enable_irq())
 
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
+
 #define CFG_OTSM_STACK_SIZE (200112L)          // Stack size for Octopus Task Manager
 #define GET_SYSTEM_TICK_COUNT (SDL_GetTicks()) // Retrieve system tick count in milliseconds
 #define DELAY_US(us) (usleep(us))              // Introduce delay in microseconds
 
 #elif defined(PLATFORM_LINUX_RISC)
+
 #define CFG_OTSM_STACK_SIZE (1024 * 1024) //(200112L)// Stack size for Octopus Task Manager
 #define DELAY_US(us) (usleep(us))         // Define empty macro for unsupported platforms
 #define GET_SYSTEM_TICK_COUNT ({                                                      \
@@ -207,16 +223,23 @@ extern "C"
     tick_count;                                                                       \
 }) // Return zero for unsupported platforms
 
+#define DISABLE_IRQ
+#define ENABLE_IRQ
+
 #else
-extern uint32_t system_tick_ms;
-extern volatile uint32_t system_timer_tick_50us;
+
+extern volatile uint32_t system_tick_ms;
+#define DISABLE_IRQ (__disable_irq())
+#define ENABLE_IRQ (__enable_irq())
 #define GET_SYSTEM_TICK_COUNT system_tick_ms // Return zero for unsupported platforms
+
 #endif
 
 /*******************************************************************************
  * BIT MANIPULATION MACROS
  * Define macros for setting, clearing, toggling, and extracting bit values.
  ******************************************************************************/
+ 
 #define BIT_0 0x01 // Bit mask for bit 0
 #define BIT_1 0x02 // Bit mask for bit 1
 #define BIT_2 0x04 // Bit mask for bit 2
@@ -249,6 +272,26 @@ extern volatile uint32_t system_timer_tick_50us;
 #define MK_DWORD(MSB, LSB) (uint32_t)(((uint32_t)MSB << 16) + LSB) // Combine two 16-bit values (MSB and LSB) into a 32-bit double word
 #define MK_SIG_WORD(a) (*(int16_t *)(&a))                          // Interpret a word as a signed 16-bit value
 
+#define BYTES_TO_UINT32_LE(p)   \
+    (((uint32_t)(p)[0]) |       \
+     ((uint32_t)(p)[1] << 8) |  \
+     ((uint32_t)(p)[2] << 16) | \
+     ((uint32_t)(p)[3] << 24))
+
+#define BYTES_TO_UINT32_BE(p)   \
+    (((uint32_t)(p)[0] << 24) | \
+     ((uint32_t)(p)[1] << 16) | \
+     ((uint32_t)(p)[2] << 8) |  \
+     ((uint32_t)(p)[3]))
+
+#define UINT32_TO_BYTES_LE(val, p)                \
+    do                                            \
+    {                                             \
+        (p)[0] = (uint8_t)((val) & 0xFF);         \
+        (p)[1] = (uint8_t)(((val) >> 8) & 0xFF);  \
+        (p)[2] = (uint8_t)(((val) >> 16) & 0xFF); \
+        (p)[3] = (uint8_t)(((val) >> 24) & 0xFF); \
+    } while (0)
 /*******************************************************************************
  * CONSTANTS
  * Define mathematical constants and other useful values.
@@ -256,19 +299,17 @@ extern volatile uint32_t system_timer_tick_50us;
 #define PI_FLOAT (3.14159f) // Value of �� as a floating-point constant
 
 /*******************************************************************************
-* FUNCTION DECLARATIONS
-* Declare any external functions used in this file.
-******************************************************************************/
-
-#define MY_ASSERT(expr)                                                                      \
-    do                                                                                       \
-    {                                                                                        \
-        if (!(expr))                                                                         \
-        {                                                                                    \
-            LOG_LEVEL("ASSERT FAILED: %s, FILE: %s, LINE: %d\n", #expr, __FILE__, __LINE__); \
-            while (1)                                                                        \
-                ;                                                                            \
-        }                                                                                    \
+ * FUNCTION DECLARATIONS
+ * Declare any external functions used in this file.
+ ******************************************************************************/
+#define MY_ASSERT(expr)                                           \
+    do                                                            \
+    {                                                             \
+        if (!(expr))                                              \
+        {                                                         \
+            LOG_LEVEL("ASSERT WARNING: %s, FILE: %s, LINE: %d\n", \
+                      #expr, __FILE__, __LINE__);                 \
+        }                                                         \
     } while (0)
 
 #ifdef __cplusplus
@@ -276,4 +317,3 @@ extern volatile uint32_t system_timer_tick_50us;
 #endif
 
 #endif // ___OCTOPUS_TASK_MANAGER_PLATFORM_H___
-

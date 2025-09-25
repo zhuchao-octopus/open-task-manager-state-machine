@@ -22,13 +22,14 @@
  */
 #include "octopus_platform.h"   // Include platform-specific header for hardware platform details
 #include "octopus_uart_ptl_1.h" // Include UART protocol header
+#include "octopus_uart_ptl_2.h" // Include UART protocol header
 #include "octopus_uart_hal.h"   // Include UART hardware abstraction layer header
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
 #define TEST_LOG_DEBUG_PTL_RX_FRAME // Enable debugging for receiving frames
-#define TEST_LOG_DEBUG_PTL_TX_FRAME // Enable debugging for transmitting frames
+// #define TEST_LOG_DEBUG_PTL_TX_FRAME // Enable debugging for transmitting frames
 
 /*******************************************************************************
  * MACROS
@@ -110,15 +111,19 @@ void ptl_help(void)
     /// LOG_LEVEL("app ptl help guide\r\n");
 
     /// tmp[0] = 0x00;
-    /// ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    /// ptl_build_frame(P2M_MOD_DEBUG, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
     /// LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
     ///  tmp[0] = 0x01;
-    ///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    ///  ptl_build_frame(P2M_MOD_DEBUG, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
     ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
     ///  tmp[0] = 0x02;
-    ///  ptl_build_frame(P2M_MOD_DEBUG, CMD_MODSYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
+    ///  ptl_build_frame(P2M_MOD_DEBUG, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, &l_t_tx_proc_buf);
     ///  LOG_BUFF_LEVEL(l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
     print_all_registered_module();
+
+#ifdef TASK_MANAGER_STATE_MACHINE_PTL2
+    print_ptl2_registered_module();
+#endif
 }
 
 void ptl_init(void)
@@ -143,33 +148,23 @@ void ptl_start_running(void)
 // Assert that UART communication is running
 void ptl_assert_running(void)
 {
-    if (PTL_RUNNING_NONE != l_t_ptl_running_req_mask)
-    {
-        OTMS(TASK_MODULE_PTL_1, OTMS_S_RUNNING);
-        StartTickCounter(&l_t_ptl_rx_main_timer);
-        StartTickCounter(&l_t_ptl_tx_main_timer);
-        StartTickCounter(&l_t_ptl_error_detect_timer);
-        lb_com_error = false;
-        lb_opposite_running = false;
-    }
+    StartTickCounter(&l_t_ptl_rx_main_timer);
+    StartTickCounter(&l_t_ptl_tx_main_timer);
+    StartTickCounter(&l_t_ptl_error_detect_timer);
+    lb_com_error = false;
+    lb_opposite_running = false;
+    OTMS(TASK_MODULE_PTL_1, OTMS_S_RUNNING);
 }
 
 // Main running function for UART communication
 void ptl_running(void)
 {
-    if (true == ptl_is_sleep_enable())
-    {
-        OTMS(TASK_MODULE_PTL_1, OTMS_S_POST_RUN);
-    }
-    else
-    {
-        ptl_1_tx_event_handler();
+    ptl_1_tx_event_handler();
 
-        ptl_1_rx_event_handler();
-        ptl_frame_analysis_handler();
+    ptl_1_rx_event_handler();
+    ptl_frame_analysis_handler();
 
-        ptl_error_detect();
-    }
+    ptl_error_detect();
 }
 
 // Post-running function for UART communication
@@ -177,16 +172,18 @@ void ptl_post_running(void)
 {
     if (true == ptl_is_sleep_enable())
     {
+        OTMS(TASK_MODULE_PTL_1, OTMS_S_STOP);
     }
     else
     {
-        OTMS(TASK_MODULE_PTL_1, OTMS_S_RUNNING);
+        OTMS(TASK_MODULE_PTL_1, OTMS_S_ASSERT_RUN);
     }
 }
 
 // Stop the UART communication task
 void ptl_stop_running(void)
 {
+    LOG_LEVEL("_stop_running\r\n");
     OTMS(TASK_MODULE_PTL_1, OTMS_S_INVALID);
 }
 
@@ -274,7 +271,6 @@ module_info_t *ptl_get_module(ptl_frame_type_t frame_type)
 
 void print_all_registered_module(void)
 {
-    // module_info_t *module_info = NULL;
     for (uint8_t i = 0; i < l_u8_next_empty_module; i++)
     {
         LOG_LEVEL("registered l_t_module_info[%d]=%02x \r\n", i, l_t_module_info[i].frame_type);
@@ -559,6 +555,10 @@ void ptl_find_valid_frame(ptl_proc_buff_t *proc_buff)
         {
 #endif
             offset = i;
+            // Ensure there is at least one more byte to read frame length
+            if ((i + 3) >= proc_buff->size)
+                break;
+
             datalen = proc_buff->buff[i + 3];
             framelen = datalen + PTL_FRAME_HEADER_SIZE + 1;
 
@@ -696,5 +696,7 @@ void ptl_1_hal_tx(uint8_t *data, uint16_t length)
     LOG_LEVEL("data[%02d] ", length);
     LOG_BUFF(data, length);
 #endif
-    hal_com_uart_send_buffer_1(data, length);
+    if (length <= 0)
+        return;
+    hal_com_uart_send_buffer(data, length);
 }

@@ -1,6 +1,6 @@
 /**
  * ****************************************************************************
- * @file octopus_task_manager.c
+ * @file octopus_ble.c
  * @brief C file for the Octopus Task Manager module.
  *
  * This file defines the macros, includes required libraries, and declares
@@ -38,16 +38,16 @@
 /*******************************************************************************
  * LOCAL FUNCTIONS DECLEAR
  */
-void CheckBLeConnectionStatus(uint8_t *connected_mac, uint16_t c_type);
+void ble_check_connection_status(uint8_t *connected_mac, uint16_t c_type);
 
-void StartToLock(void);
-void StartToUnlock(void);
+void ble_start_to_lock(void);
+void ble_start_to_unlock(void);
 
-void StartToLockRssi(void);
-void StartToUnlockRssi(void);
+void ble_start_to_lock_rssi(void);
+void ble_start_to_unlock_rssi(void);
 
 void ble_connecttion_polling(void);
-void update_bonded_mac(void);
+void ble_master_bonded_mac(void);
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
@@ -82,9 +82,9 @@ void task_ble_init_running(void)
 #ifdef TASK_MANAGER_STATE_MACHINE_BLE
 	LOG_LEVEL("task_ble_init_running\r\n");
 	// com_uart_ptl_register_module(MSGMODULE_SYSTEM, module_send_handler, module_receive_handler);
-	//hal_disable_bLe_pair_mode();
-  ble_status.mode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
-	update_bonded_mac();
+	// hal_disable_bLe_pair_mode();
+	ble_status.mode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
+	ble_master_bonded_mac();
 #endif
 }
 
@@ -98,7 +98,7 @@ void task_ble_assert_running(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_BLE
 	StartTickCounter(&l_t_msg_wait_10_timer);
-  StartTickCounter(&l_t_msg_ble_polling_timer_1s);
+	StartTickCounter(&l_t_msg_ble_polling_timer_1s);
 	OTMS(TASK_MODULE_BLE, OTMS_S_RUNNING);
 #endif
 }
@@ -124,64 +124,70 @@ void task_ble_running(void)
 					ble_status.mode = hal_set_pairing_mode_onoff(false, ble_status.mode);
 				break;
 
-	    case MSG_OTSM_CMD_BLE_CONNECTED:
-		    	break;
-			
+			case MSG_OTSM_CMD_BLE_CONNECTED:
+				break;
+
 			case MSG_OTSM_CMD_BLE_PAIRING:
 			case MSG_OTSM_CMD_BLE_BONDED:
 				ble_status.connected = true;
-			  ble_status.rssi_unlock = true;
-				update_bonded_mac();			
-			 break;
-			
+				ble_status.rssi_unlock = true;
+				ble_master_bonded_mac();
+				break;
+
 			case MSG_OTSM_CMD_BLE_DISCONNECTED:
-				if(ble_status.connected)
+				if (ble_status.connected)
 				{
-				ble_status.connected = false;
-				CheckBLeConnectionStatus(ble_status.mac, msg->param1);
+					ble_status.connected = false;
+					ble_check_connection_status(ble_status.mac, msg->param1);
 				}
 				break;
-			
+
 			default:
 				break;
 			}
 		}
 	}
-	
+
 	if (GAPBOND_PAIRING_MODE_WAIT_FOR_REQ == ble_status.mode)
 	{
 		if (!IsTickCounterStart(&l_t_msg_ble_pair_wait_timer))
 			StartTickCounter(&l_t_msg_ble_pair_wait_timer);
 		if (GetTickCounter(&l_t_msg_ble_pair_wait_timer) >= 1000 * 60)
-			ble_status.mode = hal_set_pairing_mode_onoff(false, ble_status.mode);		
+			ble_status.mode = hal_set_pairing_mode_onoff(false, ble_status.mode);
 	}
 	else
 	{
 		StopTickCounter(&l_t_msg_ble_pair_wait_timer);
 	}
-	
-  if (GetTickCounter(&l_t_msg_ble_polling_timer_1s) >= 1000)
+
+	if (GetTickCounter(&l_t_msg_ble_polling_timer_1s) >= 1000)
 	{
-		//LOG_LEVEL("ble_status.rssi:%d\r\n",ble_status.rssi);
+		// LOG_LEVEL("ble_status.rssi:%d\r\n",ble_status.rssi);
 		ble_status.rssi = hal_get_ble_rssi(0);
-		StartToLockRssi();
-		StartToUnlockRssi();
+		ble_start_to_lock_rssi();
+		ble_start_to_unlock_rssi();
 		StartTickCounter(&l_t_msg_ble_polling_timer_1s);
 	}
-	
+
 	ble_connecttion_polling();
 }
 
 void task_ble_post_running(void)
 {
+	OTMS(TASK_MODULE_BLE, OTMS_S_ASSERT_RUN);
 }
 
 void task_ble_stop_running(void)
 {
+	LOG_LEVEL("_stop_running\r\n");
 	OTMS(TASK_MODULE_BLE, OTMS_S_INVALID);
 }
 
-bool is_exists_bonded_mac(uint8_t *connected_mac)
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool ble_is_exists_bonded_mac(uint8_t *connected_mac)
 {
 	uint8_t length = sizeof(ble_bonded_mac) / sizeof(ble_bonded_mac[0]);
 	bool matched = false;
@@ -197,24 +203,108 @@ bool is_exists_bonded_mac(uint8_t *connected_mac)
 	return matched;
 }
 
-void update_bonded_mac(void)
+#define DEVICE_NAME_PREFIX "KLD-BT-LOCK-"
+// Address_buff: 6-byte MAC address
+void ble_modify_device_name(uint8 *Address_buff)
 {
+    char advName[20];
+    char attName[GAP_DEVICE_NAME_LEN];
+
+    if (!Address_buff)
+        return;
+
+    // -----------------------------
+    // 1. Construct device name
+    // Format: KLD-BLE + last 3 bytes of MAC
+    // Example: KLD-BLE-789ABC
+    // -----------------------------
+    snprintf(advName, sizeof(advName), "%s%02X%02X%02X",
+             DEVICE_NAME_PREFIX,
+             Address_buff[3], Address_buff[4], Address_buff[5]);
+
+    // -----------------------------
+    // 2. Update advertising / scan response data
+    // Scan response data format: [Length, Type, Value...]
+    // Type: GAP_ADTYPE_LOCAL_NAME_COMPLETE
+    // -----------------------------
+    uint8 scanData[31];
+    uint8 len = 0;
+
+    uint8 nameLen = strlen(advName);
+    scanData[len++] = nameLen + 1;                    // Length field = name length + 1
+    scanData[len++] = GAP_ADTYPE_LOCAL_NAME_COMPLETE; // Type field
+    memcpy(&scanData[len], advName, nameLen);         // Copy name
+    len += nameLen;
+
+    // Optional: add appearance or service UUID here if needed
+
+    // Set the scan response data
+    GAPRole_SetParameter(GAPROLE_SCAN_RSP_DATA, len, scanData);
+
+    // -----------------------------
+    // 3. Update GATT Device Name attribute
+    // This is the name read by the central device after connection
+    // -----------------------------
+    memset(attName, 0, sizeof(attName));
+    snprintf(attName, sizeof(attName), "%s%02X%02X%02X",
+             DEVICE_NAME_PREFIX,
+             Address_buff[3], Address_buff[4], Address_buff[5]);
+
+    GGS_SetParameter(GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, (void*)attName);
+
+    // -----------------------------
+    // 4. Optional debug log
+    // -----------------------------
+    LOG_LEVEL("ble set name  :%s\r\n", advName);
+}
+
+void ble_master_bonded_mac(void)
+{
+	uint8 peerAddress[B_ADDR_LEN];
+  GAPRole_GetParameter(GAPROLE_CONN_BD_ADDR, peerAddress);	
+	LOG_LEVEL("ble master mac:%02X %02X %02X %02X %02X %02X\r\n",peerAddress[5],peerAddress[4],peerAddress[3],peerAddress[2],peerAddress[1],peerAddress[0]);
+	
+	LL_ReadBDADDR(peerAddress);
+	LOG_LEVEL("ble master mac:%02X %02X %02X %02X %02X %02X\r\n",peerAddress[5],peerAddress[4],peerAddress[3],peerAddress[2],peerAddress[1],peerAddress[0]);
+	
+	ble_modify_device_name(peerAddress);
+	
+	FlashReadToBuff(0x1000, ble_bonded_mac[0], 6);
+	LOG_LEVEL("ble master mac:");
+	LOG_BUFF(ble_bonded_mac[0], 6);
+
+	FlashReadToBuff(0x1004, ble_bonded_mac[0], 6);
+	LOG_LEVEL("ble master mac:");
+	LOG_BUFF(ble_bonded_mac[0], 6);
+	
+	FlashReadToBuff(0x4000, ble_bonded_mac[0], 6);
+	LOG_LEVEL("ble master mac:");
+	LOG_BUFF(ble_bonded_mac[0], 6);
+	
+	FlashReadToBuff(0x4004, ble_bonded_mac[0], 6);
+	LOG_LEVEL("ble master mac:");
+	LOG_BUFF(ble_bonded_mac[0], 6);
+	
 	FlashReadToBuff(BLE_BONDED_MAC_ADDRESS_0, ble_bonded_mac[0], 6);
 	LOG_LEVEL("ble bonded mac:");
 	LOG_BUFF(ble_bonded_mac[0], 6);
+	
 	FlashReadToBuff(BLE_BONDED_MAC_ADDRESS_1, ble_bonded_mac[1], 6);
 	LOG_LEVEL("ble bonded mac:");
 	LOG_BUFF(ble_bonded_mac[1], 6);
+	
 	FlashReadToBuff(BLE_BONDED_MAC_ADDRESS_2, ble_bonded_mac[2], 6);
 	LOG_LEVEL("ble bonded mac:");
 	LOG_BUFF(ble_bonded_mac[2], 6);
+	
 	FlashReadToBuff(BLE_BONDED_MAC_ADDRESS_3, ble_bonded_mac[3], 6);
 	LOG_LEVEL("ble bonded mac:");
 	LOG_BUFF(ble_bonded_mac[3], 6);
-	LOG_LEVEL("ble_status.connected:%d,ble_status.rssi:%d\r\n",ble_status.connected,ble_status.rssi);
+	
+	LOG_LEVEL("ble_status.connected:%d,ble_status.rssi:%d\r\n", ble_status.connected, ble_status.rssi);
 }
 
-void CheckBLeConnectionStatus(uint8_t *connected_mac, uint16_t c_type)
+void ble_check_connection_status(uint8_t *connected_mac, uint16_t c_type)
 {
 	if (c_type == MSG_OTSM_CMD_BLE_DISCONNECTED)
 	{
@@ -225,7 +315,7 @@ void CheckBLeConnectionStatus(uint8_t *connected_mac, uint16_t c_type)
 	{
 		LOG_LEVEL("ble connected mac:");
 		LOG_BUFF(ble_status.mac, 6);
-		bool matched = is_exists_bonded_mac(connected_mac);
+		bool matched = ble_is_exists_bonded_mac(connected_mac);
 		if (!matched)
 		{
 			/// LOG_LEVEL("no exists bonded mac:");
@@ -241,8 +331,8 @@ void CheckBLeConnectionStatus(uint8_t *connected_mac, uint16_t c_type)
 		break;
 	case MSG_OTSM_CMD_BLE_DISCONNECTED:
 		send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, MSG_OTSM_CMD_BLE_DISCONNECTED);
-		StartToLock();
-	 
+		ble_start_to_lock();
+
 		break;
 	default:
 		break;
@@ -251,38 +341,42 @@ void CheckBLeConnectionStatus(uint8_t *connected_mac, uint16_t c_type)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void StartToLockRssi(void)
+void ble_start_to_lock_rssi(void)
 {
 	if (ble_status.rssi > BLE_RSSI_LOCK_MAX_DB_VALUE && ble_status.connected)
 	{
-		if (!IsTickCounterStart(&l_t_msg_ble_lock_wait_timer) )
+		if (!IsTickCounterStart(&l_t_msg_ble_lock_wait_timer))
 		{
 			ble_status.to_lock = true;
 			StartTickCounter(&l_t_msg_ble_lock_wait_timer);
-			LOG_LEVEL("Start to lock system rssi=%d ...\r\n",ble_status.rssi);
+			LOG_LEVEL("Start to lock system rssi=%d ...\r\n", ble_status.rssi);
 		}
 	}
 }
 
-void StartToUnlockRssi(void)
+void ble_start_to_unlock_rssi(void)
 {
-	if (ble_status.rssi > BLE_RSSI_UNLOCK_MAX_DB_VALUE || ble_status.rssi == 0) return;
-	if (!ble_status.connected) return ;
-	
+	if (ble_status.rssi > BLE_RSSI_UNLOCK_MAX_DB_VALUE || ble_status.rssi == 0)
+		return;
+	if (!ble_status.connected)
+		return;
+
 	if (IsTickCounterStart(&l_t_msg_ble_lock_wait_timer))
 		StopTickCounter(&l_t_msg_ble_lock_wait_timer);
-	
-  if (!ble_status.rssi_unlock) return;
+
+	if (!ble_status.rssi_unlock)
+		return;
+
 	ble_status.to_lock = false;
-	//ble_status.locked = false;
-  ble_status.rssi_unlock = false;
-	LOG_LEVEL("Start to unlock system rssi=%d ...\r\n",ble_status.rssi);
-	send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, CMD_MODSYSTEM_POWER_ON);	
+	// ble_status.locked = false;
+	ble_status.rssi_unlock = false;
+	LOG_LEVEL("Start to unlock system rssi=%d ...\r\n", ble_status.rssi);
+	send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, FRAME_CMD_SYSTEM_POWER_ON);
 }
 
-void StartToLock(void)
+void ble_start_to_lock(void)
 {
-	if (!IsTickCounterStart(&l_t_msg_ble_lock_wait_timer) )
+	if (!IsTickCounterStart(&l_t_msg_ble_lock_wait_timer))
 	{
 		ble_status.to_lock = true;
 		StartTickCounter(&l_t_msg_ble_lock_wait_timer);
@@ -290,28 +384,31 @@ void StartToLock(void)
 	}
 }
 
-void StartToUnlock(void)
+void ble_start_to_unlock(void)
 {
-	if (!ble_status.connected) return ;
+	if (!ble_status.connected)
+		return;
 	if (IsTickCounterStart(&l_t_msg_ble_lock_wait_timer))
 		StopTickCounter(&l_t_msg_ble_lock_wait_timer);
-	
+
 	ble_status.to_lock = false;
-	//ble_status.locked = false;
+	// ble_status.locked = false;
 	LOG_LEVEL("Start to unlock system...\r\n");
-	send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, CMD_MODSYSTEM_POWER_ON);
+	send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, FRAME_CMD_SYSTEM_POWER_ON);
 }
 
 void ble_connecttion_polling(void)
-{	
+{
+	ble_status.rssi = hal_get_ble_rssi(0);
+
 	if (ble_status.to_lock && GetTickCounter(&l_t_msg_ble_lock_wait_timer) > 8000)
 	{
 		StopTickCounter(&l_t_msg_ble_lock_wait_timer);
-		//ble_status.locked = true;
+		// ble_status.locked = true;
 		ble_status.to_lock = false;
-		
-		LOG_LEVEL("Start to power off system...\r\n");
-		send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, CMD_MODSYSTEM_POWER_OFF);
+
+		LOG_LEVEL("Start to power off system ...\r\n");
+		send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, FRAME_CMD_SYSTEM_POWER_OFF);
 	}
 }
 #endif

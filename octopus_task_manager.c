@@ -23,36 +23,27 @@
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_system.h"
 #include "octopus_gpio.h"
+#include "octopus_key.h"
+
 #include "octopus_carinfor.h"
 #include "octopus_ble.h"
-#include "octopus_key.h"
-#include "octopus_update_soc.h"
+#include "octopus_4g.h"
+#include "octopus_bt.h"
+#include "octopus_ling_hui_liion2.h"
+
 #include "octopus_update_mcu.h"
 #include "octopus_ipc.h"
 #include "octopus_bafang.h"
 #include "octopus_uart_ptl_1.h" // Include UART protocol header
 #include "octopus_uart_ptl_2.h" // Include UART protocol header
-/*******************************************************************************
- * MACROS
- ******************************************************************************/
-
-/* Add any necessary macros here */
-
-/*******************************************************************************
- * TYPEDEFS
- ******************************************************************************/
-
-/* Define any custom types here */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-
 /** Static configuration for all tasks in the OTMS. */
-const static otms_t lat_otms_config[TASK_MODULE_MAX_NUM] = {
+const static otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
 
     [TASK_MODULE_PTL_1] = {
-        .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = ptl_init_running,
             [OTMS_S_START] = ptl_start_running,
@@ -65,7 +56,6 @@ const static otms_t lat_otms_config[TASK_MODULE_MAX_NUM] = {
 
 #ifdef TASK_MANAGER_STATE_MACHINE_PTL2
     [TASK_MODULE_PTL_2] = {
-        .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = ptl_2_init_running,
             [OTMS_S_START] = ptl_2_start_running,
@@ -76,9 +66,22 @@ const static otms_t lat_otms_config[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
+		
+#ifdef TASK_MANAGER_STATE_MACHINE_IPC
+    [TASK_MODULE_IPC] = {
+        .func = {
+            [OTMS_S_INIT] = task_ipc_init_running,
+            [OTMS_S_START] = task_ipc_start_running,
+            [OTMS_S_ASSERT_RUN] = task_ipc_assert_running,
+            [OTMS_S_RUNNING] = task_ipc_running,
+            [OTMS_S_POST_RUN] = task_ipc_post_running,
+            [OTMS_S_STOP] = task_ipc_stop_running,
+        },
+    },
+#endif
 
+#ifdef TASK_MANAGER_STATE_MACHINE_SYSTEM
     [TASK_MODULE_SYSTEM] = {
-        .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_system_init_running,
             [OTMS_S_START] = task_system_start_running,
@@ -88,9 +91,10 @@ const static otms_t lat_otms_config[TASK_MODULE_MAX_NUM] = {
             [OTMS_S_STOP] = task_system_stop_running,
         },
     },
+#endif
+
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     [TASK_MODULE_GPIO] = {
-        .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_gpio_init_running,
             [OTMS_S_START] = task_gpio_start_running,
@@ -101,9 +105,22 @@ const static otms_t lat_otms_config[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR		
+
+#ifdef TASK_MANAGER_STATE_MACHINE_KEY
+    [TASK_MODULE_KEY] = {
+        .func = {
+            [OTMS_S_INIT] = task_key_init_running,
+            [OTMS_S_START] = task_key_start_running,
+            [OTMS_S_ASSERT_RUN] = task_key_assert_running,
+            [OTMS_S_RUNNING] = task_key_running,
+            [OTMS_S_POST_RUN] = task_key_post_running,
+            [OTMS_S_STOP] = task_key_stop_running,
+        },
+    },
+#endif
+
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
     [TASK_MODULE_CAR_INFOR] = {
-        .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_carinfo_init_running,
             [OTMS_S_START] = task_carinfo_start_running,
@@ -118,7 +135,6 @@ const static otms_t lat_otms_config[TASK_MODULE_MAX_NUM] = {
 
 #ifdef TASK_MANAGER_STATE_MACHINE_BLE
     [TASK_MODULE_BLE] = {
-        .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_ble_init_running,
             [OTMS_S_START] = task_ble_start_running,
@@ -130,51 +146,34 @@ const static otms_t lat_otms_config[TASK_MODULE_MAX_NUM] = {
     },
 #endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_KEY
-    [TASK_MODULE_KEY] = {
-        .state_limit = OTMS_S_INVALID,
+#ifdef TASK_MANAGER_STATE_MACHINE_4G
+    [TASK_MODULE_4G] = {
         .func = {
-            [OTMS_S_INIT] = task_key_init_running,
-            [OTMS_S_START] = task_key_start_running,
-            [OTMS_S_ASSERT_RUN] = task_key_assert_running,
-            [OTMS_S_RUNNING] = task_key_running,
-            [OTMS_S_POST_RUN] = task_key_post_running,
-            [OTMS_S_STOP] = task_key_stop_running,
+            [OTMS_S_INIT] = task_4g_init_running,
+            [OTMS_S_START] = task_4g_start_running,
+            [OTMS_S_ASSERT_RUN] = task_4g_assert_running,
+            [OTMS_S_RUNNING] = task_4g_running,
+            [OTMS_S_POST_RUN] = task_4g_post_running,
+            [OTMS_S_STOP] = task_4g_stop_running,
         },
     },
 #endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    [TASK_MODULE_UPDATE_MCU] = {
-        .state_limit = OTMS_S_INVALID,
+#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
+    [TASK_MODULE_BT] = {
         .func = {
-            [OTMS_S_INIT] = task_update_mcu_init_running,
-            [OTMS_S_START] = task_update_mcu_start_running,
-            [OTMS_S_ASSERT_RUN] = task_update_mcu_assert_running,
-            [OTMS_S_RUNNING] = task_update_mcu_running,
-            [OTMS_S_POST_RUN] = task_update_mcu_post_running,
-            [OTMS_S_STOP] = task_update_mcu_stop_running,
+            [OTMS_S_INIT] = task_bt_init_running,
+            [OTMS_S_START] = task_bt_start_running,
+            [OTMS_S_ASSERT_RUN] = task_bt_assert_running,
+            [OTMS_S_RUNNING] = task_bt_running,
+            [OTMS_S_POST_RUN] = task_bt_post_running,
+            [OTMS_S_STOP] = task_bt_stop_running,
         },
     },
-#elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
-    [TASK_MODULE_UPDATE_SOC] = {
-        .state_limit = OTMS_S_INVALID,
-        .func = {
-            [OTMS_S_INIT] = task_update_soc_init_running,
-            [OTMS_S_START] = task_update_soc_start_running,
-            [OTMS_S_ASSERT_RUN] = task_update_soc_assert_running,
-            [OTMS_S_RUNNING] = task_update_soc_running,
-            [OTMS_S_POST_RUN] = task_update_soc_post_running,
-            [OTMS_S_STOP] = task_update_soc_stop_running,
-        },
-    },
-#endif
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
     [TASK_MODULE_CAN] = {
-        .state_limit = OTMS_S_INVALID,
         .func = {
             [OTMS_S_INIT] = task_can_init_running,
             [OTMS_S_START] = task_can_start_running,
@@ -187,8 +186,7 @@ const static otms_t lat_otms_config[TASK_MODULE_MAX_NUM] = {
 #endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
-    [TASK_MODULE_PTL_BAFANG] = {
-        .state_limit = OTMS_S_INVALID,
+    [TASK_MODULE_BAFANG] = {
         .func = {
             [OTMS_S_INIT] = task_bfang_ptl_init_running,
             [OTMS_S_START] = task_bfang_ptl_start_running,
@@ -199,22 +197,33 @@ const static otms_t lat_otms_config[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-
-#ifdef TASK_MANAGER_STATE_MACHINE_IPC_SOCKET
-    [TASK_MODULE_IPC_SOCKET] = {
-        .state_limit = OTMS_S_INVALID,
+		
+#ifdef TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2
+    [TASK_MODULE_LING_HUI_LIION2] = {
         .func = {
-            [OTMS_S_INIT] = task_ipc_init_running,
-            [OTMS_S_START] = task_ipc_start_running,
-            [OTMS_S_ASSERT_RUN] = task_ipc_assert_running,
-            [OTMS_S_RUNNING] = task_ipc_running,
-            [OTMS_S_POST_RUN] = task_ipc_post_running,
-            [OTMS_S_STOP] = task_ipc_stop_running,
+            [OTMS_S_INIT] = task_lhl2_ptl_init_running,
+            [OTMS_S_START] = task_lhl2_ptl_start_running,
+            [OTMS_S_ASSERT_RUN] = task_lhl2_ptl_assert_running,
+            [OTMS_S_RUNNING] = task_lhl2_ptl_running,
+            [OTMS_S_POST_RUN] = task_lhl2_ptl_post_running,
+            [OTMS_S_STOP] = task_lhl2_ptl_stop_running,
+        },
+    },
+#endif
+		
+#ifdef TASK_MANAGER_STATE_MACHINE_UPDATE
+    [TASK_MODULE_UPDATE_MCU] = {
+        .func = {
+            [OTMS_S_INIT] = task_update_init_running,
+            [OTMS_S_START] = task_update_start_running,
+            [OTMS_S_ASSERT_RUN] = task_update_assert_running,
+            [OTMS_S_RUNNING] = task_update_running,
+            [OTMS_S_POST_RUN] = task_update_post_running,
+            [OTMS_S_STOP] = task_update_stop_running,
         },
     },
 #endif
 };
-/* Add any constants here */
 
 /*******************************************************************************
  * LOCAL FUNCTION DECLARATIONS
@@ -260,7 +269,7 @@ static otms_state_t otms_task_state[TASK_MODULE_MAX_NUM];
  */
 const otms_t *otms_get_config(void)
 {
-    return lat_otms_config;
+    return task_module_config_table;
 }
 
 /**
@@ -287,6 +296,15 @@ void task_manager_start(void)
     }
 }
 
+void task_manager_start_module(TaskModule_t TaskModule)
+{
+    otms_id_t i;
+    for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
+    {
+        if (i == TaskModule)
+            otms_exec_state(i, OTMS_S_START); // Set each task to the START state.
+    }
+}
 /**
  * @brief Stops all tasks by transitioning them to the STOP state.
  */
@@ -297,6 +315,28 @@ void task_manager_stop(void)
     for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
     {
         otms_exec_state(i, OTMS_S_STOP); // Set each task to the STOP state.
+    }
+}
+
+void task_manager_stop_except_1(TaskModule_t task_module1)
+{
+    otms_id_t i;
+
+    for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
+    {
+        if (i != task_module1)
+            otms_exec_state(i, OTMS_S_STOP); // Set each task to the STOP state.
+    }
+}
+
+void task_manager_stop_except_2(TaskModule_t task_module1, TaskModule_t task_module2)
+{
+    otms_id_t i;
+
+    for (i = 0; i < TASK_MODULE_MAX_NUM; i++)
+    {
+        if (i != task_module1 && i != task_module2)
+            otms_exec_state(i, OTMS_S_STOP); // Set each task to the STOP state.
     }
 }
 
@@ -316,14 +356,14 @@ void task_manager_run(void)
 /**
  * @brief Sets the state of a specific task.
  *
- * @param TASK_MODULE ID of the task.
+ * @param task_module ID of the task.
  * @param state   New state to set for the task.
  */
-void otms_set_state(otms_id_t TASK_MODULE, otms_state_t state)
+void otms_set_state(otms_id_t task_module, otms_state_t state)
 {
-    if (TASK_MODULE < TASK_MODULE_MAX_NUM)
+    if (task_module < TASK_MODULE_MAX_NUM)
     {
-        otms_task_state[TASK_MODULE] = state; // Update the task state.
+        otms_task_state[task_module] = state; // Update the task state.
     }
     else
     {
@@ -334,16 +374,16 @@ void otms_set_state(otms_id_t TASK_MODULE, otms_state_t state)
 /**
  * @brief Gets the current state of a specific task.
  *
- * @param TASK_MODULE ID of the task.
+ * @param task_module ID of the task.
  * @return Current state of the task.
  */
-otms_state_t otms_get_state(otms_id_t TASK_MODULE)
+otms_state_t otms_get_state(otms_id_t task_module)
 {
     otms_state_t state;
 
-    if (TASK_MODULE < TASK_MODULE_MAX_NUM)
+    if (task_module < TASK_MODULE_MAX_NUM)
     {
-        state = otms_task_state[TASK_MODULE];
+        state = otms_task_state[task_module];
     }
     else
     {
@@ -385,18 +425,18 @@ void otms_on_exit_post_run(void)
 /**
  * @brief Executes the state-specific function for a given task.
  *
- * @param TASK_MODULE ID of the task to execute.
+ * @param task_module ID of the task to execute.
  * @param state   State to execute for the task.
  */
-static void otms_exec_state(otms_id_t TASK_MODULE, otms_state_t state)
+static void otms_exec_state(otms_id_t task_module, otms_state_t state)
 {
     const otms_t *cfg = otms_get_config();
 
-    if ((TASK_MODULE < TASK_MODULE_MAX_NUM) && (NULL != cfg) && (cfg[TASK_MODULE].state_limit > state))
+    if ((task_module < TASK_MODULE_MAX_NUM) && (NULL != cfg) && (OTMS_S_COUNT > state) && (OTMS_S_INVALID != state))
     {
-        if (NULL != cfg[TASK_MODULE].func[state])
+        if (NULL != cfg[task_module].func[state])
         {
-            cfg[TASK_MODULE].func[state](); // Call the state-specific function.
+            cfg[task_module].func[state](); // Call the state-specific function.
         }
     }
 }
