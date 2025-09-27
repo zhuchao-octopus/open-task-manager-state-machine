@@ -35,10 +35,18 @@
 //                          CUSTOMER MODEL CONFIGURATION                        //
 //------------------------------------------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////
+
 //#define CUSTOMER_MODEL_EZ_406
 //#define CUSTOMER_MODEL_RL_500
 #define CUSTOMER_MODEL_CA_500
 //#define CUSTOMER_MODEL_DH_500
+
+#ifdef TARGET_BANK_SLOT_L
+ #undef CUSTOMER_MODEL_EZ_406
+ #undef CUSTOMER_MODEL_RL_500
+ #undef CUSTOMER_MODEL_CA_500
+ #undef CUSTOMER_MODEL_DH_500
+#endif
 ///////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------//
 //                            PLATFORM / RTOS SELECTION                         //
@@ -143,18 +151,19 @@
 #define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 4
 
 #else
-#define TASK_MANAGER_STATE_MACHINE_GPIO               1   /**< GPIO handling */
+
+//#define TASK_MANAGER_STATE_MACHINE_GPIO             1   /**< GPIO handling */
 #define TASK_MANAGER_STATE_MACHINE_FLASH              1   /**< Flash memory handling */
-#define TASK_MANAGER_STATE_MACHINE_SYSTEM             1   /**< System-level state machine */
+#define TASK_MANAGER_STATE_MACHINE_SYSTEM           1   /**< System-level state machine */
 #define TASK_MANAGER_STATE_MACHINE_UPDATE             1   /**< OTA / Firmware update */
-#define TASK_MANAGER_STATE_MACHINE_KEY                1   /**< Key input handling */
+//#define TASK_MANAGER_STATE_MACHINE_KEY              1   /**< Key input handling */
 
-#define TASK_MANAGER_STATE_MACHINE_CARINFOR           1   /**< Car information processing */
+//#define TASK_MANAGER_STATE_MACHINE_CARINFOR         1   /**< Car information processing */
 #define TASK_MANAGER_STATE_MACHINE_PTL                1   /**< PTL protocol handler */
-#define TASK_MANAGER_STATE_MACHINE_UPF                1   /**< UART Packet Framework */
-#define TASK_MANAGER_STATE_MACHINE_IPC                1   /**< Inter-process communication */
+//#define TASK_MANAGER_STATE_MACHINE_UPF              1   /**< UART Packet Framework */
+//#define TASK_MANAGER_STATE_MACHINE_IPC              1   /**< Inter-process communication */
 
-//#define TASK_MANAGER_STATE_MACHINE_CAN                1   /**< CAN bus protocol */
+//#define TASK_MANAGER_STATE_MACHINE_CAN              1   /**< CAN bus protocol */
 //#define TASK_MANAGER_STATE_MACHINE_BAFANG           1   /**< Bafang system support */
 //#define TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2  1   /**< Ling Hui battery */
 
@@ -164,7 +173,7 @@
 //#define TASK_MANAGER_STATE_MACHINE_SIF              1   /**< SIF protocol handler */
 //#define TASK_MANAGER_STATE_MACHINE_BLE              1   /**< Bluetooth Low Energy */
 //#define TASK_MANAGER_STATE_MACHINE_BMS              1   /**< Battery Management System */
-#define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 4
+#define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 				4
 #endif
 
 
@@ -174,17 +183,34 @@
 //------------------------------------------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////
 
-#define FLASH_USE_EEROM_FOR_DATA_SAVING   /**< Use EEPROM instead of Flash */
+#define FLASH_USE_EEROM_FOR_DATA_SAVING       /**< Use EEPROM instead of Flash */
 #define FLASH_MAPPING_VECT_TABLE_TO_SRAM true /**< Remap vector table to SRAM */
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 #ifdef TARGET_BANK_SLOT_A
-#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A /**< Select Flash bank slot */
+
+#define FLASH_ROM_BASE_ADDRESS (0x8000000 + 0x0A000 + FLASH_BLOCK_SIZE) // BOOTLOADER_END_ADDR + FLASH_BLOCK_SIZE;
+#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A 					               /**< Select Flash bank slot */
+#define FLASH_BANK_CONFIG_MODE_BANK BOOT_MODE_SINGLE_BANK_WITH_LOADER
+
 #elif defined(TARGET_BANK_SLOT_B)
-#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_B /**< Select Flash bank slot */
+
+#define FLASH_ROM_BASE_ADDRESS 0x0A000
+#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_B 					/**< Select Flash bank slot */
+#define FLASH_BANK_CONFIG_MODE_BANK BOOT_MODE_SINGLE_BANK_WITH_LOADER
+
+#elif defined(TARGET_BANK_SLOT_L)
+
+#define FLASH_ROM_BASE_ADDRESS 0x8000000
+#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_LOADER 			/**< Select Flash bank slot */
+#define FLASH_BANK_CONFIG_MODE_BANK BOOT_MODE_SINGLE_BANK_WITH_LOADER
+
 #else
-#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_INVALID /**< Select Flash bank slot */
+
+#define FLASH_ROM_BASE_ADDRESS (0x8000000) // BOOTLOADER_END_ADDR + FLASH_BLOCK_SIZE;
+#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A 					               /**< Select Flash bank slot */
+#define FLASH_BANK_CONFIG_MODE_BANK BOOT_MODE_SINGLE_BANK_NO_LOADER
 #endif
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////

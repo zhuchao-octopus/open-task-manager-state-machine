@@ -571,6 +571,7 @@ void native_enter_sleep_mode(void)
 	UART3_Config_IRQ();
 	UART4_Config_IRQ();
 	LPUART_WakeStop_Config();
+	dbg_log_set_channel(TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL);
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
 	CAN_Config();
 #endif

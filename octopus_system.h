@@ -57,12 +57,12 @@
 typedef enum MB_POWER_STATE
 {
     MB_POWER_ST_INIT = 0, /**< Initialization state. */
-    MB_POWER_ST_BOOTING, /**< Booting state. */
-	
+    MB_POWER_ST_BOOTING,  /**< Booting state. */
+
     MB_POWER_ST_LOWPOWER, /**< Low-power state. */
     MB_POWER_ST_STANDBY,  /**< Standby state. */
 
-    MB_POWER_ST_ON,      /**< Fully operational state. */
+    MB_POWER_ST_ON, /**< Fully operational state. */
     MB_POWER_ST_STOP,
     MB_POWER_ST_SHUTDOWN, /**< Shutdown process. */
     MB_POWER_ST_OFF,      /**< Power-off state. */
@@ -72,12 +72,12 @@ typedef enum MB_POWER_STATE
 typedef enum MCU_POWER_STATE
 {
     MCU_POWER_ST_INIT = 0, /**< Initialization state. */
-    MCU_POWER_ST_BOOTING, /**< Booting state. */
-	
+    MCU_POWER_ST_BOOTING,  /**< Booting state. */
+
     MCU_POWER_ST_LOWPOWER, /**< Low-power state. */
     MCU_POWER_ST_STANDBY,  /**< Standby state. */
 
-    MCU_POWER_ST_ON,      /**< Fully operational state. */
+    MCU_POWER_ST_ON, /**< Fully operational state. */
     MCU_POWER_ST_STOP,
     MCU_POWER_ST_SHUTDOWN, /**< Shutdown process. */
     MCU_POWER_ST_OFF,      /**< Power-off state. */
@@ -152,11 +152,10 @@ extern "C"
 
     void system_power_on_off(bool onoff);
 
+    void system_set_mcu_status(mcu_state_t mcu_state);
 
-		void system_set_mcu_status(mcu_state_t mcu_state);
+    mcu_state_t system_get_mcu_status(void);
 
-		mcu_state_t system_get_mcu_status(void);
-		
 #ifdef __cplusplus
 }
 #endif

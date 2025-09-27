@@ -45,50 +45,51 @@
  */
 typedef enum
 {
-		DRIVE_MOD_REAR = 0, // 后驱
-		DRIVE_MOD_FRONT,    // 前驱
-		DRIVE_MOD_DOUBLE,   // 双驱
+    DRIVE_MOD_REAR = 0, // 后驱
+    DRIVE_MOD_FRONT,    // 前驱
+    DRIVE_MOD_DOUBLE,   // 双驱
 } drive_mode_;
 
-typedef enum {
-    BMS_MODE_INIT      = 0x00,  // 初始化模式
-    BMS_MODE_STANDBY   = 0x01,  // 待机模式
-    BMS_MODE_DISCHARGE = 0x02,  // 放电模式
-    BMS_MODE_CHARGE    = 0x03,  // 充电模式
-    BMS_MODE_SLEEP     = 0x04   // 睡眠模式
+typedef enum
+{
+    BMS_MODE_INIT = 0x00,      // 初始化模式
+    BMS_MODE_STANDBY = 0x01,   // 待机模式
+    BMS_MODE_DISCHARGE = 0x02, // 放电模式
+    BMS_MODE_CHARGE = 0x03,    // 充电模式
+    BMS_MODE_SLEEP = 0x04      // 睡眠模式
 } BMS_Mode_t;
 
 // 故障-故障信息
 typedef enum __attribute__((packed))
 {
-     // ===========================
+    // ===========================
     // 基础状态
     // ===========================
-    ERROR_CODE_IDLE = 0x00,                                      // 无动作
-    ERROR_CODE_NORMAL = 0x01,                                    // 正常状态
-    ERROR_CODE_BRAKE = 0x03,                                     // 已刹车
-    ERROR_CODE_THROTTLE_NOT_ZERO = 0x04,                         // 转把没有归位（停在高位处）
-    ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY = 0x05,           // 转把故障
+    ERROR_CODE_IDLE = 0x00,                            // 无动作
+    ERROR_CODE_NORMAL = 0x01,                          // 正常状态
+    ERROR_CODE_BRAKE = 0x03,                           // 已刹车
+    ERROR_CODE_THROTTLE_NOT_ZERO = 0x04,               // 转把没有归位（停在高位处）
+    ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY = 0x05, // 转把故障
 
     // ===========================
     // 电压保护
     // ===========================
-    ERROR_CODE_LOW_VOLTAGE_PROTECTION = 0x06,                    // 低电压保护
-    ERROR_CODE_OVER_VOLTAGE_PROTECTION = 0x07,                   // 过电压保护
+    ERROR_CODE_LOW_VOLTAGE_PROTECTION = 0x06,  // 低电压保护
+    ERROR_CODE_OVER_VOLTAGE_PROTECTION = 0x07, // 过电压保护
 
     // ===========================
     // 电机相关
     // ===========================
-    ERROR_CODE_HALLSENSOR_ABNORMALITY = 0x08,                    // 电机霍尔信号线故障
-    ERROR_CODE_MOTOR_ABNORMALITY = 0x09,                         // 电机相线故障
-    ERROR_CODE_MOTOR_OVERHEAT = 0x31,                            // 电机过热
-    ERROR_CODE_MOTOR_PHASE_LOSS = 0x38,                          // 电机缺相
-    ERROR_CODE_MOTOR_LOCK = 0x3F,                                // 电机锁定保护
-    ERROR_CODE_MOTOR_CURRENT_IMBALANCE = 0x40,                   // 电机相电流不平衡
-    ERROR_CODE_MOTOR_DRIVER_OVERLOAD = 0x41,                     // 电机驱动器过载
-    ERROR_CODE_MOTOR_UNDER_TEMP = 0x42,                          // 电机温度过低
-    ERROR_CODE_MOTOR_HALL_NOISE = 0x43,                          // 霍尔信号噪声过大
-    ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY = 0x14,      // 电机温度传感器故障
+    ERROR_CODE_HALLSENSOR_ABNORMALITY = 0x08,               // 电机霍尔信号线故障
+    ERROR_CODE_MOTOR_ABNORMALITY = 0x09,                    // 电机相线故障
+    ERROR_CODE_MOTOR_OVERHEAT = 0x31,                       // 电机过热
+    ERROR_CODE_MOTOR_PHASE_LOSS = 0x38,                     // 电机缺相
+    ERROR_CODE_MOTOR_LOCK = 0x3F,                           // 电机锁定保护
+    ERROR_CODE_MOTOR_CURRENT_IMBALANCE = 0x40,              // 电机相电流不平衡
+    ERROR_CODE_MOTOR_DRIVER_OVERLOAD = 0x41,                // 电机驱动器过载
+    ERROR_CODE_MOTOR_UNDER_TEMP = 0x42,                     // 电机温度过低
+    ERROR_CODE_MOTOR_HALL_NOISE = 0x43,                     // 霍尔信号噪声过大
+    ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY = 0x14, // 电机温度传感器故障
 
     // ===========================
     // 控制器相关
@@ -108,57 +109,58 @@ typedef enum __attribute__((packed))
     // ===========================
     // 助力/传感器
     // ===========================
-    ERROR_CODE_ASSIST_POWER_SENSOR_ABNORMALITY = 0x16,           // 助力传感器故障
-    ERROR_CODE_SPEED_SENSOR_ABNORMALITY = 0x21,                  // 速度传感器故障
-    ERROR_CODE_BRAKE_SENSOR_ABNORMALITY = 0x33,                  // 刹车传感器故障
-    ERROR_CODE_THROTTLE_SHORT_CIRCUIT = 0x34,                    // 转把短路
-    ERROR_CODE_THROTTLE_OPEN_CIRCUIT = 0x35,                     // 转把断路
-    ERROR_CODE_TORQUE_SENSOR_ABNORMALITY = 0x3D,                 // 扭矩传感器故障
-    ERROR_CODE_REVERSE_SENSOR_ABNORMALITY = 0x3C,                // 倒车传感器故障
-    ERROR_CODE_BATTERY_TEMP_SENSOR_ABNORMALITY = 0x3E,           // 电池温度传感器故障
+    ERROR_CODE_ASSIST_POWER_SENSOR_ABNORMALITY = 0x16, // 助力传感器故障
+    ERROR_CODE_SPEED_SENSOR_ABNORMALITY = 0x21,        // 速度传感器故障
+    ERROR_CODE_BRAKE_SENSOR_ABNORMALITY = 0x33,        // 刹车传感器故障
+    ERROR_CODE_THROTTLE_SHORT_CIRCUIT = 0x34,          // 转把短路
+    ERROR_CODE_THROTTLE_OPEN_CIRCUIT = 0x35,           // 转把断路
+    ERROR_CODE_TORQUE_SENSOR_ABNORMALITY = 0x3D,       // 扭矩传感器故障
+    ERROR_CODE_REVERSE_SENSOR_ABNORMALITY = 0x3C,      // 倒车传感器故障
+    ERROR_CODE_BATTERY_TEMP_SENSOR_ABNORMALITY = 0x3E, // 电池温度传感器故障
 
     // ===========================
     // 电池相关
     // ===========================
-    ERROR_CODE_BATTERY_OVERHEAT = 0x13,                           // 电池过热
-    ERROR_CODE_BATTERY_UNDER_VOLTAGE = 0x36,                      // 电池欠压
-    ERROR_CODE_BATTERY_OVER_VOLTAGE = 0x37,                       // 电池过压
-    ERROR_CODE_BATTERY_SINGLE_CELL_OVER_VOLTAGE = 0x48,           // 电池单体过压
-    ERROR_CODE_BATTERY_SINGLE_CELL_UNDER_VOLTAGE = 0x49,          // 电池单体欠压
-    ERROR_CODE_BATTERY_TEMP_DIFFERENCE = 0x4A,                    // 电池温差过大
-    ERROR_CODE_BATTERY_OVER_CURRENT = 0x4B,                       // 电池过流
-    ERROR_CODE_BMS_ABNORMALITY = 0x22,                            // BMS通讯故障
+    ERROR_CODE_BATTERY_OVERHEAT = 0x13,                  // 电池过热
+    ERROR_CODE_BATTERY_UNDER_VOLTAGE = 0x36,             // 电池欠压
+    ERROR_CODE_BATTERY_OVER_VOLTAGE = 0x37,              // 电池过压
+    ERROR_CODE_BATTERY_SINGLE_CELL_OVER_VOLTAGE = 0x48,  // 电池单体过压
+    ERROR_CODE_BATTERY_SINGLE_CELL_UNDER_VOLTAGE = 0x49, // 电池单体欠压
+    ERROR_CODE_BATTERY_TEMP_DIFFERENCE = 0x4A,           // 电池温差过大
+    ERROR_CODE_BATTERY_OVER_CURRENT = 0x4B,              // 电池过流
+    ERROR_CODE_BMS_ABNORMALITY = 0x22,                   // BMS通讯故障
 
     // ===========================
     // 灯光/外设
     // ===========================
-    ERROR_CODE_LAMP_ABNORMALITY = 0x23,                          // 大灯故障
-    ERROR_CODE_LAMP_SENSOR_ABNORMALITY = 0x24,                   // 大灯传感器故障
-    ERROR_CODE_LIGHT_OVERCURRENT = 0x50,                         // 大灯过流/熔断
-    ERROR_CODE_TURN_SIGNAL_FAULT = 0x51,                         // 转向灯故障
-    ERROR_CODE_DISPLAY_FAULT = 0x52,                             // 仪表/显示屏故障
+    ERROR_CODE_LAMP_ABNORMALITY = 0x23,        // 大灯故障
+    ERROR_CODE_LAMP_SENSOR_ABNORMALITY = 0x24, // 大灯传感器故障
+    ERROR_CODE_LIGHT_OVERCURRENT = 0x50,       // 大灯过流/熔断
+    ERROR_CODE_TURN_SIGNAL_FAULT = 0x51,       // 转向灯故障
+    ERROR_CODE_DISPLAY_FAULT = 0x52,           // 仪表/显示屏故障
 
     // ===========================
     // 通讯相关
     // ===========================
-    ERROR_CODE_COMMUNICATION_ABNORMALITY = 0x30,                 // 总体通讯故障
-    ERROR_CODE_CAN_BMS_TIMEOUT = 0x53,                           // BMS CAN通信超时
-    ERROR_CODE_CAN_MOTOR_CONTROLLER_TIMEOUT = 0x54,              // 电机控制器CAN通信异常
-    ERROR_CODE_CAN_EXTERNAL_DEVICE_ERROR = 0x55                  // 外部设备CAN总线错误
+    ERROR_CODE_COMMUNICATION_ABNORMALITY = 0x30,    // 总体通讯故障
+    ERROR_CODE_CAN_BMS_TIMEOUT = 0x53,              // BMS CAN通信超时
+    ERROR_CODE_CAN_MOTOR_CONTROLLER_TIMEOUT = 0x54, // 电机控制器CAN通信异常
+    ERROR_CODE_CAN_EXTERNAL_DEVICE_ERROR = 0x55     // 外部设备CAN总线错误
 } __attribute__((packed)) ERROR_CODE;
 
-#define ERROR_FLAG_BYTES 16  // 16 字节 = 128 bit，可表示最多 128 个错误
+#define ERROR_FLAG_BYTES 16 // 16 字节 = 128 bit，可表示最多 128 个错误
 // 设置错误
-#define CAR_INFOR_SET_ERROR(err_struct, code)   ((err_struct).flags[(code)/8] |= (1 << ((code)%8)))
+#define CAR_INFOR_SET_ERROR(err_struct, code) ((err_struct).flags[(code) / 8] |= (1 << ((code) % 8)))
 // 清除错误
-#define CAR_INFOR_CLEAR_ERROR(err_struct, code) ((err_struct).flags[(code)/8] &= ~(1 << ((code)%8)))
+#define CAR_INFOR_CLEAR_ERROR(err_struct, code) ((err_struct).flags[(code) / 8] &= ~(1 << ((code) % 8)))
 // 检查错误
-#define CAR_INFOR_CHECK_ERROR(err_struct, code) (((err_struct).flags[(code)/8] & (1 << ((code)%8))) != 0)
+#define CAR_INFOR_CHECK_ERROR(err_struct, code) (((err_struct).flags[(code) / 8] & (1 << ((code) % 8))) != 0)
 
 #define ERROR_CODE_BEGIN ERROR_CODE_THROTTLE_NOT_ZERO       // 故障码开始
 #define ERROR_CODE_END ERROR_CODE_COMMUNICATION_ABNORMALITY // 故障码结束
 
-typedef struct {
+typedef struct
+{
     uint8_t flags[ERROR_FLAG_BYTES];
 } CarErrorCodeFlags_t;
 

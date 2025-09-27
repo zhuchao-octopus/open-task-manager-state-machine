@@ -54,15 +54,15 @@ void system_mcu_goto_lowpower(void);
  * Global Variables
  * Define variables accessible across multiple files if needed.
  ******************************************************************************/
-
+#define MCU_LOW_POWER_MODE
 /*******************************************************************************
  * Local Variables
  * Define static variables used only within this file.
  ******************************************************************************/
 static mcu_state_t g_mcu_state = MCU_POWER_ST_INIT; // Current state of the system
-//static uint8_t l_u8_mpu_status = 0;               // Tracks the status of the MPU
-//static uint8_t l_u8_power_off_req = 0;            // Tracks if a power-off request is pending
-static uint32_t l_t_msg_wait_10_timer;            // Timer for 10 ms message waiting period
+// static uint8_t l_u8_mpu_status = 0;               // Tracks the status of the MPU
+// static uint8_t l_u8_power_off_req = 0;            // Tracks if a power-off request is pending
+static uint32_t l_t_msg_wait_10_timer; // Timer for 10 ms message waiting period
 static uint32_t l_t_msg_lowpower_wait_timer;
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
@@ -344,13 +344,15 @@ void system_event_message_handler(void)
             g_mcu_state = MCU_POWER_ST_ON;
         }
     }
+		#ifdef MCU_LOW_POWER_MODE
     else if (g_mcu_state == MCU_POWER_ST_LOWPOWER)
     {
-        if (GetTickCounter(&l_t_msg_lowpower_wait_timer) >1000 * 60)
+        if (GetTickCounter(&l_t_msg_lowpower_wait_timer) > 1000 * 60)
         {
-           system_mcu_goto_lowpower();
+            system_mcu_goto_lowpower();
         }
     }
+		#endif
 #endif
 
     Msg_t *msg = get_message(TASK_MODULE_SYSTEM);
@@ -392,7 +394,7 @@ void system_handshake_with_mcu(void)
 {
     LOG_LEVEL("task system send handshake data to xxx\r\n");
     send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, 0);
-    //send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
+    // send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
 }
 
 /*******************************************************************************
@@ -450,9 +452,9 @@ void system_power_onoff(bool onoff)
         {
             g_mcu_state = MCU_POWER_ST_ON;
             LOG_LEVEL("Power on soc succesfully\r\n");
-						#ifdef TASK_MANAGER_STATE_MACHINE_CAN
-						CAN_Config();
-						#endif
+#ifdef TASK_MANAGER_STATE_MACHINE_CAN
+            CAN_Config();
+#endif
         }
     }
     else
@@ -464,9 +466,12 @@ void system_power_onoff(bool onoff)
         if (!gpio_is_power_on())
         {
             LOG_LEVEL("Power down SOC succesfully\r\n");
+					  #ifdef MCU_LOW_POWER_MODE
             g_mcu_state = MCU_POWER_ST_LOWPOWER;
             StartTickCounter(&l_t_msg_lowpower_wait_timer); // time out goto sleep
-					  system_mcu_goto_lowpower();
+            system_mcu_goto_lowpower();
+					  #else
+					  #endif
         }
     }
 #endif
@@ -474,16 +479,18 @@ void system_power_onoff(bool onoff)
 
 void system_mcu_goto_lowpower(void)
 {
-	  if (!gpio_is_power_on())
-		{
-		otms_task_manager_stop();
-		native_enter_sleep_mode();
-		g_mcu_state = MCU_POWER_ST_BOOTING;
-		StartTickCounter(&l_t_msg_booting_wait_timer);
-		otms_task_manager_start();
-		//system_power_onoff(true);
-		StopTickCounter(&l_t_msg_lowpower_wait_timer);
-		}
+#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
+    if (!gpio_is_power_on())
+    {
+        otms_task_manager_stop();
+        native_enter_sleep_mode();
+        g_mcu_state = MCU_POWER_ST_BOOTING;
+        StartTickCounter(&l_t_msg_booting_wait_timer);
+        otms_task_manager_start();
+        // system_power_onoff(true);
+        StopTickCounter(&l_t_msg_lowpower_wait_timer);
+    }
+#endif
 }
 
 bool system_is_power_on(void)

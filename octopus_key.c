@@ -238,7 +238,7 @@ void task_key_power_handler(GPIO_KEY_STATUS *key_status)
             if (gpio_is_power_on())
             {
                 send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_OFF, 0);
-						    key_reset(key_status);
+                key_reset(key_status);
             }
             else
             {
@@ -321,14 +321,14 @@ void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void key_reset(GPIO_KEY_STATUS *key_status)
 {
-	if(key_status != NULL)
-	{
-		key_status->pressed = false;
-		key_status->dispatched = false;
-		key_status->state = KEY_STATE_NONE;
-		key_status->press_duration = 0;		 
-		key_status->start_tick_count = 0;	
-	}
+    if (key_status != NULL)
+    {
+        key_status->pressed = false;
+        key_status->dispatched = false;
+        key_status->state = KEY_STATE_NONE;
+        key_status->press_duration = 0;
+        key_status->start_tick_count = 0;
+    }
 }
 
 bool key_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
@@ -492,9 +492,13 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
     case OCTOPUS_KEY_PAGE:
         send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_KEY, key, key_status);
         break;
-		
-		case OCTOPUS_KEY_POWER:      
-		    break;
+
+    case OCTOPUS_KEY_ACC:
+			   if(key_status)
+			   send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_OFF, 0);
+				 else
+				 send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_ON, 0);	 
+        break;
     }
 }
 #else
