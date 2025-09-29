@@ -78,15 +78,19 @@ typedef enum
 {
   TASK_MODULE_SYSTEM = 0, /**< System task. */
   TASK_MODULE_GPIO,       /**< GPIO task. */
+  TASK_MODULE_KEY,        /**< Key input. */
 
   TASK_MODULE_PTL_1, /**< Protocol handling task. */
   TASK_MODULE_UPF,   /**< Protocol handling task. */
   TASK_MODULE_IPC,   /**< IPC socket service. */
 
+  TASK_MODULE_IIC,
+  TASK_MODULE_AUDIO,
+  TASK_MODULE_RADIO,
+
   TASK_MODULE_CAR_INFOR, /**< Car information. */
   TASK_MODULE_CAN,
 
-  TASK_MODULE_KEY, /**< Key input. */
   TASK_MODULE_BLE, /**< BLE communication. */
   TASK_MODULE_4G,
   TASK_MODULE_BT,

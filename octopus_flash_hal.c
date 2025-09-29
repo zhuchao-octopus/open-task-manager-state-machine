@@ -95,6 +95,7 @@ uint32_t hal_flash_erase_page_(uint32_t startaddr, uint8_t page_count)
     FLASH_Lock();
     return i;
 }
+
 uint32_t hal_flash_erase_area_(uint32_t startaddr, uint32_t endaddr)
 {
     uint32_t i = 0;

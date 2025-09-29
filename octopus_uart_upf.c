@@ -42,14 +42,14 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_uart_upf.h" // Include UART protocol header
-#include "octopus_uart_hal.h" // Include UART hardware abstraction layer header
+#include "octopus_uart_upf.h"     // Include UART protocol header
+#include "octopus_uart_hal.h"     // Include UART hardware abstraction layer header
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
-#include "octopus_tickcounter.h" // Include tick counter for timing operations
+#include "octopus_tickcounter.h"  // Include tick counter for timing operations
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
- 
+
 // #define TEST_LOG_DEBUG_UPF_RX_FRAME // Enable debugging for receiving frames
 // #define TEST_LOG_DEBUG_PTL_TX_FRAME // Enable debugging for transmitting frames
 

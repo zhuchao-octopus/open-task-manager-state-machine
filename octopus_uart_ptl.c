@@ -436,9 +436,9 @@ void ptl_remove_none_header_data(ptl_proc_buff_t *proc_buff)
             return;
         }
     }
-// #endif
-// #ifdef TASK_MANAGER_STATE_MACHINE_SOC
+
 #else
+		
     if (proc_buff->buff[0] == MCU_TO_SOC_PTL_HEADER)
         return;
     for (uint16_t i = 0; i < proc_buff->size; i++)

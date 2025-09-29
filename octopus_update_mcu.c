@@ -22,8 +22,8 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_update_mcu.h" // Include header for MCU update management
-#include "octopus_flash.h"		// Include flash memory handling utilities
+#include "octopus_update_mcu.h"	 // Include header for MCU update management
+#include "octopus_flash.h"		 // Include flash memory handling utilities
 #include "octopus_uart_ptl.h"	 // Include UART protocol header
 #include "octopus_uart_upf.h"	 // Include UART protocol header
 #include "octopus_tickcounter.h" // Include tick counter for timing operations
@@ -177,6 +177,29 @@ void task_update_stop_running(void)
 /*******************************************************************************
  * LOCAL FUNCTIONS IMPLEMENTATION
  */
+uint8_t upgrade_enter_upgrade_mode(void)
+{
+	switch (update_get_target_bank())
+	{
+	case BANK_SLOT_LOADER:
+		return BANK_SLOT_LOADER;
+
+	case BANK_SLOT_A:
+		SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
+		if (IS_SLOT_A_NEED_UPGRADE(flash_meta_infor.slot_stat_flags))
+			return BANK_SLOT_A;
+		else
+			break;
+
+	case BANK_SLOT_B:
+		SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
+		if (IS_SLOT_B_NEED_UPGRADE(flash_meta_infor.slot_stat_flags))
+			return BANK_SLOT_B;
+		else
+			break;
+	}
+	return BANK_SLOT_INVALID;
+}
 
 // Function to handle sending update module requests based on the module type and parameters
 bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
@@ -311,7 +334,7 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 	MY_ASSERT(payload);
 	MY_ASSERT(ackbuff);
 	uint8_t buffer[64] = {0};
-
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
 	if (SOC_TO_MCU_MOD_UPDATE == payload->frame_type)
 	{
 		switch (payload->frame_cmd)
@@ -329,6 +352,13 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 		{
 			// LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPDATE \n");
 			// uint32_t address = BYTES_TO_UINT32_LE(&payload->data[0]);
+			// SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
+
+			if (upgrade_enter_upgrade_mode() != BANK_SLOT_LOADER)
+			{
+				NVIC_SystemReset(); // user reboot enter bootloader
+			}
+
 			lt_mcu_program_buf.bank_address = BYTES_TO_UINT32_LE(&payload->data[0]);
 			lt_mcu_program_buf.total_length = BYTES_TO_UINT32_LE(&payload->data[4]);
 			lt_mcu_program_buf.total_crc_32 = 0;
@@ -398,8 +428,10 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 			break;
 		}
 	}
-#ifdef TASK_MANAGER_STATE_MACHINE_SOC
-	else if (MCU_TO_SOC_MOD_UPDATE == payload->frame_type)
+
+#elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
+
+	if (MCU_TO_SOC_MOD_UPDATE == payload->frame_type)
 	{
 		switch (payload->frame_cmd)
 		{
@@ -460,6 +492,7 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
 					return false;
 				}
 			}
+
 			if (mcu_upgrade_status.file_info.file_type == FILE_TYPE_HEX)
 				hex_record.address = (mcu_upgrade_status.file_info.reset_handler & FLASH_BANK_MASK) | hex_record.address;
 			else if (mcu_upgrade_status.file_info.file_type == FILE_TYPE_BIN)
@@ -656,10 +689,10 @@ static void update_state_process(void)
 		}
 
 		erase_count = flash_erase_user_app_bank();
-		LOG_LEVEL("MCU_UPDATE_STATE_ERASE... %d / %d\n", erase_count, MAIN_APP_BLOCK_COUNT);
-		if (erase_count == MAIN_APP_BLOCK_COUNT)
+		LOG_LEVEL("MCU_UPDATE_STATE_ERASE... %d\n", erase_count);
+		if (erase_count > 0)
 		{
-			flash_save_app_meter_infor();
+			flash_write_meta_infor();
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_RECEIVING;
 			lt_mcu_program_buf.f_count = 0; // start receiving data
 			StartTickCounter(&l_t_msg_wait_2000_timer);
@@ -743,14 +776,14 @@ static void update_state_process(void)
 				flash_meta_infor.slot_a_crc = crc_32;
 				flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_A;
 				flash_meta_infor.slot_a_size = lt_mcu_program_buf.total_length;
-				SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_UPGRADED);
+				CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
 			}
 			if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 			{
 				flash_meta_infor.slot_b_crc = crc_32;
 				flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_B;
 				flash_meta_infor.slot_b_size = lt_mcu_program_buf.total_length;
-				SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_UPGRADED);
+				CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
 			}
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_COMPLETE;
 		}
@@ -761,7 +794,6 @@ static void update_state_process(void)
 				flash_meta_infor.slot_a_crc = crc_32;
 				flash_meta_infor.slot_stat_flags &= ~APP_FLAG_VALID_A;
 				flash_meta_infor.slot_a_size = lt_mcu_program_buf.total_length;
-				CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_UPGRADED);
 			}
 
 			if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
@@ -769,7 +801,6 @@ static void update_state_process(void)
 				flash_meta_infor.slot_b_crc = crc_32;
 				flash_meta_infor.slot_stat_flags &= ~APP_FLAG_VALID_B;
 				flash_meta_infor.slot_b_size = lt_mcu_program_buf.total_length;
-				CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_UPGRADED);
 			}
 			lt_mcu_program_buf.state = MCU_UPDATE_STATE_ERROR;
 		}
@@ -783,16 +814,17 @@ static void update_state_process(void)
 			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_a_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
 			LOG_LEVEL("Task finished, time taken: %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
 
-			flash_save_app_meter_infor();
-			/////JumpToApplication(flash_meta_infor.slot_a_addr); 
+			flash_write_meta_infor();
+			flash_JumpToApplication(flash_meta_infor.slot_a_addr);
 			/////Because BANK A is the default boot slot, no jump is required after a successful upgrade on BANK A.
 		}
 		else if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 		{
 			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_b_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
 			LOG_LEVEL("Task finished, time taken: %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
-			flash_save_app_meter_infor();
-			flash_JumpToApplication(flash_meta_infor.slot_b_addr);//bank B must to perform a jump when the upgrade on BANK B succeeds.
+
+			flash_write_meta_infor();
+			flash_JumpToApplication(flash_meta_infor.slot_b_addr); // bank B must to perform a jump when the upgrade on BANK B succeeds.
 		}
 		else
 		{
@@ -814,7 +846,7 @@ static void update_state_process(void)
 		else
 			LOG_LEVEL("lt_mcu_program_buf.bank_slot error! bank_slot=%d\n", lt_mcu_program_buf.bank_slot);
 
-		flash_save_app_meter_infor();
+		flash_write_meta_infor();
 
 		LOG_LEVEL("It took %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
 		StopTickCounter(&mcu_upgrade_status.start_time);

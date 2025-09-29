@@ -193,6 +193,123 @@ void calculate_battery_soc_ex(uint32_t voltage_mV,
         rmax100 = 65535;
     *out_range_max_100m = (uint16_t)rmax100;
 }
+
+void calculate_battery_soc_ex_v2(uint32_t rated_voltage_mV,
+                                 uint32_t capacity_mAh,
+                                 uint32_t trip_odo_m,
+                                 float consumption_Wh_per_km,
+                                 float safety_reserve_ratio,
+                                 float avg_speed_kph,
+                                 int32_t current_mA,                // 新：实时放电电流，正为放电（mA）
+                                 uint32_t internal_resistance_mohm, // 新：包内阻，毫欧 (mΩ)
+                                 uint16_t *out_power_w,
+                                 uint16_t *out_soc_pct,
+                                 uint16_t *out_range_100m,
+                                 uint16_t *out_range_max_100m,
+                                 uint16_t *out_voltage_mV) // 新：输出估算端电压 (mV)
+{
+    if (!out_power_w || !out_soc_pct || !out_range_100m || !out_range_max_100m || !out_voltage_mV)
+        return;
+
+    // --- 原有输入单位兼容处理 ---
+    if (rated_voltage_mV < 1000)
+        rated_voltage_mV *= 100;
+    if (capacity_mAh < 1000)
+        capacity_mAh *= 100;
+
+    if (consumption_Wh_per_km <= 0.01f)
+        consumption_Wh_per_km = 18.0f;
+    if (safety_reserve_ratio < 0.0f)
+        safety_reserve_ratio = 0.0f;
+    if (safety_reserve_ratio > 0.5f)
+        safety_reserve_ratio = 0.5f;
+
+    // --- 能量与 SOC（保持原算法的里程→能量推算） ---
+    double capacity_Wh = (rated_voltage_mV * (double)capacity_mAh) / 1000000.0;
+    double usable_Wh = capacity_Wh * (1.0 - safety_reserve_ratio);
+
+    double used_km = trip_odo_m / 1000.0;
+    double used_Wh = used_km * consumption_Wh_per_km;
+    double remain_Wh = usable_Wh - used_Wh;
+    if (remain_Wh < 0.0)
+        remain_Wh = 0.0;
+
+    double soc_f = (usable_Wh > 0.0) ? (remain_Wh / usable_Wh) * 100.0 : 0.0;
+    if (soc_f > 100.0)
+        soc_f = 100.0;
+
+    double full_range_km = (usable_Wh > 0.0) ? (usable_Wh / consumption_Wh_per_km) : 0.0;
+    double remain_range_km = (remain_Wh > 0.0) ? (remain_Wh / consumption_Wh_per_km) : 0.0;
+
+    // --- 功率估算（同原） ---
+    uint16_t power_w = 0;
+    if (avg_speed_kph > 0.0f)
+    {
+        double p = consumption_Wh_per_km * avg_speed_kph;
+        if (p < 0.0)
+            p = 0.0;
+        if (p > 65535.0)
+            p = 65535.0;
+        power_w = (uint16_t)(p + 0.5);
+    }
+    *out_power_w = power_w;
+    *out_soc_pct = (uint16_t)(soc_f + 0.5);
+
+    uint32_t r100 = (uint32_t)(remain_range_km * 10.0 + 0.5);
+    if (r100 > 65535)
+        r100 = 65535;
+    *out_range_100m = (uint16_t)r100;
+
+    uint32_t rmax100 = (uint32_t)(full_range_km * 10.0 + 0.5);
+    if (rmax100 > 65535)
+        rmax100 = 65535;
+    *out_range_max_100m = (uint16_t)rmax100;
+
+    // --- 新：计算 OCV (per cell) 与 串数 ---
+    double v_cell_min = 3.0; // 可调整
+    double v_cell_max = 4.2; // 可调整
+    double v_cell_nom = 3.7; // 用于估算串数
+
+    int n_cell = (int)((rated_voltage_mV / 1000.0) / v_cell_nom + 0.5);
+    if (n_cell < 1)
+        n_cell = 1;
+
+    double soc_ratio = soc_f / 100.0;
+    // 简单线性 OCV，若需精确请替换为查表/拟合函数
+    double v_cell_ocv = v_cell_min + (v_cell_max - v_cell_min) * soc_ratio;
+    double vpack_ocv = v_cell_ocv * n_cell;
+
+    // --- 新：考虑内阻压降计算端电压（terminal voltage） ---
+    // internal_resistance_mohm: 毫欧 (mΩ)
+    // current_mA: mA，正为放电（电流离开电池）
+    double I_A = ((double)current_mA) / 1000.0;
+    double R_ohm = ((double)internal_resistance_mohm) / 1000.0; // mΩ -> Ω
+    double v_drop = I_A * R_ohm;                                // V
+
+    double vpack_terminal = vpack_ocv - v_drop;
+
+    // 下限保护：不小于各单体最低允许电压总和
+    double vpack_min = v_cell_min * n_cell;
+    if (vpack_terminal < vpack_min)
+        vpack_terminal = vpack_min;
+
+    // 上限保护（OCV 不应超过充满电OCV）
+    double vpack_max = v_cell_max * n_cell;
+    if (vpack_terminal > vpack_max)
+        vpack_terminal = vpack_max;
+
+    // 输出端电压（mV）
+    double v_mV = vpack_terminal * 1000.0;
+    if (v_mV < 0.0)
+        v_mV = 0.0;
+    if (v_mV > 0xFFFFFFFFu)
+        v_mV = 0xFFFFFFFFu;
+		
+		if (!(v_mV >= 0.0 && v_mV < 4e5)) // 合理范围，比如 <400V
+        v_mV = 0.0;
+    *out_voltage_mV = (uint16_t)(v_mV /100 + 0.5);
+}
+
 /*******************************************************************************
  * CRC Calculation
  *******************************************************************************/

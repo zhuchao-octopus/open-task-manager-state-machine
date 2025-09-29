@@ -7,8 +7,8 @@
  *
  * Description:
  *   This source file implements a fixed-size circular queue to store I²C messages.
- *   It is typically used in embedded systems where I²C messages are received via 
- *   interrupt (ISR) and need to be processed asynchronously in the main loop or 
+ *   It is typically used in embedded systems where I²C messages are received via
+ *   interrupt (ISR) and need to be processed asynchronously in the main loop or
  *   RTOS task thread.
  */
 
@@ -48,11 +48,13 @@ uint16_t I2c_Queue_Length(I2cQueue_t *queue)
  * @param data_len Length of the payload.
  * @return 0 if push was successful, 1 if the queue is full.
  */
-uint8_t I2c_Queue_Push(I2cQueue_t *queue, uint8_t dev_address, uint8_t reg_address, const uint8_t *data, uint8_t data_len)
+uint8_t I2c_Queue_Push(I2cQueue_t *queue, uint8_t channel, uint8_t oparation, uint8_t dev_address, uint8_t reg_address, const uint8_t *data, uint8_t data_len)
 {
     if (I2c_Queue_Length(queue) < I2C_MSG_QUEUE_SIZE)
     {
         uint8_t i;
+        queue->msg[queue->tail].channel = channel;
+        queue->msg[queue->tail].oparation = oparation;
         queue->msg[queue->tail].dev_address = dev_address;
         queue->msg[queue->tail].reg_address = reg_address;
         queue->msg[queue->tail].data_len = data_len;

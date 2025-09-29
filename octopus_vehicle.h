@@ -47,140 +47,125 @@ typedef enum
 {
     DRIVE_MOD_REAR = 0, // 后驱
     DRIVE_MOD_FRONT,    // 前驱
-	DRIVE_MOD_DOUBLE,   // 双驱
+    DRIVE_MOD_DOUBLE,   // 双驱
 } drive_mode_;
+
+typedef enum
+{
+    BMS_MODE_INIT = 0x00,      // 初始化模式
+    BMS_MODE_STANDBY = 0x01,   // 待机模式
+    BMS_MODE_DISCHARGE = 0x02, // 放电模式
+    BMS_MODE_CHARGE = 0x03,    // 充电模式
+    BMS_MODE_SLEEP = 0x04      // 睡眠模式
+} BMS_Mode_t;
 
 // 故障-故障信息
 typedef enum __attribute__((packed))
 {
-    ERROR_CODE_IDLE = 0X00,                                      // 无动作
-    ERROR_CODE_NORMAL = 0X01,                                    // 正常状态
-    ERROR_CODE_BRAKE = 0X03,                                     // 已刹车
-    ERROR_CODE_THROTTLE_NOT_ZERO = 0X04,                         // 转把没有归位（停在高位处）
-    ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY = 0X05,           // 转把故障
-    ERROR_CODE_LOW_VOLTAGE_PROTECTION = 0X06,                    // 低电压保护
-    ERROR_CODE_OVER_VOLTAGE_PROTECTION = 0X07,                   // 过电压保护
-    ERROR_CODE_HALLSENSOR_ABNORMALITY = 0X08,                    // 电机霍尔信号线故障
-    ERROR_CODE_MOTOR_ABNORMALITY = 0X09,                         // 电机相线故障
-    ERROR_CODE_CONTROLLER_OVERHEAT = 0X10,                       // 控制器温度高已达到保护点
-    ERROR_CODE_CONTROLLER_TEMPERATURE_SENSOR_ABNORMALITY = 0X11, // 控制器温度传感器故障
-    ERROR_CODE_CURRENT_SENSOR_ABNORMALITY = 0X12,                // 电流传感器故障
-    ERROR_CODE_BATTERY_OVERHEAT = 0X13,                          // 电池内温度故障
-    ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY = 0X14,      // 电机内温度传感器故障
-    ERROR_CODE_CONTROLLER_ABNORMALITY = 0X15,                    // 控制器故障
-    ERROR_CODE_ASSIST_POWER_SENSOR_ABNORMALITY = 0X16,           // 助力传感器故障
-    ERROR_CODE_SPEED_SENSOR_ABNORMALITY = 0X21,                  // 速度传感器故障
-    ERROR_CODE_BMS_ABNORMALITY = 0X22,                           // BMS通讯故障
-    ERROR_CODE_LAMP_ABNORMALITY = 0X23,                          // 大灯故障
-    ERROR_CODE_LAMP_SENSOR_ABNORMALITY = 0X24,                   // 大灯传感器故障
-    ERROR_CODE_COMMUNICATION_ABNORMALITY = 0X30,                 // 通讯故障
+    // ===========================
+    // 基础状态
+    // ===========================
+    ERROR_CODE_IDLE = 0x00,                            // 无动作
+    ERROR_CODE_NORMAL = 0x01,                          // 正常状态
+    ERROR_CODE_BRAKE = 0x03,                           // 已刹车
+    ERROR_CODE_THROTTLE_NOT_ZERO = 0x04,               // 转把没有归位（停在高位处）
+    ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY = 0x05, // 转把故障
 
+    // ===========================
+    // 电压保护
+    // ===========================
+    ERROR_CODE_LOW_VOLTAGE_PROTECTION = 0x06,  // 低电压保护
+    ERROR_CODE_OVER_VOLTAGE_PROTECTION = 0x07, // 过电压保护
+
+    // ===========================
+    // 电机相关
+    // ===========================
+    ERROR_CODE_HALLSENSOR_ABNORMALITY = 0x08,               // 电机霍尔信号线故障
+    ERROR_CODE_MOTOR_ABNORMALITY = 0x09,                    // 电机相线故障
+    ERROR_CODE_MOTOR_OVERHEAT = 0x31,                       // 电机过热
+    ERROR_CODE_MOTOR_PHASE_LOSS = 0x38,                     // 电机缺相
+    ERROR_CODE_MOTOR_LOCK = 0x3F,                           // 电机锁定保护
+    ERROR_CODE_MOTOR_CURRENT_IMBALANCE = 0x40,              // 电机相电流不平衡
+    ERROR_CODE_MOTOR_DRIVER_OVERLOAD = 0x41,                // 电机驱动器过载
+    ERROR_CODE_MOTOR_UNDER_TEMP = 0x42,                     // 电机温度过低
+    ERROR_CODE_MOTOR_HALL_NOISE = 0x43,                     // 霍尔信号噪声过大
+    ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY = 0x14, // 电机温度传感器故障
+
+    // ===========================
+    // 控制器相关
+    // ===========================
+    ERROR_CODE_CONTROLLER_OVERHEAT = 0x10,                       // 控制器过热保护
+    ERROR_CODE_CONTROLLER_TEMPERATURE_SENSOR_ABNORMALITY = 0x11, // 控制器温度传感器故障
+    ERROR_CODE_CURRENT_SENSOR_ABNORMALITY = 0x12,                // 电流传感器故障
+    ERROR_CODE_CONTROLLER_ABNORMALITY = 0x15,                    // 控制器故障
+    ERROR_CODE_CONTROLLER_UNDER_TEMP = 0x32,                     // 控制器温度过低
+    ERROR_CODE_CONTROLLER_COMMUNICATION_LOST = 0x44,             // 控制器内部CAN通信丢失
+    ERROR_CODE_CONTROLLER_SOFTWARE_EXCEPTION = 0x45,             // 控制器软件异常/重启
+    ERROR_CODE_CONTROLLER_HARDWARE_FAULT = 0x46,                 // 控制器硬件故障(MOSFET/IGBT)
+    ERROR_CODE_CONTROLLER_PROTECTION_TRIGGER = 0x47,             // 控制器防护触发（短路/过流）
+    ERROR_CODE_EEPROM_ABNORMALITY = 0x3A,                        // 控制器EEPROM故障
+    ERROR_CODE_FAN_ABNORMALITY = 0x3B,                           // 风扇故障
+
+    // ===========================
+    // 助力/传感器
+    // ===========================
+    ERROR_CODE_ASSIST_POWER_SENSOR_ABNORMALITY = 0x16, // 助力传感器故障
+    ERROR_CODE_SPEED_SENSOR_ABNORMALITY = 0x21,        // 速度传感器故障
+    ERROR_CODE_BRAKE_SENSOR_ABNORMALITY = 0x33,        // 刹车传感器故障
+    ERROR_CODE_THROTTLE_SHORT_CIRCUIT = 0x34,          // 转把短路
+    ERROR_CODE_THROTTLE_OPEN_CIRCUIT = 0x35,           // 转把断路
+    ERROR_CODE_TORQUE_SENSOR_ABNORMALITY = 0x3D,       // 扭矩传感器故障
+    ERROR_CODE_REVERSE_SENSOR_ABNORMALITY = 0x3C,      // 倒车传感器故障
+    ERROR_CODE_BATTERY_TEMP_SENSOR_ABNORMALITY = 0x3E, // 电池温度传感器故障
+
+    // ===========================
+    // 电池相关
+    // ===========================
+    ERROR_CODE_BATTERY_OVERHEAT = 0x13,                  // 电池过热
+    ERROR_CODE_BATTERY_UNDER_VOLTAGE = 0x36,             // 电池欠压
+    ERROR_CODE_BATTERY_OVER_VOLTAGE = 0x37,              // 电池过压
+    ERROR_CODE_BATTERY_SINGLE_CELL_OVER_VOLTAGE = 0x48,  // 电池单体过压
+    ERROR_CODE_BATTERY_SINGLE_CELL_UNDER_VOLTAGE = 0x49, // 电池单体欠压
+    ERROR_CODE_BATTERY_TEMP_DIFFERENCE = 0x4A,           // 电池温差过大
+    ERROR_CODE_BATTERY_OVER_CURRENT = 0x4B,              // 电池过流
+    ERROR_CODE_BMS_ABNORMALITY = 0x22,                   // BMS通讯故障
+
+    // ===========================
+    // 灯光/外设
+    // ===========================
+    ERROR_CODE_LAMP_ABNORMALITY = 0x23,        // 大灯故障
+    ERROR_CODE_LAMP_SENSOR_ABNORMALITY = 0x24, // 大灯传感器故障
+    ERROR_CODE_LIGHT_OVERCURRENT = 0x50,       // 大灯过流/熔断
+    ERROR_CODE_TURN_SIGNAL_FAULT = 0x51,       // 转向灯故障
+    ERROR_CODE_DISPLAY_FAULT = 0x52,           // 仪表/显示屏故障
+
+    // ===========================
+    // 通讯相关
+    // ===========================
+    ERROR_CODE_COMMUNICATION_ABNORMALITY = 0x30,    // 总体通讯故障
+    ERROR_CODE_CAN_BMS_TIMEOUT = 0x53,              // BMS CAN通信超时
+    ERROR_CODE_CAN_MOTOR_CONTROLLER_TIMEOUT = 0x54, // 电机控制器CAN通信异常
+    ERROR_CODE_CAN_EXTERNAL_DEVICE_ERROR = 0x55     // 外部设备CAN总线错误
 } __attribute__((packed)) ERROR_CODE;
+
+#define ERROR_FLAG_BYTES 16 // 16 字节 = 128 bit，可表示最多 128 个错误
+// 设置错误
+#define CAR_INFOR_SET_ERROR(err_struct, code) ((err_struct).flags[(code) / 8] |= (1 << ((code) % 8)))
+// 清除错误
+#define CAR_INFOR_CLEAR_ERROR(err_struct, code) ((err_struct).flags[(code) / 8] &= ~(1 << ((code) % 8)))
+// 检查错误
+#define CAR_INFOR_CHECK_ERROR(err_struct, code) (((err_struct).flags[(code) / 8] & (1 << ((code) % 8))) != 0)
 
 #define ERROR_CODE_BEGIN ERROR_CODE_THROTTLE_NOT_ZERO       // 故障码开始
 #define ERROR_CODE_END ERROR_CODE_COMMUNICATION_ABNORMALITY // 故障码结束
 
-#if 0
-    typedef struct
-    {
-        uint8_t sideStand;                // Side stand status        0: off     1: on
-        uint8_t bootGuard;                // Boot guard status        0: open   1: locked
-        uint8_t hallFault;                // Hall fault (sensor)      0: no fault  1: fault
-        uint8_t throttleFault;            // Throttle fault
-        uint8_t controllerFault;          // Controller fault
-        uint8_t lowVoltageProtection;     // Low voltage protection
-        uint8_t cruise;                   // Cruise mode indicator
-        uint8_t assist;                   // Assist mode indicator
-        uint8_t motorFault;               // Motor fault
-        uint8_t gear;                     // Gear position //0~7
-        uint8_t motorRunning;             // Motor running status     1: running
-        uint8_t brake;                    // Brake status
-        uint8_t controllerProtection;     // Controller protection
-        uint8_t coastCharging;            // Coasting charging status
-        uint8_t antiSpeedProtection;      // Anti-speed protection
-        uint8_t seventyPercentCurrent;    // 70% current
-        uint8_t pushToTalk;               // Push-to-talk signal
-        uint8_t ekkBackupPower;           // EKK backup power status
-        uint8_t overCurrentProtection;    // Overcurrent protection
-        uint8_t motorShaftLockProtection; // Motor shaft lock protection
-        uint8_t reverse;                  // Reverse status
-        uint8_t electronicBrake;          // Electronic brake
-        uint8_t speedLimit;               // Speed limit
-        uint8_t current;                  // Current (A)
-        uint16_t hallCounter;             // Hall counter (change in value every 0.5 seconds)
-        uint8_t soc;                      // State of charge (0-100%) and corresponding voltage levels
-        uint8_t voltageSystem;            // Voltage system: 0x01:36V  0x02:48V  0x04:60V  0x08:64V  0x10:72V  0x20:80V  0x40:84V  0x80:96V
-    } carinfo_sif_t;
-
-    typedef struct
-    {
-        uint8_t SideStand;                // Side stand status        0: off     1: on
-        uint8_t BootGuard;                // Boot guard status        0: open   1: locked
-        uint8_t hallFault;                // Hall fault (sensor)      0: no fault  1: fault
-        uint8_t throttleFault;            // Throttle fault
-        uint8_t controllerFault;          // Controller fault
-        uint8_t lowVoltageProtection;     // Low voltage protection
-        uint8_t cruise;                   // Cruise mode indicator
-        uint8_t assist;                   // Assist mode indicator
-        uint8_t motorFault;               // Motor fault
-        uint8_t gear;                     // Gear position //0~7
-        uint8_t motorRunning;             // Motor running status     1: running
-        uint8_t brake;                    // Brake status
-        uint8_t controllerProtection;     // Controller protection
-        uint8_t coastCharging;            // Coasting charging status
-        uint8_t antiSpeedProtection;      // Anti-speed protection
-        uint8_t seventyPercentCurrent;    // 70% current
-        uint8_t pushToTalk;               // Push-to-talk signal
-        uint8_t ekkBackupPower;           // EKK backup power status
-        uint8_t overCurrentProtection;    // Overcurrent protection
-        uint8_t motorShaftLockProtection; // Motor shaft lock protection
-        uint8_t reverse;                  // Reverse status
-        uint8_t electronicBrake;          // Electronic brake
-        uint8_t speedLimit;               // Speed limit
-        uint32_t current;                 // Current (0.1A)
-        uint32_t voltage;                 // Voltage (0.1V)
-        uint8_t voltageSystem;            // Voltage system: 0x01:36V  0x02:48V  0x04:60V  0x08:64V  0x10:72V  0x20:80V  0x40:84V  0x80:96V
-        uint8_t soc;                      // State of charge (0-100%) and corresponding voltage levels
-        uint32_t speed;                   // Speed (0.1 km/h)
-        uint32_t speed_real;              // Actual speed (0.1 km/h)
-        uint32_t rpm;                     // RPM (revolutions per minute)
-    } carinfo_t;
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    typedef struct
-    {
-        uint16_t temp;
-        uint16_t max_temp;
-        uint16_t min_temp;
-        uint16_t voltage;
-        uint16_t current;
-        uint16_t avg_current;
-        uint16_t res_cap;
-        uint16_t full_cap;
-
-        uint16_t cycle_times;
-        uint16_t max_uncharge_time;
-        uint16_t last_uncharge_time;
-        uint16_t cell_voltage[CELL_COUNT];
-
-        uint8_t total_cell;
-        uint8_t rel_charge_state;
-        uint8_t abs_charge_state;
-
-        uint16_t voltage_system; // Battery system voltage type:
-                                 // 0x01:36V, 0x02:48V, 0x04:60V, 0x08:64V,
-                                 // 0x10:72V, 0x20:80V, 0x40:84V, 0x80:96V
-
-        uint16_t power; //< Power in W
-        uint16_t soc;   // State of Charge: 0–100% (based on voltage curve)
-        uint16_t range; //< Estimated range in 100m
-        uint16_t max_range;
-    } battery_t;
-#endif
-#pragma pack(push, 1)
 typedef struct
+{
+    uint8_t flags[ERROR_FLAG_BYTES];
+} CarErrorCodeFlags_t;
+
+#pragma pack(push, 1)
+typedef struct 
 {
     uint8_t ready;      // Ready status (1 = system ready to operate)
     uint8_t high_beam;  // High beam light status (1 = ON)
@@ -238,7 +223,8 @@ typedef struct
     uint8_t current_limit;    // Current limit, range: 6~50A, default: 12A, unit: 1A
     uint8_t rel_charge_state; // Relative charge state (e.g., fast/slow charging, enum value)
     uint8_t abs_charge_state; // Absolute charge state (e.g., charging, full, fault, enum value)
-    uint8_t reserve;
+    uint8_t reserve1;
+    uint16_t reserve2;
 } carinfo_battery_t;
 
 // 故障信息
@@ -253,9 +239,9 @@ typedef struct
     uint8_t fault_battery;  // Battery fault status
     uint8_t fault_brake;    // Brake fault status
     uint8_t fault_throttle; // Throttle fault status
-    // uint8_t error[ERROR_CODE_COUNT];
-} __attribute__((packed)) carinfo_error_t;
+} carinfo_error_t;
 #pragma pack(pop)
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -452,7 +438,7 @@ extern "C"
 
     // void car_indicator_proc_turn_signal(void);
     // void car_meter_proc_speed_rpm(void);
-
+    void battary_update_simulate_infor(void);
     void carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately);
     bool task_carinfo_has_error_code(void);
 
@@ -460,7 +446,7 @@ extern "C"
     extern carinfo_indicator_t lt_carinfo_indicator; // Local indicator data structure
     extern carinfo_battery_t lt_carinfo_battery;
     extern carinfo_error_t lt_carinfo_error;
-
+    extern CarErrorCodeFlags_t CarErrorCodeFlags;
 #ifdef __cplusplus
 }
 #endif

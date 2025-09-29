@@ -7,10 +7,10 @@
  *
  * Description:
  *   This header file defines the data structures and function interfaces for a circular
- *   message queue used to temporarily store I²C messages. 
+ *   message queue used to temporarily store I²C messages.
  *
- *   The queue is mainly designed to decouple I²C message transmission/reception 
- *   (often happening in interrupt context or ISR) from their processing in the main loop 
+ *   The queue is mainly designed to decouple I²C message transmission/reception
+ *   (often happening in interrupt context or ISR) from their processing in the main loop
  *   or in another RTOS task/thread.
  *
  * Features:
@@ -24,8 +24,8 @@
  *   - In main loop / task: Call I2c_Queue_Pop() to retrieve and process messages
  */
 
-#ifndef __OCTOPUS_IIC_H_
-#define __OCTOPUS_IIC_H_
+#ifndef __OCTOPUS_IIC_QUEUE_H__
+#define __OCTOPUS_IIC_QUEUE_H__
 
 #include "octopus_base.h" // Base include file for the Octopus project.
 
@@ -59,10 +59,12 @@
  */
 typedef struct
 {
-    uint8_t dev_address;       /**< I²C device address */
-    uint8_t reg_address;       /**< I²C register address */
-    uint8_t data_len;          /**< Length of valid data in @ref data */
-    uint8_t data[128];         /**< Data payload (up to 255 bytes) */
+    uint8_t channel;
+    uint8_t oparation;
+    uint8_t dev_address; /**< I²C device address */
+    uint8_t reg_address; /**< I²C register address */
+    uint8_t data_len;    /**< Length of valid data in @ref data */
+    uint8_t data[128];   /**< Data payload (up to 255 bytes) */
 } I2c_QueueMsg_t;
 
 /**
@@ -103,7 +105,7 @@ uint16_t I2c_Queue_Length(I2cQueue_t *queue);
  * @param data_len Length of the payload.
  * @return 0 if push was successful, 1 if the queue is full.
  */
-uint8_t I2c_Queue_Push(I2cQueue_t *queue, uint8_t dev_address, uint8_t reg_address, const uint8_t *data, uint8_t data_len);
+uint8_t I2c_Queue_Push(I2cQueue_t *queue, uint8_t channel, uint8_t oparation, uint8_t dev_address, uint8_t reg_address, const uint8_t *data, uint8_t data_len);
 
 /**
  * @brief Attempts to pop the oldest I²C message from the queue.
