@@ -86,6 +86,19 @@ const otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
     },
 #endif
 
+#ifdef TASK_MANAGER_STATE_MACHINE_KEY
+    [TASK_MODULE_KEY] = {
+        .func = {
+            [OTMS_S_INIT] = task_key_init_running,
+            [OTMS_S_START] = task_key_start_running,
+            [OTMS_S_ASSERT_RUN] = task_key_assert_running,
+            [OTMS_S_RUNNING] = task_key_running,
+            [OTMS_S_POST_RUN] = task_key_post_running,
+            [OTMS_S_STOP] = task_key_stop_running,
+        },
+    },
+#endif
+		
 #ifdef TASK_MANAGER_STATE_MACHINE_PTL
     [TASK_MODULE_PTL_1] = {
         .func = {
@@ -147,19 +160,6 @@ const otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
             [OTMS_S_RUNNING] = task_can_running,
             [OTMS_S_POST_RUN] = task_can_post_running,
             [OTMS_S_STOP] = task_can_stop_running,
-        },
-    },
-#endif
-
-#ifdef TASK_MANAGER_STATE_MACHINE_KEY
-    [TASK_MODULE_KEY] = {
-        .func = {
-            [OTMS_S_INIT] = task_key_init_running,
-            [OTMS_S_START] = task_key_start_running,
-            [OTMS_S_ASSERT_RUN] = task_key_assert_running,
-            [OTMS_S_RUNNING] = task_key_running,
-            [OTMS_S_POST_RUN] = task_key_post_running,
-            [OTMS_S_STOP] = task_key_stop_running,
         },
     },
 #endif

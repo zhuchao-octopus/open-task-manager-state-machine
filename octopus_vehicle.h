@@ -165,7 +165,7 @@ typedef struct
 } CarErrorCodeFlags_t;
 
 #pragma pack(push, 1)
-typedef struct
+typedef struct 
 {
     uint8_t ready;      // Ready status (1 = system ready to operate)
     uint8_t high_beam;  // High beam light status (1 = ON)
@@ -223,7 +223,8 @@ typedef struct
     uint8_t current_limit;    // Current limit, range: 6~50A, default: 12A, unit: 1A
     uint8_t rel_charge_state; // Relative charge state (e.g., fast/slow charging, enum value)
     uint8_t abs_charge_state; // Absolute charge state (e.g., charging, full, fault, enum value)
-    uint8_t reserve;
+    uint8_t reserve1;
+    uint16_t reserve2;
 } carinfo_battery_t;
 
 // 故障信息
@@ -238,7 +239,7 @@ typedef struct
     uint8_t fault_battery;  // Battery fault status
     uint8_t fault_brake;    // Brake fault status
     uint8_t fault_throttle; // Throttle fault status
-} __attribute__((packed)) carinfo_error_t;
+} carinfo_error_t;
 #pragma pack(pop)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -437,7 +438,7 @@ extern "C"
 
     // void car_indicator_proc_turn_signal(void);
     // void car_meter_proc_speed_rpm(void);
-
+    void battary_update_simulate_infor(void);
     void carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately);
     bool task_carinfo_has_error_code(void);
 

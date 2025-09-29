@@ -50,45 +50,46 @@
  * Define macros for setting, clearing, toggling, and extracting bit values.
  ******************************************************************************/
 /* --- Single bit masks --- */
-#define BIT_0   (1UL << 0)
-#define BIT_1   (1UL << 1)
-#define BIT_2   (1UL << 2)
-#define BIT_3   (1UL << 3)
-#define BIT_4   (1UL << 4)
-#define BIT_5   (1UL << 5)
-#define BIT_6   (1UL << 6)
-#define BIT_7   (1UL << 7)
-#define BIT_8   (1UL << 8)
+#define BIT_0 (1UL << 0)
+#define BIT_1 (1UL << 1)
+#define BIT_2 (1UL << 2)
+#define BIT_3 (1UL << 3)
+#define BIT_4 (1UL << 4)
+#define BIT_5 (1UL << 5)
+#define BIT_6 (1UL << 6)
+#define BIT_7 (1UL << 7)
+#define BIT_8 (1UL << 8)
 
 /* --- Single bit operations --- */
-#define SETBIT(VAR, POS)      ((VAR) |=  (1UL << (POS)))         // Set bit at position POS
-#define CLRBIT(VAR, POS)      ((VAR) &= ~(1UL << (POS)))         // Clear bit at position POS
-#define TOGBIT(VAR, POS)      ((VAR) ^=  (1UL << (POS)))         // Toggle bit at position POS
-#define GETBIT(VAR, POS)      (((VAR) >> (POS)) & 0x1UL)         // Get bit value (0 or 1) at position POS
+#define SETBIT(VAR, POS) ((VAR) |= (1UL << (POS)))  // Set bit at position POS
+#define CLRBIT(VAR, POS) ((VAR) &= ~(1UL << (POS))) // Clear bit at position POS
+#define TOGBIT(VAR, POS) ((VAR) ^= (1UL << (POS)))  // Toggle bit at position POS
+#define GETBIT(VAR, POS) (((VAR) >> (POS)) & 0x1UL) // Get bit value (0 or 1) at position POS
 
 /* --- Multi-bit operations --- */
-#define SETBITS(VAR, MASK)    ((VAR) |=  (MASK))                 // Set multiple bits defined by MASK
-#define CLRBITS(VAR, MASK)    ((VAR) &= ~(MASK))                 // Clear multiple bits defined by MASK
-#define TOGBITS(VAR, MASK)    ((VAR) ^=  (MASK))                 // Toggle multiple bits defined by MASK
-#define GETBITS(VAR, MASK)    ((VAR) &   (MASK))                 // Get raw masked value of multiple bits
+#define SETBITS(VAR, MASK) ((VAR) |= (MASK))  // Set multiple bits defined by MASK
+#define CLRBITS(VAR, MASK) ((VAR) &= ~(MASK)) // Clear multiple bits defined by MASK
+#define TOGBITS(VAR, MASK) ((VAR) ^= (MASK))  // Toggle multiple bits defined by MASK
+#define GETBITS(VAR, MASK) ((VAR) & (MASK))   // Get raw masked value of multiple bits
 
 /* --- Multi-bit value extraction and assignment ---
  * Example:
  *   val = GETBITS_VALUE(REG, 4, 3); // Extract 4 bits starting from position 3
  */
-#define GETBITS_VALUE(VAR, WIDTH, POS)   (((VAR) >> (POS)) & ((1UL << (WIDTH)) - 1UL))
+#define GETBITS_VALUE(VAR, WIDTH, POS) (((VAR) >> (POS)) & ((1UL << (WIDTH)) - 1UL))
 
 /* Assign a value to a specific bit field:
  *   Updates bits [POS + WIDTH - 1 : POS] of VAR with VALUE.
  */
-#define SETBITS_VALUE(VAR, WIDTH, POS, VALUE) \
-    do { \
+#define SETBITS_VALUE(VAR, WIDTH, POS, VALUE)                    \
+    do                                                           \
+    {                                                            \
         (VAR) = ((VAR) & ~(((1UL << (WIDTH)) - 1UL) << (POS))) | \
                 (((VALUE) & ((1UL << (WIDTH)) - 1UL)) << (POS)); \
-    } while(0)
+    } while (0)
 
-///////////////////////////////////////////////////////////////////////////////////	
-///////////////////////////////////////////////////////////////////////////////////	
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 // Macros for byte and word manipulation
 #define LSB_BIT(BYTE) ((BYTE) & 0x0F)        // Extract least significant nibble
 #define MSB_BIT(BYTE) (((BYTE) >> 4) & 0x0F) // Extract most significant nibble

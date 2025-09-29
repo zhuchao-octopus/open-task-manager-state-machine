@@ -37,8 +37,8 @@
 ///////////////////////////////////////////////////////////////////////////////////
 
 //#define CUSTOMER_MODEL_EZ_406
-//#define CUSTOMER_MODEL_RL_500
-#define CUSTOMER_MODEL_CA_500
+#define CUSTOMER_MODEL_RL_500
+//#define CUSTOMER_MODEL_CA_500
 //#define CUSTOMER_MODEL_DH_500
 
 #ifdef TARGET_BANK_SLOT_L
@@ -211,6 +211,7 @@
 #define FLASH_ROM_BASE_ADDRESS (0x8000000) // BOOTLOADER_END_ADDR + FLASH_BLOCK_SIZE;
 #define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A 					               /**< Select Flash bank slot */
 #define FLASH_BANK_CONFIG_MODE_BANK BOOT_MODE_SINGLE_BANK_NO_LOADER
+
 #endif
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////

@@ -138,7 +138,7 @@ void task_ipc_running(void)
 
     Msg_t *msg = get_message(TASK_MODULE_IPC);
     ipc_auto_enter_upgrade(msg);
-		
+
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     if (update_is_mcu_updating() && (msg->msg_id != MSG_OTSM_DEVICE_MCU_EVENT))
     {
@@ -261,7 +261,7 @@ void task_ipc_stop_running(void)
 
 void ipc_request_upgrade(Msg_t *msg)
 {
-	#ifdef TASK_MANAGER_STATE_MACHINE_SOC
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
     if (flash_is_meta_infor_valid())
     {
         if (update_check_oupg_file_exists())
@@ -281,21 +281,21 @@ void ipc_request_upgrade(Msg_t *msg)
     {
         send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
     }
-	#endif
+#endif
 }
 
 void ipc_auto_enter_upgrade(Msg_t *msg)
 {
-	#ifdef TASK_MANAGER_STATE_MACHINE_SOC
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
     if (flash_is_meta_infor_valid() && flash_get_current_bank() == BANK_SLOT_LOADER)
     {
         if (IS_SLOT_A_NEED_UPGRADE(flash_meta_infor.slot_stat_flags) || (IS_SLOT_B_NEED_UPGRADE(flash_meta_infor.slot_stat_flags)))
         {
-           LOG_LEVEL("auto enter upgrading mode.\r\n");
-           send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE, msg->param2);  
+            LOG_LEVEL("auto enter upgrading mode.\r\n");
+            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE, msg->param2);
         }
     }
-	#endif
+#endif
 }
 /*******************************************************************************
  * FUNCTION: ipc_send_handler
@@ -351,6 +351,7 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
 
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
         case FRAME_CMD_CAR_SET_INDICATOR:
             ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, (uint8_t *)&lt_carinfo_indicator, sizeof(carinfo_indicator_t), buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
@@ -365,7 +366,7 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
             ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, (uint8_t *)&lt_carinfo_battery, sizeof(carinfo_battery_t), buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
-
+#endif
         default:
             break;
         }
@@ -413,6 +414,8 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
             // lt_carinfo_meter.unit_type = payload->data[0];
             flash_save_carinfor_meter();
             return false;
+
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
         case FRAME_CMD_CAR_SET_LIGHT:
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
             if (payload->data[0] == 1)
@@ -425,25 +428,29 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
                 lt_carinfo_indicator.high_beam = payload->data[0];
             return false;
 #endif
+
         case FRAME_CMD_CAR_SET_GEAR_LEVEL:
             if (payload->data_len >= 1)
                 lt_carinfo_meter.gear = payload->data[0];
+
 #ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
             bafang_set_gear(payload->data[0]);
 #endif
             return false;
 
-#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
         case FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
             lt_carinfo_meter.trip_distance = 0;
+				    flash_save_carinfor_meter();
             return false;
 
         case FRAME_CMD_CAR_METER_TIME_CLEAR:
             lt_carinfo_meter.trip_time = 0;
+				    flash_save_carinfor_meter();
             return false;
 
         case FRAME_CMD_CAR_METER_ODO_CLEAR:
             lt_carinfo_meter.trip_odo = 0;
+				    flash_save_carinfor_meter();
             return false;
 
         case FRAME_CMD_CAR_SET_INDICATOR:
@@ -466,11 +473,7 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
             if (payload->data_len >= sizeof(carinfo_battery_t))
             {
                 memcpy(&lt_carinfo_battery, payload->data, sizeof(carinfo_battery_t));
-                calculate_battery_soc_ex(lt_carinfo_battery.voltage, lt_carinfo_battery.current, system_meter_infor.trip_odo,
-                                         DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
-                                         lt_carinfo_meter.speed_average,
-                                         &lt_carinfo_battery.power, &lt_carinfo_battery.soc,
-                                         &lt_carinfo_battery.range, &lt_carinfo_battery.range_max);
+                battary_update_simulate_infor();
 
                 LOG_LEVEL("voltage=%d,current=%d,trip_odo=%d,power=%d,soc=%d,range=%d,range_max=%d\r\n",
                           lt_carinfo_battery.voltage, lt_carinfo_battery.current, lt_carinfo_meter.trip_odo,

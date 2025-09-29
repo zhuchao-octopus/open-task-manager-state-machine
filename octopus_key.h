@@ -168,7 +168,7 @@
 #define OCTOPUS_KEY_PLUS 155  ///< Plus key / volume up
 #define OCTOPUS_KEY_SUBT 156  ///< Minus key / volume down
 #define OCTOPUS_KEY_PAGE 157  ///< Page key
-#define OCTOPUS_KEY_ACC 158  ///< Page key
+#define OCTOPUS_KEY_ACC 158   ///< Page key
 // #define OCTOPUS_NORMAL_KEY_MAX 100
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

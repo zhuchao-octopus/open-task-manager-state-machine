@@ -54,7 +54,7 @@ void system_mcu_goto_lowpower(void);
  * Global Variables
  * Define variables accessible across multiple files if needed.
  ******************************************************************************/
-#define MCU_LOW_POWER_MODE
+// #define MCU_LOW_POWER_MODE
 /*******************************************************************************
  * Local Variables
  * Define static variables used only within this file.
@@ -63,14 +63,19 @@ static mcu_state_t g_mcu_state = MCU_POWER_ST_INIT; // Current state of the syst
 // static uint8_t l_u8_mpu_status = 0;               // Tracks the status of the MPU
 // static uint8_t l_u8_power_off_req = 0;            // Tracks if a power-off request is pending
 static uint32_t l_t_msg_wait_10_timer; // Timer for 10 ms message waiting period
+
+#ifdef MCU_LOW_POWER_MODE
 static uint32_t l_t_msg_lowpower_wait_timer;
+#endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
 static uint32_t l_t_msg_booting_wait_timer;
 #endif
+
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
 static uint32_t l_t_msg_mcu_meta_wait_timer;
 #endif
+
 /*******************************************************************************
  * Global Function Implementations
  ******************************************************************************/
@@ -261,8 +266,9 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             return true;
 
         case FRAME_CMD_SYSTEM_MCU_META:
-            LOG_LEVEL("Send mcu meta information,flash_meta_infor.bank_slot_activated=%d\r\n", flash_meta_infor.bank_slot_activated);
+            LOG_LEVEL("Send mcu meta size=%d bank_slot=%d address=%08X\r\n",sizeof(flash_meta_infor_t), flash_meta_infor.bank_slot_activated,flash_get_bank_address(flash_meta_infor.bank_slot_activated));
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ackbuff);
+			      //flash_print_mcu_meta_infor();
             return true;
 
         case MSG_OTSM_CMD_BLE_CONNECTED:
@@ -344,7 +350,7 @@ void system_event_message_handler(void)
             g_mcu_state = MCU_POWER_ST_ON;
         }
     }
-		#ifdef MCU_LOW_POWER_MODE
+#ifdef MCU_LOW_POWER_MODE
     else if (g_mcu_state == MCU_POWER_ST_LOWPOWER)
     {
         if (GetTickCounter(&l_t_msg_lowpower_wait_timer) > 1000 * 60)
@@ -352,7 +358,7 @@ void system_event_message_handler(void)
             system_mcu_goto_lowpower();
         }
     }
-		#endif
+#endif
 #endif
 
     Msg_t *msg = get_message(TASK_MODULE_SYSTEM);
@@ -466,12 +472,12 @@ void system_power_onoff(bool onoff)
         if (!gpio_is_power_on())
         {
             LOG_LEVEL("Power down SOC succesfully\r\n");
-					  #ifdef MCU_LOW_POWER_MODE
+#ifdef MCU_LOW_POWER_MODE
             g_mcu_state = MCU_POWER_ST_LOWPOWER;
             StartTickCounter(&l_t_msg_lowpower_wait_timer); // time out goto sleep
             system_mcu_goto_lowpower();
-					  #else
-					  #endif
+#else
+#endif
         }
     }
 #endif
@@ -479,7 +485,7 @@ void system_power_onoff(bool onoff)
 
 void system_mcu_goto_lowpower(void)
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_GPIO
+#ifdef MCU_LOW_POWER_MODE
     if (!gpio_is_power_on())
     {
         otms_task_manager_stop();

@@ -434,6 +434,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
     LOG_LEVEL("key %02d state %02d\r\n", key, key_status);
     switch (key)
     {
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
     case OCTOPUS_KEY_ZZD:
         if (key_status == KEY_STATE_PRESSED)
         {
@@ -462,11 +463,13 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
     case OCTOPUS_KEY_DDD:
         lt_carinfo_indicator.high_beam = !lt_carinfo_indicator.high_beam;
         break;
-
+#endif
     case OCTOPUS_KEY_PLUS:
         if (key_status == KEY_STATE_LONG_PRESSED)
         {
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
             lt_carinfo_indicator.high_beam = !lt_carinfo_indicator.high_beam;
+#endif
             key_status_received_temp.ignore = true;
             send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR);
             break;
@@ -479,7 +482,9 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
     case OCTOPUS_KEY_SUBT:
         if (key_status == KEY_STATE_LONG_PRESSED)
         {
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
             lt_carinfo_indicator.walk_assist = !lt_carinfo_indicator.walk_assist;
+#endif
             key_status_received_temp.ignore = true;
             send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR);
             break;
@@ -494,14 +499,17 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
         break;
 
     case OCTOPUS_KEY_ACC:
-			   if(key_status)
-			   send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_OFF, 0);
-				 else
-				 send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_ON, 0);	 
+        if (key_status)
+            send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_OFF, 0);
+        else
+            send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_ON, 0);
+
         break;
     }
 }
 #else
+
 GPIO_STATUS *gpio_array[] = {NULL};
 GPIO_KEY_STATUS *gpio_key_array[] = {NULL};
+
 #endif

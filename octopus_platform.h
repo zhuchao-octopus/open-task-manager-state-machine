@@ -159,8 +159,6 @@ extern volatile uint32_t system_tick_counter_ms;
 #define ENABLE_IRQ (__enable_irq())
 #define GET_SYSTEM_TICK_COUNT system_tick_counter_ms // Return zero for unsupported platforms
 
-
-
 #endif
 
 #endif // ___OCTOPUS_TASK_MANAGER_PLATFORM_H___

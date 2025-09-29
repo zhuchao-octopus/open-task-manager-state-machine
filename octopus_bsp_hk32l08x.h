@@ -85,13 +85,12 @@ extern "C"
     uint8_t hal_iic4_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length);
     uint8_t hal_iic5_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length);
     uint8_t hal_iic6_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length);
-		
-	void platform_delay_us(uint32_t us);
-	void platform_delay_ms(uint32_t us);
+
+    void platform_delay_us(uint32_t us);
+    void platform_delay_ms(uint32_t us);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-
