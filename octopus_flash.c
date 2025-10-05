@@ -399,10 +399,17 @@ void flash_loader_active_user_app(uint8_t bank_slot, const char *date_str, const
 	uint32_t active_app_addr = 0;
 	uint32_t expected_crc = 0;
 	uint32_t slot_length = 0;
-
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// START BEGIN IN BOOTLOADER MODE
 	if (flash_get_current_bank() == BANK_SLOT_LOADER)
 	{
+		if (flash_check_enter_upgrade_mode())
+		{
+			LOG_LEVEL("The bank %s needs to be upgraded before proceeding.", flash_get_current_bank_name());
+			goto ENTER_BOOTLOADER_MODE;
+		}
 		if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
 		{
 			active_app_addr = flash_meta_infor.slot_a_addr;
@@ -414,6 +421,7 @@ void flash_loader_active_user_app(uint8_t bank_slot, const char *date_str, const
 
 			LOG_LEVEL("Bank slot A is invalid fallback to loader...\r\n");
 		}
+
 		if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
 		{
 			active_app_addr = flash_meta_infor.slot_b_addr;
@@ -427,19 +435,13 @@ void flash_loader_active_user_app(uint8_t bank_slot, const char *date_str, const
 			LOG_LEVEL("Bank slot B is invalid fallback to loader...\r\n");
 		}
 
-		LOG_LEVEL("Bank slot A&B are invalid fallback to loader...\r\n");
-
-		goto ENTER_BOOTLOADER_MODE;
-	}
-
-	if (flash_check_enter_upgrade_mode())
-	{
-		LOG_LEVEL("The bank %d needs to be upgraded before proceeding.", flash_get_current_bank());
 		goto ENTER_BOOTLOADER_MODE;
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// start A/B mode checking
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// A/B dual mode checking
 	if (flash_meta_infor.bank_slot_mode == BOOT_MODE_DUAL_BANK_NO_LOADER)
 	{
 		if (compare_versions(flash_meta_infor.slot_a_version, flash_meta_infor.slot_b_version) >= 0)
@@ -488,22 +490,35 @@ void flash_loader_active_user_app(uint8_t bank_slot, const char *date_str, const
 		}
 		if (flash_check_vector_table(flash_get_current_bank(), active_app_addr))
 			flash_goto_terget_bank(active_app_addr, expected_crc, slot_length);
-		return; // goto failed return directly keep A/B
+		return; // already in A/B mode,return directly keep A/B
 	}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// L/A,L/A/B mode
 // ENTER_BOOTLOADER_MODE MODE
 ENTER_BOOTLOADER_MODE:
-	switch (flash_meta_infor.bank_slot_mode)
+	if (flash_get_current_bank() == BANK_SLOT_LOADER)
 	{
-	case BOOT_MODE_SINGLE_BANK_WITH_LOADER:
-		SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
-		break;
-	case BOOT_MODE_DUAL_BANK_WITH_LOADER:
-		SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
-		SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
-		break;
+		LOG_LEVEL("Entering bootloader upgrade mode(%s)...\r\n", flash_get_current_bank_name());
+		switch (flash_meta_infor.bank_slot_mode)
+		{
+		case BOOT_MODE_SINGLE_BANK_WITH_LOADER:
+			SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
+			break;
+		case BOOT_MODE_DUAL_BANK_WITH_LOADER:
+			SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
+			SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
+			break;
+		}
 	}
+	else
+	{
+		LOG_LEVEL("Entering running (%s)...\r\n", flash_get_current_bank_name());
+	}
+	
 }
 
 void flash_goto_terget_bank(uint32_t active_app_addr, uint32_t expected_crc, uint32_t slot_length)
@@ -531,10 +546,6 @@ void flash_goto_terget_bank(uint32_t active_app_addr, uint32_t expected_crc, uin
 
 		if (flash_get_current_bank() == BANK_SLOT_LOADER)
 		{
-			// Both slots failed integrity check, enter firmware update mode
-			LOG_LEVEL("Active slot A/B failed! Both slots failed verification.\r\n");
-			LOG_LEVEL("Entering bootloader upgrade mode...\r\n");
-			// EnterFirmwareUpgradeMode();  // Implement your IAP or OTA entry point
 			return;
 		}
 	}
@@ -739,7 +750,7 @@ bool flash_verify_bank_slot_crc(uint32_t slot_addr, uint32_t slot_size, uint32_t
 	uint32_t calculated_crc = calculate_crc_32((uint8_t *)(uintptr_t)slot_addr, slot_size);
 	ENABLE_IRQ;
 
-	LOG_LEVEL("Bank crc verify at 0x%08X size:0x%08X calculate crc:%08X\r\n", slot_addr, slot_size, calculated_crc);
+	LOG_LEVEL("Bank crc verify at 0x%08X size:0x%08X calculat crc:%08X\r\n", slot_addr, slot_size, calculated_crc);
 
 	return (calculated_crc == expected_crc);
 }

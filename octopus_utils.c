@@ -536,6 +536,61 @@ bool check_encoded_version_valid(uint32_t encoded_version)
 }
 
 /**
+ * @brief 检查字符数组是否全部为数字
+ *
+ * @param str    字符数组指针
+ * @param len    检查长度
+ * @return true  全部是数字
+ * @return false 含有非数字字符
+ */
+bool is_all_digits(const char *str, size_t len)
+{
+    if (str == NULL || len == 0)
+        return false;
+
+    for (size_t i = 0; i < len; i++)
+    {
+        if (str[i] == '\0')
+        {
+            // 遇到 '\0' 直接认为后续为空，返回 true
+            return true;
+        }
+        if (!isdigit((unsigned char)str[i]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool is_all_digits_2(const char *str, size_t len)
+{
+    if (!str)
+        return false;
+
+    if (len == 0)
+    {
+        // 遍历 C 字符串直到 '\0'
+        while (*str)
+        {
+            if (!isdigit((unsigned char)*str))
+                return false;
+            str++;
+        }
+        return true;
+    }
+    else
+    {
+        // 遍历已知长度数组
+        for (size_t i = 0; i < len; i++)
+        {
+            if (!isdigit((unsigned char)str[i]))
+                return false;
+        }
+        return true;
+    }
+}
+/**
  * Extracts and encodes version information from a firmware file name.
  * Expected file name format example: "mcu_202506141612_100.oupg"
  *
@@ -589,13 +644,9 @@ uint32_t decode_version_from_filename(const char *filepath)
     strncpy(version_str, underscore + 1, 3);
 
     // Step 7: Validate version code is numeric
-    for (int i = 0; i < 3; ++i)
-    {
-        if (!isdigit((unsigned char)version_str[i]))
-            return 0;
-    }
-
-    uint8_t version_code = atoi(version_str); // VVV
+    uint16_t version_code = 0;
+    if (is_all_digits(version_str, sizeof(version_str)))
+        version_code = atoi(version_str); // VVV
 
     // Step 8: Encode all components into a compact 32-bit value
     return encode_datetime_version(year, month, day, hour, minute, version_code);
