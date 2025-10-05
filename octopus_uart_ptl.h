@@ -180,8 +180,8 @@ typedef struct
 /**
  * @brief Module handlers for sending and receiving frames.
  */
-typedef bool (*module_send_handler_t)(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
-typedef bool (*module_receive_handler_t)(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
+typedef bool (*module_send_handler_t)(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *ptl_proc_buff);
+typedef bool (*module_receive_handler_t)(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_ack_buff);
 
 #ifdef __cplusplus
 extern "C"

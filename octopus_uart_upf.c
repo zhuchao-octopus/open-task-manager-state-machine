@@ -42,14 +42,14 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_uart_upf.h" // Include UART protocol header
-#include "octopus_uart_hal.h" // Include UART hardware abstraction layer header
+#include "octopus_uart_upf.h"     // Include UART protocol header
+#include "octopus_uart_hal.h"     // Include UART hardware abstraction layer header
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
-#include "octopus_tickcounter.h" // Include tick counter for timing operations
+#include "octopus_tickcounter.h"  // Include tick counter for timing operations
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
- 
+
 // #define TEST_LOG_DEBUG_UPF_RX_FRAME // Enable debugging for receiving frames
 // #define TEST_LOG_DEBUG_PTL_TX_FRAME // Enable debugging for transmitting frames
 
@@ -321,15 +321,6 @@ void upf_proc_valid_frame(void)
         }
     }
 }
-
-// uint8_t hal_com_uart0_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uartl_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uart2_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uart3_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uart4_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uart5_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uart6_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uart7_send_buffer(const uint8_t *buffer, uint16_t length);
 
 void upf_send_buffer(upf_module_t upf_module, const uint8_t *buffer, uint16_t length)
 {

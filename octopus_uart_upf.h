@@ -35,7 +35,7 @@
  *******************************************************************************/
 typedef enum
 {
-	SETTING_WHEEL_16_Inch,
+	SETTING_WHEEL_16_Inch = 0,
 	SETTING_WHEEL_18_Inch,
 	SETTING_WHEEL_20_Inch,
 	SETTING_WHEEL_22_Inch,
@@ -45,6 +45,7 @@ typedef enum
 	SETTING_WHEEL_27_5_Inch,
 	SETTING_WHEEL_28_Inch,
 	SETTING_WHEEL_29_Inch,
+	SETTING_WHEEL_MAX,
 } SETTING_WHEEL;
 
 typedef enum
@@ -128,6 +129,7 @@ typedef struct
 extern "C"
 {
 #endif
+
 	void task_upf_init_running(void);
 	void task_upf_start_running(void);
 	void task_upf_assert_running(void);
@@ -135,13 +137,13 @@ extern "C"
 	void task_upf_post_running(void);
 	void task_upf_stop_running(void);
 
-	//void upf_module_info_init(upf_module_info_t *array, uint16_t length);
+	// void upf_module_info_init(upf_module_info_t *array, uint16_t length);
 	void upf_register_module(upf_module_t upf_module, upf_module_receive_handler_t receive_handler);
 	void upf_receive_callback(upf_module_t upf_module, const uint8_t *buffer, uint16_t length);
 	void upf_send_buffer(upf_module_t upf_module, const uint8_t *buffer, uint16_t length);
 	void upf_print_registered_module(void);
 
-  void otsm_upf_init(upf_module_info_t *array, uint16_t length);
+	void otsm_upf_init(upf_module_info_t *array, uint16_t length);
 	void otsm_upf_help(void);
 
 #ifdef __cplusplus

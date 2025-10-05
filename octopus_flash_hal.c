@@ -95,6 +95,7 @@ uint32_t hal_flash_erase_page_(uint32_t startaddr, uint8_t page_count)
     FLASH_Lock();
     return i;
 }
+
 uint32_t hal_flash_erase_area_(uint32_t startaddr, uint32_t endaddr)
 {
     uint32_t i = 0;
@@ -207,8 +208,8 @@ void hal_eeprom_write_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {
 #ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
     uint8_t ret = I2C_EepromBufferWrite(startaddr, buffer, length);
-    if (ret == ERROR)
-        LOG_LEVEL("save data to eeprom status=%d\r\n", ret);
+    // if (ret == ERROR)
+    LOG_LEVEL("Save data to eeprom status:%d\r\n", ret);
 #endif
 }
 

@@ -4,6 +4,8 @@
 // Created: 2025-04-17
 
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
+#include "octopus_message.h"      // Message IDs: defines identifiers for inter-task communication
+#include "octopus_msgqueue.h"     // Message Queue: API for sending/receiving messages between tasks
 #include "octopus_vehicle.h"
 #include "octopus_gpio.h"
 #include "octopus_system.h"
@@ -12,12 +14,14 @@
 #include "octopus_can.h"
 #include "octopus_can_queue.h"
 #include "octopus_can_2E006.h"
+#include "octopus_can_2E008.h"
 
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-static uint32_t l_t_msg_wait_tx_timer = 0;
+static uint32_t l_t_msg_wait_tx0_timer = 0;
+static uint32_t l_t_msg_wait_tx1_timer = 0;
 
 static bool can_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool can_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
@@ -53,17 +57,18 @@ void task_can_assert_running(void)
 {
   ptl_reqest_running(MCU_TO_SOC_MOD_CAN);
   OTMS(TASK_MODULE_CAN, OTMS_S_RUNNING);
-	StartTickCounter(&l_t_msg_wait_tx_timer);
+  StartTickCounter(&l_t_msg_wait_tx0_timer);
+  StartTickCounter(&l_t_msg_wait_tx1_timer);
 }
 
 void task_can_running(void)
 {
-	if(system_get_mb_state() == MB_POWER_ST_ON)
-	{
+  if (system_get_mcu_status() == MCU_POWER_ST_ON)
+  {
     can_rx_message_event_handler();
-	
-	  can_tx_message_event_handler();
-	}
+
+    can_tx_message_event_handler();
+  }
 }
 
 void task_can_post_running(void)
@@ -102,23 +107,36 @@ void can_message_receiver(const CAN_Message_t *message)
 void can_rx_message_event_handler(void)
 {
   uint16_t q_size = Can_GetMsgQueueSize();
+  bool updated = false;
   if (q_size > 0)
   {
     CanQueueMsg_t *msg = Can_GetMsg();
     if (NULL != msg)
     {
-      can_message_dispatcher(msg);
+      updated = can_message_dispatcher(msg);
     }
+  }
+
+  if (GetTickCounter(&l_t_msg_wait_tx0_timer) >= 3000)
+  {
+    if (!updated)
+    {
+      send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR);
+      send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, FRAME_CMD_CARINFOR_METER);
+      send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, FRAME_CMD_CARINFOR_BATTERY);
+    }
+    StartTickCounter(&l_t_msg_wait_tx0_timer);
   }
 }
 
 void can_tx_message_event_handler(void)
 {
-	if (GetTickCounter(&l_t_msg_wait_tx_timer) >= 1000)
-	{
-     //can_message_sender(CAN_ID_BMS_TASK_H_001);
-		 StartTickCounter(&l_t_msg_wait_tx_timer);
-	}
+  if (GetTickCounter(&l_t_msg_wait_tx1_timer) >= 1000)
+  {
+    // can_message_sender(CAN_ID_BMS_TASK_H_001);
+    // StartTickCounter(&l_t_msg_wait_tx_timer);
+    // StopTickCounter(&l_t_msg_wait_tx_timer);
+  }
 }
 
 #endif

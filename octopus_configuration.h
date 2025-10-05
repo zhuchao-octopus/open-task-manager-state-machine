@@ -101,9 +101,12 @@
 #define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A /**< Select Flash bank slot */
 #elif defined(TARGET_BANK_SLOT_B)
 #define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_B /**< Select Flash bank slot */
-#else
+#elif defined(PLATFORM_LINUX_RISC)
+#define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_A /**< Select Flash bank slot */
+#else 
 #define FLASH_BANK_CONFIG_MODE_SLOT BANK_SLOT_INVALID /**< Select Flash bank slot */
 #endif
-
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 
 #endif /* __OCTOPUS_CONFIGURATION_H__ */

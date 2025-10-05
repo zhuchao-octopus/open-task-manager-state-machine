@@ -57,20 +57,32 @@
 typedef enum MB_POWER_STATE
 {
     MB_POWER_ST_INIT = 0, /**< Initialization state. */
+    MB_POWER_ST_BOOTING,  /**< Booting state. */
 
     MB_POWER_ST_LOWPOWER, /**< Low-power state. */
     MB_POWER_ST_STANDBY,  /**< Standby state. */
 
-    MB_POWER_ST_BOOTING, /**< Booting state. */
-
-    MB_POWER_ST_ON,      /**< Fully operational state. */
-    MB_POWER_ST_PARTIAL, /**< Partial operation state. */
+    MB_POWER_ST_ON, /**< Fully operational state. */
     MB_POWER_ST_STOP,
-
     MB_POWER_ST_SHUTDOWN, /**< Shutdown process. */
     MB_POWER_ST_OFF,      /**< Power-off state. */
 
-} mb_state_t;
+} main_board_state_t;
+
+typedef enum MCU_POWER_STATE
+{
+    MCU_POWER_ST_INIT = 0, /**< Initialization state. */
+    MCU_POWER_ST_BOOTING,  /**< Booting state. */
+
+    MCU_POWER_ST_LOWPOWER, /**< Low-power state. */
+    MCU_POWER_ST_STANDBY,  /**< Standby state. */
+
+    MCU_POWER_ST_ON, /**< Fully operational state. */
+    MCU_POWER_ST_STOP,
+    MCU_POWER_ST_SHUTDOWN, /**< Shutdown process. */
+    MCU_POWER_ST_OFF,      /**< Power-off state. */
+
+} mcu_state_t;
 
 /*******************************************************************************
  * GLOBAL FUNCTIONS DECLARATION
@@ -138,14 +150,11 @@ extern "C"
      */
     void system_handshake_with_mcu(void);
 
-    /**
-     * @brief Get the current mainboard state.
-     * @return Current mainboard state.
-     */
-    mb_state_t system_get_mb_state(void);
-
-    void system_set_mb_state(mb_state_t status);
     void system_power_on_off(bool onoff);
+
+    void system_set_mcu_status(mcu_state_t mcu_state);
+
+    mcu_state_t system_get_mcu_status(void);
 
 #ifdef __cplusplus
 }

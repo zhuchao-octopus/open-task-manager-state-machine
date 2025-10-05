@@ -193,6 +193,123 @@ void calculate_battery_soc_ex(uint32_t voltage_mV,
         rmax100 = 65535;
     *out_range_max_100m = (uint16_t)rmax100;
 }
+
+void calculate_battery_soc_ex_v2(uint32_t rated_voltage_mV,
+                                 uint32_t capacity_mAh,
+                                 uint32_t trip_odo_m,
+                                 float consumption_Wh_per_km,
+                                 float safety_reserve_ratio,
+                                 float avg_speed_kph,
+                                 int32_t current_mA,                // 新：实时放电电流，正为放电（mA）
+                                 uint32_t internal_resistance_mohm, // 新：包内阻，毫欧 (mΩ)
+                                 uint16_t *out_power_w,
+                                 uint16_t *out_soc_pct,
+                                 uint16_t *out_range_100m,
+                                 uint16_t *out_range_max_100m,
+                                 uint16_t *out_voltage_mV) // 新：输出估算端电压 (mV)
+{
+    if (!out_power_w || !out_soc_pct || !out_range_100m || !out_range_max_100m || !out_voltage_mV)
+        return;
+
+    // --- 原有输入单位兼容处理 ---
+    if (rated_voltage_mV < 1000)
+        rated_voltage_mV *= 100;
+    if (capacity_mAh < 1000)
+        capacity_mAh *= 100;
+
+    if (consumption_Wh_per_km <= 0.01f)
+        consumption_Wh_per_km = 18.0f;
+    if (safety_reserve_ratio < 0.0f)
+        safety_reserve_ratio = 0.0f;
+    if (safety_reserve_ratio > 0.5f)
+        safety_reserve_ratio = 0.5f;
+
+    // --- 能量与 SOC（保持原算法的里程→能量推算） ---
+    double capacity_Wh = (rated_voltage_mV * (double)capacity_mAh) / 1000000.0;
+    double usable_Wh = capacity_Wh * (1.0 - safety_reserve_ratio);
+
+    double used_km = trip_odo_m / 1000.0;
+    double used_Wh = used_km * consumption_Wh_per_km;
+    double remain_Wh = usable_Wh - used_Wh;
+    if (remain_Wh < 0.0)
+        remain_Wh = 0.0;
+
+    double soc_f = (usable_Wh > 0.0) ? (remain_Wh / usable_Wh) * 100.0 : 0.0;
+    if (soc_f > 100.0)
+        soc_f = 100.0;
+
+    double full_range_km = (usable_Wh > 0.0) ? (usable_Wh / consumption_Wh_per_km) : 0.0;
+    double remain_range_km = (remain_Wh > 0.0) ? (remain_Wh / consumption_Wh_per_km) : 0.0;
+
+    // --- 功率估算（同原） ---
+    uint16_t power_w = 0;
+    if (avg_speed_kph > 0.0f)
+    {
+        double p = consumption_Wh_per_km * avg_speed_kph;
+        if (p < 0.0)
+            p = 0.0;
+        if (p > 65535.0)
+            p = 65535.0;
+        power_w = (uint16_t)(p + 0.5);
+    }
+    *out_power_w = power_w;
+    *out_soc_pct = (uint16_t)(soc_f + 0.5);
+
+    uint32_t r100 = (uint32_t)(remain_range_km * 10.0 + 0.5);
+    if (r100 > 65535)
+        r100 = 65535;
+    *out_range_100m = (uint16_t)r100;
+
+    uint32_t rmax100 = (uint32_t)(full_range_km * 10.0 + 0.5);
+    if (rmax100 > 65535)
+        rmax100 = 65535;
+    *out_range_max_100m = (uint16_t)rmax100;
+
+    // --- 新：计算 OCV (per cell) 与 串数 ---
+    double v_cell_min = 3.0; // 可调整
+    double v_cell_max = 4.2; // 可调整
+    double v_cell_nom = 3.7; // 用于估算串数
+
+    int n_cell = (int)((rated_voltage_mV / 1000.0) / v_cell_nom + 0.5);
+    if (n_cell < 1)
+        n_cell = 1;
+
+    double soc_ratio = soc_f / 100.0;
+    // 简单线性 OCV，若需精确请替换为查表/拟合函数
+    double v_cell_ocv = v_cell_min + (v_cell_max - v_cell_min) * soc_ratio;
+    double vpack_ocv = v_cell_ocv * n_cell;
+
+    // --- 新：考虑内阻压降计算端电压（terminal voltage） ---
+    // internal_resistance_mohm: 毫欧 (mΩ)
+    // current_mA: mA，正为放电（电流离开电池）
+    double I_A = ((double)current_mA) / 1000.0;
+    double R_ohm = ((double)internal_resistance_mohm) / 1000.0; // mΩ -> Ω
+    double v_drop = I_A * R_ohm;                                // V
+
+    double vpack_terminal = vpack_ocv - v_drop;
+
+    // 下限保护：不小于各单体最低允许电压总和
+    double vpack_min = v_cell_min * n_cell;
+    if (vpack_terminal < vpack_min)
+        vpack_terminal = vpack_min;
+
+    // 上限保护（OCV 不应超过充满电OCV）
+    double vpack_max = v_cell_max * n_cell;
+    if (vpack_terminal > vpack_max)
+        vpack_terminal = vpack_max;
+
+    // 输出端电压（mV）
+    double v_mV = vpack_terminal * 1000.0;
+    if (v_mV < 0.0)
+        v_mV = 0.0;
+    if (v_mV > 0xFFFFFFFFu)
+        v_mV = 0xFFFFFFFFu;
+
+    if (!(v_mV >= 0.0 && v_mV < 4e5)) // 合理范围，比如 <400V
+        v_mV = 0.0;
+    *out_voltage_mV = (uint16_t)(v_mV / 100 + 0.5);
+}
+
 /*******************************************************************************
  * CRC Calculation
  *******************************************************************************/
@@ -716,7 +833,16 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     fseek(f, file_size - sizeof(meta_info_t), SEEK_SET);
     if (fread(&meta, 1, sizeof(meta_info_t), f) == sizeof(meta_info_t))
     {
-        if (meta.bank1.magic == APP_MATA_INFO_MAGIC && meta.bank2.magic == APP_MATA_INFO_MAGIC)
+        LOG_LEVEL("target_bank_offset:%08x\r\n ", target_bank_offset);
+        LOG_LEVEL("bank0.magic:%08x \r\n ", meta.bank0.magic);
+        LOG_LEVEL("bank1.magic:%08x \r\n ", meta.bank1.magic);
+        LOG_LEVEL("bank2.magic:%08x \r\n ", meta.bank2.magic);
+
+        if (meta.bank0.magic == APP_MATA_INFO_MAGIC && meta.bank1.magic == APP_MATA_INFO_MAGIC && meta.bank2.magic == APP_MATA_INFO_MAGIC)
+        {
+            has_valid_meta = 1;
+        }
+        else if (meta.bank0.magic == APP_MATA_INFO_MAGIC && meta.bank1.magic == APP_MATA_INFO_MAGIC)
         {
             has_valid_meta = 1;
         }
@@ -726,9 +852,15 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
             return info;
         }
 
-        LOG_LEVEL("bank1.model: %08x bank2.model: %08x model_number:%08x\n ", meta.bank1.model, meta.bank2.model, model_number);
+        LOG_LEVEL("bank0.model: %08x model_number:%08x\r\n ", meta.bank0.model, model_number);
+        LOG_LEVEL("bank1.model: %08x model_number:%08x\r\n ", meta.bank1.model, model_number);
+        LOG_LEVEL("bank2.model: %08x model_number:%08x\r\n ", meta.bank2.model, model_number);
 
-        if (meta.bank1.model != model_number || meta.bank2.model != model_number)
+        LOG_LEVEL("bank0.size: %08x start_address:%08x\r\n ", meta.bank0.size, meta.bank0.start_address);
+        LOG_LEVEL("bank1.size: %08x start_address:%08x\r\n ", meta.bank1.size, meta.bank1.start_address);
+        LOG_LEVEL("bank2.size: %08x start_address:%08x\r\n ", meta.bank2.size, meta.bank2.start_address);
+
+        if ((meta.bank0.model != model_number) && (meta.bank1.model != model_number) && (meta.bank2.model != model_number))
         {
             fclose(f);
             return info;
@@ -736,8 +868,9 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     }
 
     // Step 3: Read first 8 bytes from target offset (SP + Reset Vector)
-    if (fseek(f, target_bank_offset, SEEK_SET) != 0)
+    if (fseek(f, target_bank_offset, SEEK_SET) != 0) // goto target address
     {
+        LOG_LEVEL("invalid target offset\r\n ");
         fclose(f);
         return info;
     }
@@ -745,12 +878,15 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     uint8_t header_buf[8];
     if (fread(header_buf, 1, 8, f) != 8)
     {
+        LOG_LEVEL("invalid reset vector\r\n ");
         fclose(f);
         return info;
     }
-
+    // get target reset address
     uint32_t sp = header_buf[0] | (header_buf[1] << 8) | (header_buf[2] << 16) | (header_buf[3] << 24);
     uint32_t reset_vector = header_buf[4] | (header_buf[5] << 8) | (header_buf[6] << 16) | (header_buf[7] << 24);
+
+    LOG_LEVEL("reset_vector: %08x\r\n ", reset_vector);
 
     // Step 4: Validate stack pointer and reset handler address range
     if (sp < 0x20000000 || sp > 0x40000000 ||
@@ -781,7 +917,7 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     }
 
     // Step 6: Calculate CRC from target offset to end of valid range
-    if (fseek(f, target_bank_offset, SEEK_SET) != 0)
+    if (fseek(f, target_bank_offset, SEEK_SET) != 0) // goto target address for caculate crc
     {
         fclose(f);
         return info;
@@ -809,7 +945,10 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     info.file_type = FILE_TYPE_BIN;
     info.file_size = valid_size;
     info.file_version = decode_version_from_filename(path_filename);
-    LOG_LEVEL("bank1.crc: %08x bank2.crc: %08x re-crc:%08x\r\n ", meta.bank1.crc32, meta.bank2.crc32, info.file_crc_32);
+    LOG_LEVEL("bank0.crc: %08x\r\n", meta.bank0.crc32);
+    LOG_LEVEL("bank1.crc: %08x\r\n", meta.bank1.crc32);
+    LOG_LEVEL("bank2.crc: %08x\r\n", meta.bank2.crc32);
+    LOG_LEVEL("local.crc: %08x\r\n", info.file_crc_32);
     return info;
 }
 
@@ -891,7 +1030,7 @@ file_info_t parse_firmware_file(uint32_t model_number, uint32_t target_bank_offs
 {
     file_info_t info = {.file_type = FILE_TYPE_UNKNOWN};
     LOG_LEVEL("parse firmware file:%s\r\n", filename);
-    LOG_LEVEL("parse firmware file target_address:%08x\r\n", target_bank_offset);
+    LOG_LEVEL("parse firmware file target offset address:%08x\r\n", target_bank_offset);
 
     info = is_valid_hex_file(filename);
     if (info.file_type == FILE_TYPE_HEX)
@@ -939,11 +1078,12 @@ int copy_file_to_tmp(const char *src_path, const char *filename, char *dst_path,
 
 int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_path_size)
 {
+
 #ifdef PLATFORM_LINUX_RISC
     DIR *dir = opendir(dir_path);
-    if (!dir)
+    if (!dir || out_path_size < 64)
     {
-        LOG_LEVEL("dir not exitst:%s\r\n", dir_path);
+        LOG_LEVEL("dir not exitst:%s mini size:%d\r\n", dir_path, out_path_size);
         return 0;
     }
 
@@ -955,14 +1095,15 @@ int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_
             continue;
         }
 
-        // if (strlen(entry->d_name) > out_path_size -10)
-        //{
-        //     continue;
-        // }
+        if (strlen(entry->d_name) > out_path_size - 64)
+        {
+            LOG_LEVEL("entry->d_name too long:%s\r\n", entry->d_name);
+            continue;
+        }
 
         if (fnmatch("*.oupg", entry->d_name, 0) == 0)
         {
-            char full_path[64];
+            char full_path[255];
             snprintf(full_path, sizeof(full_path), "%s/%s", dir_path, entry->d_name);
             if (copy_file_to_tmp(full_path, entry->d_name, out_path, out_path_size) >= 0)
             {
@@ -984,4 +1125,17 @@ int file_exists(const char *file_path_name)
 #else
     return 0;
 #endif
+}
+
+bool is_str_empty(const char *s)
+{
+    if (s == NULL)
+    {
+        return true; // NULL 指针
+    }
+    if (s[0] == '\0')
+    {
+        return true; // 空字符串
+    }
+    return false;
 }

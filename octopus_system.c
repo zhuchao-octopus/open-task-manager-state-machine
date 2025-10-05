@@ -41,35 +41,41 @@
  * Local Function Declarations
  * Declare static functions used only within this file.
  ******************************************************************************/
-static bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
-static bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
+static bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *ptl_proc_buff);
+static bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_ack_buff);
 
-void system_event_handler(void);
+void system_event_message_handler(void);
 void system_power_onoff(bool onoff);
 bool system_is_power_on(void);
 void system_mcu_initate_remote_soc(void);
 void system_soc_request_mata_infor(void);
+void system_mcu_goto_lowpower(void);
 /*******************************************************************************
  * Global Variables
  * Define variables accessible across multiple files if needed.
  ******************************************************************************/
-
+// #define MCU_LOW_POWER_MODE
 /*******************************************************************************
  * Local Variables
  * Define static variables used only within this file.
  ******************************************************************************/
-static mb_state_t lt_mb_state = MB_POWER_ST_INIT; // Current state of the system
-static uint8_t l_u8_mpu_status = 0;               // Tracks the status of the MPU
-static uint8_t l_u8_power_off_req = 0;            // Tracks if a power-off request is pending
-static uint32_t l_t_msg_wait_10_timer;            // Timer for 10 ms message waiting period
+static mcu_state_t g_mcu_state = MCU_POWER_ST_INIT; // Current state of the system
+// static uint8_t l_u8_mpu_status = 0;               // Tracks the status of the MPU
+// static uint8_t l_u8_power_off_req = 0;            // Tracks if a power-off request is pending
+static uint32_t l_t_msg_wait_10_timer; // Timer for 10 ms message waiting period
+
+#ifdef MCU_LOW_POWER_MODE
 static uint32_t l_t_msg_lowpower_wait_timer;
+#endif
 
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
 static uint32_t l_t_msg_booting_wait_timer;
 #endif
+
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
 static uint32_t l_t_msg_mcu_meta_wait_timer;
 #endif
+
 /*******************************************************************************
  * Global Function Implementations
  ******************************************************************************/
@@ -136,7 +142,7 @@ void task_system_running(void)
         return;
     StartTickCounter(&l_t_msg_wait_10_timer);
 
-    system_event_handler();
+    system_event_message_handler();
 }
 
 void task_system_post_running(void)
@@ -166,10 +172,10 @@ void task_system_stop_running(void)
  * RETURNS:
  * - true if the command was processed successfully, false otherwise.
  ******************************************************************************/
-bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
+bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *ptl_proc_buff)
 {
-    MY_ASSERT(buff);      // Ensure the buffer is valid
-    uint8_t tmp[8] = {0}; // Temporary buffer for command parameters
+    MY_ASSERT(ptl_proc_buff); // Ensure the buffer is valid
+    uint8_t tmp[8] = {0};     // Temporary buffer for command parameters
 
     // Handle commands for MCU_TO_SOC_MOD_SYSTEM frame type
     if (MCU_TO_SOC_MOD_SYSTEM == frame_type)
@@ -178,22 +184,26 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         {
             /// case FRAME_CMD_SYSTEM_HANDSHAKE:
             /// LOG_LEVEL("Send handshake frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
-            /// ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, buff);
+            /// ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, ptl_proc_buff);
             /// return false;
 
             /// case FRAME_CMD_SYSTEM_POWER_ON:
-            ///     ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_ON, tmp, 2, buff);
+            ///     ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_ON, tmp, 2, ptl_proc_buff);
             ///     return true;
 
             /// case FRAME_CMD_SYSTEM_POWER_OFF:
-            ///     ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, tmp, 2, buff);
+            ///     ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, tmp, 2, ptl_proc_buff);
             ///     return true;
+        case FRAME_CMD_SYSTEM_MCU_META:
+            LOG_LEVEL("Send mcu meta size=%d bank_slot=%d address=%08X\r\n", sizeof(flash_meta_infor_t), flash_meta_infor.bank_slot_activated, flash_get_bank_address(flash_meta_infor.bank_slot_activated));
+            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ptl_proc_buff);
+            return true;
 
         case MSG_OTSM_CMD_BLE_PAIR_ON:
         case MSG_OTSM_CMD_BLE_PAIR_OFF:
             LOG_LEVEL("MSG_OTSM_CMD_BLE_PAIR_ON/OFF \r\n");
-            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, (ptl_frame_cmd_t)MSG_OTSM_CMD_BLE_PAIR_ON, tmp, 2, buff);
-            ptl_send_buffer(2, buff->buff, buff->size);
+            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, (ptl_frame_cmd_t)MSG_OTSM_CMD_BLE_PAIR_ON, tmp, 2, ptl_proc_buff);
+            ptl_send_buffer(2, ptl_proc_buff->buff, ptl_proc_buff->size);
             return false;
 
         default:
@@ -209,19 +219,19 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         {
         case FRAME_CMD_SYSTEM_HANDSHAKE:
             LOG_LEVEL("Send handshake frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
-            ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, buff);
+            ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, ptl_proc_buff);
             return true;
 
         case FRAME_CMD_SYSTEM_MCU_META:
             LOG_LEVEL("Request mcu meta infor frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
-            ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, tmp, 2, buff);
+            ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, tmp, 2, ptl_proc_buff);
             return true;
 
         case MSG_OTSM_CMD_BLE_CONNECTED:
         case MSG_OTSM_CMD_BLE_DISCONNECTED:
             tmp[0] = param1; // Send MPU status
             tmp[1] = param2; // Additional status byte
-            ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, (ptl_frame_cmd_t)param1, tmp, 2, buff);
+            ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, (ptl_frame_cmd_t)param1, tmp, 2, ptl_proc_buff);
             return true;
         default:
             break;
@@ -243,10 +253,10 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
  * RETURNS:
  * - true if the command was processed successfully, false otherwise.
  ******************************************************************************/
-bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
+bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_ack_buff)
 {
-    MY_ASSERT(payload); // Ensure payload is valid
-    MY_ASSERT(ackbuff); // Ensure acknowledgment buffer is valid
+    MY_ASSERT(payload);      // Ensure payload is valid
+    MY_ASSERT(ptl_ack_buff); // Ensure acknowledgment buffer is valid
     // uint8_t tmp;        // Temporary variable for holding command data
 
     if (SOC_TO_MCU_MOD_SYSTEM == payload->frame_type)
@@ -256,12 +266,13 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         case FRAME_CMD_SYSTEM_HANDSHAKE:
             LOG_LEVEL("Handshake from soc payload->frame_type=%02x\r\n", payload->frame_type);
             system_mcu_initate_remote_soc();
-            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ackbuff);
+            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ptl_ack_buff);
             return true;
 
         case FRAME_CMD_SYSTEM_MCU_META:
-            LOG_LEVEL("Send mcu meta information,flash_meta_infor.bank_slot_activated=%d\r\n", flash_meta_infor.bank_slot_activated);
-            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ackbuff);
+            LOG_LEVEL("Send mcu meta size=%d bank_slot=%d address=%08X\r\n", sizeof(flash_meta_infor_t), flash_meta_infor.bank_slot_activated, flash_get_bank_address(flash_meta_infor.bank_slot_activated));
+            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ptl_ack_buff);
+            // flash_print_mcu_meta_infor();
             return true;
 
         case MSG_OTSM_CMD_BLE_CONNECTED:
@@ -301,9 +312,8 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             if (payload->data_len >= sizeof(flash_meta_infor_t))
             {
                 memcpy(&flash_meta_infor, payload->data, sizeof(flash_meta_infor_t));
-                LOG_LEVEL("FRAME_CMD_SYSTEM_MCU_META mata size=%d bank_slot_activated=%d \r\n",
-                          sizeof(flash_meta_infor_t), flash_meta_infor.bank_slot_activated);
-
+                LOG_LEVEL("FRAME_CMD_SYSTEM_MCU_META mata size=%d bank_slot_activated=%d \r\n", sizeof(flash_meta_infor_t), flash_meta_infor.bank_slot_activated);
+                flash_print_mcu_meta_infor();
                 send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_VERSION, 0);
             }
             else
@@ -332,30 +342,26 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
     return false; // Command not processed
 }
 
-void system_event_handler(void)
+void system_event_message_handler(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    if (lt_mb_state == MB_POWER_ST_BOOTING)
+    if (g_mcu_state == MCU_POWER_ST_BOOTING)
     {
         if (GetTickCounter(&l_t_msg_booting_wait_timer) > 3000)
         {
             StopTickCounter(&l_t_msg_booting_wait_timer);
-            lt_mb_state = MB_POWER_ST_ON;
+            g_mcu_state = MCU_POWER_ST_ON;
         }
     }
-    else if (lt_mb_state == MB_POWER_ST_LOWPOWER)
+#ifdef MCU_LOW_POWER_MODE
+    else if (g_mcu_state == MCU_POWER_ST_LOWPOWER)
     {
-        if (GetTickCounter(&l_t_msg_lowpower_wait_timer) > 8000)
+        if (GetTickCounter(&l_t_msg_lowpower_wait_timer) > 1000 * 60)
         {
-            otms_task_manager_stop();
-            native_enter_sleep_mode();
-            lt_mb_state = MB_POWER_ST_BOOTING;
-            StartTickCounter(&l_t_msg_booting_wait_timer);
-            otms_task_manager_start();
-            system_power_onoff(true);
-            StopTickCounter(&l_t_msg_lowpower_wait_timer);
+            system_mcu_goto_lowpower();
         }
     }
+#endif
 #endif
 
     Msg_t *msg = get_message(TASK_MODULE_SYSTEM);
@@ -412,66 +418,14 @@ void system_handshake_with_app(void)
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, 0);
 }
 
-/*******************************************************************************
- * FUNCTION: system_set_mpu_status
- *
- * DESCRIPTION:
- * Sets the MPU status and sends an application state update message.
- *
- * PARAMETERS:
- * - status: The status value to set for the MPU.
- ******************************************************************************/
-void system_set_mpu_status(uint8_t status)
+void system_set_mcu_status(mcu_state_t mcu_state)
 {
-    LOG_LEVEL("Send mpu status=%d \r\n", status);
-    l_u8_mpu_status = status;
+    g_mcu_state = mcu_state;
 }
 
-/*******************************************************************************
- * FUNCTION: system_get_mpu_status
- *
- * DESCRIPTION:
- * Retrieves the current MPU status.
- *
- * RETURNS:
- * - The current MPU status value.
- ******************************************************************************/
-uint8_t system_get_mpu_status(void)
+mcu_state_t system_get_mcu_status(void)
 {
-    return l_u8_mpu_status;
-}
-
-/*******************************************************************************
- * FUNCTION: system_get_power_off_req
- *
- * DESCRIPTION:
- * Checks if a power off request has been made.
- *
- * RETURNS:
- * - true if power off is requested, false otherwise.
- ******************************************************************************/
-bool system_get_power_off_req(void)
-{
-    return l_u8_power_off_req;
-}
-
-/*******************************************************************************
- * FUNCTION: system_get_mb_state
- *
- * DESCRIPTION:
- * Retrieves the current ModBus state.
- *
- * RETURNS:
- * - The current ModBus state value.
- ******************************************************************************/
-mb_state_t system_get_mb_state(void)
-{
-    return lt_mb_state;
-}
-
-void system_set_mb_state(mb_state_t status)
-{
-    lt_mb_state = status;
+    return g_mcu_state;
 }
 
 void system_reboot_soc(void)
@@ -505,8 +459,11 @@ void system_power_onoff(bool onoff)
         gpio_power_on_off(true);
         if (gpio_is_power_on())
         {
-            lt_mb_state = MB_POWER_ST_ON;
+            g_mcu_state = MCU_POWER_ST_ON;
             LOG_LEVEL("Power on soc succesfully\r\n");
+#ifdef TASK_MANAGER_STATE_MACHINE_CAN
+            CAN_Config();
+#endif
         }
     }
     else
@@ -518,9 +475,29 @@ void system_power_onoff(bool onoff)
         if (!gpio_is_power_on())
         {
             LOG_LEVEL("Power down SOC succesfully\r\n");
-            lt_mb_state = MB_POWER_ST_LOWPOWER;
+#ifdef MCU_LOW_POWER_MODE
+            g_mcu_state = MCU_POWER_ST_LOWPOWER;
             StartTickCounter(&l_t_msg_lowpower_wait_timer); // time out goto sleep
+            system_mcu_goto_lowpower();
+#else
+#endif
         }
+    }
+#endif
+}
+
+void system_mcu_goto_lowpower(void)
+{
+#ifdef MCU_LOW_POWER_MODE
+    if (!gpio_is_power_on())
+    {
+        otms_task_manager_stop();
+        native_enter_sleep_mode();
+        g_mcu_state = MCU_POWER_ST_BOOTING;
+        StartTickCounter(&l_t_msg_booting_wait_timer);
+        otms_task_manager_start();
+        // system_power_onoff(true);
+        StopTickCounter(&l_t_msg_lowpower_wait_timer);
     }
 #endif
 }
@@ -561,4 +538,5 @@ void system_soc_request_mata_infor(void)
     }
 #endif
 }
+
 #endif

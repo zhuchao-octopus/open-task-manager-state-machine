@@ -89,6 +89,7 @@ typedef struct
 
 typedef struct
 {
+	bank_info_t bank0;
 	bank_info_t bank1;
 	bank_info_t bank2;
 } meta_info_t;
@@ -123,6 +124,20 @@ extern "C"
 								  uint16_t *out_range_100m,
 								  uint16_t *out_range_max_100m);
 
+	void calculate_battery_soc_ex_v2(uint32_t rated_voltage_mV,
+									 uint32_t capacity_mAh,
+									 uint32_t trip_odo_m,
+									 float consumption_Wh_per_km,
+									 float safety_reserve_ratio,
+									 float avg_speed_kph,
+									 int32_t current_mA,				// 新：实时放电电流，正为放电（mA）
+									 uint32_t internal_resistance_mohm, // 新：包内阻，毫欧 (mΩ)
+									 uint16_t *out_power_w,
+									 uint16_t *out_soc_pct,
+									 uint16_t *out_range_100m,
+									 uint16_t *out_range_max_100m,
+									 uint16_t *out_voltage_mV); // 新：输出估算端电压 (mV)
+
 	uint32_t calculate_crc_32(uint8_t *data, uint32_t length);
 	uint32_t calculate_crc_32_step(uint32_t current_crc, uint8_t *data, uint32_t length);
 
@@ -142,6 +157,7 @@ extern "C"
 
 	int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_path_size);
 	int file_exists(const char *file_path_name);
+	bool is_str_empty(const char *s);
 
 #ifdef __cplusplus
 }

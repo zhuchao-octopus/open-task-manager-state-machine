@@ -22,6 +22,7 @@
  */
 #include "octopus_base.h" //  Base include file for the Octopus project.
 #include "octopus_platform.h"
+#include "octopus_gpio_car.h"
 
 /*******************************************************************************
  * MACRO DEFINITIONS
@@ -145,8 +146,6 @@ typedef uint8_t GPIO_GROUP;
 typedef GPIO_TypeDef GPIO_GROUP;
 // Default GPIO pin definitions for unsupported platforms
 
-#define GPIO_ACC_GROUP 0
-#define GPIO_ACC_PIN 0
 #define GPIO_POWER_KEY_GROUP GPIOA
 #define GPIO_POWER_KEY_PIN GPIO_Pin_12
 

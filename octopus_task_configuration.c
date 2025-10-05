@@ -34,25 +34,25 @@
 /********************************************************************************
  * Vehicle and Communication Modules
  ********************************************************************************/
-#include "octopus_vehicle.h"       // Vehicle data processing and control interfaces
-#include "octopus_ble.h"           // BLE communication module
-#include "octopus_4g.h"            // 4G network communication module
-#include "octopus_bt.h"            // Classic Bluetooth communication module
+#include "octopus_vehicle.h"         // Vehicle data processing and control interfaces
+#include "octopus_ble.h"             // BLE communication module
+#include "octopus_4g.h"              // 4G network communication module
+#include "octopus_bt.h"              // Classic Bluetooth communication module
 #include "octopus_ling_hui_liion2.h" // Ling Hui Li-ion battery management
-#include "octopus_bafang.h"        // Bafang motor control and communication
+#include "octopus_bafang.h"          // Bafang motor control and communication
 
 /********************************************************************************
  * Update, IPC, and CAN Modules
  ********************************************************************************/
 
-#include "octopus_ipc.h"           // Inter-process / inter-task communication
-#include "octopus_can.h"           // CAN bus interface and message processing
+#include "octopus_ipc.h" // Inter-process / inter-task communication
+#include "octopus_can.h" // CAN bus interface and message processing
 
 /********************************************************************************
  * UART Modules
  ********************************************************************************/
-#include "octopus_uart_ptl.h"      // UART Protocol Layer: handles protocol-level UART operations
-#include "octopus_uart_upf.h"      // UART Packet Framework: low-level UART packet processing
+#include "octopus_uart_ptl.h" // UART Protocol Layer: handles protocol-level UART operations
+#include "octopus_uart_upf.h" // UART Packet Framework: low-level UART packet processing
 
 /*******************************************************************************
  * CONSTANTS
@@ -86,6 +86,19 @@ const otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
     },
 #endif
 
+#ifdef TASK_MANAGER_STATE_MACHINE_KEY
+    [TASK_MODULE_KEY] = {
+        .func = {
+            [OTMS_S_INIT] = task_key_init_running,
+            [OTMS_S_START] = task_key_start_running,
+            [OTMS_S_ASSERT_RUN] = task_key_assert_running,
+            [OTMS_S_RUNNING] = task_key_running,
+            [OTMS_S_POST_RUN] = task_key_post_running,
+            [OTMS_S_STOP] = task_key_stop_running,
+        },
+    },
+#endif
+		
 #ifdef TASK_MANAGER_STATE_MACHINE_PTL
     [TASK_MODULE_PTL_1] = {
         .func = {
@@ -147,19 +160,6 @@ const otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
             [OTMS_S_RUNNING] = task_can_running,
             [OTMS_S_POST_RUN] = task_can_post_running,
             [OTMS_S_STOP] = task_can_stop_running,
-        },
-    },
-#endif
-
-#ifdef TASK_MANAGER_STATE_MACHINE_KEY
-    [TASK_MODULE_KEY] = {
-        .func = {
-            [OTMS_S_INIT] = task_key_init_running,
-            [OTMS_S_START] = task_key_start_running,
-            [OTMS_S_ASSERT_RUN] = task_key_assert_running,
-            [OTMS_S_RUNNING] = task_key_running,
-            [OTMS_S_POST_RUN] = task_key_post_running,
-            [OTMS_S_STOP] = task_key_stop_running,
         },
     },
 #endif
@@ -264,5 +264,3 @@ const otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
 #ifdef TASK_MANAGER_STATE_MACHINE_UPF
 upf_module_info_t upf_module_array[_UPF_MODULE_MAX_];
 #endif
-
-
