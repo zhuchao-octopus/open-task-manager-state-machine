@@ -697,7 +697,7 @@ uint16_t task_carinfo_getSpeed(void)
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
     return lt_carinfo_meter.speed_actual;
 #else
-    return NULL;
+    return 0;
 #endif
 }
 

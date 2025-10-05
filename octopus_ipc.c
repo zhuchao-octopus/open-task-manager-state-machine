@@ -6,7 +6,7 @@
  * This source file is responsible for initializing and controlling the system's
  * state machine. It handles incoming and outgoing messages through a UART
  * interface, processes system-level events, and manages the power state
- * and handshake procedures with both the MCU and external applications.
+ * and synchronization request procedures with both the MCU and external applications.
  *
  * The code uses a modular design to interface with other system components,
  * ensuring flexibility and scalability.

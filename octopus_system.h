@@ -123,35 +123,23 @@ extern "C"
     void task_system_stop_running(void);
 
     /**
-     * @brief Set the current MPU (Microprocessor Unit) status.
-     * @param status Status value to set.
-     */
-    void system_set_mpu_status(uint8_t status);
-
-    /**
-     * @brief Get the power-off request status.
-     * @return True if power-off is requested, false otherwise.
-     */
-    bool system_get_power_off_req(void);
-
-    /**
      * @brief Get the current MPU (Microprocessor Unit) status.
      * @return Current MPU status.
      */
     uint8_t system_get_mpu_status(void);
 
     /**
-     * @brief Perform a handshake with the application layer.
+     * @brief Perform a synchronization request with the application layer.
      */
-    void system_handshake_with_app(void);
+    void system_synchronize_with_app(void);
 
     /**
-     * @brief Perform a handshake with the MCU (Microcontroller Unit).
+     * @brief Perform a synchronization request with the MCU (Microcontroller Unit).
      */
-    void system_handshake_with_mcu(void);
+    void system_synchronize_with_mcu(void);
 
-    void system_power_on_off(bool onoff);
-
+    void system_power_onoff(bool onoff);
+    void system_reboot_soc(void);
     void system_set_mcu_status(mcu_state_t mcu_state);
 
     mcu_state_t system_get_mcu_status(void);
