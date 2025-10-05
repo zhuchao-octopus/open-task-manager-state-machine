@@ -83,7 +83,31 @@ uint8_t GetTaskManagerStateMachineId(void)
 {
     return TaskManagerStateMachine_Id_;
 }
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
+void otsm_print_logo(void)
+{
+    LOG_NONE("-----------------------------------------------------------------------------\r\n");
+    LOG_NONE("               _____                                 \r\n");
+    LOG_NONE(" ______ _________  /_______ ________ ____  __________\r\n");
+    LOG_NONE(" _  __ \\_  ___/_  __/_  __ \\___  __ \\_  / / /__  ___/\r\n");
+    LOG_NONE(" / /_/ // /__  / /_  / /_/ /__  /_/ // /_/ / _(__  ) \r\n");
+    LOG_NONE(" \\____/ \\___/  \\__/  \\____/ _  .___/ \\__,_/  /____/  \r\n");
+    LOG_NONE("                            /_/                       \r\n");
+    LOG_NONE(" Embedded Real-Time Task Scheduler + FSM Engine\r\n");
 
+    LOG_NONE(" Firmware  : v%s\r\n", OTMS_VERSION_NAME);
+    LOG_NONE(" Compiled  : %s %s\r\n", __DATE__, __TIME__);
+
+#ifdef PLATFORM_LINUX_RISC
+    LOG_NONE(" Module    : %s\r\n", flash_get_bank_name(FLASH_BANK_CONFIG_MODE_SLOT));
+#else
+    LOG_NONE(" Module    : %s\r\n", flash_get_current_bank_name());
+#endif
+
+    LOG_NONE(" Author    : Octopus Dev Team\r\n");
+    LOG_NONE("-----------------------------------------------------------------------------\r\n");
+}
+#endif
 /**
  * @brief Initializes the Task Manager State Machine.
  * @param task_id The task ID to initialize.
@@ -97,12 +121,14 @@ void TaskManagerStateMachineInit(uint8_t task_id)
 void TaskManagerStateMachineInit(void)
 #endif
 {
+
 #ifdef PLATFORM_CST_OSAL_RTOS
     TaskManagerStateMachine_Id_ = task_id; // Store the task ID in the global variable
 #endif
 		LOG_NONE("\r\n");
     /// LOG_NONE("\r\n\r\n");//[1B blob data]
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
+    otsm_print_logo();
     /// LOG_NONE("\r\n######################################BOOT  START######################################\r\n");
     TaskManagerStateStopRunning();
 #endif
@@ -224,15 +250,12 @@ uint16_t TaskManagerStateEventLoop(uint8 task_id, uint16 events)
 
     return 0; // Return 0 if no events were handled
 }
-
 void TaskManagerStateStartRunning(void)
 {
 }
-
 void TaskManagerStateStopRunning(void)
 {
 }
-
 #elif defined(PLATFORM_ITE_OPEN_RTOS)
 /**
  * @brief Task manager state machine event loop for ITE Open RTOS.
@@ -310,7 +333,6 @@ void TaskManagerStateEventLoop(void *arg)
 
 void TaskManagerStateStartRunning(void)
 {
-	  
 }
 
 #endif

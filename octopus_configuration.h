@@ -77,6 +77,7 @@
 //------------------------------------------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////
 #ifdef CUSTOMER_MODEL_RL_500
+#define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 				4
 #define TASK_MANAGER_STATE_MACHINE_GPIO               1   /**< GPIO handling */
 #define TASK_MANAGER_STATE_MACHINE_FLASH              1   /**< Flash memory handling */
 #define TASK_MANAGER_STATE_MACHINE_SYSTEM             1   /**< System-level state machine */
@@ -98,10 +99,9 @@
 //#define TASK_MANAGER_STATE_MACHINE_SIF              1   /**< SIF protocol handler */
 //#define TASK_MANAGER_STATE_MACHINE_BLE              1   /**< Bluetooth Low Energy */
 //#define TASK_MANAGER_STATE_MACHINE_BMS              1   /**< Battery Management System */
-#define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 4
 
 #elif defined(CUSTOMER_MODEL_CA_500)
-
+#define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 				4
 #define TASK_MANAGER_STATE_MACHINE_GPIO               1   /**< GPIO handling */
 #define TASK_MANAGER_STATE_MACHINE_FLASH              1   /**< Flash memory handling */
 #define TASK_MANAGER_STATE_MACHINE_SYSTEM             1   /**< System-level state machine */
@@ -123,10 +123,9 @@
 //#define TASK_MANAGER_STATE_MACHINE_SIF              1   /**< SIF protocol handler */
 //#define TASK_MANAGER_STATE_MACHINE_BLE              1   /**< Bluetooth Low Energy */
 //#define TASK_MANAGER_STATE_MACHINE_BMS              1   /**< Battery Management System */
-#define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 4
 
 #elif defined(CUSTOMER_MODEL_DH_500)
-
+#define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 				4
 #define TASK_MANAGER_STATE_MACHINE_GPIO               1   /**< GPIO handling */
 #define TASK_MANAGER_STATE_MACHINE_FLASH              1   /**< Flash memory handling */
 #define TASK_MANAGER_STATE_MACHINE_SYSTEM             1   /**< System-level state machine */
@@ -148,20 +147,20 @@
 //#define TASK_MANAGER_STATE_MACHINE_SIF              1   /**< SIF protocol handler */
 //#define TASK_MANAGER_STATE_MACHINE_BLE              1   /**< Bluetooth Low Energy */
 //#define TASK_MANAGER_STATE_MACHINE_BMS              1   /**< Battery Management System */
-#define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 4
 
 #else
-
-//#define TASK_MANAGER_STATE_MACHINE_GPIO             1   /**< GPIO handling */
+#define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 				4
+#define TASK_MANAGER_STATE_MACHINE_GPIO             	1   /**< GPIO handling */
 #define TASK_MANAGER_STATE_MACHINE_FLASH              1   /**< Flash memory handling */
-#define TASK_MANAGER_STATE_MACHINE_SYSTEM           1   /**< System-level state machine */
+#define TASK_MANAGER_STATE_MACHINE_SYSTEM          		1   /**< System-level state machine */
 #define TASK_MANAGER_STATE_MACHINE_UPDATE             1   /**< OTA / Firmware update */
-//#define TASK_MANAGER_STATE_MACHINE_KEY              1   /**< Key input handling */
+#define TASK_MANAGER_STATE_MACHINE_KEY              	1   /**< Key input handling */
 
-//#define TASK_MANAGER_STATE_MACHINE_CARINFOR         1   /**< Car information processing */
 #define TASK_MANAGER_STATE_MACHINE_PTL                1   /**< PTL protocol handler */
+
 //#define TASK_MANAGER_STATE_MACHINE_UPF              1   /**< UART Packet Framework */
 //#define TASK_MANAGER_STATE_MACHINE_IPC              1   /**< Inter-process communication */
+//#define TASK_MANAGER_STATE_MACHINE_CARINFOR         1   /**< Car information processing */
 
 //#define TASK_MANAGER_STATE_MACHINE_CAN              1   /**< CAN bus protocol */
 //#define TASK_MANAGER_STATE_MACHINE_BAFANG           1   /**< Bafang system support */
@@ -173,9 +172,8 @@
 //#define TASK_MANAGER_STATE_MACHINE_SIF              1   /**< SIF protocol handler */
 //#define TASK_MANAGER_STATE_MACHINE_BLE              1   /**< Bluetooth Low Energy */
 //#define TASK_MANAGER_STATE_MACHINE_BMS              1   /**< Battery Management System */
-#define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 				4
-#endif
 
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------//

@@ -50,7 +50,7 @@ static bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint1
 static bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer);
 static void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
 static void ipc_request_upgrade(Msg_t *msg);
-static void ipc_auto_enter_upgrade(Msg_t *msg);
+
 /*******************************************************************************
  * Global Variables
  * Define variables accessible across multiple files if needed.
@@ -137,7 +137,6 @@ void task_ipc_running(void)
     StartTickCounter(&l_t_msg_wait_10_timer);
 
     Msg_t *msg = get_message(TASK_MODULE_IPC);
-    ipc_auto_enter_upgrade(msg);
 
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     if (update_is_mcu_updating() && (msg->msg_id != MSG_OTSM_DEVICE_MCU_EVENT))
@@ -284,19 +283,6 @@ void ipc_request_upgrade(Msg_t *msg)
 #endif
 }
 
-void ipc_auto_enter_upgrade(Msg_t *msg)
-{
-#ifdef TASK_MANAGER_STATE_MACHINE_SOC
-    if (flash_is_meta_infor_valid() && flash_get_current_bank() == BANK_SLOT_LOADER)
-    {
-        if (IS_SLOT_A_NEED_UPGRADE(flash_meta_infor.slot_stat_flags) || (IS_SLOT_B_NEED_UPGRADE(flash_meta_infor.slot_stat_flags)))
-        {
-            LOG_LEVEL("auto enter upgrading mode.\r\n");
-            send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE, msg->param2);
-        }
-    }
-#endif
-}
 /*******************************************************************************
  * FUNCTION: ipc_send_handler
  *
@@ -440,17 +426,17 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
 
         case FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
             lt_carinfo_meter.trip_distance = 0;
-				    flash_save_carinfor_meter();
+            flash_save_carinfor_meter();
             return false;
 
         case FRAME_CMD_CAR_METER_TIME_CLEAR:
             lt_carinfo_meter.trip_time = 0;
-				    flash_save_carinfor_meter();
+            flash_save_carinfor_meter();
             return false;
 
         case FRAME_CMD_CAR_METER_ODO_CLEAR:
             lt_carinfo_meter.trip_odo = 0;
-				    flash_save_carinfor_meter();
+            flash_save_carinfor_meter();
             return false;
 
         case FRAME_CMD_CAR_SET_INDICATOR:

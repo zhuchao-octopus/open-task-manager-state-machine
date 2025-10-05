@@ -41,8 +41,8 @@
  * Local Function Declarations
  * Declare static functions used only within this file.
  ******************************************************************************/
-static bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
-static bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
+static bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *ptl_proc_buff);
+static bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_ack_buff);
 
 void system_event_message_handler(void);
 void system_power_onoff(bool onoff);
@@ -172,10 +172,10 @@ void task_system_stop_running(void)
  * RETURNS:
  * - true if the command was processed successfully, false otherwise.
  ******************************************************************************/
-bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff)
+bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *ptl_proc_buff)
 {
-    MY_ASSERT(buff);      // Ensure the buffer is valid
-    uint8_t tmp[8] = {0}; // Temporary buffer for command parameters
+    MY_ASSERT(ptl_proc_buff); // Ensure the buffer is valid
+    uint8_t tmp[8] = {0};     // Temporary buffer for command parameters
 
     // Handle commands for MCU_TO_SOC_MOD_SYSTEM frame type
     if (MCU_TO_SOC_MOD_SYSTEM == frame_type)
@@ -184,22 +184,26 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         {
             /// case FRAME_CMD_SYSTEM_HANDSHAKE:
             /// LOG_LEVEL("Send handshake frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
-            /// ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, buff);
+            /// ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, ptl_proc_buff);
             /// return false;
 
             /// case FRAME_CMD_SYSTEM_POWER_ON:
-            ///     ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_ON, tmp, 2, buff);
+            ///     ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_ON, tmp, 2, ptl_proc_buff);
             ///     return true;
 
             /// case FRAME_CMD_SYSTEM_POWER_OFF:
-            ///     ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, tmp, 2, buff);
+            ///     ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, tmp, 2, ptl_proc_buff);
             ///     return true;
+        case FRAME_CMD_SYSTEM_MCU_META:
+            LOG_LEVEL("Send mcu meta size=%d bank_slot=%d address=%08X\r\n", sizeof(flash_meta_infor_t), flash_meta_infor.bank_slot_activated, flash_get_bank_address(flash_meta_infor.bank_slot_activated));
+            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ptl_proc_buff);
+            return true;
 
         case MSG_OTSM_CMD_BLE_PAIR_ON:
         case MSG_OTSM_CMD_BLE_PAIR_OFF:
             LOG_LEVEL("MSG_OTSM_CMD_BLE_PAIR_ON/OFF \r\n");
-            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, (ptl_frame_cmd_t)MSG_OTSM_CMD_BLE_PAIR_ON, tmp, 2, buff);
-            ptl_send_buffer(2, buff->buff, buff->size);
+            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, (ptl_frame_cmd_t)MSG_OTSM_CMD_BLE_PAIR_ON, tmp, 2, ptl_proc_buff);
+            ptl_send_buffer(2, ptl_proc_buff->buff, ptl_proc_buff->size);
             return false;
 
         default:
@@ -215,19 +219,19 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         {
         case FRAME_CMD_SYSTEM_HANDSHAKE:
             LOG_LEVEL("Send handshake frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
-            ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, buff);
+            ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, ptl_proc_buff);
             return true;
 
         case FRAME_CMD_SYSTEM_MCU_META:
             LOG_LEVEL("Request mcu meta infor frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
-            ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, tmp, 2, buff);
+            ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, tmp, 2, ptl_proc_buff);
             return true;
 
         case MSG_OTSM_CMD_BLE_CONNECTED:
         case MSG_OTSM_CMD_BLE_DISCONNECTED:
             tmp[0] = param1; // Send MPU status
             tmp[1] = param2; // Additional status byte
-            ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, (ptl_frame_cmd_t)param1, tmp, 2, buff);
+            ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, (ptl_frame_cmd_t)param1, tmp, 2, ptl_proc_buff);
             return true;
         default:
             break;
@@ -249,10 +253,10 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
  * RETURNS:
  * - true if the command was processed successfully, false otherwise.
  ******************************************************************************/
-bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
+bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_ack_buff)
 {
-    MY_ASSERT(payload); // Ensure payload is valid
-    MY_ASSERT(ackbuff); // Ensure acknowledgment buffer is valid
+    MY_ASSERT(payload);      // Ensure payload is valid
+    MY_ASSERT(ptl_ack_buff); // Ensure acknowledgment buffer is valid
     // uint8_t tmp;        // Temporary variable for holding command data
 
     if (SOC_TO_MCU_MOD_SYSTEM == payload->frame_type)
@@ -262,13 +266,13 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
         case FRAME_CMD_SYSTEM_HANDSHAKE:
             LOG_LEVEL("Handshake from soc payload->frame_type=%02x\r\n", payload->frame_type);
             system_mcu_initate_remote_soc();
-            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ackbuff);
+            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ptl_ack_buff);
             return true;
 
         case FRAME_CMD_SYSTEM_MCU_META:
-            LOG_LEVEL("Send mcu meta size=%d bank_slot=%d address=%08X\r\n",sizeof(flash_meta_infor_t), flash_meta_infor.bank_slot_activated,flash_get_bank_address(flash_meta_infor.bank_slot_activated));
-            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ackbuff);
-			      //flash_print_mcu_meta_infor();
+            LOG_LEVEL("Request for mcu meta size=%d bank_slot=%d address=%08X\r\n", sizeof(flash_meta_infor_t), flash_get_current_bank(), flash_get_bank_address(flash_get_current_bank()));
+            ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ptl_ack_buff);
+            // flash_print_mcu_meta_infor();
             return true;
 
         case MSG_OTSM_CMD_BLE_CONNECTED:
@@ -308,9 +312,8 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbu
             if (payload->data_len >= sizeof(flash_meta_infor_t))
             {
                 memcpy(&flash_meta_infor, payload->data, sizeof(flash_meta_infor_t));
-                LOG_LEVEL("FRAME_CMD_SYSTEM_MCU_META mata size=%d bank_slot_activated=%d \r\n",
-                          sizeof(flash_meta_infor_t), flash_meta_infor.bank_slot_activated);
-
+                LOG_LEVEL("FRAME_CMD_SYSTEM_MCU_META mata size=%d bank_slot_activated=%d \r\n", sizeof(flash_meta_infor_t), flash_meta_infor.bank_slot_activated);
+                flash_print_mcu_meta_infor();
                 send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_VERSION, 0);
             }
             else
