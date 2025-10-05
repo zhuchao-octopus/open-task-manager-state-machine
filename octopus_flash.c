@@ -518,7 +518,6 @@ ENTER_BOOTLOADER_MODE:
 	{
 		LOG_LEVEL("Entering running (%s)...\r\n", flash_get_current_bank_name());
 	}
-	
 }
 
 void flash_goto_terget_bank(uint32_t active_app_addr, uint32_t expected_crc, uint32_t slot_length)
@@ -612,7 +611,7 @@ bool flash_is_allow_update_bank(uint8_t bank_slot)
 	switch (bank_slot)
 	{
 	case BANK_SLOT_LOADER:
-		return true;
+		return false;
 	case BANK_SLOT_A:
 		return true;
 	case BANK_SLOT_B:
@@ -620,6 +619,14 @@ bool flash_is_allow_update_bank(uint8_t bank_slot)
 	default:
 		return false;
 	}
+}
+
+bool flash_is_allow_update_address(uint32_t address)
+{
+	if (address >= FLASH_BOOTLOADER_START_ADDR && address <= FLASH_BOOTLOADER_END_ADDR)
+		return false;
+	else
+		return true;
 }
 
 bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address)

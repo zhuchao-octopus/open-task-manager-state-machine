@@ -88,6 +88,7 @@ mcu_update_progress_status_t mcu_upgrade_status;
 static FILE *file_handle_oupg = NULL;
 static char file_path_name_upgrade[255] = {0};
 static bool auto_enter_upgrading = true;
+static uint32_t l_t_boot_loader_reboot_delay_timer;
 #endif
 /*******************************************************************************
  * STATIC VARIABLES
@@ -95,7 +96,7 @@ static bool auto_enter_upgrading = true;
 // Declare static variables for managing reboot process
 static uint32_t l_t_transmission_timeout_timer; // Timer for 1000 ms message wait
 static uint32_t l_t_boot_loader_checking_meta_timer;
-static uint32_t l_t_boot_loader_reboot_delay_timer;
+
 /*******************************************************************************
  * EXTERNAL VARIABLES
  */
@@ -188,21 +189,37 @@ void task_update_stop_running(void)
 
 uint8_t update_get_target_bank(void)
 {
-	if (flash_get_bank_slot_mode() >= BOOT_MODE_DUAL_BANK_NO_LOADER)
+	switch (flash_get_bank_slot_mode())
 	{
-		if (flash_get_current_bank() == BANK_SLOT_LOADER)
-			return BANK_SLOT_A;
-		else if (flash_get_current_bank() == BANK_SLOT_A)
+	case BOOT_MODE_SINGLE_BANK_NONE:	  // No bootloader or second bank present
+	case BOOT_MODE_SINGLE_BANK_NO_LOADER: // Single bank without a bootloader
+		return BANK_SLOT_INVALID;
+
+	case BOOT_MODE_SINGLE_BANK_WITH_LOADER: // Single bank with bootloader present
+		return BANK_SLOT_A;
+
+	case BOOT_MODE_DUAL_BANK_NO_LOADER: // Two banks, but no dedicated bootloader
+		if (flash_get_current_bank() == BANK_SLOT_A)
 			return BANK_SLOT_B;
 		else if (flash_get_current_bank() == BANK_SLOT_B)
 			return BANK_SLOT_A;
 		else
 			return BANK_SLOT_INVALID;
+
+	case BOOT_MODE_DUAL_BANK_WITH_LOADER: // Two banks and a bootloader present
+		if (flash_get_current_bank() == BANK_SLOT_LOADER)
+			return BANK_SLOT_A;
+		else if (flash_get_current_bank() == BANK_SLOT_A)
+			return BANK_SLOT_A;
+		else if (flash_get_current_bank() == BANK_SLOT_B)
+			return BANK_SLOT_B;
+		else
+			return BANK_SLOT_INVALID;
+	default:
+		return BANK_SLOT_INVALID;
 	}
-	else
-	{
-		return BANK_SLOT_A;
-	}
+
+	return BANK_SLOT_INVALID;
 }
 
 uint8_t upgrade_enter_upgrade_mode(void)
@@ -490,7 +507,16 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_a
 				LOG_BUFF_LEVEL(hex_record.data, hex_record.length);
 				return false;
 			}
-
+			if (flash_is_allow_update_address(hex_record.address))
+			{
+				LOG_LEVEL("Not allowed flash address file_bank_address=%08x hex_record.address=%08x\n", file_bank_address, hex_record.address);
+				mcu_upgrade_status.error_code = MCU_ERROR_CODE_ADDRESS;
+				LOG_BUFF_LEVEL(hex_record.data, hex_record.length);
+				return false;
+			}
+			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			mcu_upgrade_status.s_length = mcu_upgrade_status.s_length + hex_record.length;
 			mcu_upgrade_status.f_counter++;
 
@@ -566,7 +592,7 @@ bool update_is_mcu_updating(void)
 
 void update_start_reboot_soc(void)
 {
-  StartTickCounter(&l_t_boot_loader_reboot_delay_timer);	
+	StartTickCounter(&l_t_boot_loader_reboot_delay_timer);
 }
 
 bool update_check_auto_enter_upgrade(void)
@@ -647,6 +673,14 @@ bool update_check_and_enter_start(ptl_proc_buff_t *ptl_proc_buff)
 	if ((!flash_is_valid_bank_address(flash_bank_address, file_bank_address)) || (flash_bank_address != file_bank_address))
 	{
 		LOG_LEVEL("file_bank_address is invalid: %08x / %08x\r\n", flash_bank_address, file_bank_address);
+		mcu_upgrade_status.error_code = MCU_ERROR_CODE_ADDRESS;
+		send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_UPDATING, 0); // notify ui
+		return false;
+	}
+
+	if (flash_is_allow_update_address(file_bank_address))
+	{
+		LOG_LEVEL("address not be allowed : %08x / %08x\r\n", file_bank_address);
 		mcu_upgrade_status.error_code = MCU_ERROR_CODE_ADDRESS;
 		send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_UPDATING, 0); // notify ui
 		return false;
