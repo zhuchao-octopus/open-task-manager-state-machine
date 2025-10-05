@@ -6,7 +6,7 @@
  * This source file is responsible for initializing and controlling the system's
  * state machine. It handles incoming and outgoing messages through a UART
  * interface, processes system-level events, and manages the power state
- * and handshake procedures with both the MCU and external applications.
+ * and synchronization request procedures with both the MCU and external applications.
  *
  * The code uses a modular design to interface with other system components,
  * ensuring flexibility and scalability.
@@ -182,11 +182,6 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
     {
         switch (param1)
         {
-            /// case FRAME_CMD_SYSTEM_HANDSHAKE:
-            /// LOG_LEVEL("Send handshake frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
-            /// ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, ptl_proc_buff);
-            /// return false;
-
             /// case FRAME_CMD_SYSTEM_POWER_ON:
             ///     ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_ON, tmp, 2, ptl_proc_buff);
             ///     return true;
@@ -218,7 +213,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         switch (param1)
         {
         case FRAME_CMD_SYSTEM_HANDSHAKE:
-            LOG_LEVEL("Send handshake frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
+            LOG_LEVEL("Send synchronization request frame_type=%02x param1=%02x param2=%02x\r\n", frame_type, tmp[0], tmp[1]);
             ptl_build_frame(SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, tmp, 2, ptl_proc_buff);
             return true;
 
@@ -264,7 +259,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_a
         switch (payload->frame_cmd)
         {
         case FRAME_CMD_SYSTEM_HANDSHAKE:
-            LOG_LEVEL("Handshake from soc payload->frame_type=%02x\r\n", payload->frame_type);
+            LOG_LEVEL("Synchronization request received from SoC payload->frame_type=%02x\r\n", payload->frame_type);
             system_mcu_initate_remote_soc();
             ptl_build_frame(MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, (uint8_t *)(&flash_meta_infor), sizeof(flash_meta_infor_t), ptl_ack_buff);
             return true;
@@ -301,9 +296,6 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_a
     {
         switch (payload->frame_cmd)
         {
-            /// case FRAME_CMD_SYSTEM_HANDSHAKE:
-            ///     LOG_LEVEL("Handshake from mcu payload->frame_type=%02x\r\n", payload->frame_type);
-            ///     return false;
             /// case FRAME_CMD_SYSTEM_ACC_STATE:
             ///     LOG_LEVEL("FRAME_CMD_SYSTEM_ACC_STATE\r\n");
             ///     return false;
@@ -385,8 +377,10 @@ void system_event_message_handler(void)
             system_power_onoff(true);
         else if (msg->param1 == FRAME_CMD_SYSTEM_POWER_OFF)
             system_power_onoff(false);
-        break;
+        else if (msg->param1 == FRAME_CMD_UPDATE_REBOOT)
+            system_reboot_soc();
 
+        break;
     case MSG_OTSM_DEVICE_BLE_EVENT:
         LOG_LEVEL("MSG_OTSM_DEVICE_BLE_EVENT notify ble to ON/OFF pair mode\r\n");
         send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, msg->param1, msg->param2);
@@ -394,27 +388,26 @@ void system_event_message_handler(void)
     }
 }
 /*******************************************************************************
- * FUNCTION: system_handshake_with_mcu
+ * FUNCTION: system_synchronize_with_mcu
  *
  * DESCRIPTION:
- * Initiates a handshake with the MCU by sending the handshake command.
+ * Initiates a synchronization request with the MCU by sending the command.
  ******************************************************************************/
-void system_handshake_with_mcu(void)
+void system_synchronize_with_mcu(void)
 {
-    LOG_LEVEL("task system send handshake data to xxx\r\n");
+    LOG_LEVEL("task system send synchronization request data to xxx\r\n");
     send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, 0);
     // send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
 }
 
 /*******************************************************************************
- * FUNCTION: system_handshake_with_app
+ * FUNCTION: system_synchronize_with_app
  *
  * DESCRIPTION:
- * Initiates a handshake with the app by sending the handshake command.
+ * Initiates a synchronization request with the app by sending the command.
  ******************************************************************************/
-void system_handshake_with_app(void)
+void system_synchronize_with_app(void)
 {
-    // LOG_LEVEL("send handshake message to xxx\r\n");
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_HANDSHAKE, 0);
 }
 
@@ -513,8 +506,7 @@ bool system_is_power_on(void)
 
 void system_mcu_initate_remote_soc(void)
 {
-    // after got handshake then send indicate respond by message
-    LOG_LEVEL("System initate remote soc...\r\n");
+    LOG_LEVEL("Synchronization data with remote SoC\r\n");
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, 0);
     send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
