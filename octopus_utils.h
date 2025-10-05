@@ -89,6 +89,7 @@ typedef struct
 
 typedef struct
 {
+	bank_info_t bank0;
 	bank_info_t bank1;
 	bank_info_t bank2;
 } meta_info_t;
@@ -156,6 +157,7 @@ extern "C"
 
 	int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_path_size);
 	int file_exists(const char *file_path_name);
+	bool is_str_empty(const char *s);
 
 #ifdef __cplusplus
 }

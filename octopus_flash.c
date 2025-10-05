@@ -17,15 +17,18 @@
 #include "octopus_vehicle.h"
 #include "octopus_platform.h"
 
-#ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
+// #ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
 #if (defined(__CC_ARM))
-__IO uint32_t Vector_Table[48] __attribute__((at(0x20000000)));
+__IO uint32_t IRAM_Vector_Table[48] __attribute__((at(0x20000000)));
 #elif defined(__GNUC__)
-__IO uint32_t Vector_Table[48] __attribute__((section(".SRAM_VECTOR_TABLE")));
+//__IO uint32_t IRAM_Vector_Table[48] __attribute__((section(".SRAM_VECTOR_TABLE")));
+uint32_t IRAM_Vector_Table[48];
 #elif defined(__TASKING__)
-__IO uint32_t Vector_Table[48] __at(0x20000000);
+__IO uint32_t IRAM_Vector_Table[48] __at(0x20000000);
+#else
+uint32_t IRAM_Vector_Table[48] __at(0x20000000);
 #endif
-#endif
+// #endif
 
 void Print_VectorTable(void);
 void Print_Flash_VectorTable(void);
@@ -33,6 +36,9 @@ void Print_SRAM_VectorTable(void);
 
 bool flash_verify_bank_slot_crc(uint32_t slot_addr, uint32_t slot_size, uint32_t expected_crc);
 void flash_goto_terget_bank(uint32_t active_app_addr, uint32_t expected_crc, uint32_t slot_length);
+
+bool flash_check_vector_table(uint8_t bank_slot, uint32_t vector_address);
+bool flash_is_first_boot(uint8_t bank_slot);
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 flash_meta_infor_t flash_meta_infor = {0};
@@ -41,12 +47,36 @@ uint8_t flash_bank_config_mode_slot = BANK_SLOT_INVALID;
 uint8_t flash_bank_config_mode_boot = BOOT_MODE_SINGLE_BANK_NONE;
 uint32_t flash_bank_config_rom_address = FLASH_BOOTLOADER_END_ADDR + FLASH_BLOCK_SIZE;
 
-bool flash_check_vector_table(uint8_t bank_slot, uint32_t vector_address);
-bool flash_is_first_boot(uint8_t bank_slot);
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
+void otsm_flash_init(void)
+{
+	hal_flash_init(0);
+	// flash_meta_infor.bank_slot_mode = BOOT_MODE_SINGLE_BANK_NONE;
+	// flash_meta_infor.loader_addr = FLASH_BOOTLOADER_START_ADDR;
+	// flash_meta_infor.slot_a_addr = 0;
+	// flash_meta_infor.slot_b_addr = 0;
+}
+
+void flash_init_version(const char *date_str, const char *time_str)
+{
+	switch (flash_bank_config_mode_slot)
+	{
+	case BANK_SLOT_LOADER:
+		flash_meta_infor.loader_version = build_version_code(date_str, time_str);
+		break;
+	case BANK_SLOT_A:
+		flash_meta_infor.slot_a_version = build_version_code(date_str, time_str);
+		break;
+	case BANK_SLOT_B:
+		flash_meta_infor.slot_b_version = build_version_code(date_str, time_str);
+		break;
+	}
+}
+
 void flash_print_logo(void)
 {
 	LOG_NONE("\r\n");
@@ -65,252 +95,18 @@ void flash_print_logo(void)
 	LOG_NONE(" Author    : Octopus Dev Team\r\n");
 	LOG_NONE("-----------------------------------------------------------------------------\r\n");
 }
-
-void otsm_flash_init(void)
-{
-	hal_flash_init(0);
-	//if (flash_bank_config_mode_slot >= BANK_SLOT_INVALID)
-	//{
-	// flash_bank_config_mode_slot = BANK_SLOT_A;
-	//}
-
-	// flash_meta_infor.bank_slot_mode = BOOT_MODE_SINGLE_BANK_NONE;
-	flash_meta_infor.loader_addr = FLASH_BOOTLOADER_START_ADDR;
-	//flash_meta_infor.slot_a_addr = 0;
-	//flash_meta_infor.slot_b_addr = 0;
-}
-
-void flash_init_version(const char *date_str, const char *time_str)
-{
-	switch (flash_bank_config_mode_slot)
-	{
-	case BANK_SLOT_LOADER:
-		flash_meta_infor.loader_version = build_version_code(date_str, time_str);
-		break;
-	case BANK_SLOT_A:
-		flash_meta_infor.slot_a_version = build_version_code(date_str, time_str);
-		break;
-	case BANK_SLOT_B:
-		flash_meta_infor.slot_b_version = build_version_code(date_str, time_str);
-		break;
-	}
-}
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
-
-/*******************************************************************************
- * LOCAL FUNCTIONS DECLEAR
- */
-#ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
-void flash_vector_table_config(boot_mode_t boot_mode, uint8_t bank_slot, uint32_t slot_address, bool mapping_vector)
-{
-	flash_bank_config_mode_slot = bank_slot;
-	flash_bank_config_mode_boot = boot_mode;
-	flash_bank_config_rom_address = slot_address;
-
-	if (!mapping_vector)
-		return;
-
-	DISABLE_IRQ;
-	switch (flash_bank_config_mode_slot)
-	{
-	case BANK_SLOT_A:
-		for (uint8_t i = 0; i < 48; i++)
-		{
-			Vector_Table[i] = *(volatile uint32_t *)(flash_bank_config_rom_address + i * 4);
-		}
-
-		RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-		SYSCFG_MemoryRemapConfig(SYSCFG_MemoryRemap_SRAM);
-		break;
-
-	case BANK_SLOT_B:
-		for (uint8_t i = 0; i < 48; i++)
-		{
-			Vector_Table[i] = *(volatile uint32_t *)(flash_bank_config_rom_address + i * 4);
-		}
-
-		RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-		SYSCFG_MemoryRemapConfig(SYSCFG_MemoryRemap_SRAM);
-		break;
-
-	case BANK_SLOT_LOADER:
-		for (uint8_t i = 0; i < 48; i++)
-		{
-			Vector_Table[i] = *(volatile uint32_t *)(FLASH_BOOTLOADER_START_ADDR + i * 4);
-		}
-
-		RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-		SYSCFG_MemoryRemapConfig(SYSCFG_MemoryRemap_SRAM);
-		break;
-
-	case BANK_SLOT_INVALID:
-	default:
-		break;
-	}
-
-	ENABLE_IRQ;
-}
-
-bool flash_check_enter_upgrade_mode(void)
-{
-	if (IS_SLOT_A_NEED_UPGRADE(flash_meta_infor.slot_stat_flags))
-		return true;
-	else if (IS_SLOT_B_NEED_UPGRADE(flash_meta_infor.slot_stat_flags))
-		return true;
-	else
-		return false;
-}
-/**
- * @brief Main bootloader logic: verify and jump to the valid application
- */
-void boot_loader_active_user_app(uint8_t bank_slot, const char *date_str, const char *time_str)
-{
-	flash_bank_config_mode_slot = bank_slot;
-	flash_meta_infor.bank_slot_activated = flash_bank_config_mode_slot;
-	// LOG_LEVEL("bank_slot_activated=%02x flash_bank_config_mode_slot=%02x\r\n",flash_meta_infor.bank_slot_activated,flash_bank_config_mode_slot);
-	flash_print_logo();
-	flash_load_sync_data_infor(); // Read application metadata from EEPROM
-	flash_init_version(date_str, time_str);
-	flash_print_mcu_meta_infor();
-
-	uint32_t active_app_addr = 0;
-	uint32_t expected_crc = 0;
-	uint32_t slot_length = 0;
-
-	if (flash_check_enter_upgrade_mode())
-	{
-		LOG_LEVEL("Has bank need to be upgraded!");
-		return;
-	}
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	if (flash_get_current_bank() == BANK_SLOT_LOADER)
-	{
-		if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
-		{
-			active_app_addr = flash_meta_infor.slot_a_addr;
-			expected_crc = flash_meta_infor.slot_a_crc;
-			slot_length = flash_meta_infor.slot_a_size;
-			LOG_LEVEL("Bootloader start to active slot A...\r\n");
-			if (flash_check_vector_table(BANK_SLOT_A, active_app_addr))
-				flash_goto_terget_bank(active_app_addr, expected_crc, slot_length);
-			else
-				LOG_LEVEL("Bank slot A is invalid fallback to loader...\r\n");
-		}
-		else if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
-		{
-			active_app_addr = flash_meta_infor.slot_b_addr;
-			expected_crc = flash_meta_infor.slot_b_crc;
-			slot_length = flash_meta_infor.slot_b_size;
-			LOG_LEVEL("Bootloader start to active slot B...\r\n");
-
-			if (flash_check_vector_table(BANK_SLOT_B, active_app_addr))
-				flash_goto_terget_bank(active_app_addr, expected_crc, slot_length);
-			else
-				LOG_LEVEL("Bank slot B is invalid fallback to loader...\r\n");
-		}
-		else
-		{
-			LOG_LEVEL("Bank slot A/B is invalid fallback to loader...\r\n");
-		}
-		return;
-	}
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	if ((flash_meta_infor.bank_slot_mode == BOOT_MODE_DUAL_BANK_NO_LOADER) && (compare_versions(flash_meta_infor.slot_a_version, flash_meta_infor.slot_b_version) >= 0))
-	{
-		if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
-		{
-			active_app_addr = flash_meta_infor.slot_a_addr;
-			expected_crc = flash_meta_infor.slot_a_crc;
-			slot_length = flash_meta_infor.slot_a_size;
-			LOG_LEVEL("Bank Active Slot   : A,flash_get_current_bank()=%d\r\n", flash_get_current_bank());
-			if (flash_get_current_bank() == BANK_SLOT_A)
-				return;
-		}
-		else if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
-		{
-			active_app_addr = flash_meta_infor.slot_b_addr;
-			expected_crc = flash_meta_infor.slot_b_crc;
-			slot_length = flash_meta_infor.slot_b_size;
-			LOG_LEVEL("Slot A activation failed. fallback to Slot B initiated.\r\n");
-			if (flash_get_current_bank() == BANK_SLOT_B)
-			{
-				return;
-			}
-		}
-	}
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	else if (flash_meta_infor.bank_slot_mode == BOOT_MODE_DUAL_BANK_NO_LOADER)
-	{
-		if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
-		{
-			active_app_addr = flash_meta_infor.slot_b_addr;
-			expected_crc = flash_meta_infor.slot_b_crc;
-			slot_length = flash_meta_infor.slot_b_size;
-			LOG_LEVEL("Bank Active Slot   : B,flash_get_current_bank()=%d\r\n", flash_get_current_bank());
-			if (flash_get_current_bank() == BANK_SLOT_B)
-				return;
-		}
-		else if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
-		{
-			active_app_addr = flash_meta_infor.slot_a_addr;
-			expected_crc = flash_meta_infor.slot_a_crc;
-			slot_length = flash_meta_infor.slot_a_size;
-			LOG_LEVEL("Slot B activation failed. fallback to Slot A initiated.\r\n");
-			if (flash_get_current_bank() == BANK_SLOT_A)
-				return;
-		}
-	}
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-}
-
-void flash_goto_terget_bank(uint32_t active_app_addr, uint32_t expected_crc, uint32_t slot_length)
-{
-	// Verify CRC of the active application
-	if (flash_verify_bank_slot_crc(active_app_addr, slot_length, expected_crc))
-	{
-		LOG_LEVEL("Bank verified successfuly & jumping to application at 0x%08X...\r\n", active_app_addr);
-		flash_JumpToApplication(active_app_addr); // Hand over control to application
-		LOG_LEVEL("Bank jump failed! Can Not Jumping to 0x%08X...\r\n", active_app_addr);
-	}
-	else
-	{
-		LOG_LEVEL("Bank verified crc failed Can Not Jumping to application at 0x%08X...\r\n", active_app_addr);
-		
-		if (flash_get_current_bank() == BANK_SLOT_A)
-		{
-			return;
-		}
-
-		if (flash_get_current_bank() == BANK_SLOT_B)
-		{
-			return;
-		}
-
-		if (flash_get_current_bank() == BANK_SLOT_LOADER)
-		{
-			// Both slots failed integrity check, enter firmware update mode
-			LOG_LEVEL("Active slot A/B failed! Both slots failed verification.\r\n");
-			LOG_LEVEL("Entering bootloader upgrade mode...\r\n");
-			// EnterFirmwareUpgradeMode();  // Implement your IAP or OTA entry point
-			return;
-		}
-		
-	}
-}
+// LOCAL FUNCTIONS DECLEAR
 
 void Print_VectorTable(void)
 {
 	// LOG_LEVEL("Interrupt Vector Table\r\n");
 	for (int i = 0; i < 48; i++)
 	{
-		LOG_LEVEL("Vector_Table[%02d] = 0x%08X\r\n", i, Vector_Table[i]);
+		LOG_LEVEL("Vector_Table[%02d] = 0x%08X\r\n", i, IRAM_Vector_Table[i]);
 	}
 }
 
@@ -349,12 +145,6 @@ void Print_SRAM_VectorTable(void)
 		LOG_LEVEL("SRAM_Vector[%02d] = 0x%08X\r\n", i, entry);
 	}
 }
-#endif
-
-flash_meta_infor_t *flash_get_meta_infor(void)
-{
-	return &flash_meta_infor;
-}
 
 void flash_print_mcu_meta_infor(void)
 {
@@ -378,38 +168,60 @@ void flash_print_mcu_meta_infor(void)
 	// LOG_LEVEL("VECT_TAB_OFFSET   : 0x%08X\n", SCB->AIRCR);
 }
 
-bool flash_is_first_boot(uint8_t bank_slot)
+flash_meta_infor_t *flash_get_meta_infor(void)
 {
-	// if (!IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags) && !IS_SLOT_A_NEED_UPGRADE(flash_meta_infor.slot_stat_flags)) ||
-	if (flash_meta_infor.mete_data_flags != FLASH_META_DATAS_VALID_FLAG)
-		return true;
+	return &flash_meta_infor;
+}
 
-	switch (bank_slot)
+void flash_vector_table_config(boot_mode_t boot_mode, uint8_t bank_slot, uint32_t slot_address, bool mapping_vector)
+{
+	flash_bank_config_mode_slot = bank_slot;
+	flash_bank_config_mode_boot = boot_mode;
+	flash_bank_config_rom_address = slot_address;
+
+	if (!mapping_vector)
+		return;
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+	DISABLE_IRQ;
+	switch (flash_bank_config_mode_slot)
 	{
-	case BANK_SLOT_LOADER:
-		return false;
-
 	case BANK_SLOT_A:
-		if (flash_meta_infor.slot_a_crc == 0xFFFFFFFF || flash_meta_infor.slot_a_crc == 0)
+		for (uint8_t i = 0; i < 48; i++)
 		{
-			return true;
+			IRAM_Vector_Table[i] = *(volatile uint32_t *)(flash_bank_config_rom_address + i * 4);
 		}
-		else
-		{
-			return false;
-		}
+
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+		SYSCFG_MemoryRemapConfig(SYSCFG_MemoryRemap_SRAM);
+		break;
 
 	case BANK_SLOT_B:
-		if (flash_meta_infor.slot_b_crc == 0xFFFFFFFF || flash_meta_infor.slot_b_crc == 0)
+		for (uint8_t i = 0; i < 48; i++)
 		{
-			return true;
+			IRAM_Vector_Table[i] = *(volatile uint32_t *)(flash_bank_config_rom_address + i * 4);
 		}
-		else
+
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+		SYSCFG_MemoryRemapConfig(SYSCFG_MemoryRemap_SRAM);
+		break;
+
+	case BANK_SLOT_LOADER:
+		for (uint8_t i = 0; i < 48; i++)
 		{
-			return false;
+			IRAM_Vector_Table[i] = *(volatile uint32_t *)(FLASH_BOOTLOADER_START_ADDR + i * 4);
 		}
+
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+		SYSCFG_MemoryRemapConfig(SYSCFG_MemoryRemap_SRAM);
+		break;
+
+	case BANK_SLOT_INVALID:
+	default:
+		break;
 	}
-	return false;
+
+	ENABLE_IRQ;
+#endif
 }
 
 void flash_reconfig_bank_address(void)
@@ -474,10 +286,6 @@ void flash_reconfig_bank_address(void)
 
 void flash_load_sync_data_infor(void)
 {
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//	  uint32_t bootloader_addr;       // Bootloader entry address
 
 	//    uint32_t slot_a_addr;           // Flash address of Application Slot A
@@ -495,7 +303,7 @@ void flash_load_sync_data_infor(void)
 	//    uint8_t  reserved[2];           // Reserved for alignment and future use
 	LOG_NONE("\r\n");
 	uint32_t calculated_crc = 0;
-	flash_read_meta_infor();
+	flash_read_all_infor();
 	flash_reconfig_bank_address();
 
 	if (flash_bank_config_mode_slot == BANK_SLOT_A)
@@ -560,12 +368,12 @@ void flash_load_sync_data_infor(void)
 				}
 				flash_meta_infor.slot_a_crc = calculated_crc;
 				flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_A;
-				flash_write_meta_infor();
+				flash_writ_all_infor();
 			}
 		}
 	}
 
-#ifdef FLASH_MAPPING_VECT_TABLE_TO_SRAM
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
 	///	Print_VectorTable();
 	/// Print_Flash_VectorTable();
 	/// Print_SRAM_VectorTable();
@@ -575,14 +383,214 @@ void flash_load_sync_data_infor(void)
 #endif
 }
 
+/**
+ * @brief Main bootloader logic: verify and jump to the valid application
+ */
+void flash_loader_active_user_app(uint8_t bank_slot, const char *date_str, const char *time_str)
+{
+	flash_bank_config_mode_slot = bank_slot;
+	flash_meta_infor.bank_slot_activated = flash_bank_config_mode_slot;
+	// LOG_LEVEL("bank_slot_activated=%02x flash_bank_config_mode_slot=%02x\r\n",flash_meta_infor.bank_slot_activated,flash_bank_config_mode_slot);
+	flash_print_logo();
+	flash_load_sync_data_infor(); // Read application metadata from EEPROM
+	flash_init_version(date_str, time_str);
+	flash_print_mcu_meta_infor();
+
+	uint32_t active_app_addr = 0;
+	uint32_t expected_crc = 0;
+	uint32_t slot_length = 0;
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	if (flash_get_current_bank() == BANK_SLOT_LOADER)
+	{
+		if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
+		{
+			active_app_addr = flash_meta_infor.slot_a_addr;
+			expected_crc = flash_meta_infor.slot_a_crc;
+			slot_length = flash_meta_infor.slot_a_size;
+			LOG_LEVEL("Bootloader start to active slot A...\r\n");
+			if (flash_check_vector_table(BANK_SLOT_A, active_app_addr))
+				flash_goto_terget_bank(active_app_addr, expected_crc, slot_length);
+
+			LOG_LEVEL("Bank slot A is invalid fallback to loader...\r\n");
+		}
+		if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
+		{
+			active_app_addr = flash_meta_infor.slot_b_addr;
+			expected_crc = flash_meta_infor.slot_b_crc;
+			slot_length = flash_meta_infor.slot_b_size;
+			LOG_LEVEL("Bootloader start to active slot B...\r\n");
+
+			if (flash_check_vector_table(BANK_SLOT_B, active_app_addr))
+				flash_goto_terget_bank(active_app_addr, expected_crc, slot_length);
+
+			LOG_LEVEL("Bank slot B is invalid fallback to loader...\r\n");
+		}
+
+		LOG_LEVEL("Bank slot A&B are invalid fallback to loader...\r\n");
+
+		goto ENTER_BOOTLOADER_MODE;
+	}
+
+	if (flash_check_enter_upgrade_mode())
+	{
+		LOG_LEVEL("The bank %d needs to be upgraded before proceeding.", flash_get_current_bank());
+		goto ENTER_BOOTLOADER_MODE;
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// start A/B mode checking
+	if (flash_meta_infor.bank_slot_mode == BOOT_MODE_DUAL_BANK_NO_LOADER)
+	{
+		if (compare_versions(flash_meta_infor.slot_a_version, flash_meta_infor.slot_b_version) >= 0)
+		{ // AB MODE
+			if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
+			{
+				active_app_addr = flash_meta_infor.slot_a_addr;
+				expected_crc = flash_meta_infor.slot_a_crc;
+				slot_length = flash_meta_infor.slot_a_size;
+				LOG_LEVEL("Bank Active Slot   : A,flash_get_current_bank()=%d\r\n", flash_get_current_bank());
+				if (flash_get_current_bank() == BANK_SLOT_A)
+					return;
+			}
+			else if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
+			{
+				active_app_addr = flash_meta_infor.slot_b_addr;
+				expected_crc = flash_meta_infor.slot_b_crc;
+				slot_length = flash_meta_infor.slot_b_size;
+				LOG_LEVEL("Slot A activation failed. fallback to Slot B initiated.\r\n");
+				if (flash_get_current_bank() == BANK_SLOT_B)
+				{
+					return;
+				}
+			}
+		}
+		else
+		{ // AB MODE
+			if (IS_SLOT_B_VALID(flash_meta_infor.slot_stat_flags))
+			{
+				active_app_addr = flash_meta_infor.slot_b_addr;
+				expected_crc = flash_meta_infor.slot_b_crc;
+				slot_length = flash_meta_infor.slot_b_size;
+				LOG_LEVEL("Bank Active Slot   : B,flash_get_current_bank()=%d\r\n", flash_get_current_bank());
+				if (flash_get_current_bank() == BANK_SLOT_B)
+					return;
+			}
+			else if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
+			{
+				active_app_addr = flash_meta_infor.slot_a_addr;
+				expected_crc = flash_meta_infor.slot_a_crc;
+				slot_length = flash_meta_infor.slot_a_size;
+				LOG_LEVEL("Slot B activation failed. fallback to Slot A initiated.\r\n");
+				if (flash_get_current_bank() == BANK_SLOT_A)
+					return;
+			}
+		}
+		if (flash_check_vector_table(flash_get_current_bank(), active_app_addr))
+			flash_goto_terget_bank(active_app_addr, expected_crc, slot_length);
+		return; // goto failed return directly keep A/B
+	}
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ENTER_BOOTLOADER_MODE MODE
+ENTER_BOOTLOADER_MODE:
+	switch (flash_meta_infor.bank_slot_mode)
+	{
+	case BOOT_MODE_SINGLE_BANK_WITH_LOADER:
+		SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
+		break;
+	case BOOT_MODE_DUAL_BANK_WITH_LOADER:
+		SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
+		SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
+		break;
+	}
+}
+
+void flash_goto_terget_bank(uint32_t active_app_addr, uint32_t expected_crc, uint32_t slot_length)
+{
+	// Verify CRC of the active application
+	if (flash_verify_bank_slot_crc(active_app_addr, slot_length, expected_crc))
+	{
+		LOG_LEVEL("Bank verified successfuly & jumping to application at 0x%08X...\r\n", active_app_addr);
+		flash_JumpToApplication(active_app_addr); // Hand over control to application
+		LOG_LEVEL("Bank jump failed! Can Not Jumping to 0x%08X...\r\n", active_app_addr);
+	}
+	else
+	{
+		LOG_LEVEL("Bank verified crc failed Can Not Jumping to application at 0x%08X...\r\n", active_app_addr);
+
+		if (flash_get_current_bank() == BANK_SLOT_A)
+		{
+			return;
+		}
+
+		if (flash_get_current_bank() == BANK_SLOT_B)
+		{
+			return;
+		}
+
+		if (flash_get_current_bank() == BANK_SLOT_LOADER)
+		{
+			// Both slots failed integrity check, enter firmware update mode
+			LOG_LEVEL("Active slot A/B failed! Both slots failed verification.\r\n");
+			LOG_LEVEL("Entering bootloader upgrade mode...\r\n");
+			// EnterFirmwareUpgradeMode();  // Implement your IAP or OTA entry point
+			return;
+		}
+	}
+}
+
+bool flash_is_first_boot(uint8_t bank_slot)
+{
+	// if (!IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags) && !IS_SLOT_A_NEED_UPGRADE(flash_meta_infor.slot_stat_flags)) ||
+	if (flash_meta_infor.mete_data_flags != FLASH_META_DATAS_VALID_FLAG)
+		return true;
+
+	switch (bank_slot)
+	{
+	case BANK_SLOT_LOADER:
+		return false;
+
+	case BANK_SLOT_A:
+		if (flash_meta_infor.slot_a_crc == 0xFFFFFFFF || flash_meta_infor.slot_a_crc == 0)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+
+	case BANK_SLOT_B:
+		if (flash_meta_infor.slot_b_crc == 0xFFFFFFFF || flash_meta_infor.slot_b_crc == 0)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return false;
+}
+
 bool flash_is_meta_infor_valid(void)
 {
 	if ((flash_get_current_bank() == BANK_SLOT_INVALID) || (flash_meta_infor.bank_slot_mode == BOOT_MODE_SINGLE_BANK_NONE))
 		return false;
-	else if ((flash_meta_infor.slot_a_addr == 0) || (flash_meta_infor.slot_b_addr == 0))
+
+	else if (((flash_meta_infor.slot_a_addr == 0) || (flash_meta_infor.slot_b_addr == 0)) && (flash_meta_infor.bank_slot_mode >= BOOT_MODE_DUAL_BANK_NO_LOADER))
 		return false;
-	else if ((flash_get_current_bank() != BANK_SLOT_A) && (flash_get_current_bank() != BANK_SLOT_B))
+
+	else if ((flash_meta_infor.slot_a_addr == 0) && (flash_meta_infor.slot_b_addr == 0) && (flash_meta_infor.bank_slot_mode < BOOT_MODE_DUAL_BANK_NO_LOADER))
 		return false;
+
+	else if ((flash_get_current_bank() != BANK_SLOT_LOADER) && (flash_get_current_bank() != BANK_SLOT_A) && (flash_get_current_bank() != BANK_SLOT_B))
+		return false;
+
+	else if ((flash_get_current_bank() == BANK_SLOT_LOADER) && (flash_meta_infor.loader_addr != FLASH_BOOTLOADER_START_ADDR))
+		return false;
+
 	else
 		return true;
 	// return flash_is_valid_bank_address(0, flash_meta_infor.active_slot);
@@ -605,18 +613,17 @@ bool flash_is_allow_update_bank(uint8_t bank_slot)
 
 bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address)
 {
-	if ((b_address & FLASH_BANK_MASK) == flash_meta_infor.slot_a_addr)
+	if (b_address == flash_meta_infor.slot_a_addr)
 	{
-		return (address >= flash_meta_infor.slot_a_addr) && (address < flash_meta_infor.slot_b_addr);
+		return (address >= flash_meta_infor.slot_a_addr) && (address < (flash_meta_infor.slot_a_addr + flash_get_app_max_size()));
 	}
-	else if ((b_address & FLASH_BANK_MASK) == flash_meta_infor.slot_b_addr)
+	else if (b_address == flash_meta_infor.slot_b_addr)
 	{
 		return (address >= flash_meta_infor.slot_b_addr) && (address < (flash_meta_infor.slot_b_addr + flash_get_app_max_size()));
 	}
-	else if (b_address == 0)
+	else if (b_address == flash_meta_infor.loader_addr)
 	{
-		return (((address >= flash_meta_infor.slot_a_addr) && (address < flash_meta_infor.slot_b_addr)) ||
-				((address >= flash_meta_infor.slot_b_addr) && (address < (flash_meta_infor.slot_b_addr + flash_get_app_max_size()))));
+		return (address >= flash_meta_infor.loader_addr) && (address < FLASH_BOOTLOADER_END_ADDR);
 	}
 	else
 	{
@@ -627,6 +634,11 @@ bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address)
 uint32_t flash_get_current_bank(void)
 {
 	return flash_meta_infor.bank_slot_activated;
+}
+
+uint32_t flash_get_bank_slot_mode(void)
+{
+	return flash_meta_infor.bank_slot_mode;
 }
 
 const char *flash_get_current_bank_name(void)
@@ -664,9 +676,9 @@ uint32_t flash_get_bank_address(uint8_t bank_type)
 	}
 }
 
-uint32_t flash_get_bank_offset_address(uint8_t bank_type)
+uint32_t flash_get_bank_offset_address(uint8_t bank_slot)
 {
-	switch (bank_type)
+	switch (bank_slot)
 	{
 	case BANK_SLOT_LOADER:
 		return FLASH_BOOTLOADER_START_ADDR & FLASH_BANK_UNMASK;
@@ -677,33 +689,6 @@ uint32_t flash_get_bank_offset_address(uint8_t bank_type)
 	default:
 		return 0;
 	}
-}
-
-uint32_t flash_erase_user_app_bank(void)
-{
-	uint32_t ret = 0;
-	if (flash_bank_config_mode_slot == BANK_SLOT_LOADER)
-	{
-		LOG_LEVEL("erase address: 0x%08X size:%08X\r\n", flash_meta_infor.slot_b_addr, flash_meta_infor.slot_a_size);
-		DISABLE_IRQ;
-		ret = hal_flash_erase_page_(flash_meta_infor.slot_b_addr, flash_meta_infor.slot_a_size);
-		ENABLE_IRQ;
-	}
-	else if (flash_bank_config_mode_slot == BANK_SLOT_A)
-	{
-		LOG_LEVEL("erase address: 0x%08X size:%08X\r\n", flash_meta_infor.slot_b_addr, flash_meta_infor.slot_a_size);
-		DISABLE_IRQ;
-		ret = hal_flash_erase_page_(flash_meta_infor.slot_b_addr, flash_meta_infor.slot_a_size);
-		ENABLE_IRQ;
-	}
-	else if (flash_bank_config_mode_slot == BANK_SLOT_B)
-	{
-		LOG_LEVEL("erase address: 0x%08X size:%08X\r\n", flash_meta_infor.slot_a_addr, flash_meta_infor.slot_a_size);
-		DISABLE_IRQ;
-		ret = hal_flash_erase_page_(flash_meta_infor.slot_a_addr, flash_meta_infor.slot_a_size);
-		ENABLE_IRQ;
-	}
-	return ret;
 }
 
 uint32_t flash_get_app_max_size(void)
@@ -753,7 +738,7 @@ bool flash_verify_bank_slot_crc(uint32_t slot_addr, uint32_t slot_size, uint32_t
 	DISABLE_IRQ;
 	uint32_t calculated_crc = calculate_crc_32((uint8_t *)(uintptr_t)slot_addr, slot_size);
 	ENABLE_IRQ;
-	
+
 	LOG_LEVEL("Bank crc verify at 0x%08X size:0x%08X calculate crc:%08X\r\n", slot_addr, slot_size, calculated_crc);
 
 	return (calculated_crc == expected_crc);
@@ -814,6 +799,20 @@ bool flash_check_vector_table(uint8_t bank_slot, uint32_t vector_address)
 
 	return true; // 向量表合法
 }
+
+bool flash_check_enter_upgrade_mode(void)
+{
+	if (IS_SLOT_A_NEED_UPGRADE(flash_meta_infor.slot_stat_flags))
+		return true;
+	else if (IS_SLOT_B_NEED_UPGRADE(flash_meta_infor.slot_stat_flags))
+		return true;
+	else
+		return false;
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
  * @brief  Safely jump from bootloader to user application at given address.
  *         For Cortex-M0 (no VTOR), assumes the application will remap RAM at 0x00000000
@@ -883,12 +882,61 @@ void flash_JumpToApplication(uint32_t app_address)
 		;
 }
 #endif
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+uint32_t flash_erase_user_app_bank(uint8_t bank_slot)
+{
+	uint32_t ret = 0;
+	if (bank_slot == BANK_SLOT_LOADER)
+	{
+		LOG_LEVEL("Erase not permitted at address 0x%08X (size 0x%08X)\r\n", flash_meta_infor.loader_addr, FLASH_BOOTLOADER_SIZE);
+		// DISABLE_IRQ;
+		// ret = hal_flash_erase_page_(flash_meta_infor.slot_b_addr, flash_meta_infor.slot_a_size);
+		// ENABLE_IRQ;
+	}
+	else if (bank_slot == BANK_SLOT_A)
+	{
+		LOG_LEVEL("Erase address: 0x%08X size:0x%08X\r\n", flash_meta_infor.slot_a_addr, flash_meta_infor.slot_a_size);
+		if (flash_meta_infor.slot_a_addr >= FLASH_BOOTLOADER_START_ADDR && flash_meta_infor.slot_a_addr <= FLASH_BOOTLOADER_END_ADDR)
+		{
+			LOG_LEVEL("Erase not permitted at address 0x%08X (size 0x%08X)\r\n", flash_meta_infor.slot_a_addr, flash_meta_infor.slot_a_size);
+			return 0;
+		}
+		DISABLE_IRQ;
+		ret = hal_flash_erase_page_(flash_meta_infor.slot_a_addr, flash_meta_infor.slot_a_size / FLASH_BLOCK_SIZE);
+		ENABLE_IRQ;
+	}
+	else if (bank_slot == BANK_SLOT_B)
+	{
+		LOG_LEVEL("Erase address: 0x%08X size:0x%08X\r\n", flash_meta_infor.slot_b_addr, flash_meta_infor.slot_b_size);
+		if (flash_meta_infor.slot_b_addr >= FLASH_BOOTLOADER_START_ADDR && flash_meta_infor.slot_b_addr <= FLASH_BOOTLOADER_END_ADDR)
+		{
+			LOG_LEVEL("Erase not permitted at address 0x%08X (size 0x%08X)\r\n", flash_meta_infor.slot_b_addr, flash_meta_infor.slot_b_size);
+			return 0;
+		}
 
+		DISABLE_IRQ;
+		ret = hal_flash_erase_page_(flash_meta_infor.slot_b_addr, flash_meta_infor.slot_b_size / FLASH_BLOCK_SIZE);
+		ENABLE_IRQ;
+	}
+	else
+	{
+		LOG_LEVEL("Erase not permitted at bank_slot: %d\r\n", bank_slot);
+	}
+	return ret;
+}
 uint32_t FlashErasePage(uint32_t addr, uint8_t page_count)
 {
 	uint8_t pages = 0;
+	if (addr >= FLASH_BOOTLOADER_START_ADDR && addr <= FLASH_BOOTLOADER_END_ADDR)
+	{
+		LOG_LEVEL("Erase not permitted at address 0x%08X (page_count 0x%08X)\r\n", addr, page_count);
+		return 0;
+	}
 	DISABLE_IRQ;
-	pages = hal_flash_erase_page_(addr,page_count);//FlashErase(FLASH_META_DATA_START_ADDRESS, 2);
+	pages = hal_flash_erase_page_(addr, page_count); // FlashErase(FLASH_META_DATA_START_ADDRESS, 2);
 	ENABLE_IRQ;
 	return pages;
 }
@@ -897,6 +945,11 @@ uint32_t FlashErasePage(uint32_t addr, uint8_t page_count)
 uint32_t FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 {
 	uint32_t writed_bytes = 0;
+	if (addr >= FLASH_BOOTLOADER_START_ADDR && addr <= FLASH_BOOTLOADER_END_ADDR)
+	{
+		LOG_LEVEL("Erase not permitted at address 0x%08X (length 0x%08X)\r\n", addr, length);
+		return 0;
+	}
 	DISABLE_IRQ;
 	writed_bytes = hal_flash_write_(addr, buf, length);
 	ENABLE_IRQ;
@@ -910,7 +963,8 @@ void FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length)
 		hal_flash_read_(addr, buf, length);
 	}
 }
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length)
 {
 	if (buf)
@@ -926,14 +980,16 @@ void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 		hal_eeprom_write_(addr, buf, length);
 	}
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // #define FLASH_META_DATA_START_ADDRESS     (FLASH_BASE_END_ADDR - FLASH_BLOCK_SIZE)
 // #define FLASH_SYSTEM_DATA_START_ADDRESS   (FLASH_META_DATA_START_ADDRESS + 128)
 // #define FLASH_METER_DATA_START_ADDRESS    (FLASH_SYSTEM_DATA_START_ADDRESS + 128)
 // #define FLASH_CARINFOR_DATA_START_ADDRESS (FLASH_METER_DATA_START_ADDRESS + 128)
-void flash_write_meter_infor(void)
+void E2ROM_writ_meter_infor(void)
 {
-	//uint8_t pages = 0;
-	 E2ROMWriteBuffTo(EEROM_SYSTEM_METER_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
+	// uint8_t pages = 0;
+	E2ROMWriteBuffTo(EEROM_SYSTEM_METER_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
 	if (task_carinfo_get_meter_info())
 	{
 		E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
@@ -941,10 +997,10 @@ void flash_write_meter_infor(void)
 	}
 }
 
-void flash_read_meter_infor(void)
+void E2ROM_read_meter_infor(void)
 {
-	//uint8_t pages = 0;
-	 E2ROMReadToBuff(EEROM_SYSTEM_METER_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
+	// uint8_t pages = 0;
+	E2ROMReadToBuff(EEROM_SYSTEM_METER_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
 	if (task_carinfo_get_meter_info())
 	{
 		E2ROMReadToBuff(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
@@ -952,11 +1008,21 @@ void flash_read_meter_infor(void)
 	}
 }
 
-void flash_write_meta_infor(void)
+void E2ROM_writ_metas_infor(void)
+{
+	E2ROMWriteBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+}
+
+void E2ROM_read_metas_infor(void)
+{
+	E2ROMReadToBuff(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void flash_writ_all_infor(void)
 {
 	uint8_t pages = 0;
 	flash_meta_infor.mete_data_flags = FLASH_META_DATAS_VALID_FLAG;
-	
+
 #ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
 	if (task_carinfo_get_meter_info())
 	{
@@ -972,7 +1038,7 @@ void flash_write_meta_infor(void)
 		E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 	}
 #else
-  pages = FlashErasePage(FLASH_META_DATA_START_ADDRESS, 2);
+	pages = FlashErasePage(FLASH_META_DATA_START_ADDRESS, 2);
 	LOG_LEVEL("hal_flash_erase_page_ pages=%d... \r\n", pages);
 	if (task_carinfo_get_meter_info())
 	{
@@ -983,15 +1049,15 @@ void flash_write_meta_infor(void)
 	pages = FlashWriteBuffTo(FLASH_SYSTEM_DATA_START_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
 	if (task_carinfo_get_meter_info())
 	{
-		//pages = FlashWriteBuffTo(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-		//LOG_LEVEL("Save flash meta information task_carinfo_get_meter_info()=%d... \r\n", task_carinfo_get_meter_info()->trip_odo);
-		flash_write_meter_infor();
+		// pages = FlashWriteBuffTo(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
+		// LOG_LEVEL("Save flash meta information task_carinfo_get_meter_info()=%d... \r\n", task_carinfo_get_meter_info()->trip_odo);
+		E2ROM_writ_meter_infor();
 	}
 	LOG_LEVEL("Save flash meta information count=%d... \r\n", pages);
 #endif
 }
 
-void flash_read_meta_infor(void)
+void flash_read_all_infor(void)
 {
 #ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
 	E2ROMReadToBuff(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
@@ -1004,12 +1070,12 @@ void flash_read_meta_infor(void)
 #else
 	FlashReadToBuff(FLASH_META_DATA_START_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 	FlashReadToBuff(FLASH_SYSTEM_DATA_START_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
-	
+
 	if (task_carinfo_get_meter_info())
 	{
-		//FlashReadToBuff(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-		//task_carinfo_get_meter_info()->trip_odo = task_carinfo_get_meter_info()->trip_odo;
-		flash_read_meter_infor();
+		// FlashReadToBuff(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
+		// task_carinfo_get_meter_info()->trip_odo = task_carinfo_get_meter_info()->trip_odo;
+		E2ROM_read_meter_infor();
 	}
 #endif
 
@@ -1024,25 +1090,25 @@ void flash_read_meta_infor(void)
 			task_carinfo_get_meter_info()->trip_distance = 0;
 			task_carinfo_get_meter_info()->trip_time = 0;
 		}
-		
+
 		system_meter_infor.trip_odo = 0;
 		system_meter_infor.speed_actual = 0;
 		system_meter_infor.speed_average = 0;
 	}
-	
-  if (task_carinfo_get_meter_info())
-  {
+
+	if (task_carinfo_get_meter_info())
+	{
 		if (task_carinfo_get_meter_info()->trip_odo >= (UINT32_MAX - 1000))
 		{
-				task_carinfo_get_meter_info()->trip_odo = 0;
+			task_carinfo_get_meter_info()->trip_odo = 0;
 		}
 
 		if (system_meter_infor.trip_odo >= (UINT32_MAX - 1000))
 		{
-				system_meter_infor.trip_odo = 0;
+			system_meter_infor.trip_odo = 0;
 		}
-	}	
-	
+	}
+
 	if (task_carinfo_get_meter_info() && (flash_meta_infor.mete_data_flags == FLASH_META_DATAS_VALID_FLAG))
 	{
 		LOG_LEVEL("Load meter data[%02d]: ", sizeof(carinfo_meter_t));
@@ -1054,13 +1120,13 @@ void flash_read_meta_infor(void)
 	}
 
 	LOG_NONE("\r\n");
-	//LOG_LEVEL("flash meta information task_carinfo_get_meter_info().trip_odo=%d... \r\n", task_carinfo_get_meter_info()->trip_odo);
+	// LOG_LEVEL("flash meta information task_carinfo_get_meter_info().trip_odo=%d... \r\n", task_carinfo_get_meter_info()->trip_odo);
 }
 
 // void flash_set_app_meta_
 void flash_save_carinfor_meter(void)
 {
-	flash_write_meta_infor();
+	flash_writ_all_infor();
 }
 
 bool flash_decode_active_version(uint8_t bank_slot, char *out_str, size_t max_len, const char *date_str, const char *time_str)

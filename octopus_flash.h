@@ -231,42 +231,52 @@ extern "C"
      */
 
     /**< Prints a buffer in hexadecimal format for debugging. */
-    extern void FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t len);
-    /**< Reads data from Flash memory into a buffer. */
-    extern uint32_t FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t len);
-    /**< Writes data from a buffer to Flash memory. */
-    extern void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length);
-    extern void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length);
 
     void otsm_flash_init(void);
-		void flash_print_mcu_meta_infor(void);
+
+    void flash_print_mcu_meta_infor(void);
     void flash_init_version(const char *date_str, const char *time_str);
-    void boot_loader_active_user_app(uint8_t bank_slot, const char *date_str, const char *time_str);
+    void flash_delay_ms(uint32_t ms);
 
-    void flash_JumpToApplication(uint32_t app_address);
     void flash_vector_table_config(boot_mode_t boot_mode, uint8_t bank_slot, uint32_t slot_address, bool mapping_vector);
-
+    void flash_loader_active_user_app(uint8_t bank_slot, const char *date_str, const char *time_str);
+    void flash_JumpToApplication(uint32_t app_address);
     void flash_load_sync_data_infor(void);
-    void flash_save_carinfor_meter(void);
 
     uint32_t flash_get_app_max_size(void);
+    uint32_t flash_get_bank_slot_mode(void);
     uint32_t flash_get_current_bank(void);
-    uint32_t flash_get_bank_address(uint8_t bank_type);
-    uint32_t flash_get_bank_offset_address(uint8_t bank_type);
-    uint32_t flash_erase_user_app_bank(void);
+    uint32_t flash_get_bank_address(uint8_t bank_slot);
+    uint32_t flash_get_bank_offset_address(uint8_t bank_slot);
 
     bool flash_check_enter_upgrade_mode(void);
     bool flash_decode_active_version(uint8_t bank_slot, char *out_str, size_t max_len, const char *date_str, const char *time_str);
     bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);
-    void flash_print_mcu_meta_infor(void);
+
     bool flash_is_meta_infor_valid(void);
     bool flash_is_allow_update_bank(uint8_t bank_type);
     const char *flash_get_current_bank_name(void);
     const char *flash_get_bank_name(uint8_t bank);
     flash_meta_infor_t *flash_get_meta_infor(void);
 
-    void flash_write_meta_infor(void);
-    void flash_read_meta_infor(void);
+    void FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t len);
+    /**< Reads data from Flash memory into a buffer. */
+    uint32_t FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t len);
+    /**< Writes data from a buffer to Flash memory. */
+    void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length);
+    void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length);
+
+    uint32_t flash_erase_user_app_bank(uint8_t bank_slot);
+    void E2ROM_writ_metas_infor(void);
+    void E2ROM_read_metas_infor(void);
+
+    void E2ROM_writ_meter_infor(void);
+    void E2ROM_read_meter_infor(void);
+
+    void flash_writ_all_infor(void);
+    void flash_read_all_infor(void);
+    void flash_save_carinfor_meter(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -78,7 +78,7 @@ static void ptl_frame_analysis_handler(void);                       // Analyzes 
 
 static void ptl_tx_event_handler(void); // Handle the transmission event message
 static void ptl_rx_event_handler(void);
-static void ptl_hal_tx(uint8_t channel, uint8_t *buffer, uint16_t length);
+static void ptl_tx_hal(uint8_t channel, uint8_t *buffer, uint16_t length);
 
 static module_info_t *ptl_get_module(ptl_frame_type_t frame_type); // Get module information by frame type
 
@@ -356,7 +356,7 @@ void ptl_tx_event_handler(void)
             bool res = p_module->send_handler(frame_type, (ptl_frame_cmd_t)param1, param2, &l_t_tx_proc_buf);
             if (res)
             {
-                ptl_hal_tx(l_t_tx_proc_buf.channel, l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
+                ptl_tx_hal(l_t_tx_proc_buf.channel, l_t_tx_proc_buf.buff, l_t_tx_proc_buf.size);
             }
         }
         else if (NULL == p_module->send_handler)
@@ -436,9 +436,10 @@ void ptl_remove_none_header_data(ptl_proc_buff_t *proc_buff)
             return;
         }
     }
-
+// #endif
+// #ifdef TASK_MANAGER_STATE_MACHINE_SOC
 #else
-		
+
     if (proc_buff->buff[0] == MCU_TO_SOC_PTL_HEADER)
         return;
     for (uint16_t i = 0; i < proc_buff->size; i++)
@@ -595,7 +596,7 @@ void ptl_proc_valid_frame(uint8_t *buffer, uint16_t length)
         if (res)
         {
             // If the handler succeeds, clear error flag and restart timer
-            ptl_hal_tx(tx_frame->channel, tx_frame->buff, tx_frame->size); // Send response via UART
+            ptl_tx_hal(tx_frame->channel, tx_frame->buff, tx_frame->size); // Send response via UART
         }
     }
     else /// if (NULL == module_)
@@ -607,9 +608,9 @@ void ptl_proc_valid_frame(uint8_t *buffer, uint16_t length)
 /**
  * Sends data over UART using the hardware abstraction layer.
  */
-static void ptl_hal_tx(uint8_t channel, uint8_t *data, uint16_t length)
+static void ptl_tx_hal(uint8_t channel, uint8_t *buffer, uint16_t length)
 {
-    // Send the processed data over UART
+// Send the processed data over UART
 #ifdef TEST_LOG_DEBUG_PTL_TX_FRAME
     LOG_LEVEL("data[%02d] ", length);
     LOG_BUFF(data, length);
@@ -620,41 +621,41 @@ static void ptl_hal_tx(uint8_t channel, uint8_t *data, uint16_t length)
     switch (channel)
     {
     case 1:
-        hal_com_uartl_send_buffer(data, length);
+        hal_com_uartl_send_buffer(buffer, length);
         break;
 
     case 2:
-        hal_com_uart2_send_buffer(data, length);
+        hal_com_uart2_send_buffer(buffer, length);
         break;
 
     case 3:
-        hal_com_uart3_send_buffer(data, length);
+        hal_com_uart3_send_buffer(buffer, length);
         break;
 
     case 4:
-        hal_com_uart4_send_buffer(data, length);
+        hal_com_uart4_send_buffer(buffer, length);
         break;
 
     case 5:
-        hal_com_uart5_send_buffer(data, length);
+        hal_com_uart5_send_buffer(buffer, length);
         break;
 
     case 6:
-        hal_com_uart6_send_buffer(data, length);
+        hal_com_uart6_send_buffer(buffer, length);
         break;
 
     case 7:
-        hal_com_uart7_send_buffer(data, length);
+        hal_com_uart7_send_buffer(buffer, length);
         break;
 
     case 0:
     default:
-        hal_com_uart0_send_buffer(data, length);
+        hal_com_uart0_send_buffer(buffer, length);
         break;
     }
 }
 
 void ptl_send_buffer(uint8_t channel, uint8_t *data, uint16_t length)
 {
-    ptl_hal_tx(channel, data, length);
+    ptl_tx_hal(channel, data, length);
 }

@@ -304,10 +304,10 @@ void calculate_battery_soc_ex_v2(uint32_t rated_voltage_mV,
         v_mV = 0.0;
     if (v_mV > 0xFFFFFFFFu)
         v_mV = 0xFFFFFFFFu;
-		
-		if (!(v_mV >= 0.0 && v_mV < 4e5)) // 合理范围，比如 <400V
+
+    if (!(v_mV >= 0.0 && v_mV < 4e5)) // 合理范围，比如 <400V
         v_mV = 0.0;
-    *out_voltage_mV = (uint16_t)(v_mV /100 + 0.5);
+    *out_voltage_mV = (uint16_t)(v_mV / 100 + 0.5);
 }
 
 /*******************************************************************************
@@ -833,7 +833,16 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     fseek(f, file_size - sizeof(meta_info_t), SEEK_SET);
     if (fread(&meta, 1, sizeof(meta_info_t), f) == sizeof(meta_info_t))
     {
-        if (meta.bank1.magic == APP_MATA_INFO_MAGIC && meta.bank2.magic == APP_MATA_INFO_MAGIC)
+        LOG_LEVEL("target_bank_offset:%08x\r\n ", target_bank_offset);
+        LOG_LEVEL("bank0.magic:%08x \r\n ", meta.bank0.magic);
+        LOG_LEVEL("bank1.magic:%08x \r\n ", meta.bank1.magic);
+        LOG_LEVEL("bank2.magic:%08x \r\n ", meta.bank2.magic);
+
+        if (meta.bank0.magic == APP_MATA_INFO_MAGIC && meta.bank1.magic == APP_MATA_INFO_MAGIC && meta.bank2.magic == APP_MATA_INFO_MAGIC)
+        {
+            has_valid_meta = 1;
+        }
+        else if (meta.bank0.magic == APP_MATA_INFO_MAGIC && meta.bank1.magic == APP_MATA_INFO_MAGIC)
         {
             has_valid_meta = 1;
         }
@@ -843,9 +852,15 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
             return info;
         }
 
-        LOG_LEVEL("bank1.model: %08x bank2.model: %08x model_number:%08x\n ", meta.bank1.model, meta.bank2.model, model_number);
+        LOG_LEVEL("bank0.model: %08x model_number:%08x\r\n ", meta.bank0.model, model_number);
+        LOG_LEVEL("bank1.model: %08x model_number:%08x\r\n ", meta.bank1.model, model_number);
+        LOG_LEVEL("bank2.model: %08x model_number:%08x\r\n ", meta.bank2.model, model_number);
 
-        if (meta.bank1.model != model_number || meta.bank2.model != model_number)
+        LOG_LEVEL("bank0.size: %08x start_address:%08x\r\n ", meta.bank0.size, meta.bank0.start_address);
+        LOG_LEVEL("bank1.size: %08x start_address:%08x\r\n ", meta.bank1.size, meta.bank1.start_address);
+        LOG_LEVEL("bank2.size: %08x start_address:%08x\r\n ", meta.bank2.size, meta.bank2.start_address);
+
+        if ((meta.bank0.model != model_number) && (meta.bank1.model != model_number) && (meta.bank2.model != model_number))
         {
             fclose(f);
             return info;
@@ -853,8 +868,9 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     }
 
     // Step 3: Read first 8 bytes from target offset (SP + Reset Vector)
-    if (fseek(f, target_bank_offset, SEEK_SET) != 0)
+    if (fseek(f, target_bank_offset, SEEK_SET) != 0) // goto target address
     {
+        LOG_LEVEL("invalid target offset\r\n ");
         fclose(f);
         return info;
     }
@@ -862,12 +878,15 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     uint8_t header_buf[8];
     if (fread(header_buf, 1, 8, f) != 8)
     {
+        LOG_LEVEL("invalid reset vector\r\n ");
         fclose(f);
         return info;
     }
-
+    // get target reset address
     uint32_t sp = header_buf[0] | (header_buf[1] << 8) | (header_buf[2] << 16) | (header_buf[3] << 24);
     uint32_t reset_vector = header_buf[4] | (header_buf[5] << 8) | (header_buf[6] << 16) | (header_buf[7] << 24);
+
+    LOG_LEVEL("reset_vector: %08x\r\n ", reset_vector);
 
     // Step 4: Validate stack pointer and reset handler address range
     if (sp < 0x20000000 || sp > 0x40000000 ||
@@ -898,7 +917,7 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     }
 
     // Step 6: Calculate CRC from target offset to end of valid range
-    if (fseek(f, target_bank_offset, SEEK_SET) != 0)
+    if (fseek(f, target_bank_offset, SEEK_SET) != 0) // goto target address for caculate crc
     {
         fclose(f);
         return info;
@@ -926,7 +945,10 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     info.file_type = FILE_TYPE_BIN;
     info.file_size = valid_size;
     info.file_version = decode_version_from_filename(path_filename);
-    LOG_LEVEL("bank1.crc: %08x bank2.crc: %08x re-crc:%08x\r\n ", meta.bank1.crc32, meta.bank2.crc32, info.file_crc_32);
+    LOG_LEVEL("bank0.crc: %08x\r\n", meta.bank0.crc32);
+    LOG_LEVEL("bank1.crc: %08x\r\n", meta.bank1.crc32);
+    LOG_LEVEL("bank2.crc: %08x\r\n", meta.bank2.crc32);
+    LOG_LEVEL("local.crc: %08x\r\n", info.file_crc_32);
     return info;
 }
 
@@ -1008,7 +1030,7 @@ file_info_t parse_firmware_file(uint32_t model_number, uint32_t target_bank_offs
 {
     file_info_t info = {.file_type = FILE_TYPE_UNKNOWN};
     LOG_LEVEL("parse firmware file:%s\r\n", filename);
-    LOG_LEVEL("parse firmware file target_address:%08x\r\n", target_bank_offset);
+    LOG_LEVEL("parse firmware file target offset address:%08x\r\n", target_bank_offset);
 
     info = is_valid_hex_file(filename);
     if (info.file_type == FILE_TYPE_HEX)
@@ -1056,11 +1078,12 @@ int copy_file_to_tmp(const char *src_path, const char *filename, char *dst_path,
 
 int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_path_size)
 {
+
 #ifdef PLATFORM_LINUX_RISC
     DIR *dir = opendir(dir_path);
-    if (!dir)
+    if (!dir || out_path_size < 64)
     {
-        LOG_LEVEL("dir not exitst:%s\r\n", dir_path);
+        LOG_LEVEL("dir not exitst:%s mini size:%d\r\n", dir_path, out_path_size);
         return 0;
     }
 
@@ -1072,14 +1095,15 @@ int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_
             continue;
         }
 
-        // if (strlen(entry->d_name) > out_path_size -10)
-        //{
-        //     continue;
-        // }
+        if (strlen(entry->d_name) > out_path_size - 64)
+        {
+            LOG_LEVEL("entry->d_name too long:%s\r\n", entry->d_name);
+            continue;
+        }
 
         if (fnmatch("*.oupg", entry->d_name, 0) == 0)
         {
-            char full_path[64];
+            char full_path[255];
             snprintf(full_path, sizeof(full_path), "%s/%s", dir_path, entry->d_name);
             if (copy_file_to_tmp(full_path, entry->d_name, out_path, out_path_size) >= 0)
             {
@@ -1101,4 +1125,17 @@ int file_exists(const char *file_path_name)
 #else
     return 0;
 #endif
+}
+
+bool is_str_empty(const char *s)
+{
+    if (s == NULL)
+    {
+        return true; // NULL 指针
+    }
+    if (s[0] == '\0')
+    {
+        return true; // 空字符串
+    }
+    return false;
 }

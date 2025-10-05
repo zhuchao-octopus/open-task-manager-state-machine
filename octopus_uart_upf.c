@@ -322,15 +322,6 @@ void upf_proc_valid_frame(void)
     }
 }
 
-// uint8_t hal_com_uart0_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uartl_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uart2_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uart3_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uart4_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uart5_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uart6_send_buffer(const uint8_t *buffer, uint16_t length);
-// uint8_t hal_com_uart7_send_buffer(const uint8_t *buffer, uint16_t length);
-
 void upf_send_buffer(upf_module_t upf_module, const uint8_t *buffer, uint16_t length)
 {
     if (buffer == NULL || length == 0)
