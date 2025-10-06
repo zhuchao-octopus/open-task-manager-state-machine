@@ -104,7 +104,8 @@ PUTCHAR_PROTOTYPE
 	case 9:
 		hal_com_uart9_send_buffer(data, 1);
 		break;
-	default: break;
+	default:
+		break;
 	}
 	return (ch);
 }
