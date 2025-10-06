@@ -407,7 +407,7 @@ void flash_loader_active_user_app(uint8_t bank_slot, const char *date_str, const
 	{
 		if (flash_check_enter_upgrade_mode())
 		{
-			LOG_LEVEL("The bank %s needs to be upgraded before proceeding.", flash_get_current_bank_name());
+			LOG_LEVEL("The bank(%s) needs to be upgraded before proceeding.\r\n", flash_get_current_bank_name());
 			goto ENTER_BOOTLOADER_MODE;
 		}
 		if (IS_SLOT_A_VALID(flash_meta_infor.slot_stat_flags))
@@ -586,24 +586,46 @@ bool flash_is_first_boot(uint8_t bank_slot)
 
 bool flash_is_meta_infor_valid(void)
 {
-	if ((flash_get_current_bank() == BANK_SLOT_INVALID) || (flash_meta_infor.bank_slot_mode == BOOT_MODE_SINGLE_BANK_NONE))
+	if (flash_meta_infor.bank_slot_mode <= BOOT_MODE_SINGLE_BANK_NONE || flash_meta_infor.bank_slot_mode >= BOOT_MODE_MAX)
 		return false;
 
-	else if (((flash_meta_infor.slot_a_addr == 0) || (flash_meta_infor.slot_b_addr == 0)) && (flash_meta_infor.bank_slot_mode >= BOOT_MODE_DUAL_BANK_NO_LOADER))
+	if ((flash_get_current_bank() != BANK_SLOT_LOADER) && (flash_get_current_bank() != BANK_SLOT_A) && (flash_get_current_bank() != BANK_SLOT_B))
 		return false;
 
-	else if ((flash_meta_infor.slot_a_addr == 0) && (flash_meta_infor.slot_b_addr == 0) && (flash_meta_infor.bank_slot_mode < BOOT_MODE_DUAL_BANK_NO_LOADER))
+	if (((flash_meta_infor.slot_a_addr == 0) || (flash_meta_infor.slot_b_addr == 0)) && (flash_meta_infor.bank_slot_mode >= BOOT_MODE_DUAL_BANK_NO_LOADER))
 		return false;
 
-	else if ((flash_get_current_bank() != BANK_SLOT_LOADER) && (flash_get_current_bank() != BANK_SLOT_A) && (flash_get_current_bank() != BANK_SLOT_B))
+	if ((flash_meta_infor.slot_a_addr == 0) && (flash_meta_infor.slot_b_addr == 0) && (flash_meta_infor.bank_slot_mode < BOOT_MODE_DUAL_BANK_NO_LOADER))
 		return false;
 
-	else if ((flash_get_current_bank() == BANK_SLOT_LOADER) && (flash_meta_infor.loader_addr != FLASH_BOOTLOADER_START_ADDR))
+	if ((flash_meta_infor.slot_a_size == 0) && (flash_meta_infor.slot_a_size == 0))
 		return false;
 
+	if ((flash_get_current_bank() == BANK_SLOT_LOADER) && (flash_meta_infor.loader_addr != FLASH_BOOTLOADER_START_ADDR))
+		return false;
+
+	// can detect the range of memory addresses for further checking
+	return true;
+}
+
+bool flash_is_bank_address_valid(uint32_t b_address, uint32_t address)
+{
+	if (b_address == flash_meta_infor.slot_a_addr)
+	{
+		return (address >= flash_meta_infor.slot_a_addr) && (address < (flash_meta_infor.slot_a_addr + flash_get_app_max_size()));
+	}
+	else if (b_address == flash_meta_infor.slot_b_addr)
+	{
+		return (address >= flash_meta_infor.slot_b_addr) && (address < (flash_meta_infor.slot_b_addr + flash_get_app_max_size()));
+	}
+	else if (b_address == flash_meta_infor.loader_addr)
+	{
+		return (address >= flash_meta_infor.loader_addr) && (address < FLASH_BOOTLOADER_END_ADDR);
+	}
 	else
-		return true;
-	// return flash_is_valid_bank_address(0, flash_meta_infor.active_slot);
+	{
+		return false;
+	}
 }
 
 bool flash_is_allow_update_bank(uint8_t bank_slot)
@@ -627,26 +649,6 @@ bool flash_is_allow_update_address(uint32_t address)
 		return false;
 	else
 		return true;
-}
-
-bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address)
-{
-	if (b_address == flash_meta_infor.slot_a_addr)
-	{
-		return (address >= flash_meta_infor.slot_a_addr) && (address < (flash_meta_infor.slot_a_addr + flash_get_app_max_size()));
-	}
-	else if (b_address == flash_meta_infor.slot_b_addr)
-	{
-		return (address >= flash_meta_infor.slot_b_addr) && (address < (flash_meta_infor.slot_b_addr + flash_get_app_max_size()));
-	}
-	else if (b_address == flash_meta_infor.loader_addr)
-	{
-		return (address >= flash_meta_infor.loader_addr) && (address < FLASH_BOOTLOADER_END_ADDR);
-	}
-	else
-	{
-		return false;
-	}
 }
 
 uint32_t flash_get_current_bank(void)
@@ -741,13 +743,13 @@ bool flash_verify_bank_slot_crc(uint32_t slot_addr, uint32_t slot_size, uint32_t
 
 	if (slot_addr == 0 || slot_size == 0 || expected_crc == 0)
 	{
-		LOG_LEVEL("Bank crc verify at 0x%08X size:0x%08X expected crc:08X%08X \r\n", slot_addr, slot_size, expected_crc);
+		LOG_LEVEL("Bank crc verify at 0x%08X size:0x%08X expected crc:0x%08X\r\n", slot_addr, slot_size, expected_crc);
 		return false;
 	}
 
 	if (slot_size > flash_get_app_max_size())
 	{
-		LOG_LEVEL("CRC check failed because the bank size is incorrect.\r\n", slot_size);
+		LOG_LEVEL("CRC check failed because the bank size is incorrect\r\n", slot_size);
 		return false;
 	}
 
@@ -757,7 +759,7 @@ bool flash_verify_bank_slot_crc(uint32_t slot_addr, uint32_t slot_size, uint32_t
 	uint32_t calculated_crc = calculate_crc_32((uint8_t *)(uintptr_t)slot_addr, slot_size);
 	ENABLE_IRQ;
 
-	LOG_LEVEL("Bank crc verify at 0x%08X size:0x%08X calculat crc:%08X\r\n", slot_addr, slot_size, calculated_crc);
+	LOG_LEVEL("Bank crc verify at 0x%08X size:0x%08X calculat crc:0x%08X\r\n", slot_addr, slot_size, calculated_crc);
 
 	return (calculated_crc == expected_crc);
 }
@@ -814,7 +816,7 @@ bool flash_check_vector_table(uint8_t bank_slot, uint32_t vector_address)
 		if (irq != 0 && (irq < start_address || irq > end_address))
 			return false;
 	}
-
+	LOG_LEVEL("check vector table successfuly.\r\n");
 	return true; // 向量表合法
 }
 
@@ -866,7 +868,7 @@ void flash_JumpToApplication(uint32_t app_address)
 		return;
 	}
 
-	LOG_LEVEL("Jumping To Application: MSP=0x%08X,Reset_Handler=0x%08X\r\n", app_msp, app_reset);
+	LOG_LEVEL("Jumping To 0x%08X: MSP=0x%08X,Reset_Handler=0x%08X\r\n",app_address, app_msp, app_reset);
 	flash_delay_ms(10);
 	// Disable global interrupts
 	DISABLE_IRQ;
@@ -907,6 +909,7 @@ void flash_JumpToApplication(uint32_t app_address)
 uint32_t flash_erase_user_app_bank(uint8_t bank_slot)
 {
 	uint32_t ret = 0;
+	uint16_t pages_count = 0;
 	if (bank_slot == BANK_SLOT_LOADER)
 	{
 		LOG_LEVEL("Erase not permitted at address 0x%08X (size 0x%08X)\r\n", flash_meta_infor.loader_addr, FLASH_BOOTLOADER_SIZE);
@@ -922,8 +925,9 @@ uint32_t flash_erase_user_app_bank(uint8_t bank_slot)
 			LOG_LEVEL("Erase not permitted at address 0x%08X (size 0x%08X)\r\n", flash_meta_infor.slot_a_addr, flash_meta_infor.slot_a_size);
 			return 0;
 		}
+		pages_count = flash_meta_infor.slot_a_size / FLASH_BLOCK_SIZE + 1;
 		DISABLE_IRQ;
-		ret = hal_flash_erase_page_(flash_meta_infor.slot_a_addr, flash_meta_infor.slot_a_size / FLASH_BLOCK_SIZE);
+		ret = hal_flash_erase_page_(flash_meta_infor.slot_a_addr, pages_count);
 		ENABLE_IRQ;
 	}
 	else if (bank_slot == BANK_SLOT_B)
@@ -934,9 +938,9 @@ uint32_t flash_erase_user_app_bank(uint8_t bank_slot)
 			LOG_LEVEL("Erase not permitted at address 0x%08X (size 0x%08X)\r\n", flash_meta_infor.slot_b_addr, flash_meta_infor.slot_b_size);
 			return 0;
 		}
-
+		pages_count = flash_meta_infor.slot_b_size / FLASH_BLOCK_SIZE + 1;
 		DISABLE_IRQ;
-		ret = hal_flash_erase_page_(flash_meta_infor.slot_b_addr, flash_meta_infor.slot_b_size / FLASH_BLOCK_SIZE);
+		ret = hal_flash_erase_page_(flash_meta_infor.slot_b_addr, pages_count);
 		ENABLE_IRQ;
 	}
 	else
@@ -945,10 +949,11 @@ uint32_t flash_erase_user_app_bank(uint8_t bank_slot)
 	}
 	return ret;
 }
+
 uint32_t FlashErasePage(uint32_t addr, uint8_t page_count)
 {
 	uint8_t pages = 0;
-	if (addr >= FLASH_BOOTLOADER_START_ADDR && addr <= FLASH_BOOTLOADER_END_ADDR)
+	if (!flash_is_allow_update_address(addr))
 	{
 		LOG_LEVEL("Erase not permitted at address 0x%08X (page_count 0x%08X)\r\n", addr, page_count);
 		return 0;
@@ -960,10 +965,10 @@ uint32_t FlashErasePage(uint32_t addr, uint8_t page_count)
 }
 
 //__attribute__((section(".ramfunc")))
-uint32_t FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
+uint32_t FlashWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 {
 	uint32_t writed_bytes = 0;
-	if (addr >= FLASH_BOOTLOADER_START_ADDR && addr <= FLASH_BOOTLOADER_END_ADDR)
+	if (!flash_is_allow_update_address(addr))
 	{
 		LOG_LEVEL("Erase not permitted at address 0x%08X (length 0x%08X)\r\n", addr, length);
 		return 0;
@@ -974,12 +979,14 @@ uint32_t FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 	return writed_bytes;
 }
 
-void FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length)
+uint32_t FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length)
 {
+	uint32_t readed_bytes = 0;
 	if (buf)
 	{
-		hal_flash_read_(addr, buf, length);
+		readed_bytes = hal_flash_read_(addr, buf, length);
 	}
+	return readed_bytes;
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -991,7 +998,7 @@ void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length)
 	}
 }
 
-void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
+void E2ROMWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 {
 	if (buf)
 	{
@@ -1007,10 +1014,10 @@ void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 void E2ROM_writ_meter_infor(void)
 {
 	// uint8_t pages = 0;
-	E2ROMWriteBuffTo(EEROM_SYSTEM_METER_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
+	E2ROMWritBuffTo(EEROM_SYSTEM_METER_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
 	if (task_carinfo_get_meter_info())
 	{
-		E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
+		E2ROMWritBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 		LOG_LEVEL("Save eerom meta information task_carinfo_get_meter_info()=%d... \r\n", task_carinfo_get_meter_info()->trip_odo);
 	}
 }
@@ -1022,13 +1029,13 @@ void E2ROM_read_meter_infor(void)
 	if (task_carinfo_get_meter_info())
 	{
 		E2ROMReadToBuff(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-		LOG_LEVEL("Read eerom meta information task_carinfo_get_meter_info()=%d... \r\n", task_carinfo_get_meter_info()->trip_odo);
+		LOG_LEVEL("task_carinfo_get_meter_info()->trip_odo=%d\r\n", task_carinfo_get_meter_info()->trip_odo);
 	}
 }
 
 void E2ROM_writ_metas_infor(void)
 {
-	E2ROMWriteBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	E2ROMWritBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 }
 
 void E2ROM_read_metas_infor(void)
@@ -1047,31 +1054,40 @@ void flash_writ_all_infor(void)
 		system_meter_infor.trip_odo = task_carinfo_get_meter_info()->trip_odo;
 		system_meter_infor.speed_average = task_carinfo_get_meter_info()->speed_average;
 	}
-	E2ROMWriteBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
-	E2ROMWriteBuffTo(EEROM_SYSTEM_METER_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
+	E2ROMWritBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	E2ROMWritBuffTo(EEROM_SYSTEM_METER_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
 	if (task_carinfo_get_meter_info())
 	{
 		// LOG_BUFF_LEVEL((uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 		// LOG_LEVEL("task_carinfo_get_meter_info().trip_odo:%d\r\n", task_carinfo_get_meter_info()->trip_odo);
-		E2ROMWriteBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
+		E2ROMWritBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 	}
 #else
-	pages = FlashErasePage(FLASH_META_DATA_START_ADDRESS, 2);
-	LOG_LEVEL("hal_flash_erase_page_ pages=%d... \r\n", pages);
+	if (FLASH_USER_DATA_BLOCK <= 0)
+	{
+		LOG_LEVEL("No enougth space for user data pages:%d\r\n", FLASH_USER_DATA_BLOCK);
+		return;
+	}
+
+	pages = FlashErasePage(FLASH_META_DATA_START_ADDRESS, FLASH_USER_DATA_BLOCK);
+	LOG_LEVEL("flash_writ_all_infor need %d pages...\r\n", pages);
 	if (task_carinfo_get_meter_info())
 	{
 		system_meter_infor.trip_odo = task_carinfo_get_meter_info()->trip_odo;
 		system_meter_infor.speed_average = task_carinfo_get_meter_info()->speed_average;
 	}
-	pages = FlashWriteBuffTo(FLASH_META_DATA_START_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
-	pages = FlashWriteBuffTo(FLASH_SYSTEM_DATA_START_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
+	pages = FlashWritBuffTo(FLASH_META_DATA_START_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	LOG_LEVEL("Save flash meta information count=%d... \r\n", pages);
+	pages = FlashWritBuffTo(FLASH_SYSTEM_DATA_START_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
+	LOG_LEVEL("Save syste meta information count=%d... \r\n", pages);
 	if (task_carinfo_get_meter_info())
 	{
 		// pages = FlashWriteBuffTo(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 		// LOG_LEVEL("Save flash meta information task_carinfo_get_meter_info()=%d... \r\n", task_carinfo_get_meter_info()->trip_odo);
 		E2ROM_writ_meter_infor();
+		LOG_LEVEL("Save meter information count=%d... \r\n", pages);
 	}
-	LOG_LEVEL("Save flash meta information count=%d... \r\n", pages);
+	
 #endif
 }
 
@@ -1126,15 +1142,17 @@ void flash_read_all_infor(void)
 			system_meter_infor.trip_odo = 0;
 		}
 	}
-
+  
+	LOG_LEVEL("Load metas data[%03d]: ", sizeof(flash_meta_infor_t));
+	LOG_BUFF((uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 	if (task_carinfo_get_meter_info() && (flash_meta_infor.mete_data_flags == FLASH_META_DATAS_VALID_FLAG))
 	{
-		LOG_LEVEL("Load meter data[%02d]: ", sizeof(carinfo_meter_t));
+		LOG_LEVEL("Load meter data[%03d]: ", sizeof(carinfo_meter_t));
 		LOG_BUFF((uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 	}
 	else
 	{
-		LOG_LEVEL("Load meter data[%02d]: ", sizeof(carinfo_meter_t));
+		LOG_LEVEL("Load meter data[%03d]: ", sizeof(carinfo_meter_t));
 	}
 
 	LOG_NONE("\r\n");

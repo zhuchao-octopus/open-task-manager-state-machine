@@ -107,13 +107,12 @@ static uint32_t l_t_boot_loader_checking_meta_timer;
 // Function declarations
 static bool update_send_handler(ptl_frame_type_t module, uint16_t param1, uint16_t param2, ptl_proc_buff_t *ptl_proc_buff); // Handle outgoing messages
 static bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_ack_buff);							// Handle incoming messages
-static void update_state_process(void);
-
 static bool update_and_verify_dest_bank(uint32_t slot_addr);
+static void update_state_handler_polling(void);
 
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
 static uint32_t update_get_model_number(void);
-static bool update_check_auto_enter_upgrade(void);
+static bool update_upgrade_mode_polling(void);
 static bool update_check_and_enter_start(ptl_proc_buff_t *ptl_proc_buff);
 static file_read_status_t read_next_record(FILE *fp, long *file_offset, file_type_t type, hex_record_t *record);
 static void update_start_reboot_soc();
@@ -158,10 +157,13 @@ void task_update_assert_running(void)
 void task_update_running(void)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-	update_state_process(); // Call the reboot state machine processing function
+	if (flash_get_current_bank() == BANK_SLOT_LOADER)
+	{
+		update_state_handler_polling(); // Call the reboot state machine processing function
+	}
 #endif
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
-	update_check_auto_enter_upgrade();
+	update_upgrade_mode_polling();
 #endif
 }
 
@@ -219,7 +221,7 @@ uint8_t update_get_target_bank(void)
 		return BANK_SLOT_INVALID;
 	}
 
-	return BANK_SLOT_INVALID;
+	// return BANK_SLOT_INVALID;
 }
 
 uint8_t upgrade_enter_upgrade_mode(void)
@@ -232,14 +234,20 @@ uint8_t upgrade_enter_upgrade_mode(void)
 	case BANK_SLOT_A:
 		SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
 		if (IS_SLOT_A_NEED_UPGRADE(flash_meta_infor.slot_stat_flags))
+		{
+			LOG_LEVEL("enable slot A upgrade flag %08x\r\n",flash_meta_infor.slot_stat_flags);
 			return BANK_SLOT_A;
+		}
 		else
 			break;
 
 	case BANK_SLOT_B:
 		SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
 		if (IS_SLOT_B_NEED_UPGRADE(flash_meta_infor.slot_stat_flags))
+		{
+			LOG_LEVEL("enable slot B upgrade flag %08x\r\n",flash_meta_infor.slot_stat_flags);
 			return BANK_SLOT_B;
+		}
 		else
 			break;
 	}
@@ -282,7 +290,7 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 	{
 		switch (param1)
 		{
-		case FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE:
+		case FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE: // message from ui layer
 		{
 			LOG_LEVEL("FRAME_CMD_UPDATE_ENTER_FW_UPGRADE_MODE \r\n");
 			flash_print_mcu_meta_infor();
@@ -291,19 +299,19 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 
 		case FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE:
 		{
-			LOG_LEVEL("FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE \r\n");
+			LOG_LEVEL("FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE notify mcu\r\n");
 			if (file_handle_oupg)
 			{
 				fclose(file_handle_oupg);
 				file_handle_oupg = NULL;
 				CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
 				CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
-				auto_enter_upgrading = true;
-				update_start_reboot_soc();
+				auto_enter_upgrading = true;				
 			}
 			UINT32_TO_BYTES_LE(mcu_upgrade_status.file_info.file_crc_32, &buffer[0]);
 			UINT32_TO_BYTES_LE(mcu_upgrade_status.s_length, &buffer[4]);
 			ptl_build_frame(SOC_TO_MCU_MOD_UPDATE, FRAME_CMD_UPDATE_EXITS_FW_UPGRADE_MODE, buffer, 8, ptl_proc_buff);
+			update_start_reboot_soc();
 			return true;
 		}
 
@@ -348,14 +356,14 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_a
 
 			if (upgrade_enter_upgrade_mode() != BANK_SLOT_LOADER)
 			{
-				E2ROM_writ_metas_infor();
+				LOG_LEVEL("Jumping to bootLoader : 0x%08X\r\n", flash_get_bank_address(BANK_SLOT_LOADER));
 				flash_writ_all_infor();
-				LOG_LEVEL("Jumping To BootLoader : 0x%08X\r\n", flash_get_bank_address(BANK_SLOT_LOADER));
-				flash_delay_ms(100);
+				E2ROM_writ_metas_infor();
+				flash_delay_ms(300);
 				flash_JumpToApplication(flash_get_bank_address(BANK_SLOT_LOADER));
 				flash_delay_ms(100);
 				// NVIC_SystemReset(); // user reboot enter bootloader
-				LOG_LEVEL("Jumping To BootLoader : 0x%08X Failed!!!!!\r\n", flash_get_bank_address(BANK_SLOT_LOADER));
+				LOG_LEVEL("Jumping to bootLoader : 0x%08X failed!!!!!\r\n", flash_get_bank_address(BANK_SLOT_LOADER));
 				return false;
 			}
 
@@ -492,22 +500,24 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_a
 					return false;
 				}
 			}
-
+			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			// transformer the file address to flash address
 			if (mcu_upgrade_status.file_info.file_type == FILE_TYPE_HEX)
 				hex_record.address = (mcu_upgrade_status.file_info.reset_handler & FLASH_BANK_MASK) | hex_record.address;
 			else if (mcu_upgrade_status.file_info.file_type == FILE_TYPE_BIN)
-				hex_record.address = FLASH_BASE_START_ADDR | hex_record.address; // address of flash
+				hex_record.address = FLASH_BASE_START_ADDR | hex_record.address; // address of flash, convert the bin file address to flash address
 
 			uint32_t file_bank_address = mcu_upgrade_status.file_info.reset_handler & 0xFFFFFF00;
 
-			if (!flash_is_valid_bank_address(file_bank_address, hex_record.address))
+			if (!flash_is_bank_address_valid(file_bank_address, hex_record.address))
 			{
 				LOG_LEVEL("Invalid flash address file_bank_address=%08x hex_record.address=%08x\n", file_bank_address, hex_record.address);
 				mcu_upgrade_status.error_code = MCU_ERROR_CODE_ADDRESS;
 				LOG_BUFF_LEVEL(hex_record.data, hex_record.length);
 				return false;
 			}
-			if (flash_is_allow_update_address(hex_record.address))
+			if (!flash_is_allow_update_address(hex_record.address))
 			{
 				LOG_LEVEL("Not allowed flash address file_bank_address=%08x hex_record.address=%08x\n", file_bank_address, hex_record.address);
 				mcu_upgrade_status.error_code = MCU_ERROR_CODE_ADDRESS;
@@ -578,6 +588,11 @@ bool update_and_verify_dest_bank(uint32_t slot_addr)
 }
 
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
+void update_enable_auto_upgrade(void)
+{
+	auto_enter_upgrading = true;
+}
+
 uint32_t update_get_model_number(void)
 {
 	LOG_LEVEL("MCU_MODEL_NAME: %s\r\n", MCU_MODEL_NAME);
@@ -595,18 +610,22 @@ void update_start_reboot_soc(void)
 	StartTickCounter(&l_t_boot_loader_reboot_delay_timer);
 }
 
-bool update_check_auto_enter_upgrade(void)
+bool update_upgrade_mode_polling(void)
 {
 	ptl_proc_buff_t ptl_proc_buff;
 	ptl_proc_buff.channel = 0;
 	bool enter_start = false;
-
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// after update polling reboot message
 	if (GetTickCounter(&l_t_boot_loader_reboot_delay_timer) > 2000)
 	{
 		StopTickCounter(&l_t_boot_loader_reboot_delay_timer);
-		send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_UPDATE_REBOOT, 0);
+		LOG_LEVEL("reboot soc system after upgrading\r\n");
+		task_manager_start_module(TASK_MODULE_SYSTEM);
+		send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_UPDATE_REBOOT, FRAME_CMD_UPDATE_REBOOT);
 	}
-
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// get message from flash meta information & checking mcu status if need to be upgraded
 	if ((flash_get_current_bank() == BANK_SLOT_LOADER) && (!update_is_mcu_updating()) && (flash_is_meta_infor_valid()) && auto_enter_upgrading)
 	{
 		if (IS_SLOT_A_NEED_UPGRADE(flash_meta_infor.slot_stat_flags) || (IS_SLOT_B_NEED_UPGRADE(flash_meta_infor.slot_stat_flags)))
@@ -620,7 +639,7 @@ bool update_check_auto_enter_upgrade(void)
 			{
 				enter_start = update_check_and_enter_start(&ptl_proc_buff);
 			}
-			if (enter_start)
+			if (enter_start) // notify mcu soc is ready for upgrading,then mcu will enter loader mode & request data
 			{
 				ptl_send_buffer(ptl_proc_buff.channel, ptl_proc_buff.buff, ptl_proc_buff.size);
 				auto_enter_upgrading = false;
@@ -648,13 +667,15 @@ bool update_check_and_enter_start(ptl_proc_buff_t *ptl_proc_buff)
 		return false;
 	}
 
-	uint32_t flash_bank_address = flash_get_bank_address(update_get_target_bank());
-	mcu_upgrade_status.file_offset = flash_get_bank_offset_address(update_get_target_bank());
-
 	uint32_t model_number = update_get_model_number();
-
+	uint32_t flash_bank_address = flash_get_bank_address(update_get_target_bank());			  // target flash bank address need to be matched
+	mcu_upgrade_status.file_offset = flash_get_bank_offset_address(update_get_target_bank()); // offset in bin file
 	mcu_upgrade_status.file_info = parse_firmware_file(model_number, mcu_upgrade_status.file_offset, file_path_name_upgrade);
-	uint32_t file_bank_address = mcu_upgrade_status.file_info.reset_handler & 0xFFFFFF00;
+
+	// file bank address(0x08000000) is not file address(start from 0x00000000)
+	// flash map address(0x08000000)
+	// get file bank address from reset_handler
+	uint32_t file_bank_address = mcu_upgrade_status.file_info.reset_handler & 0xFFFFFF00; // reset_handler address offset 4bytes at low bit
 	mcu_upgrade_status.s_length = 0;
 	mcu_upgrade_status.f_counter = 0;
 
@@ -670,22 +691,6 @@ bool update_check_and_enter_start(ptl_proc_buff_t *ptl_proc_buff)
 	LOG_LEVEL("file CRC-32       : 0x%08X\n", mcu_upgrade_status.file_info.file_crc_32);
 	LOG_LEVEL("file Reset Handler: 0x%08X\n", mcu_upgrade_status.file_info.reset_handler);
 
-	if ((!flash_is_valid_bank_address(flash_bank_address, file_bank_address)) || (flash_bank_address != file_bank_address))
-	{
-		LOG_LEVEL("file_bank_address is invalid: %08x / %08x\r\n", flash_bank_address, file_bank_address);
-		mcu_upgrade_status.error_code = MCU_ERROR_CODE_ADDRESS;
-		send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_UPDATING, 0); // notify ui
-		return false;
-	}
-
-	if (flash_is_allow_update_address(file_bank_address))
-	{
-		LOG_LEVEL("address not be allowed : %08x / %08x\r\n", file_bank_address);
-		mcu_upgrade_status.error_code = MCU_ERROR_CODE_ADDRESS;
-		send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_UPDATING, 0); // notify ui
-		return false;
-	}
-
 	if (mcu_upgrade_status.file_info.file_type == FILE_TYPE_UNKNOWN || mcu_upgrade_status.file_info.file_size == 0)
 	{
 		LOG_LEVEL("error file_type=%d total_length=%d file_bank_address=%08x\r\n", mcu_upgrade_status.file_info.file_type,
@@ -695,6 +700,22 @@ bool update_check_and_enter_start(ptl_proc_buff_t *ptl_proc_buff)
 		return false;
 	}
 
+	if ((!flash_is_bank_address_valid(flash_bank_address, file_bank_address)) || (flash_bank_address != file_bank_address))
+	{
+		LOG_LEVEL("file_bank_address is invalid: %08x / %08x\r\n", flash_bank_address, file_bank_address);
+		mcu_upgrade_status.error_code = MCU_ERROR_CODE_ADDRESS;
+		send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_UPDATING, 0); // notify ui
+		return false;
+	}
+
+	if (!flash_is_allow_update_address(file_bank_address)) /// boot loader address must be protected
+	{
+		LOG_LEVEL("address not be allowed : %08x / %08x\r\n", file_bank_address);
+		mcu_upgrade_status.error_code = MCU_ERROR_CODE_ADDRESS;
+		send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_MCU_EVENT, MSG_OTSM_CMD_MCU_UPDATING, 0); // notify ui
+		return false;
+	}
+	// prepare to open file and notify mcu enter upgrade mode
 	task_manager_stop_except_2(TASK_MODULE_UPDATE_MCU, TASK_MODULE_PTL_1);
 	task_manager_start_module(TASK_MODULE_IPC);
 	UINT32_TO_BYTES_LE(file_bank_address, &buffer[0]);
@@ -714,7 +735,8 @@ bool update_check_and_enter_start(ptl_proc_buff_t *ptl_proc_buff)
 			LOG_LEVEL("current mcu is not in boot loader mode mcu will reboot\r\n");
 		}
 		LOG_LEVEL("start up upgrade ---> %s\r\n", file_path_name_upgrade);
-		return true;
+		update_enable_auto_upgrade();
+		return true; // notify file ptl send the command message
 	}
 	else
 	{
@@ -772,7 +794,7 @@ file_read_status_t read_next_record(FILE *fp, long *file_offset, file_type_t typ
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Function to process the MCU reboot state machine. It handles different stages of the reboot process.
-static void update_state_process(void)
+static void update_state_handler_polling(void)
 {
 	// static uint16_t writed_total_count;
 	uint16_t erase_count = 0;
@@ -781,14 +803,20 @@ static void update_state_process(void)
 	switch (lt_mcu_program_buf.state)
 	{
 	case MCU_UPDATE_STATE_IDLE:
+		if (IS_SLOT_A_NEED_UPGRADE(flash_meta_infor.slot_stat_flags) || (IS_SLOT_B_NEED_UPGRADE(flash_meta_infor.slot_stat_flags)))
+			lt_mcu_program_buf.state = MCU_UPDATE_STATE_CHECK;
+		break;
 	case MCU_UPDATE_STATE_CHECK:
+		// when mcu is in loader mode then need to notify soc fash meta infor, because of jumping failed
+		// or something is woring, mcu need to be upgraded
+		// bootloader Heartbeat packet
 		if (flash_get_current_bank() == BANK_SLOT_LOADER && flash_is_meta_infor_valid())
 		{
 			if (!IsTickCounterStart(&l_t_boot_loader_checking_meta_timer))
 				StartTickCounter(&l_t_boot_loader_checking_meta_timer);
 
 			if (GetTickCounter(&l_t_boot_loader_checking_meta_timer) > 1500)
-			{
+			{ // per 1.5s notify system sending meta information
 				send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_MCU_META, 0);
 				StartTickCounter(&l_t_boot_loader_checking_meta_timer);
 			}
@@ -857,9 +885,9 @@ static void update_state_process(void)
 		lt_mcu_program_buf.error_count = 0;
 
 	RETRY_PROGRAM:
-		if (flash_is_valid_bank_address(lt_mcu_program_buf.bank_address, lt_mcu_program_buf.r_address))
+		if (flash_is_bank_address_valid(lt_mcu_program_buf.bank_address, lt_mcu_program_buf.r_address))
 		{
-			writed_count = FlashWriteBuffTo(lt_mcu_program_buf.r_address, lt_mcu_program_buf.r_buff, lt_mcu_program_buf.r_length);
+			writed_count = FlashWritBuffTo(lt_mcu_program_buf.r_address, lt_mcu_program_buf.r_buff, lt_mcu_program_buf.r_length);
 			update_print_program_data(lt_mcu_program_buf.r_address, lt_mcu_program_buf.r_buff, lt_mcu_program_buf.r_length);
 		}
 		else

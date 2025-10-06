@@ -49,7 +49,7 @@
 static bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer);
 static void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
-static void ipc_request_upgrade(Msg_t *msg);
+static void ipc_request_upgrade_mcu(Msg_t *msg);
 
 /*******************************************************************************
  * Global Variables
@@ -223,7 +223,7 @@ void task_ipc_running(void)
         {
 
         case MSG_OTSM_CMD_MCU_REQUEST_UPGRADING:
-            ipc_request_upgrade(msg);
+            ipc_request_upgrade_mcu(msg);
             break;
 
         case MSG_OTSM_CMD_MCU_UPDATING:
@@ -258,7 +258,7 @@ void task_ipc_stop_running(void)
     OTMS(TASK_MODULE_IPC, OTMS_S_INVALID);
 }
 
-void ipc_request_upgrade(Msg_t *msg)
+void ipc_request_upgrade_mcu(Msg_t *msg)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     if (flash_is_meta_infor_valid())
@@ -267,7 +267,7 @@ void ipc_request_upgrade(Msg_t *msg)
         {
             if (update_is_mcu_updating())
             {
-                LOG_LEVEL("The device is currently in upgrade mode.\r\n");
+                LOG_LEVEL("The device is already in upgrade mode.\r\n");
             }
             else
             {

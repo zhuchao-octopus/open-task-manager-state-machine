@@ -108,7 +108,8 @@ typedef enum
     BOOT_MODE_SINGLE_BANK_NO_LOADER,   // Single bank without a bootloader
     BOOT_MODE_SINGLE_BANK_WITH_LOADER, // Single bank with bootloader present
     BOOT_MODE_DUAL_BANK_NO_LOADER,     // Two banks, but no dedicated bootloader
-    BOOT_MODE_DUAL_BANK_WITH_LOADER    // Two banks and a bootloader present
+    BOOT_MODE_DUAL_BANK_WITH_LOADER,   // Two banks and a bootloader present
+    BOOT_MODE_MAX
 } boot_mode_t;
 
 #pragma pack(push, 1)
@@ -182,6 +183,7 @@ extern system_meter_infor_t system_meter_infor;
 #define FLASH_BANK_UNMASK (0x00FFFFFF)
 
 #define FLASH_DATA_BLOCK (2)
+#define FLASH_USER_DATA_BLOCK (FLASH_DATA_BLOCK - 1)
 /////////////////////////////////////////////////////////////////////////////////////////
 // Bootloader Configuration
 // #define BOOTLOADER_CONFIG_MODE_TYPE BOOT_MODE_DUAL_BANK_NO_LOADER
@@ -191,7 +193,10 @@ extern system_meter_infor_t system_meter_infor;
 #define FLASH_BOOTLOADER_SIZE ((FLASH_BOOTLOADER_BLOCK_COUNT) * FLASH_BLOCK_SIZE) // Bootloader size: 20KB
 #define FLASH_BOOTLOADER_END_ADDR (FLASH_BOOTLOADER_START_ADDR + FLASH_BOOTLOADER_SIZE)
 
-#define FLASH_META_DATA_START_ADDRESS (FLASH_BASE_END_ADDR - FLASH_DATA_BLOCK * FLASH_BLOCK_SIZE)
+/////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
+#define FLASH_USER_META_DATA_START_ADDRESS (FLASH_BASE_END_ADDR - FLASH_USER_DATA_BLOCK * FLASH_BLOCK_SIZE)
+#define FLASH_META_DATA_START_ADDRESS (FLASH_USER_META_DATA_START_ADDRESS)
 #define FLASH_SYSTEM_DATA_START_ADDRESS (FLASH_META_DATA_START_ADDRESS + 128)
 #define FLASH_METER_DATA_START_ADDRESS (FLASH_SYSTEM_DATA_START_ADDRESS + 128)
 #define FLASH_USER_DATA_START_ADDRESS (FLASH_METER_DATA_START_ADDRESS + 128)
@@ -243,37 +248,35 @@ extern "C"
     void flash_JumpToApplication(uint32_t app_address);
     void flash_load_sync_data_infor(void);
 
+    flash_meta_infor_t *flash_get_meta_infor(void);
     uint32_t flash_get_app_max_size(void);
     uint32_t flash_get_bank_slot_mode(void);
     uint32_t flash_get_current_bank(void);
     uint32_t flash_get_bank_address(uint8_t bank_slot);
     uint32_t flash_get_bank_offset_address(uint8_t bank_slot);
+    const char *flash_get_current_bank_name(void);
+    const char *flash_get_bank_name(uint8_t bank);
 
     bool flash_check_enter_upgrade_mode(void);
     bool flash_decode_active_version(uint8_t bank_slot, char *out_str, size_t max_len, const char *date_str, const char *time_str);
-    bool flash_is_valid_bank_address(uint32_t b_address, uint32_t address);
-
+    bool flash_is_bank_address_valid(uint32_t b_address, uint32_t address);
     bool flash_is_meta_infor_valid(void);
     bool flash_is_allow_update_bank(uint8_t bank_type);
     bool flash_is_allow_update_address(uint32_t address);
-    const char *flash_get_current_bank_name(void);
-    const char *flash_get_bank_name(uint8_t bank);
-    flash_meta_infor_t *flash_get_meta_infor(void);
 
-    void FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t len);
-    /**< Reads data from Flash memory into a buffer. */
-    uint32_t FlashWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t len);
-    /**< Writes data from a buffer to Flash memory. */
+    uint32_t FlashWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t len);
+    uint32_t FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t len);
+
     void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length);
-    void E2ROMWriteBuffTo(uint32_t addr, uint8_t *buf, uint32_t length);
+    void E2ROMWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t length);
 
-    uint32_t flash_erase_user_app_bank(uint8_t bank_slot);
     void E2ROM_writ_metas_infor(void);
     void E2ROM_read_metas_infor(void);
 
     void E2ROM_writ_meter_infor(void);
     void E2ROM_read_meter_infor(void);
 
+    uint32_t flash_erase_user_app_bank(uint8_t bank_slot);
     void flash_writ_all_infor(void);
     void flash_read_all_infor(void);
     void flash_save_carinfor_meter(void);
