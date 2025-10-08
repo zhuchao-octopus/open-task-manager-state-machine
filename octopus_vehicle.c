@@ -299,13 +299,13 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void battary_update_simulate_infor(void)
 {
-	#if 1
+#if 1
     calculate_battery_soc_ex_v2(lt_carinfo_battery.voltage, lt_carinfo_battery.current, system_meter_infor.trip_odo,
                                 DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
                                 lt_carinfo_meter.speed_average, 20000, 50,
                                 &lt_carinfo_battery.power, &lt_carinfo_battery.soc,
                                 &lt_carinfo_battery.range, &lt_carinfo_battery.range_max, &lt_carinfo_battery.reserve2);
-	#endif
+#endif
     // calculate_battery_soc_ex(lt_carinfo_battery.voltage, lt_carinfo_battery.current, system_meter_infor.trip_odo,
     //											 DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
     //											 lt_carinfo_meter.speed_average,
@@ -368,7 +368,7 @@ void task_car_controller_msg_handler(void)
         if (lt_carinfo_battery.soc == 0 || trip_saving_timer % 60000 == 0)
         {
             battary_update_simulate_infor();
-					  send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
+            send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
         }
 
         return;

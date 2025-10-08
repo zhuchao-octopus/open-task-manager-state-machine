@@ -868,7 +868,7 @@ void flash_JumpToApplication(uint32_t app_address)
 		return;
 	}
 
-	LOG_LEVEL("Jumping To 0x%08X: MSP=0x%08X,Reset_Handler=0x%08X\r\n",app_address, app_msp, app_reset);
+	LOG_LEVEL("Jumping to 0x%08X: MSP=0x%08X,Reset_Handler=0x%08X\r\n", app_address, app_msp, app_reset);
 	flash_delay_ms(10);
 	// Disable global interrupts
 	DISABLE_IRQ;
@@ -1018,7 +1018,7 @@ void E2ROM_writ_meter_infor(void)
 	if (task_carinfo_get_meter_info())
 	{
 		E2ROMWritBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-		LOG_LEVEL("Save eerom meta information task_carinfo_get_meter_info()=%d... \r\n", task_carinfo_get_meter_info()->trip_odo);
+		LOG_LEVEL("Save eerom meta information meter_info()->trip_odo=%d... \r\n", task_carinfo_get_meter_info()->trip_odo);
 	}
 }
 
@@ -1087,7 +1087,7 @@ void flash_writ_all_infor(void)
 		E2ROM_writ_meter_infor();
 		LOG_LEVEL("Save meter information count=%d... \r\n", pages);
 	}
-	
+
 #endif
 }
 
@@ -1142,7 +1142,7 @@ void flash_read_all_infor(void)
 			system_meter_infor.trip_odo = 0;
 		}
 	}
-  
+
 	LOG_LEVEL("Load metas data[%03d]: ", sizeof(flash_meta_infor_t));
 	LOG_BUFF((uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 	if (task_carinfo_get_meter_info() && (flash_meta_infor.mete_data_flags == FLASH_META_DATAS_VALID_FLAG))

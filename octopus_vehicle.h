@@ -165,7 +165,7 @@ typedef struct
 } CarErrorCodeFlags_t;
 
 #pragma pack(push, 1)
-typedef struct 
+typedef struct
 {
     uint8_t ready;      // Ready status (1 = system ready to operate)
     uint8_t high_beam;  // High beam light status (1 = ON)

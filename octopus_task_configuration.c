@@ -98,7 +98,7 @@ const otms_t task_module_config_table[TASK_MODULE_MAX_NUM] = {
         },
     },
 #endif
-		
+
 #ifdef TASK_MANAGER_STATE_MACHINE_PTL
     [TASK_MODULE_PTL_1] = {
         .func = {

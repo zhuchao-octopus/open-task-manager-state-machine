@@ -235,7 +235,7 @@ uint8_t upgrade_enter_upgrade_mode(void)
 		SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
 		if (IS_SLOT_A_NEED_UPGRADE(flash_meta_infor.slot_stat_flags))
 		{
-			LOG_LEVEL("enable slot A upgrade flag %08x\r\n",flash_meta_infor.slot_stat_flags);
+			LOG_LEVEL("enable slot A upgrade flag %08x\r\n", flash_meta_infor.slot_stat_flags);
 			return BANK_SLOT_A;
 		}
 		else
@@ -245,7 +245,7 @@ uint8_t upgrade_enter_upgrade_mode(void)
 		SET_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
 		if (IS_SLOT_B_NEED_UPGRADE(flash_meta_infor.slot_stat_flags))
 		{
-			LOG_LEVEL("enable slot B upgrade flag %08x\r\n",flash_meta_infor.slot_stat_flags);
+			LOG_LEVEL("enable slot B upgrade flag %08x\r\n", flash_meta_infor.slot_stat_flags);
 			return BANK_SLOT_B;
 		}
 		else
@@ -306,7 +306,7 @@ bool update_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
 				file_handle_oupg = NULL;
 				CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
 				CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
-				auto_enter_upgrading = true;				
+				update_enable_auto_upgrade();
 			}
 			UINT32_TO_BYTES_LE(mcu_upgrade_status.file_info.file_crc_32, &buffer[0]);
 			UINT32_TO_BYTES_LE(mcu_upgrade_status.s_length, &buffer[4]);
