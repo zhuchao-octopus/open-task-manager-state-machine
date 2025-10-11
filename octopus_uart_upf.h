@@ -140,11 +140,12 @@ extern "C"
 	// void upf_module_info_init(upf_module_info_t *array, uint16_t length);
 	void upf_register_module(upf_module_t upf_module, upf_module_receive_handler_t receive_handler);
 	void upf_receive_callback(upf_module_t upf_module, const uint8_t *buffer, uint16_t length);
-	void upf_send_buffer(upf_module_t upf_module, const uint8_t *buffer, uint16_t length);
 	void upf_print_registered_module(void);
 
 	void otsm_upf_init(upf_module_info_t *array, uint16_t length);
 	void otsm_upf_help(void);
+
+	uint8_t upf_send_buffer(upf_module_t upf_module, const uint8_t *buffer, uint16_t length);
 
 #ifdef __cplusplus
 }

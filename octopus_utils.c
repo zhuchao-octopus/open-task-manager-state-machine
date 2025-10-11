@@ -67,6 +67,144 @@
  */
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+// ================== 36V 电池 ==================
+const BatterySOC_t battery_table_36V[] = {
+    {31.0, 31.8, 0, 10, 1},
+    {31.8, 32.6, 10, 20, 2},
+    {32.6, 33.4, 20, 30, 3},
+    {33.4, 34.2, 30, 40, 4},
+    {34.2, 35.0, 40, 50, 5},
+    {35.0, 35.8, 50, 60, 6},
+    {35.8, 36.6, 60, 70, 7},
+    {36.6, 37.4, 70, 80, 8},
+    {37.4, 38.2, 80, 90, 9},
+    {38.2, 42.0, 90, 100, 10},
+};
+
+// ================== 43V 电池 ==================
+const BatterySOC_t battery_table_43V[] = {
+    {36.0, 37.0, 0, 10, 1},
+    {37.0, 38.0, 10, 20, 2},
+    {38.0, 39.0, 20, 30, 3},
+    {39.0, 40.0, 30, 40, 4},
+    {40.0, 41.0, 40, 50, 5},
+    {41.0, 42.0, 50, 60, 6},
+    {42.0, 43.0, 60, 70, 7},
+    {43.0, 44.0, 70, 80, 8},
+    {44.0, 45.0, 80, 90, 9},
+    {45.0, 46.0, 90, 100, 10},
+};
+
+// ================== 48V 电池 ==================
+const BatterySOC_t battery_table_48V[] = {
+    {40.0, 41.0, 0, 10, 1},
+    {41.0, 42.0, 10, 20, 2},
+    {42.0, 43.0, 20, 30, 3},
+    {43.0, 44.0, 30, 40, 4},
+    {44.0, 45.0, 40, 50, 5},
+    {45.0, 46.0, 50, 60, 6},
+    {46.0, 47.0, 60, 70, 7},
+    {47.0, 48.0, 70, 80, 8},
+    {48.0, 49.0, 80, 90, 9},
+    {49.0, 50.0, 90, 100, 10},
+};
+
+// ================== 52V 电池 ==================
+const BatterySOC_t battery_table_52V[] = {
+    {43.0, 44.0, 0, 10, 1},
+    {44.0, 45.0, 10, 20, 2},
+    {45.0, 46.0, 20, 30, 3},
+    {46.0, 47.0, 30, 40, 4},
+    {47.0, 48.0, 40, 50, 5},
+    {48.0, 49.0, 50, 60, 6},
+    {49.0, 50.0, 60, 70, 7},
+    {50.0, 51.0, 70, 80, 8},
+    {51.0, 52.0, 80, 90, 9},
+    {52.0, 54.0, 90, 100, 10},
+};
+
+// ================== 60V 电池 ==================
+const BatterySOC_t battery_table_60V[] = {
+    {50.0, 51.5, 0, 10, 1},
+    {51.5, 53.0, 10, 20, 2},
+    {53.0, 54.5, 20, 30, 3},
+    {54.5, 56.0, 30, 40, 4},
+    {56.0, 57.5, 40, 50, 5},
+    {57.5, 59.0, 50, 60, 6},
+    {59.0, 60.5, 60, 70, 7},
+    {60.5, 62.0, 70, 80, 8},
+    {62.0, 63.5, 80, 90, 9},
+    {63.5, 65.0, 90, 100, 10},
+};
+
+// ================== 72V 电池 ==================
+const BatterySOC_t battery_table_72V[] = {
+    {60.0, 61.5, 0, 10, 1},
+    {61.5, 63.0, 10, 20, 2},
+    {63.0, 64.5, 20, 30, 3},
+    {64.5, 66.0, 30, 40, 4},
+    {66.0, 67.5, 40, 50, 5},
+    {67.5, 69.0, 50, 60, 6},
+    {69.0, 70.5, 60, 70, 7},
+    {70.5, 72.0, 70, 80, 8},
+    {72.0, 73.5, 80, 90, 9},
+    {73.5, 74.4, 90, 100, 10},
+};
+
+static inline float Lerp(float y1, float y2, float t)
+{
+    return y1 + (y2 - y1) * t;
+}
+
+BatteryResult_t Get_Battery_SOC(float voltage, int system_voltage)
+{
+    const BatterySOC_t *table = NULL;
+    size_t table_size = 0;
+
+    switch (system_voltage)
+    {
+    case 36:
+        table = battery_table_36V;
+        table_size = sizeof(battery_table_36V) / sizeof(battery_table_36V[0]);
+        break;
+    case 43:
+        table = battery_table_43V;
+        table_size = sizeof(battery_table_43V) / sizeof(battery_table_43V[0]);
+        break;
+    case 48:
+        table = battery_table_48V;
+        table_size = sizeof(battery_table_48V) / sizeof(battery_table_48V[0]);
+        break;
+    case 52:
+        table = battery_table_52V;
+        table_size = sizeof(battery_table_52V) / sizeof(battery_table_52V[0]);
+        break;
+    case 60:
+        table = battery_table_60V;
+        table_size = sizeof(battery_table_60V) / sizeof(battery_table_60V[0]);
+        break;
+    case 72:
+        table = battery_table_72V;
+        table_size = sizeof(battery_table_72V) / sizeof(battery_table_72V[0]);
+        break;
+    default:
+        return (BatteryResult_t){.soc = -1, .level = -1};
+    }
+
+    for (size_t i = 0; i < table_size; i++)
+    {
+        if (voltage >= table[i].v_min && voltage <= table[i].v_max)
+        {
+            float ratio = (voltage - table[i].v_min) / (table[i].v_max - table[i].v_min);
+            BatteryResult_t result;
+            result.level = table[i].level;
+            result.soc = Lerp(table[i].soc_min, table[i].soc_max, ratio);
+            return result;
+        }
+    }
+
+    return (BatteryResult_t){.soc = -1, .level = -1};
+}
 /**
  * @brief Calculate the distance traveled based on speed and time.
  *
@@ -308,6 +446,78 @@ void calculate_battery_soc_ex_v2(uint32_t rated_voltage_mV,
     if (!(v_mV >= 0.0 && v_mV < 4e5)) // 合理范围，比如 <400V
         v_mV = 0.0;
     *out_voltage_mV = (uint16_t)(v_mV / 100 + 0.5);
+}
+
+void calculate_battery_soc_voltage_only(uint32_t constant_voltage_mV, // 满电电压 (mV)
+                                        uint32_t voltage_mV,          // 实时电压 (mV)
+                                        uint32_t capacity_mAh,        // 电池额定容量 (mAh)
+                                        uint32_t trip_odo_m,          // 已行驶距离 (m)
+                                        float consumption_Wh_per_km,  // 单位能耗 (Wh/km)
+                                        float safety_reserve_ratio,   // 安全余量 0~0.5
+                                        float avg_speed_kph,
+                                        uint16_t *out_power_w,
+                                        uint16_t *out_soc_pct,
+                                        uint16_t *out_range_100m,
+                                        uint16_t *out_range_max_100m)
+{
+    if (!out_power_w || !out_soc_pct || !out_range_100m || !out_range_max_100m)
+        return;
+
+    // 规范化参数
+    if (consumption_Wh_per_km <= 0.01f)
+        consumption_Wh_per_km = 18.0f;
+    if (safety_reserve_ratio < 0.0f)
+        safety_reserve_ratio = 0.0f;
+    if (safety_reserve_ratio > 0.5f)
+        safety_reserve_ratio = 0.5f;
+
+    // ---------- SOC 由实时电压计算 ----------
+    double soc = (double)voltage_mV / (double)constant_voltage_mV;
+    if (soc < 0.0)
+        soc = 0.0;
+    if (soc > 1.0)
+        soc = 1.0;
+    *out_soc_pct = (uint16_t)(soc * 100.0 + 0.5);
+
+    // ---------- 电池总能量 & 可用能量 ----------
+    double capacity_Wh = (constant_voltage_mV * (double)capacity_mAh) / 1000000.0;
+    double usable_Wh = capacity_Wh * (1.0 - safety_reserve_ratio);
+
+    // ---------- 剩余能量根据里程消耗 ----------
+    double used_km = trip_odo_m / 1000.0;
+    double used_Wh = used_km * consumption_Wh_per_km;
+    if (used_Wh < 0.0)
+        used_Wh = 0.0;
+    double remain_Wh = usable_Wh - used_Wh;
+    if (remain_Wh < 0.0)
+        remain_Wh = 0.0;
+
+    // ---------- 剩余里程 ----------
+    double full_range_km = (consumption_Wh_per_km > 0.0) ? (usable_Wh / consumption_Wh_per_km) : 0.0;
+    double remain_range_km = (consumption_Wh_per_km > 0.0) ? (remain_Wh / consumption_Wh_per_km) : 0.0;
+
+    uint32_t r100 = (uint32_t)(remain_range_km * 10.0 + 0.5); // 100m单位
+    if (r100 > 65535)
+        r100 = 65535;
+    *out_range_100m = (uint16_t)r100;
+
+    uint32_t rmax100 = (uint32_t)(full_range_km * 10.0 + 0.5); // 100m单位
+    if (rmax100 > 65535)
+        rmax100 = 65535;
+    *out_range_max_100m = (uint16_t)rmax100;
+
+    // ---------- 功率估算 ----------
+    uint16_t power_w = 0;
+    if (avg_speed_kph > 0.0f)
+    {
+        double p = consumption_Wh_per_km * avg_speed_kph;
+        if (p < 0.0)
+            p = 0.0;
+        if (p > 65535)
+            p = 65535;
+        power_w = (uint16_t)(p + 0.5);
+    }
+    *out_power_w = power_w;
 }
 
 /*******************************************************************************

@@ -506,7 +506,7 @@ void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length) // RX
     // 充电状态
     lt_carinfo_battery.rel_charge_state = (state2 & BIT_3) ? 1 : 0;
 
-    lt_carinfo_indicator.ready = (state2 & BIT_6) ? 1 : 0; //---ready��
+    lt_carinfo_indicator.ready = 1; //(state2 & BIT_6) ? 1 : 0; //---ready��
 
     // mingnuo_4chin
     if (((state1 & BIT_6) == 0) && ((state1 & BIT_5) == 0) && ((state1 & BIT_4) == 0) && ((state1 & BIT_3) == 0) && ((state1 & BIT_0) == 0) && ((state2 & BIT_6) == 0) && ((state2 & BIT_4) == 0))
@@ -544,6 +544,7 @@ void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length) // RX
     // 通讯故障
     if (state2 & BIT_4)
     {
+		lt_carinfo_indicator.ready = 0;
         carinfo_add_error_code(ERROR_CODE_BMS_ABNORMALITY, state2 & BIT_4, false);
     }
 }
