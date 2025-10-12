@@ -38,7 +38,8 @@ extern "C"
     void ADC_DMA_Config(void);
     void IWDG_Init(uint8_t prer, uint16_t reload);
     void IWDG_Feed(void);
-
+    void ADC_Config(void);
+			
     void UART1_Config_IRQ(void);
     void UART2_Config_DMA(void);
     void UART2_Config_IRQ(void);
@@ -88,6 +89,8 @@ extern "C"
 
     void platform_delay_us(uint32_t us);
     void platform_delay_ms(uint32_t us);
+		
+	uint16_t adc_get_value_v(void);
 
 #ifdef __cplusplus
 }

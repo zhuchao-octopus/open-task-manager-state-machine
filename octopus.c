@@ -19,18 +19,21 @@
 /*******************************************************************************
  * INCLUDES
  */
+#include "octopus_platform.h"
 #include "octopus.h"
 #include "octopus_flash.h"
 #include "octopus_gpio.h"
 #include "octopus_uart_ptl.h"
 #include "octopus_uart_upf.h"
 #include "octopus_uart_hal.h"
+#include "octopus_timer_hal.h"
+
 #include "octopus_msgqueue.h"     // Include message queue header for task communication
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_message.h"      // Include message id for inter-task communication
 #include "octopus_tickcounter.h"  // Include tick counter for timing operations
 #include "octopus_system.h"
-#include "octopus_platform.h"
+#include "octopus_sif.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */

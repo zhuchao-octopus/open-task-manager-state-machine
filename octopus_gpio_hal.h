@@ -176,6 +176,10 @@ typedef GPIO_TypeDef GPIO_GROUP;
 #define GPIO_PAGE_KEY_GROUP GPIOB
 #define GPIO_PAGE_KEY_PIN GPIO_Pin_1
 
+// Macros for controlling SIF pins
+#define GPIO_SIF_GROUP 0   
+#define GPIO_SIF_PIN  0  
+
 // Macros for controlling GPIO pin states (Low/High)
 #define GPIO_ACC_SOC_LOW()         // Set GPIO_ACC_SOC_PIN to Low
 #define GPIO_ACC_SOC_HIGH()        // Set GPIO_ACC_SOC_PIN to High
@@ -186,11 +190,6 @@ typedef GPIO_TypeDef GPIO_GROUP;
 #define GPIO_PIN_READ_ZZD() (0x00) // Read the state of ZZD_PIN
 #define GPIO_PIN_READ_YZD() (0x00) // Read the state of YZD_PIN
 #define GPIO_PIN_READ_SKD() (0x00) // Read the state of SKD_PIN
-
-// Macros for controlling SIF pins
-#define GPIO_PIN_SIF_SET_LOW()     // Set GPIO_SIF_S_PIN to Low
-#define GPIO_PIN_SIF_SET_HIGH()    // Set GPIO_SIF_S_PIN to High
-#define GPIO_PIN_READ_SIF() (0x00) // Read the state of SIF_R_PIN
 
 #elif defined(PLATFORM_NATION_RTOS)
 
@@ -230,12 +229,12 @@ typedef uint8_t GPIO_GROUP;
 extern "C"
 {
 #endif
-    // Function to initialize GPIOs for the task
-    void hal_gpio_init(uint8_t task_id);
-    bool hal_gpio_read(GPIO_GROUP *gpiox, uint16_t pin);
-    bool hal_gpio_write(GPIO_GROUP *gpiox, uint16_t pin, uint8_t value);
 
-    void hal_gpio_power_on(void);
+	// Function to initialize GPIOs for the task
+	void hal_gpio_init(uint8_t task_id);
+	bool hal_gpio_read(GPIO_GROUP *gpiox, uint16_t pin);
+	bool hal_gpio_write(GPIO_GROUP *gpiox, uint16_t pin, uint8_t value);
+		
 #ifdef __cplusplus
 }
 #endif

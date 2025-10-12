@@ -44,13 +44,13 @@
  */
 
 // Data receive GPIO pin, defined to read data from the SIF communication interface
-#define SIF_RECEIVE_DATA_BIT() GPIO_PIN_READ_SIF()
+#define SIF_RECEIVE_DATA_BIT() hal_gpio_read(GPIO_SIF_GROUP,GPIO_SIF_PIN)
 
 // Set the send data GPIO pin to low for transmission
-#define SIF_SEND_DATA_BIT_LOW() GPIO_PIN_SIF_SET_LOW()
+#define SIF_SEND_DATA_BIT_LOW() hal_gpio_write(GPIO_SIF_GROUP,GPIO_SIF_PIN,BIT_RESET)
 
 // Set the send data GPIO pin to high for transmission
-#define SIF_SEND_DATA_BIT_HIGH() GPIO_PIN_SIF_SET_HIGH()
+#define SIF_SEND_DATA_BIT_HIGH() hal_gpio_write(GPIO_SIF_GROUP,GPIO_SIF_PIN,BIT_SET)
 
 #ifdef __cplusplus
 extern "C"
@@ -77,7 +77,7 @@ extern "C"
      * This function handles interrupts generated during SIF communication, allowing the system
      * to respond to data reception or transmission events.
      */
-    extern void SIF_IO_IRQHandler(void);
+    void SIF_IO_IRQHandler(void);
 
     /**
      * @brief Checks if the SIF interface is idle.
@@ -87,7 +87,7 @@ extern "C"
      *
      * @return true if the SIF interface is idle, false otherwise.
      */
-    extern uint8_t IsSIFIdle(void);
+    bool sif_is_idle(void);
 
     /*******************************************************************************
      * LOCAL FUNCTION DECLARATIONS
@@ -101,14 +101,7 @@ extern "C"
      * This function sets up the necessary GPIO pins and configurations to initialize the SIF
      * communication interface.
      */
-    extern void sif_init(void);
-
-    /**
-     * @brief Deinitializes the SIF interface.
-     *
-     * This function resets the GPIO pins and configurations, effectively disabling the SIF interface.
-     */
-    extern void SIF_DeInit(void);
+    void sif_init(void);
 
     /**
      * @brief Checks if the SIF interface is initialized.
@@ -117,7 +110,7 @@ extern "C"
      *
      * @return true if the SIF interface is initialized, false otherwise.
      */
-    extern bool SIF_IsInit(void);
+    bool sif_is_init(void);
 
     /**
      * @brief Reads data from the SIF interface.
@@ -128,12 +121,13 @@ extern "C"
      * @param maxlen The maximum number of bytes to read.
      * @return The number of bytes successfully read from the interface.
      */
-    extern uint8_t SIF_ReadData(uint8_t *data, uint8_t maxlen);
-
+    uint8_t sif_read_data(uint8_t *data, uint8_t maxlen);
+    void sif_delay_50_us(uint16_t delay_us);
     /*******************************************************************************
     *******************************************************************************/
     void otsm_sif_init(void);
-
+    
+		extern uint32_t system_timer_tick_50us;
 #ifdef __cplusplus
 }
 #endif

@@ -91,20 +91,18 @@ void can_update_vehicle_infor(const CanQueueMsg_t *queue_msg)
         case 0x309: break;
 			  case 0x20A:
         case 0x30A: 
-					lt_carinfo_battery.voltage = data_union_2e008.battery_pack.voltage;
-				  lt_carinfo_battery.current = data_union_2e008.battery_pack.current;
-				  lt_carinfo_battery.soc = data_union_2e008.battery_pack.soc;
-				  lt_carinfo_battery.reserve = data_union_2e008.battery_pack.soh;
-				
-        carinfo_add_error_code(ERROR_CODE_OVER_VOLTAGE_PROTECTION, data_union_2e008.battery_pack.status2.bits.cell_over_voltage_prot, false);
-        carinfo_add_error_code(ERROR_CODE_OVER_VOLTAGE_PROTECTION, data_union_2e008.battery_pack.status2.bits.cell_low_voltage_prot, false);
+						lt_carinfo_battery.voltage = data_union_2e008.battery_pack.voltage;
+						lt_carinfo_battery.current = data_union_2e008.battery_pack.current;
+						lt_carinfo_battery.soc = data_union_2e008.battery_pack.soc;
+						//lt_carinfo_battery.reserve = data_union_2e008.battery_pack.soh;
+						carinfo_add_error_code(ERROR_CODE_OVER_VOLTAGE_PROTECTION, data_union_2e008.battery_pack.status2.bits.cell_over_voltage_prot, false);
+						carinfo_add_error_code(ERROR_CODE_OVER_VOLTAGE_PROTECTION, data_union_2e008.battery_pack.status2.bits.cell_low_voltage_prot, false);
 
-		
-		    //LOG_LEVEL("lt_carinfo_meter.speed_actual: %d\n", lt_carinfo_meter.speed_actual);
-		    send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR);
-				
-				  send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, FRAME_CMD_CARINFOR_BATTERY);
+						//LOG_LEVEL("lt_carinfo_meter.speed_actual: %d\n", lt_carinfo_meter.speed_actual);
+						send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR);
+						send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, FRAME_CMD_CARINFOR_BATTERY);
 					break;
+				
         case 0x30B: break;
         case 0x30C: break;
         case 0x30D: break;

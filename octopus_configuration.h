@@ -37,9 +37,9 @@
 ///////////////////////////////////////////////////////////////////////////////////
 
 //#define CUSTOMER_MODEL_EZ_406
-#define CUSTOMER_MODEL_RL_500
+//#define CUSTOMER_MODEL_RL_500
 //#define CUSTOMER_MODEL_CA_500
-//#define CUSTOMER_MODEL_DH_500
+#define CUSTOMER_MODEL_DH_500
 
 #ifdef TARGET_BANK_SLOT_L
  #undef CUSTOMER_MODEL_EZ_406
@@ -144,7 +144,7 @@
 //#define TASK_MANAGER_STATE_MACHINE_LOT4G            1   /**< 4G module handler */
 //#define TASK_MANAGER_STATE_MACHINE_BT_MUSIC         1   /**< Classic Bluetooth */
 
-//#define TASK_MANAGER_STATE_MACHINE_SIF              1   /**< SIF protocol handler */
+#define TASK_MANAGER_STATE_MACHINE_SIF              1   /**< SIF protocol handler */
 //#define TASK_MANAGER_STATE_MACHINE_BLE              1   /**< Bluetooth Low Energy */
 //#define TASK_MANAGER_STATE_MACHINE_BMS              1   /**< Battery Management System */
 

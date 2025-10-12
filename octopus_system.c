@@ -21,6 +21,7 @@
 #include "octopus_gpio.h"
 #include "octopus_flash.h"
 #include "octopus_uart_hal.h"
+#include "octopus_vehicle.h"
 
 #include "octopus_uart_ptl.h"    // Include UART protocol header
 #include "octopus_uart_upf.h"    // Include UART protocol header
@@ -462,7 +463,10 @@ void system_power_onoff(bool onoff)
     else
     {
         // send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, 0);
+			#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
+			  task_car_reset_trip();
         flash_save_carinfor_meter();
+			#endif
         LOG_LEVEL("Power down SOC... \r\n");
         gpio_power_on_off(false);
         if (!gpio_is_power_on())

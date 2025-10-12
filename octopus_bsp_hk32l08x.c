@@ -131,6 +131,7 @@ CanRxMsg CanRxMessage = {0};
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 volatile uint32_t system_tick_counter_ms = 0;
+volatile uint32_t system_timer_tick_50us = 0;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* USART/DMA Structures -----------------------------------------------------*/
@@ -184,7 +185,7 @@ void platform_delay_us(uint32_t us)
 {
 	
 #ifdef DWT_DELAY_FUNCTION
-   dwt_delay_us(us);
+  dwt_delay_us(us);
 #else
 	  
 #endif
@@ -192,7 +193,7 @@ void platform_delay_us(uint32_t us)
 
 void platform_delay_ms(uint32_t ms)
 {
-    platform_delay_us(ms * 1000);
+  platform_delay_us(ms * 1000);
 }
 /**
   * @brief  This function handles SysTick Handler.
@@ -595,8 +596,8 @@ void UART1_Config_IRQ(void)
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 	USART_Init(USART1, &USART_InitStructure);
 	USART_Cmd(USART1, ENABLE);
+	
 	// NVIC_SetPriority(USART1_IRQn, 1);
-
 	// Configure NVIC for USART1 interrupt
 	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPriority = 1;
@@ -1447,6 +1448,7 @@ void UART4_Send_Buffer(const uint8_t *buffer, uint16_t length)
 		UART4_SendByte(buffer[i]);
 	}
 }
+
 // Receive one byte (blocking) over UART4
 uint8_t UART4_ReceiveByte(void)
 {
@@ -1482,68 +1484,8 @@ void LPUART_Send_Buffer(const uint8_t *buffer, size_t length)
 		// Wait
 	}
 }
-
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-#if 0
-void TIM2_Config(void)
-{
-	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-	NVIC_InitTypeDef NVIC_InitStructure;
-
-	// Enable clock for TIM2
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-
-	/*
-	* Configure TIM2 to generate an interrupt every 50us.
-	* Timer frequency calculation:
-	* Timer Frequency = 48 MHz / (Prescaler + 1) / (Period + 1)
-	* For 50us interval => 1 / 50us = 20kHz
-	* Example: Prescaler = 47, Period = 49
-	*          => 48MHz / 48 / 50 = 20kHz (50us)
-	*/
-	TIM_TimeBaseStructure.TIM_Period = 49;               // Auto-reload value
-	TIM_TimeBaseStructure.TIM_Prescaler = 47;            // Prescaler value
-	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-
-	// Initialize TIM2 with the specified parameters
-	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
-
-	// Enable TIM2 update interrupt
-	TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
-
-	// Configure NVIC for TIM2 interrupt
-	NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
-	// Set TIM2 interrupt to highest priority (0 = highest)
-	NVIC_SetPriority(TIM2_IRQn, 0);
-
-	// Enable TIM2 interrupt
-	NVIC_EnableIRQ(TIM2_IRQn);
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
-
-	// Start TIM2
-	TIM_Cmd(TIM2, ENABLE);
-}
-
-void TIM2_IRQHandler(void)
-{
-    // Check if update interrupt flag is set
-    if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
-    {
-        // Clear the interrupt pending bit
-        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
-        
-        // Increment the 50us tick
-        system_timer_tick_50us++;
-
-        // Optionally, you can add any periodic task logic here
-        // Example callback for periodic tasks every 50us
-        hal_timer_interrupt_callback(0);
-    }
-}
-#endif
 
 #if 0
 /**
@@ -1647,6 +1589,126 @@ void ADC_DMA_Config(void)
 
     /* ADC regular Software Start Conv */
     ADC_StartOfConversion(ADC);
+}
+#endif
+void ADC_Config(void)
+{
+	 #if 1
+    ADC_InitTypeDef          ADC_InitStructure;
+    GPIO_InitTypeDef         GPIO_InitStructure;
+
+    /* GPIOA Peripheral clock enable */
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+
+    /* ADC1 Peripheral clock enable */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC, ENABLE);
+
+    /* Configure ADC Chanenl0 as analog input */
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 ;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL ;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+    /* ADCs DeInit */
+    ADC_DeInit(ADC);
+
+    /* Configure the ADC1 in continous mode withe a resolution equal to 12 bits*/
+    ADC_StructInit(&ADC_InitStructure);
+    ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
+    ADC_Init(ADC, &ADC_InitStructure);
+    ADC_ChannelConfig(ADC, ADC_Channel_8, ADC_SampleTime_28_5Cycles);
+
+    /* ADC Calibration */
+    ADC_GetCalibrationFactor(ADC);
+
+    /* Enable the ADC peripheral */
+    ADC_Cmd(ADC, ENABLE);
+
+    /* Wait the ADRDY flag */
+    while (!ADC_GetFlagStatus(ADC, ADC_FLAG_ADRDY))
+    {
+    }
+
+    /* ADC1 regular Software Start Conv */
+    ADC_StartOfConversion(ADC);
+		#endif
+}
+
+uint16_t adc_get_value_v(void)
+{
+	uint32_t temp1,temp2;
+	double v_10 = 0;
+	#if 1
+	while (!ADC_GetFlagStatus(ADC, ADC_FLAG_EOC))
+	{
+	}
+	
+	temp1 = ADC_GetConversionValue(ADC);
+	temp2 = (temp1 * 3300) / 0xFFF;
+	
+	v_10 = (temp2 * 34) / 100;
+	#endif
+	return v_10;
+}
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+#if 1
+void TIM2_Config(void)
+{
+	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+	NVIC_InitTypeDef NVIC_InitStructure;
+
+	// Enable clock for TIM2
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+
+	/*
+	* Configure TIM2 to generate an interrupt every 50us.
+	* Timer frequency calculation:
+	* Timer Frequency = 48 MHz / (Prescaler + 1) / (Period + 1)
+	* For 50us interval => 1 / 50us = 20kHz
+	* Example: Prescaler = 47, Period = 49
+	*          => 48MHz / 48 / 50 = 20kHz (50us)
+	*/
+	TIM_TimeBaseStructure.TIM_Period = 49;               // Auto-reload value
+	TIM_TimeBaseStructure.TIM_Prescaler = 47;            // Prescaler value
+	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+
+	// Initialize TIM2 with the specified parameters
+	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+
+	// Enable TIM2 update interrupt
+	TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
+
+	// Configure NVIC for TIM2 interrupt
+	NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
+	// Set TIM2 interrupt to highest priority (0 = highest)
+	NVIC_SetPriority(TIM2_IRQn, 0);
+
+	// Enable TIM2 interrupt
+	NVIC_EnableIRQ(TIM2_IRQn);
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
+
+	// Start TIM2
+	TIM_Cmd(TIM2, ENABLE);
+}
+
+void TIM2_IRQHandler(void)
+{
+ // Check if update interrupt flag is set
+ if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
+ {
+		// Clear the interrupt pending bit
+		TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+		
+		// Increment the 50us tick
+		system_timer_tick_50us++;
+
+		// Optionally, you can add any periodic task logic here
+		// Example callback for periodic tasks every 50us
+		hal_timer_interrupt_callback(0);
+  }
 }
 #endif
 

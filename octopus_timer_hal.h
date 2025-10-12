@@ -56,6 +56,7 @@ extern "C"
      */
     // void hal_timer_interrupt_callback(uint8_t evt);
     void otsm_timer_init(void);
+
 #ifdef __cplusplus
 }
 #endif

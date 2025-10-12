@@ -3,12 +3,12 @@
  * INCLUDES
  */
 #include "octopus_ling_hui_liion2.h"
-#include "octopus_task_manager.h"   // Task Manager: handles scheduling and execution of system tasks
-#include "octopus_tickcounter.h"    // Tick Counter: provides timing and delay utilities
-#include "octopus_message.h"        // Message IDs: defines identifiers for inter-task communication
-#include "octopus_msgqueue.h"       // Message Queue: API for sending/receiving messages between tasks
-#include "octopus_uart_ptl.h"       // UART Protocol Layer: handles protocol-level UART operations
-#include "octopus_uart_upf.h"       // UART Packet Framework: low-level UART packet processing
+#include "octopus_task_manager.h" // Task Manager: handles scheduling and execution of system tasks
+#include "octopus_tickcounter.h"  // Tick Counter: provides timing and delay utilities
+#include "octopus_message.h"      // Message IDs: defines identifiers for inter-task communication
+#include "octopus_msgqueue.h"     // Message Queue: API for sending/receiving messages between tasks
+#include "octopus_uart_ptl.h"     // UART Protocol Layer: handles protocol-level UART operations
+#include "octopus_uart_upf.h"     // UART Packet Framework: low-level UART packet processing
 
 #include "octopus_vehicle.h"
 
@@ -202,11 +202,11 @@ void lhl2_ptl_tx_process(void)
         flag |= BIT_7;
     }
 
-    if (GETBIT(lt_carinfo_indicator.start_mode,7))
+    if (GETBIT(lt_carinfo_indicator.start_mode, 7))
     {
         flag |= BIT_6;
     }
-		
+
     if (lt_carinfo_indicator.high_beam)
     {
         flag |= BIT_5;
@@ -253,7 +253,7 @@ void lhl2_ptl_tx_process(void)
     lu_tx_buff[9] = lt_carinfo_indicator.start_poles; // 1
 
     // 助力启动强度
-    lu_tx_buff[10] = GETBITS_VALUE(lt_carinfo_indicator.start_mode,3,0);
+    lu_tx_buff[10] = GETBITS_VALUE(lt_carinfo_indicator.start_mode, 3, 0);
 
     // 内测速磁钢数
     lu_tx_buff[11] = 0;
@@ -281,10 +281,10 @@ void lhl2_ptl_tx_process(void)
         flag |= BIT_6;
     } // 巡航状态
 
-    ///if (lt_carinfo_indicator.drive_mode)
+    /// if (lt_carinfo_indicator.drive_mode)
     ///{
-    ///    flag |= BIT_4;
-    ///} // 0:后驱；1：双驱
+    ///     flag |= BIT_4;
+    /// } // 0:后驱；1：双驱
 
     lu_tx_buff[18] = flag | 0x06; // 助力磁钢数：6
 
@@ -506,7 +506,7 @@ void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length) // RX
     // 充电状态
     lt_carinfo_battery.rel_charge_state = (state2 & BIT_3) ? 1 : 0;
 
-    lt_carinfo_indicator.ready = (state2 & BIT_6) ? 1 : 0; //---ready��
+    lt_carinfo_indicator.ready = 1; //(state2 & BIT_6) ? 1 : 0; //---ready��
 
     // mingnuo_4chin
     if (((state1 & BIT_6) == 0) && ((state1 & BIT_5) == 0) && ((state1 & BIT_4) == 0) && ((state1 & BIT_3) == 0) && ((state1 & BIT_0) == 0) && ((state2 & BIT_6) == 0) && ((state2 & BIT_4) == 0))
@@ -544,6 +544,7 @@ void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length) // RX
     // 通讯故障
     if (state2 & BIT_4)
     {
+		lt_carinfo_indicator.ready = 0;
         carinfo_add_error_code(ERROR_CODE_BMS_ABNORMALITY, state2 & BIT_4, false);
     }
 }
