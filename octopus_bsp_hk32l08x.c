@@ -1638,6 +1638,7 @@ uint16_t adc_get_value_v(void)
 {
 	uint32_t temp1,temp2;
 	double v_10 = 0;
+	
 	#if 1
 	while (!ADC_GetFlagStatus(ADC, ADC_FLAG_EOC))
 	{
@@ -1648,6 +1649,7 @@ uint16_t adc_get_value_v(void)
 	
 	v_10 = (temp2 * 34) / 100;
 	#endif
+	
 	return v_10;
 }
 //////////////////////////////////////////////////////////////////////////////////
@@ -1701,14 +1703,15 @@ void TIM2_IRQHandler(void)
  {
 		// Clear the interrupt pending bit
 		TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
-		
+
 		// Increment the 50us tick
 		system_timer_tick_50us++;
 
 		// Optionally, you can add any periodic task logic here
 		// Example callback for periodic tasks every 50us
-		hal_timer_interrupt_callback(0);
+		//hal_timer_interrupt_callback(0);
   }
+ 	//TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 }
 #endif
 

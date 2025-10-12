@@ -122,12 +122,12 @@ extern "C"
      * @return The number of bytes successfully read from the interface.
      */
     uint8_t sif_read_data(uint8_t *data, uint8_t maxlen);
-    void sif_delay_50_us(uint16_t delay_us);
+    void sif_delay_50_us(uint32_t delay_us);
     /*******************************************************************************
     *******************************************************************************/
     void otsm_sif_init(void);
     
-		extern uint32_t system_timer_tick_50us;
+		extern volatile uint32_t system_timer_tick_50us;
 #ifdef __cplusplus
 }
 #endif

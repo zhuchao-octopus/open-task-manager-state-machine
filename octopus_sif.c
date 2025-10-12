@@ -248,14 +248,25 @@ bool sif_is_idle(void)
 }
 
 /**
- * @brief Delay function using 50us system tick counter.
- * @param delay_us: Delay time in microseconds.
+ * @brief Delay for a specified number of microseconds using 50 µs tick counter
+ * @param delay_us Desired delay in microseconds
  */
-void sif_delay_50_us(uint16_t delay_us)
+void sif_delay_50_us(uint32_t delay_us)
 {
+    if (delay_us == 0)
+        return;
+
+    // Convert to 50 µs ticks (round up)
+    uint32_t ticks = (delay_us + 49) / 50;  // 向上取整，确保不小于目标时间
     uint32_t start = system_timer_tick_50us;
-    uint32_t ticks = delay_us / 50;
-    while ((system_timer_tick_50us - start) < ticks);
+		
+		//LOG_LEVEL("start test sif_delay_50_us %u\r\n",system_timer_tick_50us);
+    while ((system_timer_tick_50us - start) < ticks)
+    {
+        // busy wait
+			__NOP();
+    }
+		//LOG_LEVEL("start test sif_delay_50_us %u\r\n",system_timer_tick_50us);
 }
 
 /**
