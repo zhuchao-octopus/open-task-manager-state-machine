@@ -30,6 +30,7 @@
 
 #define EEROM_DATAS_ADDRESS (EEROM_SYSTEM_METER_ADDRESS + EEROM_SYSTEM_METER_SIZE) // user data area from app meta struct
 #define EEROM_CARINFOR_METER_ADDRESS (EEROM_DATAS_ADDRESS + 0)
+#define EEROM_CARINFOR_BATTERY_ADDRESS (EEROM_CARINFOR_METER_ADDRESS + 128)
 
 // #define EEROM_DATAS_VALID_FLAG (0xAA55)
 // #define EEROM_APPPP_VALID_FLAG (0x55AA)
@@ -198,8 +199,9 @@ extern system_meter_infor_t system_meter_infor;
 #define FLASH_USER_META_DATA_START_ADDRESS (FLASH_BASE_END_ADDR - FLASH_USER_DATA_BLOCK * FLASH_BLOCK_SIZE)
 #define FLASH_META_DATA_START_ADDRESS (FLASH_USER_META_DATA_START_ADDRESS)
 #define FLASH_SYSTEM_DATA_START_ADDRESS (FLASH_META_DATA_START_ADDRESS + 128)
+
 #define FLASH_METER_DATA_START_ADDRESS (FLASH_SYSTEM_DATA_START_ADDRESS + 128)
-#define FLASH_USER_DATA_START_ADDRESS (FLASH_METER_DATA_START_ADDRESS + 128)
+//#define FLASH_USER_DATA_START_ADDRESS (FLASH_METER_DATA_START_ADDRESS + 128)
 
 #define FLASH_META_DATAS_VALID_FLAG (0XA5A5)
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -249,11 +251,15 @@ extern "C"
     void flash_load_sync_data_infor(void);
 
     flash_meta_infor_t *flash_get_meta_infor(void);
-    uint32_t flash_get_app_max_size(void);
+	uint32_t flash_get_app_max_size(void);
+	uint32_t flash_erase_bank(uint8_t bank_slot);
+
     uint32_t flash_get_bank_slot_mode(void);
     uint32_t flash_get_current_bank(void);
     uint32_t flash_get_bank_address(uint8_t bank_slot);
     uint32_t flash_get_bank_offset_address(uint8_t bank_slot);
+
+	
     const char *flash_get_current_bank_name(void);
     const char *flash_get_bank_name(uint8_t bank);
 
@@ -266,7 +272,7 @@ extern "C"
 
     uint32_t FlashWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t len);
     uint32_t FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t len);
-
+	
     void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length);
     void E2ROMWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t length);
 
@@ -276,7 +282,6 @@ extern "C"
     void E2ROM_writ_meter_infor(void);
     void E2ROM_read_meter_infor(void);
 
-    uint32_t flash_erase_user_app_bank(uint8_t bank_slot);
     void flash_writ_all_infor(void);
     void flash_read_all_infor(void);
     void flash_save_carinfor_meter(void);

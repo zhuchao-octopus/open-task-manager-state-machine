@@ -94,6 +94,21 @@ typedef struct
 	bank_info_t bank2;
 } meta_info_t;
 
+typedef struct
+{
+	float v_min;
+	float v_max;
+	int soc_min;
+	int soc_max;
+	int level;
+} BatterySOC_t;
+
+typedef struct
+{
+	float soc; // 当前SOC百分比
+	int level; // 电量格数（1~10）
+} BatteryResult_t;
+
 /*******************************************************************************
  * CONSTANTS
  * Define any module-specific constants.
@@ -138,6 +153,18 @@ extern "C"
 									 uint16_t *out_range_max_100m,
 									 uint16_t *out_voltage_mV); // 新：输出估算端电压 (mV)
 
+	void calculate_battery_soc_voltage_only(uint32_t constant_voltage_mV, // 满电电压 (mV)
+											uint32_t voltage_mV,		  // 实时电压 (mV)
+											uint32_t capacity_mAh,		  // 电池额定容量 (mAh)
+											uint32_t trip_odo_m,		  // 已行驶距离 (m)
+											float consumption_Wh_per_km,  // 单位能耗 (Wh/km)
+											float safety_reserve_ratio,	  // 安全余量 0~0.5
+											float avg_speed_kph,
+											uint16_t *out_power_w,
+											uint16_t *out_soc_pct,
+											uint16_t *out_range_100m,
+											uint16_t *out_range_max_100m);
+
 	uint32_t calculate_crc_32(uint8_t *data, uint32_t length);
 	uint32_t calculate_crc_32_step(uint32_t current_crc, uint8_t *data, uint32_t length);
 
@@ -156,9 +183,10 @@ extern "C"
 	file_read_status_t read_next_bin_record(FILE *bin_file, long *file_offset, hex_record_t *hex_record);
 
 	int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_path_size);
-	int file_exists(const char *file_path_name);
-	bool is_str_empty(const char *s);
 
+	bool is_file_exists(const char *file_path_name);
+	bool is_str_empty(const char *s);
+	bool is_struct_equal(const void *a, const void *b, size_t size);
 #ifdef __cplusplus
 }
 #endif

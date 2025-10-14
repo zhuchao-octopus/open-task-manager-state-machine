@@ -22,6 +22,7 @@
 #include "octopus_bsp_hk32l08x.h"
 #include "octopus_gpio.h"
 
+#ifdef TASK_MANAGER_STATE_MACHINE_I2C
 /* =======================================================================
  * MODULE INTERNAL STATE
  * ======================================================================= */
@@ -301,3 +302,6 @@ uint8_t i2c_read_byte(uint8_t ack)
 
     return data; // Return the received byte
 }
+
+#endif
+
