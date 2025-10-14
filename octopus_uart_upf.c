@@ -360,10 +360,9 @@ uint8_t upf_send_buffer(upf_module_t upf_module, const uint8_t *buffer, uint16_t
 
     case UPF_CHANNEL_9:
         return hal_com_uart9_send_buffer(buffer, length);
-
     }
-		
-		return 0;
+
+    return 0;
 }
 
 #endif

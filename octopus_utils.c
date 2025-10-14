@@ -161,19 +161,40 @@ BatteryResult_t Get_Battery_SOC(float voltage, int system_voltage)
     const BatterySOC_t *table = NULL;
     size_t table_size = 0;
 
-    switch (system_voltage) {
-        case 36: table = battery_table_36V; table_size = sizeof(battery_table_36V)/sizeof(battery_table_36V[0]); break;
-        case 43: table = battery_table_43V; table_size = sizeof(battery_table_43V)/sizeof(battery_table_43V[0]); break;
-        case 48: table = battery_table_48V; table_size = sizeof(battery_table_48V)/sizeof(battery_table_48V[0]); break;
-        case 52: table = battery_table_52V; table_size = sizeof(battery_table_52V)/sizeof(battery_table_52V[0]); break;
-        case 60: table = battery_table_60V; table_size = sizeof(battery_table_60V)/sizeof(battery_table_60V[0]); break;
-        case 72: table = battery_table_72V; table_size = sizeof(battery_table_72V)/sizeof(battery_table_72V[0]); break;
-        default: 
-            return (BatteryResult_t){.soc = -1, .level = -1};
+    switch (system_voltage)
+    {
+    case 36:
+        table = battery_table_36V;
+        table_size = sizeof(battery_table_36V) / sizeof(battery_table_36V[0]);
+        break;
+    case 43:
+        table = battery_table_43V;
+        table_size = sizeof(battery_table_43V) / sizeof(battery_table_43V[0]);
+        break;
+    case 48:
+        table = battery_table_48V;
+        table_size = sizeof(battery_table_48V) / sizeof(battery_table_48V[0]);
+        break;
+    case 52:
+        table = battery_table_52V;
+        table_size = sizeof(battery_table_52V) / sizeof(battery_table_52V[0]);
+        break;
+    case 60:
+        table = battery_table_60V;
+        table_size = sizeof(battery_table_60V) / sizeof(battery_table_60V[0]);
+        break;
+    case 72:
+        table = battery_table_72V;
+        table_size = sizeof(battery_table_72V) / sizeof(battery_table_72V[0]);
+        break;
+    default:
+        return (BatteryResult_t){.soc = -1, .level = -1};
     }
 
-    for (size_t i = 0; i < table_size; i++) {
-        if (voltage >= table[i].v_min && voltage <= table[i].v_max) {
+    for (size_t i = 0; i < table_size; i++)
+    {
+        if (voltage >= table[i].v_min && voltage <= table[i].v_max)
+        {
             float ratio = (voltage - table[i].v_min) / (table[i].v_max - table[i].v_min);
             BatteryResult_t result;
             result.level = table[i].level;
@@ -1360,7 +1381,7 @@ int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_
 
 bool is_file_exists(const char *file_path_name)
 {
- if (file_path_name == NULL)
+    if (file_path_name == NULL)
         return false;
 
 #if defined(__linux__) || defined(PLATFORM_LINUX_RISC)
@@ -1389,7 +1410,7 @@ bool is_str_empty(const char *s)
     return false;
 }
 
-bool is_struct_equal(const void* a, const void* b, size_t size)
+bool is_struct_equal(const void *a, const void *b, size_t size)
 {
     if (a == NULL || b == NULL)
         return false;
