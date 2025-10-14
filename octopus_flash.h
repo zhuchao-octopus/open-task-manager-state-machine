@@ -21,11 +21,11 @@
 /***************************************************************************************
  * User Data EEPROM Struct Definition
  ***************************************************************************************/
-#define EEROM_START_ADDRESS (0x00000000)
+#define EEPROM_START_ADDRESS (0x00000000)
 #define EEPROM_FLASH_META_SIZE (128) // 128byte app meta struct total 2kb
 #define EEROM_SYSTEM_METER_SIZE (128)
 
-#define EEROM_FLASH_MATA_ADDRESS (EEROM_START_ADDRESS)
+#define EEROM_FLASH_MATA_ADDRESS (EEPROM_START_ADDRESS)
 #define EEROM_SYSTEM_METER_ADDRESS (EEROM_FLASH_MATA_ADDRESS + EEPROM_FLASH_META_SIZE)
 
 #define EEROM_DATAS_ADDRESS (EEROM_SYSTEM_METER_ADDRESS + EEROM_SYSTEM_METER_SIZE) // user data area from app meta struct
@@ -173,9 +173,9 @@ extern system_meter_infor_t system_meter_infor;
 // * MCU Flash Memory Layout Configuration
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#define FLASH_BLOCK_SIZE (1024)                                 // 0x00000400  /* FLASH Page Size 1KB(1024)*/
-#define FLASH_TOTAL_BLOCK (128)                                 // 128K 0x20000 Total Flash size: 128KB
-#define FLASH_TOTAL_SIZE (FLASH_TOTAL_BLOCK * FLASH_BLOCK_SIZE) // Total Flash size: 128KB
+#define FLASH_BLOCK_SIZE  (1024)                                 // 0x00000400  /* FLASH Page Size 1KB(1024)*/
+#define FLASH_TOTAL_BLOCK (128)                                  // 128K 0x20000 Total Flash size: 128KB
+#define FLASH_TOTAL_SIZE  (FLASH_TOTAL_BLOCK * FLASH_BLOCK_SIZE) // Total Flash size: 128KB
 
 #define FLASH_BASE_START_ADDR (0x08000000)
 #define FLASH_BASE_END_ADDR (FLASH_BASE_START_ADDR + FLASH_TOTAL_SIZE)
@@ -230,61 +230,61 @@ extern "C"
 {
 #endif
 
-    /******************************************************************************/
-    /**
-     * @brief    Declarations of local functions for Flash operations.
-     * @details  These functions include Flash read/write operations and debugging
-     *           utilities for printing Flash data in hexadecimal format.
-     */
+	/******************************************************************************/
+	/**
+	* @brief    Declarations of local functions for Flash operations.
+	* @details  These functions include Flash read/write operations and debugging
+	*           utilities for printing Flash data in hexadecimal format.
+	*/
 
-    /**< Prints a buffer in hexadecimal format for debugging. */
+	/**< Prints a buffer in hexadecimal format for debugging. */
 
-    void otsm_flash_init(void);
+	void otsm_flash_init(void);
 
-    void flash_print_mcu_meta_infor(void);
-    void flash_init_version(const char *date_str, const char *time_str);
-    void flash_delay_ms(uint32_t ms);
+	void flash_print_mcu_meta_infor(void);
+	void flash_init_version(const char *date_str, const char *time_str);
+	void flash_delay_ms(uint32_t ms);
 
-    void flash_vector_table_config(boot_mode_t boot_mode, uint8_t bank_slot, uint32_t slot_address, bool mapping_vector);
-    void flash_loader_active_user_app(uint8_t bank_slot, const char *date_str, const char *time_str);
-    void flash_JumpToApplication(uint32_t app_address);
-    void flash_load_sync_data_infor(void);
+	void flash_vector_table_config(boot_mode_t boot_mode, uint8_t bank_slot, uint32_t slot_address, bool mapping_vector);
+	void flash_loader_active_user_app(uint8_t bank_slot, const char *date_str, const char *time_str);
+	void flash_JumpToApplication(uint32_t app_address);
+	void flash_load_sync_data_infor(void);
 
-    flash_meta_infor_t *flash_get_meta_infor(void);
+	flash_meta_infor_t *flash_get_meta_infor(void);
 	uint32_t flash_get_app_max_size(void);
 	uint32_t flash_erase_bank(uint8_t bank_slot);
 
-    uint32_t flash_get_bank_slot_mode(void);
-    uint32_t flash_get_current_bank(void);
-    uint32_t flash_get_bank_address(uint8_t bank_slot);
-    uint32_t flash_get_bank_offset_address(uint8_t bank_slot);
+	uint32_t flash_get_bank_slot_mode(void);
+	uint32_t flash_get_current_bank(void);
+	uint32_t flash_get_bank_address(uint8_t bank_slot);
+	uint32_t flash_get_bank_offset_address(uint8_t bank_slot);
 
-	
-    const char *flash_get_current_bank_name(void);
-    const char *flash_get_bank_name(uint8_t bank);
 
-    bool flash_check_enter_upgrade_mode(void);
-    bool flash_decode_active_version(uint8_t bank_slot, char *out_str, size_t max_len, const char *date_str, const char *time_str);
-    bool flash_is_bank_address_valid(uint32_t b_address, uint32_t address);
-    bool flash_is_meta_infor_valid(void);
-    bool flash_is_allow_update_bank(uint8_t bank_type);
-    bool flash_is_allow_update_address(uint32_t address);
+	const char *flash_get_current_bank_name(void);
+	const char *flash_get_bank_name(uint8_t bank);
 
-    uint32_t FlashWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t len);
-    uint32_t FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t len);
-	
-    void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length);
-    void E2ROMWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t length);
+	bool flash_check_enter_upgrade_mode(void);
+	bool flash_decode_active_version(uint8_t bank_slot, char *out_str, size_t max_len, const char *date_str, const char *time_str);
+	bool flash_is_bank_address_valid(uint32_t b_address, uint32_t address);
+	bool flash_is_meta_infor_valid(void);
+	bool flash_is_allow_update_bank(uint8_t bank_type);
+	bool flash_is_allow_update_address(uint32_t address);
 
-    void E2ROM_writ_metas_infor(void);
-    void E2ROM_read_metas_infor(void);
+	uint32_t FlashWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t len);
+	uint32_t FlashReadToBuff(uint32_t addr, uint8_t *buf, uint32_t len);
 
-    void E2ROM_writ_meter_infor(void);
-    void E2ROM_read_meter_infor(void);
+	void E2ROMReadToBuff(uint32_t addr, uint8_t *buf, uint32_t length);
+	void E2ROMWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t length);
 
-    void flash_writ_all_infor(void);
-    void flash_read_all_infor(void);
-    void flash_save_carinfor_meter(void);
+	void E2ROM_writ_metas_infor(void);
+	void E2ROM_read_metas_infor(void);
+
+	void E2ROM_writ_meter_infor(void);
+	void E2ROM_read_meter_infor(void);
+
+	void flash_writ_all_infor(void);
+	void flash_read_all_infor(void);
+	void flash_save_carinfor_meter(void);
 
 #ifdef __cplusplus
 }
