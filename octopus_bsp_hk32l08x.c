@@ -538,9 +538,11 @@ void Sleep_Mode_Wakeup_Config(void)
 	NVIC_InitStructure.NVIC_IRQChannelPriority = 0x03;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
+	
 	// NVIC_SetPriority(EXTI4_15_IRQn,3);
-
+#ifdef HARDWARE_BSP_UART_2
 	UART2_Config_IRQ_STOP_Mode();
+#endif
 }
 
 ////extern  void TaskManagerStateMachineInit(void);
@@ -567,11 +569,22 @@ void native_enter_sleep_mode(void)
 	RCC_Config();
 	EEPROM_Init();
 
+#ifdef HARDWARE_BSP_UART_1
 	UART1_Config_IRQ();
+#endif	
+#ifdef HARDWARE_BSP_UART_2
 	UART2_Config_IRQ();
+#endif
+#ifdef HARDWARE_BSP_UART_3
 	UART3_Config_IRQ();
+#endif
+#ifdef HARDWARE_BSP_UART_4
 	UART4_Config_IRQ();
+#endif
+
+#ifdef HARDWARE_BSP_LUART_1
 	LPUART_WakeStop_Config();
+#endif
 	dbg_log_set_channel(TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL);
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
 	CAN_Config();
@@ -582,6 +595,7 @@ void native_enter_sleep_mode(void)
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef HARDWARE_BSP_UART_1
 void UART1_Config_IRQ(void)
 {
 	USART_InitTypeDef USART_InitStructure;
@@ -607,9 +621,11 @@ void UART1_Config_IRQ(void)
 	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 	NVIC_EnableIRQ(USART1_IRQn);
 }
+#endif
 
+#ifdef HARDWARE_BSP_UART_2
 /* USART + DMA Init Function -------------------------------------------------*/
-#ifdef UART3_DMA_MODE
+#ifdef UART2_DMA_MODE
 void UART2_Config_DMA(void)
 {
 	/* USART2 Configuration */
@@ -666,6 +682,7 @@ void UART2_Config_DMA(void)
 	NVIC_EnableIRQ(DMA_CH4_7_IRQn);
 }
 #endif
+
 void UART2_Config_IRQ_STOP_Mode(void)
 {
 	USART_InitTypeDef USART_InitStructure;
@@ -741,7 +758,9 @@ void UART2_Config_IRQ(void)
 	// Enable USART2
 	USART_Cmd(USART2, ENABLE);
 }
+#endif
 
+#ifdef HARDWARE_BSP_UART_3
 void UART3_Config_IRQ(void)
 {
 	USART_InitTypeDef USART_InitStructure;
@@ -818,7 +837,9 @@ void UART3_Config_DMA(void)
 	NVIC_EnableIRQ(DMA_CH2_3_IRQn);
 }
 #endif
+#endif
 
+#ifdef HARDWARE_BSP_UART_4
 void UART4_Config_IRQ(void)
 {
 	USART_InitTypeDef USART_InitStructure;
@@ -838,7 +859,8 @@ void UART4_Config_IRQ(void)
 	NVIC_SetPriority(UART3_4_IRQn, 2);
 	NVIC_EnableIRQ(UART3_4_IRQn);
 }
-
+#endif
+#ifdef HARDWARE_BSP_LUART_1
 void LPUART_WakeStop_Config(void)
 {
 	/* Enable PWR APB clock */
@@ -926,9 +948,10 @@ void LPUART_WakeStop_Config(void)
 	/* Enable the wake up from stop Interrupt WUF */
 	// LPUART_ITConfig(LPUART, LPUART_IT_WU, ENABLE);
 }
-
+#endif
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef HARDWARE_BSP_UART_1
 void USART1_IRQHandler(void)
 {
 	// Non-DMA mode: use RXNE interrupt
@@ -958,8 +981,9 @@ void USART1_IRQHandler(void)
 		USART_ClearITPendingBit(USART1, USART_IT_WU);
 	}
 }
-
+#endif
 /* USART2 Interrupt Handler --------------------------------------------------*/
+#ifdef HARDWARE_BSP_UART_2
 void USART2_IRQHandler(void)
 {
 #ifdef UART2_DMA_MODE
@@ -1027,7 +1051,7 @@ void USART2_IRQHandler(void)
 	}
 #endif
 }
-
+#endif
 /* DMA Interrupt Handlers for USART2 ---------------------------*/
 #ifdef UART2_DMA_MODE
 void DMA_CH4_7_IRQHandler(void) // DMA interrupt for USART2 TX and RX
@@ -1087,6 +1111,7 @@ void DMA_CH4_7_IRQHandler(void) // DMA interrupt for USART2 TX and RX
 #endif
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 /* UART3 Interrupt Handler --------------------------------------------------*/
 void UART3_4_IRQHandler(void)
 {
@@ -1218,6 +1243,7 @@ void DMA_CH2_3_IRQHandler(void) // DMA interrupt for UART3 TX and RX
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
+#ifdef HARDWARE_BSP_LUART_1
 /**
  * @brief  This function handles LPUART Handler.
  * @retval None
@@ -1247,10 +1273,10 @@ void LPUART_IRQHandler(void)
 
 	LPUART_ClearFlag(LPUART, LPUART_FLAG_ORE);
 }
-
+#endif
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+#ifdef HARDWARE_BSP_UART_1
 /**
  * @brief  Send a buffer of data through USART1 (blocking)
  * @param  buffer: pointer to the data to be sent
@@ -1291,6 +1317,9 @@ void UART1_SendStr(const char *str)
 			;
 	}
 }
+#endif
+
+#ifdef HARDWARE_BSP_UART_2
 #ifdef UART2_DMA_MODE
 /* USART2 String Transmission via DMA ------------------------------------*/
 void UART2_Send_String_DMA(const char *str)
@@ -1354,8 +1383,10 @@ void UART2_Send_Buffer(const uint8_t *buffer, uint16_t length)
 	while (USART_GetFlagStatus(USART2, USART_FLAG_TC) == RESET)
 		;
 }
+#endif
 
 /* UART3 String Transmission via DMA ------------------------------------*/
+#ifdef HARDWARE_BSP_UART_3
 #ifdef UART3_DMA_MODE
 void UART3_Send_String_DMA(const char *str)
 {
@@ -1424,7 +1455,9 @@ uint8_t UART3_ReceiveByte(void)
 		;
 	return (uint8_t)USART_ReceiveData(UART3);
 }
+#endif
 
+#ifdef HARDWARE_BSP_UART_4
 // Send one byte over UART3
 void UART4_SendByte(const uint8_t data)
 {
@@ -1457,7 +1490,9 @@ uint8_t UART4_ReceiveByte(void)
 		;
 	return (uint8_t)USART_ReceiveData(UART4);
 }
+#endif
 
+#ifdef HARDWARE_BSP_LUART_1
 /**
  * @brief Send a buffer of data via LPUART.
  * @param data Pointer to the data buffer to send.
@@ -1484,6 +1519,7 @@ void LPUART_Send_Buffer(const uint8_t *buffer, size_t length)
 		// Wait
 	}
 }
+#endif
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -1591,7 +1627,8 @@ void ADC_DMA_Config(void)
     ADC_StartOfConversion(ADC);
 }
 #endif
-void ADC_Config(void)
+#ifdef HARDWARE_BSP_ADC_CHANNEL_8
+void ADC_Channel_8_Config(void)
 {
 	 #if 1
     ADC_InitTypeDef          ADC_InitStructure;
@@ -1652,9 +1689,10 @@ uint16_t adc_get_value_v(void)
 	
 	return v_10;
 }
+#endif
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-#if 1
+#ifdef HARDWARE_BSP_TIMER_2
 void TIM2_Config(void)
 {
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
@@ -1970,6 +2008,7 @@ void PTL_1_UART_Send_Buffer(const uint8_t *buffer, uint16_t length)
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
+#ifdef TASK_MANAGER_STATE_MACHINE_I2C
 #define BSP_I2C1                         I2C1
 #define BSP_I2C1_CLK                     RCC_APB1Periph_I2C1
 
@@ -2333,4 +2372,5 @@ uint8_t hal_iic6_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer,
 {
  return 0;	
 }
+#endif
 #endif

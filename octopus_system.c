@@ -91,8 +91,6 @@ void task_system_init_running(void)
 {
     LOG_LEVEL("task_system_init_running\r\n");
     OTMS(TASK_MODULE_SYSTEM, OTMS_S_INVALID);
-
-    // ptl_register_module(P2M_MOD_DEBUG, debug_send_handler, debug_receive_handler);
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
     ptl_register_module(MCU_TO_SOC_MOD_SYSTEM, system_send_handler, system_receive_handler);
 #elif defined(TASK_MANAGER_STATE_MACHINE_SOC)
@@ -207,7 +205,8 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         }
         return false;
     }
-
+		
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
     // Handle commands for SOC_TO_MCU_MOD_SYSTEM frame type
     if (SOC_TO_MCU_MOD_SYSTEM == frame_type)
     {
@@ -233,6 +232,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             break;
         }
     }
+#endif		
     return false; // Command not processed
 }
 
@@ -291,15 +291,12 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_a
             break;
         }
     }
-
+#ifdef TASK_MANAGER_STATE_MACHINE_SOC
     // Handle received commands for MCU_TO_SOC_MOD_SYSTEM frame type
     if (MCU_TO_SOC_MOD_SYSTEM == payload->frame_type)
     {
         switch (payload->frame_cmd)
         {
-            /// case FRAME_CMD_SYSTEM_ACC_STATE:
-            ///     LOG_LEVEL("FRAME_CMD_SYSTEM_ACC_STATE\r\n");
-            ///     return false;
 
         case FRAME_CMD_SYSTEM_MCU_META:
             if (payload->data_len >= sizeof(flash_meta_infor_t))
@@ -315,15 +312,6 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_a
             }
             return false;
 
-            /// case FRAME_CMD_SYSTEM_POWER_ON:
-            ///     LOG_LEVEL("Got FRAME_CMD_SYSTEM_POWER_ON from mcu\r\n");
-            ///     system_power_on_off(true);
-            ///     return false;
-            /// case FRAME_CMD_SYSTEM_POWER_OFF:
-            ///     LOG_LEVEL("Got FRAME_CMD_SYSTEM_POWER_OFF from mcu\r\n");
-            ///     system_power_on_off(false);
-            ///     return false;
-
         case MSG_OTSM_CMD_BLE_PAIR_ON:
         case MSG_OTSM_CMD_BLE_PAIR_OFF:
             send_message(TASK_MODULE_BLE, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_PAIR_ON, 0);
@@ -332,6 +320,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_a
             break;
         }
     }
+#endif
     return false; // Command not processed
 }
 

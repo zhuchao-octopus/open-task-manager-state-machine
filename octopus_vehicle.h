@@ -43,37 +43,6 @@
 /*******************************************************************************
  * TYPEDEFS
  */
- typedef struct
-{
-    uint8_t  sideStand;                  //单撑断电检测          0:单撑收起 1:单撑放下
-    uint8_t  bootGuard;                  //启动保护              0:非保护   1:保护中
-    uint8_t  hallFault;                  //霍尔故障(电机) 			 0:正常 		1:故障
-    uint8_t  throttleFault;              //转把故障
-    uint8_t  controllerFault;            //控制器故障
-    uint8_t  lowVoltageProtection;       //欠压保护
-    uint8_t  cruise;                     //巡航指示灯
-    uint8_t  assist;                     //助力指示灯
-    uint8_t  motorFault;                 //电机故障
-    uint8_t  gear;                       //挡位//0~7
-    uint8_t  motorRunning;               //电机运行               1运行
-    uint8_t  brake;                      //刹车
-    uint8_t  controllerProtection;       //控制器保护
-    uint8_t  coastCharging;              //滑行充电
-    uint8_t  antiSpeedProtection;        //防飞车保护
-    uint8_t  seventyPercentCurrent;      //70%电流
-    uint8_t  pushToTalk;                 //启用一键通
-    uint8_t  ekkBackupPower;             //启用EKK备用电源
-    uint8_t  overCurrentProtection;      //过流保护
-    uint8_t  motorShaftLockProtection;   //堵转保护
-    uint8_t  reverse;                    //倒车
-    uint8_t  electronicBrake;            //电子刹车
-    uint8_t  speedLimit;                 //限速
-    uint8_t  current;                    //电流 单位：A
-    uint16_t hallCounter;                //0.5s 内三个霍尔变化的个数
-    uint8_t  soc;                        //电量/电量 0-100% 5灯指示为 90,70,50,30,20（百分比，建议对应的电压大体为 47V，46V,44.5V,43V,41V)，4 灯指示为 90,70,50,30
-    uint8_t  voltageSystem;              //电压系统  0x01:36V  0x02:48V  0x04:60V  0x08:64V  0x10:72V  0x20:80V  0x40:84V   0x80:96V
-}_sif_t;
-
 typedef enum
 {
     DRIVE_MOD_REAR = 0, // 后驱
@@ -89,7 +58,9 @@ typedef enum
     BMS_MODE_CHARGE = 0x03,    // 充电模式
     BMS_MODE_SLEEP = 0x04      // 睡眠模式
 } BMS_Mode_t;
-
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
 // 故障-故障信息
 typedef enum __attribute__((packed))
 {
@@ -190,12 +161,12 @@ typedef enum __attribute__((packed))
 #define ERROR_CODE_BEGIN ERROR_CODE_THROTTLE_NOT_ZERO       // 故障码开始
 #define ERROR_CODE_END ERROR_CODE_COMMUNICATION_ABNORMALITY // 故障码结束
 
+#pragma pack(push, 1)
 typedef struct
 {
-  uint8_t flags[ERROR_FLAG_BYTES];
-} CarErrorCodeFlags_t;
+    uint8_t flags[ERROR_FLAG_BYTES];
+} __attribute__((aligned(4))) CarErrorCodeFlags_t;
 
-#pragma pack(push, 1)
 typedef struct
 {
     uint8_t ready;      // Ready status (1 = system ready to operate)
@@ -219,8 +190,8 @@ typedef struct
     uint8_t drive_mode;  // Drive mode selection (0 = eco, 1 = normal, etc.)
     uint8_t start_mode;  // Start mode setting (e.g., throttle/pedal)
 
-    uint8_t bt;   // Bluetooth indicator status (1 = connected)
-    uint8_t wifi; // Wi-Fi indicator status (1 = connected)
+    uint8_t reverse;
+    uint8_t reserve; // Wi-Fi indicator status (1 = connected)
 } __attribute__((aligned(4))) carinfo_indicator_t;
 
 typedef struct
@@ -469,7 +440,7 @@ extern "C"
 
     // void car_indicator_proc_turn_signal(void);
     // void car_meter_proc_speed_rpm(void);
-		void task_car_reset_trip(void);
+    void task_car_reset_trip(void);
     bool task_car_has_error_code(void);
 
     void battary_update_simulate_infor(void);
@@ -480,6 +451,7 @@ extern "C"
     extern carinfo_battery_t lt_carinfo_battery;
     extern carinfo_error_t lt_carinfo_error;
     extern CarErrorCodeFlags_t CarErrorCodeFlags;
+
     //////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////

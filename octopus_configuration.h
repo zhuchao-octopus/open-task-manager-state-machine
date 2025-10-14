@@ -35,7 +35,7 @@
 //                          CUSTOMER MODEL CONFIGURATION                        //
 //------------------------------------------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////
-
+#define TASK_MANAGER_STATE_MACHINE_MCU_APP 
 //#define CUSTOMER_MODEL_EZ_406
 //#define CUSTOMER_MODEL_RL_500
 //#define CUSTOMER_MODEL_CA_500
@@ -46,6 +46,7 @@
  #undef CUSTOMER_MODEL_RL_500
  #undef CUSTOMER_MODEL_CA_500
  #undef CUSTOMER_MODEL_DH_500
+ #undef TASK_MANAGER_STATE_MACHINE_MCU_APP 
 #endif
 ///////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------//
@@ -73,7 +74,29 @@
 
 ///////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------//
-//                          Enable / Disable Modules                            //
+//                     Enable / Disable Hardware Modules                        //
+//------------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////////
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU_APP
+
+#define HARDWARE_BSP_UART_1
+#define HARDWARE_BSP_UART_2
+#define HARDWARE_BSP_UART_3
+#define HARDWARE_BSP_UART_4
+#define HARDWARE_BSP_LUART_1
+#define HARDWARE_BSP_TIMER_2
+#define HARDWARE_BSP_ADC_CHANNEL_8
+
+#else
+
+#define HARDWARE_BSP_UART_3
+#define HARDWARE_BSP_UART_4
+
+#endif
+
+///////////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------//
+//                     Enable / Disable Software Modules                        //
 //------------------------------------------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////
 #ifdef CUSTOMER_MODEL_RL_500
@@ -137,18 +160,20 @@
 #define TASK_MANAGER_STATE_MACHINE_UPF                1   /**< UART Packet Framework */
 #define TASK_MANAGER_STATE_MACHINE_IPC                1   /**< Inter-process communication */
 
+#define TASK_MANAGER_STATE_MACHINE_SIF                1   /**< SIF protocol handler */
 #define TASK_MANAGER_STATE_MACHINE_CAN                1   /**< CAN bus protocol */
+
+#define TASK_MANAGER_STATE_MACHINE_DHFSIF 
 //#define TASK_MANAGER_STATE_MACHINE_BAFANG           1   /**< Bafang system support */
 //#define TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2  1   /**< Ling Hui battery */
-
 //#define TASK_MANAGER_STATE_MACHINE_LOT4G            1   /**< 4G module handler */
 //#define TASK_MANAGER_STATE_MACHINE_BT_MUSIC         1   /**< Classic Bluetooth */
 
-#define TASK_MANAGER_STATE_MACHINE_SIF              1   /**< SIF protocol handler */
 //#define TASK_MANAGER_STATE_MACHINE_BLE              1   /**< Bluetooth Low Energy */
 //#define TASK_MANAGER_STATE_MACHINE_BMS              1   /**< Battery Management System */
 
 #else
+
 #define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 				4
 #define TASK_MANAGER_STATE_MACHINE_GPIO             	1   /**< GPIO handling */
 #define TASK_MANAGER_STATE_MACHINE_FLASH              1   /**< Flash memory handling */
@@ -162,6 +187,7 @@
 //#define TASK_MANAGER_STATE_MACHINE_IPC              1   /**< Inter-process communication */
 //#define TASK_MANAGER_STATE_MACHINE_CARINFOR         1   /**< Car information processing */
 
+//#define TASK_MANAGER_STATE_MACHINE_I2C 							1
 //#define TASK_MANAGER_STATE_MACHINE_CAN              1   /**< CAN bus protocol */
 //#define TASK_MANAGER_STATE_MACHINE_BAFANG           1   /**< Bafang system support */
 //#define TASK_MANAGER_STATE_MACHINE_LING_HUI_LIION2  1   /**< Ling Hui battery */

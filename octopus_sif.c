@@ -122,9 +122,9 @@ typedef enum
 
 /*==============================================================================
  *                              GLOBAL VARIABLES
- *============================================================================*/
+ *=============================================================================*/
 
-/*------------------- Receive Variables -------------------*/
+/*----------------------------- Receive Variables -----------------------------*/
 uint32_t SIF_receive_H_L_Level_time_cnt = 0;           ///< Timing counter for H/L signal durations
 uint8_t  SIF_receive_start_H_L_Level_timming_flag = 0; ///< Timing start flag
 

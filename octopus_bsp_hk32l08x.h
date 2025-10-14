@@ -38,7 +38,7 @@ extern "C"
     void ADC_DMA_Config(void);
     void IWDG_Init(uint8_t prer, uint16_t reload);
     void IWDG_Feed(void);
-    void ADC_Config(void);
+    void ADC_Channel_8_Config(void);
 			
     void UART1_Config_IRQ(void);
     void UART2_Config_DMA(void);

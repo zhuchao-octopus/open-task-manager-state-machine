@@ -138,7 +138,7 @@ void TaskManagerStateMachineInit(void)
     char version_str[32];
     flash_decode_active_version(FLASH_BANK_CONFIG_MODE_SLOT, version_str, sizeof(version_str), __DATE__, __TIME__);
 
-    LOG_LEVEL("OTMS initializing  :%02x\r\n",TaskManagerStateMachine_Id_);
+    LOG_LEVEL("OTMS initializing  :%02x\r\n", TaskManagerStateMachine_Id_);
     LOG_LEVEL("OTMS version       :%s \r\n", version_str);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////

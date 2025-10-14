@@ -434,7 +434,7 @@ uint8_t hal_com_uartl_send_buffer(const uint8_t *buffer, uint16_t length)
     LOG_BUFF_LEVEL(buffer, length);
 #endif
 
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+#ifdef HARDWARE_BSP_LUART_1
     UART1_Send_Buffer(buffer, length);
 #endif
     return ret_code;
@@ -442,7 +442,7 @@ uint8_t hal_com_uartl_send_buffer(const uint8_t *buffer, uint16_t length)
 
 uint8_t hal_com_uart2_send_buffer(const uint8_t *buffer, uint16_t length)
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+#ifdef HARDWARE_BSP_LUART_2
     // LOG_BUFF_LEVEL(buffer, length);
     UART2_Send_Buffer(buffer, length);
 #endif
@@ -451,7 +451,7 @@ uint8_t hal_com_uart2_send_buffer(const uint8_t *buffer, uint16_t length)
 
 uint8_t hal_com_uart3_send_buffer(const uint8_t *buffer, uint16_t length)
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+#ifdef HARDWARE_BSP_LUART_3
     UART3_Send_Buffer(buffer, length);
 #endif
     return length;
@@ -459,7 +459,7 @@ uint8_t hal_com_uart3_send_buffer(const uint8_t *buffer, uint16_t length)
 
 uint8_t hal_com_uart4_send_buffer(const uint8_t *buffer, uint16_t length)
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+#ifdef HARDWARE_BSP_LUART_4
     UART4_Send_Buffer(buffer, length);
 #endif
     return length;
@@ -482,7 +482,7 @@ uint8_t hal_com_uart7_send_buffer(const uint8_t *buffer, uint16_t length)
 
 uint8_t hal_com_uart8_send_buffer(const uint8_t *buffer, uint16_t length) // LPUART
 {
-#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+#ifdef HARDWARE_BSP_LUART_1
     LPUART_Send_Buffer(buffer, length);
 #endif
     return length;
