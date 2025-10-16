@@ -1,11 +1,24 @@
 /**
- * @file	halPeripheral.c
- * @author	chipsea
- * @brief
- * @version	0.1
- * @date	2020-11-30
- * @copyright Copyright (c) 2020, CHIPSEA Co., Ltd.
- * @note
+ ******************************************************************************
+ * @file    octopus_flash_hal.c
+ * @author  Octopus Hardware Team
+ * @brief   Hardware Abstraction Layer for Flash and EEPROM operations.
+ *
+ * This file provides unified Flash and EEPROM read/write/erase functions
+ * for different RTOS or bare-metal platforms (CST OSAL, Nation RTOS, STM32 RTOS).
+ *
+ * Supported Features:
+ *   - Flash read/write/erase with 4-byte alignment validation
+ *   - Page-based Flash erase with automatic locking/unlocking
+ *   - EEPROM read/write interface through I2C abstraction
+ *   - Platform-adaptive implementation via conditional compilation
+ *
+ * @version 0.2
+ * @date    2020-08-13
+ *
+ * @note    Copyright (c) 2020-2025 Octopus Co., Ltd.
+ * @note    All rights reserved.
+ ******************************************************************************
  */
 
 /*********************************************************************
@@ -14,13 +27,34 @@
 #include "octopus_flash_hal.h"
 #include "octopus_platform.h"
 
-#define FLASH_PAGE_SIZE ((uint32_t)0x00000400) /* FLASH Page Size 1KB*/
+/* -------------------------------------------------------------------------- */
+/*                              Macro Definitions                             */
+/* -------------------------------------------------------------------------- */
 
+/**
+ * @brief Flash memory page size definition.
+ *
+ * For STM32-series MCUs, each Flash page is 1KB.
+ * Adjust this value according to your MCU’s memory organization.
+ */
+#define FLASH_PAGE_SIZE ((uint32_t)0x00000400) /* 1KB per page */
+/* -------------------------------------------------------------------------- */
+/*                              Public Functions                              */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * @brief  Initialize Flash HAL driver.
+ * @param  task_id: ID of the task requesting initialization (reserved)
+ * @retval None
+ */
 void hal_flash_init(uint8_t task_id)
 {
     LOG_LEVEL("hal flash init\r\n");
 }
 
+/* -------------------------------------------------------------------------- */
+/*                Platform-specific Implementations (RTOS Variants)           */
+/* -------------------------------------------------------------------------- */
 #ifdef PLATFORM_CST_OSAL_RTOS
 
 uint32_t hal_flash_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
@@ -60,9 +94,16 @@ uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
 {
     return 0;
 }
-
+/* -------------------------------------------------------------------------- */
+/*                       STM32 Platform Flash Driver                          */
+/* -------------------------------------------------------------------------- */
 #elif defined(PLATFORM_STM32_RTOS)
-
+/**
+ * @brief  Erase one or more Flash pages starting from a specific address.
+ * @param  startaddr: Start address of the first page to erase
+ * @param  page_count: Number of pages to erase
+ * @retval Number of successfully erased pages
+ */
 uint32_t hal_flash_erase_page_(uint32_t startaddr, uint8_t page_count)
 {
     uint32_t i = 0;
@@ -95,7 +136,12 @@ uint32_t hal_flash_erase_page_(uint32_t startaddr, uint8_t page_count)
     FLASH_Lock();
     return i;
 }
-
+/**
+ * @brief  Erase a specific area of Flash memory.
+ * @param  startaddr: Start address of the erase area
+ * @param  endaddr:   End address of the erase area (exclusive)
+ * @retval Number of successfully erased pages
+ */
 uint32_t hal_flash_erase_area_(uint32_t startaddr, uint32_t endaddr)
 {
     uint32_t i = 0;
@@ -129,10 +175,11 @@ uint32_t hal_flash_erase_area_(uint32_t startaddr, uint32_t endaddr)
     return i;
 }
 /**
- * @brief  Read a data buffer from Flash.
- * @param  addr: Start address in Flash memory
- * @param  buf: Destination buffer to read into
- * @param  len: Length in bytes
+ * @brief  Read data from Flash memory.
+ * @param  startaddr: Start address in Flash memory
+ * @param  buffer:    Destination buffer pointer
+ * @param  length:    Length in bytes to read
+ * @retval Number of bytes successfully read
  */
 uint32_t hal_flash_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {
@@ -145,33 +192,31 @@ uint32_t hal_flash_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
     return length; // Return the number of bytes read
 }
 /**
- * @brief  Write a data buffer to Flash with auto-erasure.
- * @param  addr: Start address in Flash memory
- * @param  buf: Pointer to data buffer
- * @param  len: Length in bytes
+ * @brief  Write data to Flash memory word-by-word (4-byte aligned).
+ * @param  startaddr: Start address in Flash memory
+ * @param  buffer:    Pointer to data buffer
+ * @param  length:    Length in bytes (must be 4-byte aligned)
+ * @retval Number of bytes successfully written (0 if failed)
  */
-uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
+uint32_t hal_flash_writ_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
 {
-    if (length % 4 != 0)
-    {
-        return 0; // Length is not word-aligned, fail
-    }
-
     uint32_t Address = startaddr;
     uint32_t *data = (uint32_t *)buffer;
     uint32_t written_bytes = 0;
-
+    /* Unlock the Flash for write access */
+    if ((length & (sizeof(uint32_t) - 1U)) || ((uint32_t)buffer & (sizeof(uint32_t) - 1U)))
+        return 0;
     /* Unlock the Flash for write access */
     FLASH_Unlock();
     /* Clear pending flags (if any) */
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPERR | FLASH_FLAG_SIZE_ERR);
     /* Write the data word by word */
-    for (uint32_t i = 0; i < length / 4; i++)
+    for (uint32_t i = 0; i < length / sizeof(uint32_t); i++)
     {
         if (FLASH_ProgramWord(Address, data[i]) == FLASH_COMPLETE)
         {
-            Address += 4;
-            written_bytes += 4;
+            Address += sizeof(uint32_t);
+            written_bytes += sizeof(uint32_t);
         }
         else
         {
@@ -185,6 +230,7 @@ uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
     return written_bytes; // Return the number of bytes written
 }
 #else
+/* Dummy implementations for unsupported or test environments */
 uint32_t hal_flash_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {
     return 0;
@@ -203,20 +249,39 @@ uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length)
     return 0;
 }
 #endif
+/* -------------------------------------------------------------------------- */
+/*                         EEPROM Access Layer Functions                      */
+/* -------------------------------------------------------------------------- */
 
-void hal_eeprom_write_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
+/**
+ * @brief  Write data to external EEPROM via I2C interface.
+ * @param  startaddr: EEPROM memory start address
+ * @param  buffer:    Pointer to data buffer
+ * @param  length:    Length in bytes to write
+ * @retval None
+ */
+void hal_eeprom_writ_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {
-	//#ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
-	uint8_t ret = I2C_EepromBufferWrite(startaddr, buffer, length);
-	//  if (ret == ERROR)
-	LOG_LEVEL("Save data to eeprom status:%d\r\n", ret);
-	//#endif
+    // #ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
+    uint8_t ret = I2C_EepromBufferWrite(startaddr, buffer, length);
+    // if (ret == ERROR)
+    LOG_LEVEL("Save data to eeprom status:%d\r\n", ret);
+    // #endif
 }
-
+/**
+ * @brief  Read data from external EEPROM via I2C interface.
+ * @param  startaddr: EEPROM memory start address
+ * @param  buffer:    Pointer to destination buffer
+ * @param  length:    Length in bytes to read
+ * @retval None
+ */
 void hal_eeprom_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {
-	//#ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
-	uint8_t ret =  EEPROM_Read(startaddr, buffer, length);
-	LOG_LEVEL("read data from eeprom status:%d\r\n", ret);
-	//#endif
+    // #ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
+    uint8_t ret = EEPROM_Read(startaddr, buffer, length);
+    LOG_LEVEL("read data from eeprom status:%d\r\n", ret);
+    // #endif
 }
+/* -------------------------------------------------------------------------- */
+/*                                End of File                                 */
+/* -------------------------------------------------------------------------- */

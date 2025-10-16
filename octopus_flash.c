@@ -974,7 +974,7 @@ uint32_t FlashWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 		return 0;
 	}
 	DISABLE_IRQ;
-	writed_bytes = hal_flash_write_(addr, buf, length);
+	writed_bytes = hal_flash_writ_(addr, buf, length);
 	ENABLE_IRQ;
 	return writed_bytes;
 }
@@ -1002,8 +1002,7 @@ void E2ROMWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 {
 	if (buf)
 	{
-		hal_eeprom_write_(addr, buf, length);
-		
+		hal_eeprom_writ_(addr, buf, length);	
 	}
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -43,7 +43,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
 // Define which platform and RTOS to use by enabling the corresponding macro.
 // ⚠ Only one PLATFORM_xxx macro should be enabled at a time.
-
+// #define PLATFORM_NATION_RTOS
 // #define PLATFORM_ITE_OPEN_RTOS    // Enable ITE platform with OPEN RTOS
 // #define PLATFORM_CST_OSAL_RTOS    // CST platform with OSAL RTOS
 // #define PLATFORM_X86_WIND_RTOS    // XB6 platform with WIND RTOS
