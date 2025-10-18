@@ -304,4 +304,3 @@ uint8_t i2c_read_byte(uint8_t ack)
 }
 
 #endif
-
