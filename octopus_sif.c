@@ -45,45 +45,45 @@
  *                                CONSTANTS
  *============================================================================*/
 
-#define SIF_LOW   0   ///< Logic low level
-#define SIF_HIGH  1   ///< Logic high level
+#define SIF_LOW 0  ///< Logic low level
+#define SIF_HIGH 1 ///< Logic high level
 
 /*------------------- Receive Timing Parameters -------------------*/
 
 // Synchronization low period: 30 ms = 30000 µs / 50 µs = 600 counts
-#define SIF_REV_SYNC_L_TIME_NUM       500
+#define SIF_REV_SYNC_L_TIME_NUM 500
 
 // Synchronization high period (acceptable range)
-#define SIF_REV_SYNC_H_TIME_NUM_MIN   18  ///< Min 900 µs (1000 µs - 100 µs)
-#define SIF_REV_SYNC_H_TIME_NUM_MAX   42  ///< Max 2100 µs (1000 µs + 1100 µs)
+#define SIF_REV_SYNC_H_TIME_NUM_MIN 18 ///< Min 900 µs (1000 µs - 100 µs)
+#define SIF_REV_SYNC_H_TIME_NUM_MAX 42 ///< Max 2100 µs (1000 µs + 1100 µs)
 
 // Full logic cycle: ~3 ms ± 10%
-#define SIF_REV_LOGIC_CYCLE_NUM_MIN   54  ///< Min 2700 µs / 50 µs = 54
-#define SIF_REV_LOGIC_CYCLE_NUM_MAX   66  ///< Max 3300 µs / 50 µs = 66
+#define SIF_REV_LOGIC_CYCLE_NUM_MIN 54 ///< Min 2700 µs / 50 µs = 54
+#define SIF_REV_LOGIC_CYCLE_NUM_MAX 66 ///< Max 3300 µs / 50 µs = 66
 
 // Half logic cycle: ~1.5 ms ± 10%
-#define SIF_REV_HALF_LOGIC_CYCLE_MIN  27  ///< Min 1350 µs / 50 µs = 27
-#define SIF_REV_HALF_LOGIC_CYCLE_MAX  33  ///< Max 1650 µs / 50 µs = 33
+#define SIF_REV_HALF_LOGIC_CYCLE_MIN 27 ///< Min 1350 µs / 50 µs = 27
+#define SIF_REV_HALF_LOGIC_CYCLE_MAX 33 ///< Max 1650 µs / 50 µs = 33
 
 // End signal low level period after one complete frame (~5 ms)
-#define SIF_REV_END_SIGNAL_TIME_NUM   60
+#define SIF_REV_END_SIGNAL_TIME_NUM 60
 
 // Bit and data configuration
-#define SIF_REV_BIT_NUM               8    ///< 8 bits per byte
-#define SIF_REV_DATA_NUM              12   ///< Maximum 12 bytes per frame
+#define SIF_REV_BIT_NUM 8	///< 8 bits per byte
+#define SIF_REV_DATA_NUM 12 ///< Maximum 12 bytes per frame
 
 /*------------------- Send Timing Parameters -------------------*/
 
 // Sync pulse for transmission: 30 ms low + 0.5 ms high
-#define SIF_SEND_SYNC_L_TIME_NUM      600  ///< 30 ms
-#define SIF_SEND_SYNC_H_TIME_NUM      10   ///< 0.5 ms
+#define SIF_SEND_SYNC_L_TIME_NUM 600 ///< 30 ms
+#define SIF_SEND_SYNC_H_TIME_NUM 10	 ///< 0.5 ms
 
 // Bit timing definitions
-#define SIF_SEND_SHORT_TIME_NUM       10   ///< 0.5 ms
-#define SIF_SEND_LONG_TIME_NUM        20   ///< 1.0 ms
+#define SIF_SEND_SHORT_TIME_NUM 10 ///< 0.5 ms
+#define SIF_SEND_LONG_TIME_NUM 20  ///< 1.0 ms
 
-#define SIF_SEND_BIT_NUM              8    ///< 8 bits per byte
-#define SIF_SEND_DATA_MAX_NUM         12   ///< Maximum bytes per frame
+#define SIF_SEND_BIT_NUM 8		 ///< 8 bits per byte
+#define SIF_SEND_DATA_MAX_NUM 12 ///< Maximum bytes per frame
 
 /*==============================================================================
  *                                ENUMERATIONS
@@ -94,15 +94,15 @@
  */
 typedef enum
 {
-    SIF_REV_STATE_INITIAL     = 0,  ///< Initial state, waiting for sync
-    SIF_REV_STATE_SYNC_L      = 1,  ///< Receiving sync low period
-    SIF_REV_STATE_SYNC_H      = 2,  ///< Receiving sync high period
-    SIF_REV_STATE_REV_BIT     = 3,  ///< Receiving data bits
-    SIF_REV_STATE_BUILD_DATA  = 4,  ///< Building received bytes
-    SIF_REV_STATE_END_SIGNAL  = 5,  ///< Receiving end-of-frame signal
-    SIF_REV_STATE_IDLE_SIGNAL = 6,  ///< Idle line detected
-    SIF_REV_STATE_RESTART     = 7,  ///< Restart reception
-    SIF_REV_STATE_STOP        = 8   ///< Reception complete or aborted
+	SIF_REV_STATE_INITIAL = 0,	   ///< Initial state, waiting for sync
+	SIF_REV_STATE_SYNC_L = 1,	   ///< Receiving sync low period
+	SIF_REV_STATE_SYNC_H = 2,	   ///< Receiving sync high period
+	SIF_REV_STATE_REV_BIT = 3,	   ///< Receiving data bits
+	SIF_REV_STATE_BUILD_DATA = 4,  ///< Building received bytes
+	SIF_REV_STATE_END_SIGNAL = 5,  ///< Receiving end-of-frame signal
+	SIF_REV_STATE_IDLE_SIGNAL = 6, ///< Idle line detected
+	SIF_REV_STATE_RESTART = 7,	   ///< Restart reception
+	SIF_REV_STATE_STOP = 8		   ///< Reception complete or aborted
 } SIF_REV_STATE_T;
 
 /**
@@ -110,14 +110,14 @@ typedef enum
  */
 typedef enum
 {
-    SIF_SEND_STATE_INITIAL     = 0, ///< Initial state, waiting for send request
-    SIF_SEND_STATE_SYNC_L      = 1, ///< Transmitting sync low signal
-    SIF_SEND_STATE_SYNC_H      = 2, ///< Transmitting sync high signal
-    SIF_SEND_STATE_GET_BIT     = 3, ///< Load next bit to transmit
-    SIF_SEND_STATE_BIT_L       = 4, ///< Output low period of current bit
-    SIF_SEND_STATE_BIT_H       = 5, ///< Output high period of current bit
-    SIF_SEND_STATE_CHECK_BIT   = 6, ///< Check bit timing consistency
-    SIF_SEND_STATE_END_SIGNAL  = 7  ///< Transmitting end-of-frame low signal
+	SIF_SEND_STATE_INITIAL = 0,	  ///< Initial state, waiting for send request
+	SIF_SEND_STATE_SYNC_L = 1,	  ///< Transmitting sync low signal
+	SIF_SEND_STATE_SYNC_H = 2,	  ///< Transmitting sync high signal
+	SIF_SEND_STATE_GET_BIT = 3,	  ///< Load next bit to transmit
+	SIF_SEND_STATE_BIT_L = 4,	  ///< Output low period of current bit
+	SIF_SEND_STATE_BIT_H = 5,	  ///< Output high period of current bit
+	SIF_SEND_STATE_CHECK_BIT = 6, ///< Check bit timing consistency
+	SIF_SEND_STATE_END_SIGNAL = 7 ///< Transmitting end-of-frame low signal
 } SIF_SEND_STATE_T;
 
 /*==============================================================================
@@ -125,34 +125,34 @@ typedef enum
  *=============================================================================*/
 
 /*----------------------------- Receive Variables -----------------------------*/
-uint32_t SIF_receive_H_L_Level_time_cnt = 0;           ///< Timing counter for H/L signal durations
-uint8_t  SIF_receive_start_H_L_Level_timming_flag = 0; ///< Timing start flag
+uint32_t SIF_receive_H_L_Level_time_cnt = 0;		  ///< Timing counter for H/L signal durations
+uint8_t SIF_receive_start_H_L_Level_timming_flag = 0; ///< Timing start flag
 
-uint8_t  SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL; ///< Current receive state
-uint8_t  SIF_receive_bit_num = 0;                       ///< Bit counter for current byte
-uint8_t  SIF_receive_data_num = 0;                      ///< Byte counter for received data
+uint8_t SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL; ///< Current receive state
+uint8_t SIF_receive_bit_num = 0;					   ///< Bit counter for current byte
+uint8_t SIF_receive_data_num = 0;					   ///< Byte counter for received data
 
-uint8_t  SIF_receive_data_buf[SIF_REV_DATA_NUM] = {0};  ///< Temporary buffer during reception
-uint8_t  SIF_receive_buf[SIF_REV_DATA_NUM] = {0};       ///< Final buffer after frame completion
+uint8_t SIF_receive_data_buf[SIF_REV_DATA_NUM] = {0}; ///< Temporary buffer during reception
+uint8_t SIF_receive_buf[SIF_REV_DATA_NUM] = {0};	  ///< Final buffer after frame completion
 
-uint8_t  SIF_receive_has_read_bit = 0;                  ///< 1 = bit already read
-uint8_t  SIF_receive_check_OK = 0;                      ///< 1 = checksum valid
-uint8_t  SIF_receive_read_success = 0;                  ///< 1 = frame successfully received
+uint8_t SIF_receive_has_read_bit = 0; ///< 1 = bit already read
+uint8_t SIF_receive_check_OK = 0;	  ///< 1 = checksum valid
+uint8_t SIF_receive_read_success = 0; ///< 1 = frame successfully received
 
 /*------------------- Send Variables -------------------*/
-uint32_t SIF_send_H_L_Level_time_cnt = 0;               ///< Timing counter for send bit waveform
-uint8_t  SIF_send_start_H_L_Level_timming_flag = 0;     ///< Start timing flag
+uint32_t SIF_send_H_L_Level_time_cnt = 0;		   ///< Timing counter for send bit waveform
+uint8_t SIF_send_start_H_L_Level_timming_flag = 0; ///< Start timing flag
 
-uint8_t  SIF_send_state = 0;                            ///< Send state machine status
-uint8_t  SIF_send_bit_num = 0;                          ///< Bit counter
-uint8_t  SIF_send_data_num = 0;                         ///< Sent byte counter
-uint8_t  SIF_send_bit = 0;                              ///< Current bit value being transmitted
+uint8_t SIF_send_state = 0;	   ///< Send state machine status
+uint8_t SIF_send_bit_num = 0;  ///< Bit counter
+uint8_t SIF_send_data_num = 0; ///< Sent byte counter
+uint8_t SIF_send_bit = 0;	   ///< Current bit value being transmitted
 
-uint8_t  SIF_send_data_buf[SIF_SEND_DATA_MAX_NUM] = {0};///< Transmit data buffer
-uint8_t  SIF_send_data_num_target = 0;                  ///< Total bytes to be sent
-uint8_t  SIF_send_req_flag = 0;                         ///< Send request flag
+uint8_t SIF_send_data_buf[SIF_SEND_DATA_MAX_NUM] = {0}; ///< Transmit data buffer
+uint8_t SIF_send_data_num_target = 0;					///< Total bytes to be sent
+uint8_t SIF_send_req_flag = 0;							///< Send request flag
 
-static bool SIF_has_inited = false;                     ///< Initialization flag
+static bool SIF_has_inited = false; ///< Initialization flag
 
 /*==============================================================================
  *                         FUNCTION DECLARATIONS (STATIC)
@@ -192,13 +192,13 @@ static void SIF_Checksum_Handle(void);
  */
 void otsm_sif_init(void)
 {
-    if (!SIF_has_inited)
-    {
-        SIF_GPIO_Init();
-        // SIF_TIM2_Int_Init(50 - 1, 96 - 1); // Timer config (50us)
-        SIF_has_inited = true;
-        LOG_LEVEL("sif init\r\n");
-    }
+	if (!SIF_has_inited)
+	{
+		SIF_GPIO_Init();
+		// SIF_TIM2_Int_Init(50 - 1, 96 - 1); // Timer config (50us)
+		SIF_has_inited = true;
+		LOG_LEVEL("sif init\r\n");
+	}
 }
 
 /**
@@ -206,7 +206,7 @@ void otsm_sif_init(void)
  */
 bool sif_is_init(void)
 {
-    return SIF_has_inited;
+	return SIF_has_inited;
 }
 
 /**
@@ -215,7 +215,7 @@ bool sif_is_init(void)
  */
 void SIF_GPIO_Init(void)
 {
-    SIF_SEND_DATA_BIT_LOW();
+	SIF_SEND_DATA_BIT_LOW();
 }
 
 /**
@@ -223,12 +223,12 @@ void SIF_GPIO_Init(void)
  */
 void sif_de_init(void)
 {
-    if (SIF_has_inited)
-    {
-        // TIM_ITConfig(TIM2, TIM_IT_Update, DISABLE);
-        // TIM_Cmd(TIM2, DISABLE);
-        SIF_has_inited = false;
-    }
+	if (SIF_has_inited)
+	{
+		// TIM_ITConfig(TIM2, TIM_IT_Update, DISABLE);
+		// TIM_Cmd(TIM2, DISABLE);
+		SIF_has_inited = false;
+	}
 }
 
 /**
@@ -236,7 +236,7 @@ void sif_de_init(void)
  */
 void SIF_ReStart(void)
 {
-    SIF_receive_state = SIF_REV_STATE_INITIAL;
+	SIF_receive_state = SIF_REV_STATE_INITIAL;
 }
 
 /**
@@ -244,7 +244,7 @@ void SIF_ReStart(void)
  */
 bool sif_is_idle(void)
 {
-    return (SIF_receive_state == SIF_REV_STATE_STOP);
+	return (SIF_receive_state == SIF_REV_STATE_STOP);
 }
 
 /**
@@ -253,20 +253,20 @@ bool sif_is_idle(void)
  */
 void sif_delay_50_us(uint32_t delay_us)
 {
-    if (delay_us == 0)
-        return;
+	if (delay_us == 0)
+		return;
 
-    // Convert to 50 µs ticks (round up)
-    uint32_t ticks = (delay_us + 49) / 50;  // 向上取整，确保不小于目标时间
-    uint32_t start = system_timer_tick_50us;
-		
-		//LOG_LEVEL("start test sif_delay_50_us %u\r\n",system_timer_tick_50us);
-    while ((system_timer_tick_50us - start) < ticks)
-    {
-        // busy wait
-			__NOP();
-    }
-		//LOG_LEVEL("start test sif_delay_50_us %u\r\n",system_timer_tick_50us);
+	// Convert to 50 µs ticks (round up)
+	uint32_t ticks = (delay_us + 49) / 50; // 向上取整，确保不小于目标时间
+	uint32_t start = system_timer_tick_50us;
+
+	// LOG_LEVEL("start test sif_delay_50_us %u\r\n",system_timer_tick_50us);
+	while ((system_timer_tick_50us - start) < ticks)
+	{
+		// busy wait
+		__NOP();
+	}
+	// LOG_LEVEL("start test sif_delay_50_us %u\r\n",system_timer_tick_50us);
 }
 
 /**
@@ -275,18 +275,18 @@ void sif_delay_50_us(uint32_t delay_us)
  */
 void SIF_IO_IRQHandler(void)
 {
-    /* Handle receiver timing */
-    if (SIF_receive_start_H_L_Level_timming_flag)
-        SIF_receive_H_L_Level_time_cnt++;
+	/* Handle receiver timing */
+	if (SIF_receive_start_H_L_Level_timming_flag)
+		SIF_receive_H_L_Level_time_cnt++;
 
-    SIF_Receive_Data_Handle();  // Process RX state machine
+	SIF_Receive_Data_Handle(); // Process RX state machine
 
-    /* Handle sender timing */
+	/* Handle sender timing */
 #if 1
-    if (SIF_send_start_H_L_Level_timming_flag)
-        SIF_send_H_L_Level_time_cnt++;
+	if (SIF_send_start_H_L_Level_timming_flag)
+		SIF_send_H_L_Level_time_cnt++;
 
-    SIF_Send_Data_Handle(); // Process TX state machine
+	SIF_Send_Data_Handle(); // Process TX state machine
 #endif
 }
 
@@ -304,149 +304,149 @@ void SIF_IO_IRQHandler(void)
  */
 void SIF_Receive_Data_Handle(void)
 {
-    switch (SIF_receive_state)
-    {
-        /* Initial: wait for sync low pulse */
-        case SIF_REV_STATE_INITIAL:
-            if (SIF_Get_Input_Pin_Data() == SIF_LOW)
-            {
-                SIF_receive_bit_num = 0;
-                SIF_receive_data_num = 0;
-                SIF_receive_H_L_Level_time_cnt = 0;
-                SIF_receive_start_H_L_Level_timming_flag = 1;
-                SIF_receive_state = SIF_REV_STATE_SYNC_L;
-                memset(SIF_receive_data_buf, 0, SIF_REV_DATA_NUM);
-            }
-            break;
+	switch (SIF_receive_state)
+	{
+	/* Initial: wait for sync low pulse */
+	case SIF_REV_STATE_INITIAL:
+		if (SIF_Get_Input_Pin_Data() == SIF_LOW)
+		{
+			SIF_receive_bit_num = 0;
+			SIF_receive_data_num = 0;
+			SIF_receive_H_L_Level_time_cnt = 0;
+			SIF_receive_start_H_L_Level_timming_flag = 1;
+			SIF_receive_state = SIF_REV_STATE_SYNC_L;
+			memset(SIF_receive_data_buf, 0, SIF_REV_DATA_NUM);
+		}
+		break;
 
-        /* Detect sync low → high transition */
-        case SIF_REV_STATE_SYNC_L:
-            if (SIF_Get_Input_Pin_Data() == SIF_HIGH)
-            {
-                if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_SYNC_L_TIME_NUM)
-                {
-                    SIF_receive_H_L_Level_time_cnt = 0;
-                    SIF_receive_state = SIF_REV_STATE_SYNC_H;
-                }
-                else
-                {
-                    SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
-                }
-            }
-            break;
+	/* Detect sync low → high transition */
+	case SIF_REV_STATE_SYNC_L:
+		if (SIF_Get_Input_Pin_Data() == SIF_HIGH)
+		{
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_SYNC_L_TIME_NUM)
+			{
+				SIF_receive_H_L_Level_time_cnt = 0;
+				SIF_receive_state = SIF_REV_STATE_SYNC_H;
+			}
+			else
+			{
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
+			}
+		}
+		break;
 
-        /* Detect sync high → low transition */
-        case SIF_REV_STATE_SYNC_H:
-            if (SIF_Get_Input_Pin_Data() == SIF_LOW)
-            {
-                if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_SYNC_H_TIME_NUM_MIN &&
-                    SIF_receive_H_L_Level_time_cnt <= SIF_REV_SYNC_H_TIME_NUM_MAX)
-                {
-                    SIF_receive_H_L_Level_time_cnt = 0;
-                    SIF_receive_has_read_bit = 0;
-                    SIF_receive_state = SIF_REV_STATE_REV_BIT;
-                }
-                else
-                {
-                    SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
-                }
-            }
-            else if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
-            {
-                SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
-            }
-            break;
+	/* Detect sync high → low transition */
+	case SIF_REV_STATE_SYNC_H:
+		if (SIF_Get_Input_Pin_Data() == SIF_LOW)
+		{
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_SYNC_H_TIME_NUM_MIN &&
+				SIF_receive_H_L_Level_time_cnt <= SIF_REV_SYNC_H_TIME_NUM_MAX)
+			{
+				SIF_receive_H_L_Level_time_cnt = 0;
+				SIF_receive_has_read_bit = 0;
+				SIF_receive_state = SIF_REV_STATE_REV_BIT;
+			}
+			else
+			{
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
+			}
+		}
+		else if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
+		{
+			SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
+		}
+		break;
 
-        /* Decode bit based on pulse length */
-        case SIF_REV_STATE_REV_BIT:
-            if (SIF_Get_Input_Pin_Data() == SIF_HIGH)
-            {
-                if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
-                {
-                    SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
-                }
-                else if (!SIF_receive_has_read_bit)
-                {
-                    if (SIF_receive_H_L_Level_time_cnt < SIF_REV_HALF_LOGIC_CYCLE_MIN)
-                        SIF_receive_data_buf[SIF_receive_data_num] |= 0x01;
+	/* Decode bit based on pulse length */
+	case SIF_REV_STATE_REV_BIT:
+		if (SIF_Get_Input_Pin_Data() == SIF_HIGH)
+		{
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
+			{
+				SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
+			}
+			else if (!SIF_receive_has_read_bit)
+			{
+				if (SIF_receive_H_L_Level_time_cnt < SIF_REV_HALF_LOGIC_CYCLE_MIN)
+					SIF_receive_data_buf[SIF_receive_data_num] |= 0x01;
 
-                    SIF_receive_has_read_bit = 1;
-                    SIF_receive_state = SIF_REV_STATE_BUILD_DATA;
-                }
-            }
-            else if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
-            {
-                SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
-            }
-            break;
+				SIF_receive_has_read_bit = 1;
+				SIF_receive_state = SIF_REV_STATE_BUILD_DATA;
+			}
+		}
+		else if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
+		{
+			SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
+		}
+		break;
 
-        /* Build bytes from bits */
-        case SIF_REV_STATE_BUILD_DATA:
-            if (SIF_Get_Input_Pin_Data() == SIF_LOW)
-            {
-                if (SIF_receive_has_read_bit)
-                {
-                    SIF_receive_H_L_Level_time_cnt = 0;
-                    SIF_receive_has_read_bit = 0;
-                    SIF_receive_bit_num++;
+	/* Build bytes from bits */
+	case SIF_REV_STATE_BUILD_DATA:
+		if (SIF_Get_Input_Pin_Data() == SIF_LOW)
+		{
+			if (SIF_receive_has_read_bit)
+			{
+				SIF_receive_H_L_Level_time_cnt = 0;
+				SIF_receive_has_read_bit = 0;
+				SIF_receive_bit_num++;
 
-                    if (SIF_receive_bit_num == SIF_REV_BIT_NUM)
-                    {
-                        SIF_receive_data_num++;
-                        SIF_receive_bit_num = 0;
+				if (SIF_receive_bit_num == SIF_REV_BIT_NUM)
+				{
+					SIF_receive_data_num++;
+					SIF_receive_bit_num = 0;
 
-                        if (SIF_receive_data_num == SIF_REV_DATA_NUM)
-                            SIF_receive_state = SIF_REV_STATE_END_SIGNAL;
-                        else
-                            SIF_receive_state = SIF_REV_STATE_REV_BIT;
-                    }
-                    else
-                    {
-                        SIF_receive_data_buf[SIF_receive_data_num] <<= 1;
-                        SIF_receive_state = SIF_REV_STATE_REV_BIT;
-                    }
-                }
-            }
-            else if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
-            {
-                SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
-            }
-            break;
+					if (SIF_receive_data_num == SIF_REV_DATA_NUM)
+						SIF_receive_state = SIF_REV_STATE_END_SIGNAL;
+					else
+						SIF_receive_state = SIF_REV_STATE_REV_BIT;
+				}
+				else
+				{
+					SIF_receive_data_buf[SIF_receive_data_num] <<= 1;
+					SIF_receive_state = SIF_REV_STATE_REV_BIT;
+				}
+			}
+		}
+		else if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
+		{
+			SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
+		}
+		break;
 
-        /* Detect end of frame */
-        case SIF_REV_STATE_END_SIGNAL:
-            if (SIF_Get_Input_Pin_Data() == SIF_LOW)
-            {
-                if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_END_SIGNAL_TIME_NUM)
-                {
-                    memcpy(SIF_receive_buf, SIF_receive_data_buf, SIF_REV_DATA_NUM);
-                    SIF_Checksum_Handle();
-                    SIF_receive_read_success = 1;
-                    SIF_receive_start_H_L_Level_timming_flag = 0;
-                    SIF_receive_H_L_Level_time_cnt = 0;
-                    SIF_receive_state = SIF_REV_STATE_INITIAL;
-                }
-            }
-            else if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
-            {
-                SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
-            }
-            break;
+	/* Detect end of frame */
+	case SIF_REV_STATE_END_SIGNAL:
+		if (SIF_Get_Input_Pin_Data() == SIF_LOW)
+		{
+			if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_END_SIGNAL_TIME_NUM)
+			{
+				memcpy(SIF_receive_buf, SIF_receive_data_buf, SIF_REV_DATA_NUM);
+				SIF_Checksum_Handle();
+				SIF_receive_read_success = 1;
+				SIF_receive_start_H_L_Level_timming_flag = 0;
+				SIF_receive_H_L_Level_time_cnt = 0;
+				SIF_receive_state = SIF_REV_STATE_INITIAL;
+			}
+		}
+		else if (SIF_receive_H_L_Level_time_cnt >= SIF_REV_LOGIC_CYCLE_NUM_MAX)
+		{
+			SIF_receive_state = SIF_REV_STATE_IDLE_SIGNAL;
+		}
+		break;
 
-        /* Idle and restart handling */
-        case SIF_REV_STATE_IDLE_SIGNAL:
-        case SIF_REV_STATE_RESTART:
-            SIF_receive_start_H_L_Level_timming_flag = 0;
-            SIF_receive_H_L_Level_time_cnt = 0;
-            SIF_receive_has_read_bit = 0;
-            SIF_receive_bit_num = 0;
-            SIF_receive_data_num = 0;
-            SIF_receive_state = SIF_REV_STATE_INITIAL;
-            break;
+	/* Idle and restart handling */
+	case SIF_REV_STATE_IDLE_SIGNAL:
+	case SIF_REV_STATE_RESTART:
+		SIF_receive_start_H_L_Level_timming_flag = 0;
+		SIF_receive_H_L_Level_time_cnt = 0;
+		SIF_receive_has_read_bit = 0;
+		SIF_receive_bit_num = 0;
+		SIF_receive_data_num = 0;
+		SIF_receive_state = SIF_REV_STATE_INITIAL;
+		break;
 
-        default:
-            break;
-    }
+	default:
+		break;
+	}
 }
 /********************************************************************************
  * @brief  从接收缓存区读取完整的一帧 SIF 数据
@@ -472,7 +472,7 @@ uint8_t sif_read_data(uint8_t *data, uint8_t maxlen)
 			data[i] = SIF_receive_buf[i];
 		}
 		SIF_receive_read_success = false; // 清除读取标志，防止重复读
-		return len;						// 返回拷贝长度
+		return len;						  // 返回拷贝长度
 	}
 	return 0; // 尚未有新数据可读
 }
@@ -562,7 +562,7 @@ uint8_t SIF_SendData(uint8_t *data, uint8_t len)
 			SIF_send_data_buf[i] = data[i]; // 拷贝待发送数据
 		}
 		SIF_send_data_num_target = len; // 保存目标长度
-		SIF_send_req_flag = true;		  // 设置发送请求标志
+		SIF_send_req_flag = true;		// 设置发送请求标志
 		return len;
 	}
 	return 0; // 若正在发送，则直接返回 0
@@ -593,7 +593,7 @@ void SIF_Send_Data_Handle(void)
 		if (SIF_send_H_L_Level_time_cnt >= SIF_SEND_SYNC_L_TIME_NUM)
 		{
 			SIF_send_H_L_Level_time_cnt = 0;
-			SIF_SEND_DATA_BIT_HIGH();				 // 切换高电平
+			SIF_SEND_DATA_BIT_HIGH();				// 切换高电平
 			SIF_send_state = SIF_SEND_STATE_SYNC_H; // 进入同步高阶段
 		}
 		break;
@@ -725,13 +725,13 @@ uint8_t SIF_Get_Input_Pin_Data(void)
 {
 	static uint8_t flag = 0;  // 稳定计数
 	static uint8_t value = 0; // 上次读值
-	static uint8_t ret = 0;   // 返回值
+	static uint8_t ret = 0;	  // 返回值
 
 	uint8_t cur = SIF_RECEIVE_DATA_BIT(); // 读取当前引脚状态
 
 	if (value != cur)
 	{
-		flag = 3;  // 检测到变化则启动稳定计数
+		flag = 3; // 检测到变化则启动稳定计数
 		value = cur;
 	}
 	if (flag)

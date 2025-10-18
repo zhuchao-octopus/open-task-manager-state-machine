@@ -15,6 +15,7 @@
 #include "octopus_can_queue.h"
 #include "octopus_can_2E006.h"
 #include "octopus_can_2E008.h"
+#include "octopus_can_rongjue.h"
 
 #ifdef TASK_MANAGER_STATE_MACHINE_CAN
 ///////////////////////////////////////////////////////////////////////////////////////////

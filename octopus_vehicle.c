@@ -39,7 +39,7 @@
 #include "octopus_tickcounter.h" // Include tick counter for timing operations
 #include "octopus_msgqueue.h"    // Include message queue header for task communication
 #include "octopus_message.h"     // Include message id for inter-task communication
-#include "Octopus_dhf.h"
+#include "octopus_dhf.h"
 
 /*******************************************************************************
  * DEBUG SWITCH MACROS

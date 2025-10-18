@@ -1,4 +1,9 @@
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* Includes ------------------------------------------------------------------*/
 #include "octopus_platform.h"
 
@@ -16,6 +21,7 @@
 #include "octopus_ling_hui_liion2.h"
 #include "octopus_bafang.h"
 #include "octopus_bt.h"
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -163,8 +169,8 @@ extern void hal_timer_interrupt_callback(uint8_t event);
 // Initialize DWT cycle counter for microsecond resolution
 void platform_dwt_init(void)
 {
-    //CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-    //DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+	// CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	// DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
 // uint32_t platform_dwt_get_us(void) {
@@ -172,10 +178,10 @@ void platform_dwt_init(void)
 // }
 void dwt_delay_us(uint32_t us)
 {
-    //uint32_t start = DWT->CYCCNT;
-    //uint32_t ticks = us * (SystemCoreClock / 1000000);
-    //while ((DWT->CYCCNT - start) < ticks)
-    //    ;
+	// uint32_t start = DWT->CYCCNT;
+	// uint32_t ticks = us * (SystemCoreClock / 1000000);
+	// while ((DWT->CYCCNT - start) < ticks)
+	//     ;
 }
 
 // Delay Function ---
@@ -183,25 +189,25 @@ void dwt_delay_us(uint32_t us)
 // Delay Wrapper
 void platform_delay_us(uint32_t us)
 {
-	
+
 #ifdef DWT_DELAY_FUNCTION
-  dwt_delay_us(us);
+	dwt_delay_us(us);
 #else
-	  
+
 #endif
 }
 
 void platform_delay_ms(uint32_t ms)
 {
-  platform_delay_us(ms * 1000);
+	platform_delay_us(ms * 1000);
 }
 /**
-  * @brief  This function handles SysTick Handler.
-  * @retval None
-  */
+ * @brief  This function handles SysTick Handler.
+ * @retval None
+ */
 void SysTick_Handler(void)
 {
-	system_tick_counter_ms++;  // Increment the millisecond counter
+	system_tick_counter_ms++; // Increment the millisecond counter
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -282,13 +288,13 @@ void SYS_Config(void)
 {
 	// Configure SysTick timer to interrupt every 1 ms
 	SysTick->LOAD = (SystemCoreClock / 1000) - 1; // Set reload register for 1ms interval
-	SysTick->VAL = 0;							  							// Clear current value
+	SysTick->VAL = 0;							  // Clear current value
 	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk |  // Use processor clock
-					SysTick_CTRL_TICKINT_Msk |	  				// Enable SysTick interrupt
-					SysTick_CTRL_ENABLE_Msk;	  					// Enable SysTick timer
+					SysTick_CTRL_TICKINT_Msk |	  // Enable SysTick interrupt
+					SysTick_CTRL_ENABLE_Msk;	  // Enable SysTick timer
 
 	// Set the priority of the SysTick interrupt
-	NVIC_SetPriority(SysTick_IRQn, 0x3); 					// 0x0 is the highest priority
+	NVIC_SetPriority(SysTick_IRQn, 0x3); // 0x0 is the highest priority
 }
 /**
  * @brief  Configures GPIO pins for USART1 and USART2.
@@ -381,7 +387,7 @@ void GPIO_Config(void)
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6; // PA6 - CAN RX
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_4); // AF4 for CAN RX
@@ -466,15 +472,15 @@ void RCC_Config(void)
 	// Enable the clock for USART1 (on APB2)
 	// USART1 is used for debugging purposes, e.g., via UART over USB or serial communication
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE); // Enable USART1 clock (Debug UART)
-	
+
 	// Enable the clock for USART2 (both on APB1)
 	// USART2 is used for communication with F133 (e.g., for data transmission)
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
-	
+
 	// Enable the clock for UART3 (both on APB1)
 	// UART3 is used for communication with BLE module (Bluetooth Low Energy communication)
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART3, ENABLE);
-	
+
 	// Enable the clock for UART4 (on APB1)
 	// UART4 is used for communication with GPS module
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART4, ENABLE); // Enable UART4 clock (GPS)
@@ -538,7 +544,7 @@ void Sleep_Mode_Wakeup_Config(void)
 	NVIC_InitStructure.NVIC_IRQChannelPriority = 0x03;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
-	
+
 	// NVIC_SetPriority(EXTI4_15_IRQn,3);
 #ifdef HARDWARE_BSP_UART_2
 	UART2_Config_IRQ_STOP_Mode();
@@ -571,7 +577,7 @@ void native_enter_sleep_mode(void)
 
 #ifdef HARDWARE_BSP_UART_1
 	UART1_Config_IRQ();
-#endif	
+#endif
 #ifdef HARDWARE_BSP_UART_2
 	UART2_Config_IRQ();
 #endif
@@ -610,7 +616,7 @@ void UART1_Config_IRQ(void)
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 	USART_Init(USART1, &USART_InitStructure);
 	USART_Cmd(USART1, ENABLE);
-	
+
 	// NVIC_SetPriority(USART1_IRQn, 1);
 	// Configure NVIC for USART1 interrupt
 	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
@@ -860,6 +866,7 @@ void UART4_Config_IRQ(void)
 	NVIC_EnableIRQ(UART3_4_IRQn);
 }
 #endif
+
 #ifdef HARDWARE_BSP_LUART_1
 void LPUART_WakeStop_Config(void)
 {
@@ -1052,6 +1059,7 @@ void USART2_IRQHandler(void)
 #endif
 }
 #endif
+
 /* DMA Interrupt Handlers for USART2 ---------------------------*/
 #ifdef UART2_DMA_MODE
 void DMA_CH4_7_IRQHandler(void) // DMA interrupt for USART2 TX and RX
@@ -1627,66 +1635,67 @@ void ADC_DMA_Config(void)
     ADC_StartOfConversion(ADC);
 }
 #endif
+
 #ifdef HARDWARE_BSP_ADC_CHANNEL_8
 void ADC_Channel_8_Config(void)
 {
-	 #if 1
-    ADC_InitTypeDef          ADC_InitStructure;
-    GPIO_InitTypeDef         GPIO_InitStructure;
+#if 1
+	ADC_InitTypeDef ADC_InitStructure;
+	GPIO_InitTypeDef GPIO_InitStructure;
 
-    /* GPIOA Peripheral clock enable */
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+	/* GPIOA Peripheral clock enable */
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
 
-    /* ADC1 Peripheral clock enable */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC, ENABLE);
+	/* ADC1 Peripheral clock enable */
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC, ENABLE);
 
-    /* Configure ADC Chanenl0 as analog input */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 ;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL ;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
+	/* Configure ADC Chanenl0 as analog input */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-    /* ADCs DeInit */
-    ADC_DeInit(ADC);
+	/* ADCs DeInit */
+	ADC_DeInit(ADC);
 
-    /* Configure the ADC1 in continous mode withe a resolution equal to 12 bits*/
-    ADC_StructInit(&ADC_InitStructure);
-    ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
-    ADC_Init(ADC, &ADC_InitStructure);
-    ADC_ChannelConfig(ADC, ADC_Channel_8, ADC_SampleTime_28_5Cycles);
+	/* Configure the ADC1 in continous mode withe a resolution equal to 12 bits*/
+	ADC_StructInit(&ADC_InitStructure);
+	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
+	ADC_Init(ADC, &ADC_InitStructure);
+	ADC_ChannelConfig(ADC, ADC_Channel_8, ADC_SampleTime_28_5Cycles);
 
-    /* ADC Calibration */
-    ADC_GetCalibrationFactor(ADC);
+	/* ADC Calibration */
+	ADC_GetCalibrationFactor(ADC);
 
-    /* Enable the ADC peripheral */
-    ADC_Cmd(ADC, ENABLE);
+	/* Enable the ADC peripheral */
+	ADC_Cmd(ADC, ENABLE);
 
-    /* Wait the ADRDY flag */
-    while (!ADC_GetFlagStatus(ADC, ADC_FLAG_ADRDY))
-    {
-    }
+	/* Wait the ADRDY flag */
+	while (!ADC_GetFlagStatus(ADC, ADC_FLAG_ADRDY))
+	{
+	}
 
-    /* ADC1 regular Software Start Conv */
-    ADC_StartOfConversion(ADC);
-		#endif
+	/* ADC1 regular Software Start Conv */
+	ADC_StartOfConversion(ADC);
+#endif
 }
 
 uint16_t adc_get_value_v(void)
 {
-	uint32_t temp1,temp2;
+	uint32_t temp1, temp2;
 	double v_10 = 0;
-	
-	#if 1
+
+#if 1
 	while (!ADC_GetFlagStatus(ADC, ADC_FLAG_EOC))
 	{
 	}
-	
+
 	temp1 = ADC_GetConversionValue(ADC);
 	temp2 = (temp1 * 3300) / 0xFFF;
-	
+
 	v_10 = (temp2 * 34) / 100;
-	#endif
-	
+#endif
+
 	return v_10;
 }
 #endif
@@ -1702,15 +1711,15 @@ void TIM2_Config(void)
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
 	/*
-	* Configure TIM2 to generate an interrupt every 50us.
-	* Timer frequency calculation:
-	* Timer Frequency = 48 MHz / (Prescaler + 1) / (Period + 1)
-	* For 50us interval => 1 / 50us = 20kHz
-	* Example: Prescaler = 47, Period = 49
-	*          => 48MHz / 48 / 50 = 20kHz (50us)
-	*/
-	TIM_TimeBaseStructure.TIM_Period = 49;               // Auto-reload value
-	TIM_TimeBaseStructure.TIM_Prescaler = 47;            // Prescaler value
+	 * Configure TIM2 to generate an interrupt every 50us.
+	 * Timer frequency calculation:
+	 * Timer Frequency = 48 MHz / (Prescaler + 1) / (Period + 1)
+	 * For 50us interval => 1 / 50us = 20kHz
+	 * Example: Prescaler = 47, Period = 49
+	 *          => 48MHz / 48 / 50 = 20kHz (50us)
+	 */
+	TIM_TimeBaseStructure.TIM_Period = 49;	  // Auto-reload value
+	TIM_TimeBaseStructure.TIM_Prescaler = 47; // Prescaler value
 	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 
@@ -1736,9 +1745,9 @@ void TIM2_Config(void)
 
 void TIM2_IRQHandler(void)
 {
- // Check if update interrupt flag is set
- if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
- {
+	// Check if update interrupt flag is set
+	if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
+	{
 		// Clear the interrupt pending bit
 		TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 
@@ -1747,9 +1756,9 @@ void TIM2_IRQHandler(void)
 
 		// Optionally, you can add any periodic task logic here
 		// Example callback for periodic tasks every 50us
-		//hal_timer_interrupt_callback(0);
-  }
- 	//TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+		// hal_timer_interrupt_callback(0);
+	}
+	// TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 }
 #endif
 
@@ -1761,7 +1770,7 @@ void CAN_Config(void)
 	CAN_InitTypeDef CAN_InitStructure;
 	CAN_FilterInitTypeDef CAN_FilterInitStructure;
 
-#if 0 //def HK_DEMO_BORAD_TEST
+#if 0 // def HK_DEMO_BORAD_TEST
 	GPIO_InitTypeDef GPIO_InitStructure;
 	/* Connect CAN pins to AF4 */
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource11, GPIO_AF_4);
@@ -1785,7 +1794,7 @@ void CAN_Config(void)
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	
+
 	/* NVIC configuration *******************************************************/
 	NVIC_InitStructure.NVIC_IRQChannel = LCD_CAN_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPriority = 0x0;
@@ -1816,8 +1825,8 @@ void CAN_Config(void)
 	/* CAN Baudrate = 500bps (CAN clocked at 48 MHz) */
 	CAN_InitStructure.CAN_BS1 = CAN_BS1_10tq;
 	CAN_InitStructure.CAN_BS2 = CAN_BS2_5tq;
-	CAN_InitStructure.CAN_Prescaler = 6;//500bps
-	//CAN_InitStructure.CAN_Prescaler = 12;//250bps
+	CAN_InitStructure.CAN_Prescaler = 6; // 500bps
+	// CAN_InitStructure.CAN_Prescaler = 12;//250bps
 #endif
 	CAN_Init(&CAN_InitStructure);
 
@@ -1837,10 +1846,10 @@ void CAN_Config(void)
 	CAN_ITConfig(CAN_IT_FF0, ENABLE);
 
 	/* Enable FIFO 1 full Interrupt */
-	CAN_ITConfig(CAN_IT_FF1, ENABLE);	
-	
-	//uint8_t TxMessages[8] = { 0, 1, 2, 3, 4, 5, 6, 7};
-	//CAN_Send_Data(0,CAN_ID_STD,TxMessages,8);	
+	CAN_ITConfig(CAN_IT_FF1, ENABLE);
+
+	// uint8_t TxMessages[8] = { 0, 1, 2, 3, 4, 5, 6, 7};
+	// CAN_Send_Data(0,CAN_ID_STD,TxMessages,8);
 }
 
 /**
@@ -1851,12 +1860,12 @@ void LCD_CAN_IRQHandler(void)
 {
 	CAN_Receive(CAN_FIFO0, &CanRxMessage);
 
-	if(system_get_mcu_status() == MB_POWER_ST_ON)
+	if (system_get_mcu_status() == MB_POWER_ST_ON)
 	{
-	  // LOG_BUFF_LEVEL((const uint8_t *)&CanRxMessage, sizeof(CanRxMsg));
+		// LOG_BUFF_LEVEL((const uint8_t *)&CanRxMessage, sizeof(CanRxMsg));
 		// LED_Display(CanRxMessage.Data[0]);
 		// KeyNumber = CanRxMessage.Data[0];
-		CAN_Message_t CAN_Message;// = *(CAN_Message_t *)&CanRxMessage;
+		CAN_Message_t CAN_Message; // = *(CAN_Message_t *)&CanRxMessage;
 		CAN_Message.StdId = CanRxMessage.StdId;
 		CAN_Message.ExtId = CanRxMessage.ExtId;
 		CAN_Message.IDE = CanRxMessage.IDE;
@@ -1864,9 +1873,9 @@ void LCD_CAN_IRQHandler(void)
 		CAN_Message.DLC = CanRxMessage.DLC;
 		CAN_Message.FMI = CanRxMessage.FMI;
 		for (uint8_t i = 0; i < CAN_Message.DLC; i++)
-    {
-       CAN_Message.Data[i] = CanRxMessage.Data[i];
-    }
+		{
+			CAN_Message.Data[i] = CanRxMessage.Data[i];
+		}
 		can_message_receiver(&CAN_Message);
 	}
 }
@@ -2009,92 +2018,92 @@ void PTL_1_UART_Send_Buffer(const uint8_t *buffer, uint16_t length)
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 #ifdef TASK_MANAGER_STATE_MACHINE_I2C
-#define BSP_I2C1                         I2C1
-#define BSP_I2C1_CLK                     RCC_APB1Periph_I2C1
+#define BSP_I2C1 I2C1
+#define BSP_I2C1_CLK RCC_APB1Periph_I2C1
 
-#define BSP_I2C1_SCL_PIN                 GPIO_Pin_6                  /* PB.06 */
-#define BSP_I2C1_SCL_GPIO_PORT           GPIOB                       /* GPIOB */
-#define BSP_I2C1_SCL_GPIO_CLK            RCC_AHBPeriph_GPIOB
-#define BSP_I2C1_SCL_SOURCE              GPIO_PinSource6
-#define BSP_I2C1_SCL_AF                  GPIO_AF_1
+#define BSP_I2C1_SCL_PIN GPIO_Pin_6	 /* PB.06 */
+#define BSP_I2C1_SCL_GPIO_PORT GPIOB /* GPIOB */
+#define BSP_I2C1_SCL_GPIO_CLK RCC_AHBPeriph_GPIOB
+#define BSP_I2C1_SCL_SOURCE GPIO_PinSource6
+#define BSP_I2C1_SCL_AF GPIO_AF_1
 
-#define BSP_I2C1_SDA_PIN                 GPIO_Pin_7                  /* PB.07 */
-#define BSP_I2C1_SDA_GPIO_PORT           GPIOB                       /* GPIOB */
-#define BSP_I2C1_SDA_GPIO_CLK            RCC_AHBPeriph_GPIOB
-#define BSP_I2C1_SDA_SOURCE              GPIO_PinSource7
-#define BSP_I2C1_SDA_AF                  GPIO_AF_1
+#define BSP_I2C1_SDA_PIN GPIO_Pin_7	 /* PB.07 */
+#define BSP_I2C1_SDA_GPIO_PORT GPIOB /* GPIOB */
+#define BSP_I2C1_SDA_GPIO_CLK RCC_AHBPeriph_GPIOB
+#define BSP_I2C1_SDA_SOURCE GPIO_PinSource7
+#define BSP_I2C1_SDA_AF GPIO_AF_1
 
-#define BSP_I2C1_SMBUSALERT_PIN          GPIO_Pin_5                  /* PB.05 */
-#define BSP_I2C1_SMBUSALERT_GPIO_PORT    GPIOB                       /* GPIOB */
-#define BSP_I2C1_SMBUSALERT_GPIO_CLK     RCC_AHBPeriph_GPIOB
-#define BSP_I2C1_SMBUSALERT_SOURCE       GPIO_PinSource5
-#define BSP_I2C1_SMBUSALERT_AF           GPIO_AF_3
+#define BSP_I2C1_SMBUSALERT_PIN GPIO_Pin_5	/* PB.05 */
+#define BSP_I2C1_SMBUSALERT_GPIO_PORT GPIOB /* GPIOB */
+#define BSP_I2C1_SMBUSALERT_GPIO_CLK RCC_AHBPeriph_GPIOB
+#define BSP_I2C1_SMBUSALERT_SOURCE GPIO_PinSource5
+#define BSP_I2C1_SMBUSALERT_AF GPIO_AF_3
 
-#define BSP_I2C1_TIMING     0x1045061D
-#define BSP_I2C1_FLAG_TIMEOUT         ((uint32_t)0x1000)
-#define BSP_I2C1_LONG_TIMEOUT         ((uint32_t)(10 * BSP_I2C1_FLAG_TIMEOUT))
+#define BSP_I2C1_TIMING 0x1045061D
+#define BSP_I2C1_FLAG_TIMEOUT ((uint32_t)0x1000)
+#define BSP_I2C1_LONG_TIMEOUT ((uint32_t)(10 * BSP_I2C1_FLAG_TIMEOUT))
 
 void BSP_IIC1_GPIO_Config(void)
 {
-    GPIO_InitTypeDef  GPIO_InitStructure;
+	GPIO_InitTypeDef GPIO_InitStructure;
 
-    /* LM75_I2C Periph clock enable */
-    RCC_APB1PeriphClockCmd(BSP_I2C1_CLK, ENABLE);
+	/* LM75_I2C Periph clock enable */
+	RCC_APB1PeriphClockCmd(BSP_I2C1_CLK, ENABLE);
 
-    /* Configure the I2C clock source. The clock is derived from the HSI */
-    RCC_I2C1CLKConfig(RCC_I2C1CLK_HSI8M);
-    /* LM75_I2C_SCL_GPIO_CLK, LM75_I2C_SDA_GPIO_CLK
-         and LM75_I2C_SMBUSALERT_GPIO_CLK Periph clock enable */
-    RCC_AHBPeriphClockCmd(BSP_I2C1_SCL_GPIO_CLK | BSP_I2C1_SDA_GPIO_CLK |
-                          BSP_I2C1_SMBUSALERT_GPIO_CLK, ENABLE);
+	/* Configure the I2C clock source. The clock is derived from the HSI */
+	RCC_I2C1CLKConfig(RCC_I2C1CLK_HSI8M);
+	/* LM75_I2C_SCL_GPIO_CLK, LM75_I2C_SDA_GPIO_CLK
+		 and LM75_I2C_SMBUSALERT_GPIO_CLK Periph clock enable */
+	RCC_AHBPeriphClockCmd(BSP_I2C1_SCL_GPIO_CLK | BSP_I2C1_SDA_GPIO_CLK |
+							  BSP_I2C1_SMBUSALERT_GPIO_CLK,
+						  ENABLE);
 
-    /* Connect PXx to I2C_SCL */
-    GPIO_PinAFConfig(BSP_I2C1_SCL_GPIO_PORT, BSP_I2C1_SCL_SOURCE, BSP_I2C1_SCL_AF);
+	/* Connect PXx to I2C_SCL */
+	GPIO_PinAFConfig(BSP_I2C1_SCL_GPIO_PORT, BSP_I2C1_SCL_SOURCE, BSP_I2C1_SCL_AF);
 
-    /* Connect PXx to I2C_SDA */
-    GPIO_PinAFConfig(BSP_I2C1_SDA_GPIO_PORT, BSP_I2C1_SDA_SOURCE,BSP_I2C1_SDA_AF);
+	/* Connect PXx to I2C_SDA */
+	GPIO_PinAFConfig(BSP_I2C1_SDA_GPIO_PORT, BSP_I2C1_SDA_SOURCE, BSP_I2C1_SDA_AF);
 
-    /* Connect PXx to I2C_SMBUSALER */
-    GPIO_PinAFConfig(BSP_I2C1_SMBUSALERT_GPIO_PORT, BSP_I2C1_SMBUSALERT_SOURCE, BSP_I2C1_SMBUSALERT_AF);
+	/* Connect PXx to I2C_SMBUSALER */
+	GPIO_PinAFConfig(BSP_I2C1_SMBUSALERT_GPIO_PORT, BSP_I2C1_SMBUSALERT_SOURCE, BSP_I2C1_SMBUSALERT_AF);
 
-    /* Configure LM75_I2C pins: SCL */
-    GPIO_InitStructure.GPIO_Pin = BSP_I2C1_SCL_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
-    GPIO_Init(BSP_I2C1_SCL_GPIO_PORT, &GPIO_InitStructure);
+	/* Configure LM75_I2C pins: SCL */
+	GPIO_InitStructure.GPIO_Pin = BSP_I2C1_SCL_PIN;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(BSP_I2C1_SCL_GPIO_PORT, &GPIO_InitStructure);
 
-    /* Configure LM75_I2C pins: SDA */
-    GPIO_InitStructure.GPIO_Pin = BSP_I2C1_SDA_PIN;
-    GPIO_Init(BSP_I2C1_SDA_GPIO_PORT, &GPIO_InitStructure);
+	/* Configure LM75_I2C pins: SDA */
+	GPIO_InitStructure.GPIO_Pin = BSP_I2C1_SDA_PIN;
+	GPIO_Init(BSP_I2C1_SDA_GPIO_PORT, &GPIO_InitStructure);
 
-    /* Configure LM75_I2C pin: SMBUS ALERT */
-    GPIO_InitStructure.GPIO_Pin = BSP_I2C1_SMBUSALERT_PIN;
-    GPIO_Init(BSP_I2C1_SMBUSALERT_GPIO_PORT, &GPIO_InitStructure);
+	/* Configure LM75_I2C pin: SMBUS ALERT */
+	GPIO_InitStructure.GPIO_Pin = BSP_I2C1_SMBUSALERT_PIN;
+	GPIO_Init(BSP_I2C1_SMBUSALERT_GPIO_PORT, &GPIO_InitStructure);
 }
 
 void BSP_IIC1_Config(void)
 {
-    I2C_InitTypeDef  I2C_InitStructure;
-    BSP_IIC1_GPIO_Config();
+	I2C_InitTypeDef I2C_InitStructure;
+	BSP_IIC1_GPIO_Config();
 
-    /* LM75_I2C configuration */
-    I2C_InitStructure.I2C_Mode = I2C_Mode_I2C;//I2C_Mode_SMBusHost;
-    I2C_InitStructure.I2C_AnalogFilter = I2C_AnalogFilter_Enable;
-    I2C_InitStructure.I2C_DigitalFilter = 0x00;
-    I2C_InitStructure.I2C_OwnAddress1 = 0x00;
-    I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;
-    I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-    I2C_InitStructure.I2C_Timing = BSP_I2C1_TIMING;
+	/* LM75_I2C configuration */
+	I2C_InitStructure.I2C_Mode = I2C_Mode_I2C; // I2C_Mode_SMBusHost;
+	I2C_InitStructure.I2C_AnalogFilter = I2C_AnalogFilter_Enable;
+	I2C_InitStructure.I2C_DigitalFilter = 0x00;
+	I2C_InitStructure.I2C_OwnAddress1 = 0x00;
+	I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;
+	I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+	I2C_InitStructure.I2C_Timing = BSP_I2C1_TIMING;
 
-    /* Apply LM75_I2C configuration after enabling it */
-    I2C_Init(BSP_I2C1, &I2C_InitStructure);
+	/* Apply LM75_I2C configuration after enabling it */
+	I2C_Init(BSP_I2C1, &I2C_InitStructure);
 
-    /* LM75_I2C Peripheral Enable */
-    I2C_Cmd(BSP_I2C1, ENABLE);
+	/* LM75_I2C Peripheral Enable */
+	I2C_Cmd(BSP_I2C1, ENABLE);
 }
-
 
 /******************************************************************************/
 /*                 HK32L0xx Peripherals Interrupt Handlers                   */
@@ -2103,274 +2112,274 @@ void BSP_IIC1_Config(void)
 /*  file (KEIL_Startup_hk32l0xx.s).                                               */
 /******************************************************************************/
 /**
-  * @brief  This function handles I2C1 Error interrupt request.
-  * @param  None
-  * @retval None
-  */
+ * @brief  This function handles I2C1 Error interrupt request.
+ * @param  None
+ * @retval None
+ */
 void I2C1_IRQHandler(void)
 {
-    /* Check on I2C1 SMBALERT flag and clear it */
-    if (I2C_GetITStatus(I2C1, I2C_IT_ALERT))
-    {
-        I2C_ClearITPendingBit(I2C1, I2C_IT_ALERT);
-        //SMbusAlertOccurred++;
-    }
+	/* Check on I2C1 SMBALERT flag and clear it */
+	if (I2C_GetITStatus(I2C1, I2C_IT_ALERT))
+	{
+		I2C_ClearITPendingBit(I2C1, I2C_IT_ALERT);
+		// SMbusAlertOccurred++;
+	}
 
-    /* Check on I2C1 Time out flag and clear it */
-    if (I2C_GetITStatus(I2C1, I2C_IT_TIMEOUT))
-    {
-        I2C_ClearITPendingBit(I2C1, I2C_IT_TIMEOUT);
-    }
+	/* Check on I2C1 Time out flag and clear it */
+	if (I2C_GetITStatus(I2C1, I2C_IT_TIMEOUT))
+	{
+		I2C_ClearITPendingBit(I2C1, I2C_IT_TIMEOUT);
+	}
 
-    /* Check on I2C1 Arbitration Lost flag and clear it */
-    if (I2C_GetITStatus(I2C1, I2C_IT_ARLO))
-    {
-        I2C_ClearITPendingBit(I2C1, I2C_IT_ARLO);
-    }
+	/* Check on I2C1 Arbitration Lost flag and clear it */
+	if (I2C_GetITStatus(I2C1, I2C_IT_ARLO))
+	{
+		I2C_ClearITPendingBit(I2C1, I2C_IT_ARLO);
+	}
 
-    /* Check on I2C1 PEC error flag and clear it */
-    if (I2C_GetITStatus(I2C1, I2C_IT_PECERR))
-    {
-        I2C_ClearITPendingBit(I2C1, I2C_IT_PECERR);
-    }
+	/* Check on I2C1 PEC error flag and clear it */
+	if (I2C_GetITStatus(I2C1, I2C_IT_PECERR))
+	{
+		I2C_ClearITPendingBit(I2C1, I2C_IT_PECERR);
+	}
 
-    /* Check on I2C1 Overrun/Underrun error flag and clear it */
-    if (I2C_GetITStatus(I2C1, I2C_IT_OVR))
-    {
-        I2C_ClearITPendingBit(I2C1, I2C_IT_OVR);
-    }
+	/* Check on I2C1 Overrun/Underrun error flag and clear it */
+	if (I2C_GetITStatus(I2C1, I2C_IT_OVR))
+	{
+		I2C_ClearITPendingBit(I2C1, I2C_IT_OVR);
+	}
 
-    /* Check on I2C1 Acknowledge failure error flag and clear it */
-    if (I2C_GetITStatus(I2C1, I2C_IT_NACKF))
-    {
-        I2C_ClearITPendingBit(I2C1, I2C_IT_NACKF);
-    }
+	/* Check on I2C1 Acknowledge failure error flag and clear it */
+	if (I2C_GetITStatus(I2C1, I2C_IT_NACKF))
+	{
+		I2C_ClearITPendingBit(I2C1, I2C_IT_NACKF);
+	}
 
-    /* Check on I2C1 Bus error flag and clear it */
-    if (I2C_GetITStatus(I2C1, I2C_IT_BERR))
-    {
-        I2C_ClearITPendingBit(I2C1, I2C_IT_BERR);
-    }
+	/* Check on I2C1 Bus error flag and clear it */
+	if (I2C_GetITStatus(I2C1, I2C_IT_BERR))
+	{
+		I2C_ClearITPendingBit(I2C1, I2C_IT_BERR);
+	}
 }
 
 uint8_t hal_iic1_write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
-		uint8_t DataNum = 0;
-		__IO uint32_t  LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
-		/* Test on BUSY Flag */
+	uint8_t DataNum = 0;
+	__IO uint32_t LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+	/* Test on BUSY Flag */
+	LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+
+	while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_BUSY) != RESET)
+	{
+		if ((LM75Timeout--) == 0)
+		{
+			return 1;
+		}
+	}
+
+	/* Configure slave address, nbytes, reload, end mode and start or stop generation */
+	I2C_TransferHandling(BSP_I2C1, dev_address, 1, I2C_Reload_Mode, I2C_Generate_Start_Write);
+
+	/* Wait until TXIS flag is set */
+	LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+
+	while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TXIS) == RESET)
+	{
+		if ((LM75Timeout--) == 0)
+		{
+			return 2;
+		}
+	}
+
+	/* Send Register address */
+	I2C_SendData(BSP_I2C1, (uint8_t)reg_address);
+
+	/* Wait until TCR flag is set */
+	LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+
+	while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TCR) == RESET)
+	{
+		if ((LM75Timeout--) == 0)
+		{
+			return 3;
+		}
+	}
+
+	/* Configure slave address, nbytes, reload, end mode and start or stop generation */
+	I2C_TransferHandling(BSP_I2C1, dev_address, 2, I2C_AutoEnd_Mode, I2C_No_StartStop);
+
+	while (DataNum != length)
+	{
+		/* Wait until TXIS flag is set */
 		LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
 
-    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_BUSY) != RESET)
-    {
-        if ((LM75Timeout--) == 0)
-        {
-            return 1;
-        }
-    }
+		while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TXIS) == RESET)
+		{
+			if ((LM75Timeout--) == 0)
+			{
+				return 4;
+			}
+		}
 
-    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
-    I2C_TransferHandling(BSP_I2C1, dev_address, 1, I2C_Reload_Mode, I2C_Generate_Start_Write);
+		/* Write data to TXDR */
+		I2C_SendData(BSP_I2C1, (uint8_t)(buffer[DataNum]));
 
-    /* Wait until TXIS flag is set */
-    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+		/* Update number of transmitted data */
+		DataNum++;
+	}
 
-    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TXIS) == RESET)
-    {
-        if ((LM75Timeout--) == 0)
-        {
-            return 2;
-        }
-    }
+	/* Wait until STOPF flag is set */
+	LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
 
-    /* Send Register address */
-    I2C_SendData(BSP_I2C1, (uint8_t)reg_address);
+	while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_STOPF) == RESET)
+	{
+		if ((LM75Timeout--) == 0)
+		{
+			return 5;
+		}
+	}
 
-    /* Wait until TCR flag is set */
-    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
-
-    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TCR) == RESET)
-    {
-        if ((LM75Timeout--) == 0)
-        {
-            return 3;
-        }
-    }
-
-    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
-    I2C_TransferHandling(BSP_I2C1, dev_address, 2, I2C_AutoEnd_Mode, I2C_No_StartStop);
-
-    while (DataNum != length)
-    {
-        /* Wait until TXIS flag is set */
-        LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
-
-        while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TXIS) == RESET)
-        {
-            if ((LM75Timeout--) == 0)
-            {
-                return 4;
-            }
-        }
-
-        /* Write data to TXDR */
-        I2C_SendData(BSP_I2C1, (uint8_t)(buffer[DataNum]));
-
-        /* Update number of transmitted data */
-        DataNum++;
-    }
-
-    /* Wait until STOPF flag is set */
-    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
-
-    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_STOPF) == RESET)
-    {
-        if ((LM75Timeout--) == 0)
-        {
-            return 5;
-        }
-    }
-
-    /* Clear STOPF flag */
-    I2C_ClearFlag(BSP_I2C1, I2C_ICR_STOPCF);
-    return 0;	
+	/* Clear STOPF flag */
+	I2C_ClearFlag(BSP_I2C1, I2C_ICR_STOPCF);
+	return 0;
 }
 uint8_t hal_iic2_write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
-	 return 0;
+	return 0;
 }
 uint8_t hal_iic3_write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
-	 return 0;
+	return 0;
 }
 
 uint8_t hal_iic4_write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
-   return 0;	
+	return 0;
 }
 
 uint8_t hal_iic5_write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
-	 return 0;
+	return 0;
 }
 
 uint8_t hal_iic6_write(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
-   return 0;	
+	return 0;
 }
 
 uint8_t hal_iic1_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
-	  __IO uint32_t  LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
-	  //uint8_t LM75_BufferRX[2] = {0, 0};
-    //uint16_t tmp = 0;
-    uint32_t DataNum = 0;
+	__IO uint32_t LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+	// uint8_t LM75_BufferRX[2] = {0, 0};
+	// uint16_t tmp = 0;
+	uint32_t DataNum = 0;
 
-    /* Test on BUSY Flag */
-    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+	/* Test on BUSY Flag */
+	LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
 
-    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_BUSY) != RESET)
-    {
-        if ((LM75Timeout--) == 0)
-        {
-            return 1;
-        }
-    }
+	while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_BUSY) != RESET)
+	{
+		if ((LM75Timeout--) == 0)
+		{
+			return 1;
+		}
+	}
 
-    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
-    I2C_TransferHandling(BSP_I2C1, dev_address, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
+	/* Configure slave address, nbytes, reload, end mode and start or stop generation */
+	I2C_TransferHandling(BSP_I2C1, dev_address, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
 
-    /* Wait until TXIS flag is set */
-    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+	/* Wait until TXIS flag is set */
+	LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
 
-    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TXIS) == RESET)
-    {
-        if ((LM75Timeout--) == 0)
-        {
-            return 2;
-        }
-    }
+	while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TXIS) == RESET)
+	{
+		if ((LM75Timeout--) == 0)
+		{
+			return 2;
+		}
+	}
 
-    /* Send Register address */
-    I2C_SendData(BSP_I2C1, (uint8_t)reg_address);
+	/* Send Register address */
+	I2C_SendData(BSP_I2C1, (uint8_t)reg_address);
 
-    /* Wait until TC flag is set */
-    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+	/* Wait until TC flag is set */
+	LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
 
-    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TC) == RESET)
-    {
-        if ((LM75Timeout--) == 0)
-        {
-            return 3;
-        }
-    }
+	while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_TC) == RESET)
+	{
+		if ((LM75Timeout--) == 0)
+		{
+			return 3;
+		}
+	}
 
-    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
-    I2C_TransferHandling(BSP_I2C1, dev_address, 2, I2C_AutoEnd_Mode, I2C_Generate_Start_Read);
+	/* Configure slave address, nbytes, reload, end mode and start or stop generation */
+	I2C_TransferHandling(BSP_I2C1, dev_address, 2, I2C_AutoEnd_Mode, I2C_Generate_Start_Read);
 
-    /* Reset local variable */
-    DataNum = 0;
+	/* Reset local variable */
+	DataNum = 0;
 
-    /* Wait until all data are received */
-    while (DataNum != length)
-    {
-        /* Wait until RXNE flag is set */
-        LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+	/* Wait until all data are received */
+	while (DataNum != length)
+	{
+		/* Wait until RXNE flag is set */
+		LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
 
-        while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_RXNE) == RESET)
-        {
-            if ((LM75Timeout--) == 0)
-            {
-                return 4;
-            }
-        }
+		while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_RXNE) == RESET)
+		{
+			if ((LM75Timeout--) == 0)
+			{
+				return 4;
+			}
+		}
 
-        /* Read data from RXDR */
-        buffer[DataNum] = I2C_ReceiveData(BSP_I2C1);
+		/* Read data from RXDR */
+		buffer[DataNum] = I2C_ReceiveData(BSP_I2C1);
 
-        /* Update number of received data */
-        DataNum++;
-    }
+		/* Update number of received data */
+		DataNum++;
+	}
 
-    /* Wait until STOPF flag is set */
-    LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
+	/* Wait until STOPF flag is set */
+	LM75Timeout = BSP_I2C1_LONG_TIMEOUT;
 
-    while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_STOPF) == RESET)
-    {
-        if ((LM75Timeout--) == 0)
-        {
-            return 5;
-        }
-    }
+	while (I2C_GetFlagStatus(BSP_I2C1, I2C_ISR_STOPF) == RESET)
+	{
+		if ((LM75Timeout--) == 0)
+		{
+			return 5;
+		}
+	}
 
-    /* Clear STOPF flag */
-    I2C_ClearFlag(BSP_I2C1, I2C_ICR_STOPCF);
+	/* Clear STOPF flag */
+	I2C_ClearFlag(BSP_I2C1, I2C_ICR_STOPCF);
 
-    return length;
+	return length;
 }
 
 uint8_t hal_iic2_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
- return 0;	
+	return 0;
 }
 
 uint8_t hal_iic3_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
- return 0;	
+	return 0;
 }
 
 uint8_t hal_iic4_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
- return 0;	
+	return 0;
 }
 
 uint8_t hal_iic5_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
- return 0;	
+	return 0;
 }
 
 uint8_t hal_iic6_read(uint8_t dev_address, uint8_t reg_address, uint8_t *buffer, uint8_t length)
 {
- return 0;	
+	return 0;
 }
 #endif
 #endif

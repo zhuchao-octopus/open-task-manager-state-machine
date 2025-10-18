@@ -19,12 +19,12 @@
  * Include the necessary header files for the Octopus platform and BLE functionality.
  */
 #include "octopus_4g.h"
-#include "octopus_task_manager.h"   // Task Manager: handles scheduling and execution of system tasks
-#include "octopus_tickcounter.h"    // Tick Counter: provides timing and delay utilities
-#include "octopus_message.h"        // Message IDs: defines identifiers for inter-task communication
-#include "octopus_msgqueue.h"       // Message Queue: API for sending/receiving messages between tasks
-#include "octopus_uart_ptl.h"       // UART Protocol Layer: handles protocol-level UART operations
-#include "octopus_uart_upf.h"       // UART Packet Framework: low-level UART packet processing
+#include "octopus_task_manager.h" // Task Manager: handles scheduling and execution of system tasks
+#include "octopus_tickcounter.h"  // Tick Counter: provides timing and delay utilities
+#include "octopus_message.h"      // Message IDs: defines identifiers for inter-task communication
+#include "octopus_msgqueue.h"     // Message Queue: API for sending/receiving messages between tasks
+#include "octopus_uart_ptl.h"     // UART Protocol Layer: handles protocol-level UART operations
+#include "octopus_uart_upf.h"     // UART Packet Framework: low-level UART packet processing
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -126,7 +126,7 @@ void iot_send_cmd(uint8_t cmd, uint8_t *data, uint8_t len)
     frame[index++] = calc_checksum(&frame[1], 3 + len);
     frame[index++] = 0xAA;
 
-    upf_send_buffer(upf_module_info_LOT4G,frame, index);
+    upf_send_buffer(upf_module_info_LOT4G, frame, index);
 }
 
 void iot_cmd_read_runtime_params(void)

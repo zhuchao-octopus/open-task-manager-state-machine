@@ -2,7 +2,6 @@
 #ifndef __OCTOPUS_CAN_FUNCTION_2E006__
 #define __OCTOPUS_CAN_FUNCTION_2E006__
 
-
 #include "octopus_base.h" //  Base include file for the Octopus project.
 #include "octopus_can_queue.h"
 #include "octopus_tickcounter.h"
@@ -50,10 +49,10 @@ typedef struct
 
             uint32_t ebs : 1;      // EBS能量回馈
             uint32_t seat : 1;     // 座桶状态
-					  uint32_t boost : 1;     // 座桶状态
+            uint32_t boost : 1;    // 座桶状态
             uint32_t comm : 1;     // 通信状态
             uint32_t workMode : 4; // 工作模式 (00转矩 01转速 10PWM)
-					
+
             uint32_t pwmState : 8; // PWM波状态
             uint32_t reserved : 8; // 保留
         } bits;
@@ -74,14 +73,14 @@ typedef struct
             uint16_t motorHallFault : 1; // 电机霍尔故障
             uint16_t angleFault : 1;     // 角度传感器故障
 
-					  uint16_t reserved : 2;      // 保留
+            uint16_t reserved : 2;       // 保留
             uint16_t otherFault : 1;     // 其它故障
             uint16_t derating : 1;       // 降额状态
             uint16_t mcuOverTemp1 : 1;   // MCU过温1
             uint16_t mcuOverTemp2 : 1;   // MCU过温2
             uint16_t motorOverTemp1 : 1; // 电机过温1
             uint16_t motorOverTemp2 : 1; // 电机过温2
-            
+
         } bits;
     } fault_state; // Byte4~7
 
@@ -89,13 +88,13 @@ typedef struct
 
 typedef struct
 {
-    int16_t mcu_temp;       // 控制器温度 [°C] = raw - 40
-    int16_t motor_temp;     // 电机温度 [°C] = raw - 40
-    int16_t bus_current;    // 母线电流 [0.1A] = raw*0.1 - 1950
-    int16_t phase_current;  // 相电流 [0.1A] = raw*0.1 - 4000
-    uint8_t bus_voltage;    // 母线电压 [V]   = raw
-    uint8_t throttle_volt;  // 油门电压 [0.02V] = raw*0.02
-} MCU_Task_H_002_t;  // 对应 0x171 报文
+    int16_t mcu_temp;      // 控制器温度 [°C] = raw - 40
+    int16_t motor_temp;    // 电机温度 [°C] = raw - 40
+    int16_t bus_current;   // 母线电流 [0.1A] = raw*0.1 - 1950
+    int16_t phase_current; // 相电流 [0.1A] = raw*0.1 - 4000
+    uint8_t bus_voltage;   // 母线电压 [V]   = raw
+    uint8_t throttle_volt; // 油门电压 [0.02V] = raw*0.02
+} MCU_Task_H_002_t;        // 对应 0x171 报文
 
 // -------- VCU --------
 typedef struct

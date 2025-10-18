@@ -151,12 +151,12 @@ extern void hal_timer_interrupt_callback(uint8_t event);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
-  * @brief  This function handles SysTick Handler.
-  * @retval None
-  */
+ * @brief  This function handles SysTick Handler.
+ * @retval None
+ */
 void SysTick_Handler(void)
 {
-	system_tick_counter_ms++;  // Increment the millisecond counter
+	system_tick_counter_ms++; // Increment the millisecond counter
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1661,8 +1661,8 @@ void CAN_Config(void)
 	/* CAN Baudrate = 500bps (CAN clocked at 48 MHz) */
 	CAN_InitStructure.CAN_BS1 = CAN_BS1_10tq;
 	CAN_InitStructure.CAN_BS2 = CAN_BS2_5tq;
-	//CAN_InitStructure.CAN_Prescaler = 6;//500bps
-	CAN_InitStructure.CAN_Prescaler = 12;//250bps
+	// CAN_InitStructure.CAN_Prescaler = 6;//500bps
+	CAN_InitStructure.CAN_Prescaler = 12; // 250bps
 #endif
 	CAN_Init(&CAN_InitStructure);
 

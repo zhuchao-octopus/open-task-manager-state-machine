@@ -30,8 +30,14 @@
  */
 typedef enum
 {
-    BIT_RESET = 0,
-    BIT_SET
+  GPIO_MODE_OUTPUT = 0,
+  GPIO_MODE_INPUT,
+} GIIO_MODE_T;
+
+typedef enum
+{
+  BIT_RESET = 0,
+  BIT_SET
 } Bit_Action_T;
 
 #ifdef PLATFORM_CST_OSAL_RTOS
@@ -177,8 +183,8 @@ typedef GPIO_TypeDef GPIO_GROUP;
 #define GPIO_PAGE_KEY_PIN GPIO_Pin_1
 
 // Macros for controlling SIF pins
-#define GPIO_SIF_GROUP 0   
-#define GPIO_SIF_PIN  0  
+#define GPIO_SIF_GROUP 0
+#define GPIO_SIF_PIN 0
 
 // Macros for controlling GPIO pin states (Low/High)
 #define GPIO_ACC_SOC_LOW()         // Set GPIO_ACC_SOC_PIN to Low
@@ -230,11 +236,11 @@ extern "C"
 {
 #endif
 
-	// Function to initialize GPIOs for the task
-	void hal_gpio_init(uint8_t task_id);
-	bool hal_gpio_read(GPIO_GROUP *gpiox, uint16_t pin);
-	bool hal_gpio_write(GPIO_GROUP *gpiox, uint16_t pin, uint8_t value);
-		
+  // Function to initialize GPIOs for the task
+  void hal_gpio_init(uint8_t task_id);
+  bool hal_gpio_read(GPIO_GROUP *gpiox, uint16_t pin);
+  bool hal_gpio_write(GPIO_GROUP *gpiox, uint16_t pin, uint8_t value);
+
 #ifdef __cplusplus
 }
 #endif

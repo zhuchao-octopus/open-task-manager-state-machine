@@ -3,12 +3,12 @@
  * INCLUDES
  */
 #include "octopus_bafang.h"
-#include "octopus_task_manager.h"   // Task Manager: handles scheduling and execution of system tasks
-#include "octopus_tickcounter.h"    // Tick Counter: provides timing and delay utilities
-#include "octopus_message.h"        // Message IDs: defines identifiers for inter-task communication
-#include "octopus_msgqueue.h"       // Message Queue: API for sending/receiving messages between tasks
-#include "octopus_uart_ptl.h"       // UART Protocol Layer: handles protocol-level UART operations
-#include "octopus_uart_upf.h"       // UART Packet Framework: low-level UART packet processing
+#include "octopus_task_manager.h" // Task Manager: handles scheduling and execution of system tasks
+#include "octopus_tickcounter.h"  // Tick Counter: provides timing and delay utilities
+#include "octopus_message.h"      // Message IDs: defines identifiers for inter-task communication
+#include "octopus_msgqueue.h"     // Message Queue: API for sending/receiving messages between tasks
+#include "octopus_uart_ptl.h"     // UART Protocol Layer: handles protocol-level UART operations
+#include "octopus_uart_upf.h"     // UART Packet Framework: low-level UART packet processing
 #include "octopus_vehicle.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS

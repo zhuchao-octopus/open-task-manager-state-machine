@@ -205,7 +205,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
         }
         return false;
     }
-		
+
 #ifdef TASK_MANAGER_STATE_MACHINE_SOC
     // Handle commands for SOC_TO_MCU_MOD_SYSTEM frame type
     if (SOC_TO_MCU_MOD_SYSTEM == frame_type)
@@ -232,7 +232,7 @@ bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t 
             break;
         }
     }
-#endif		
+#endif
     return false; // Command not processed
 }
 
@@ -451,11 +451,11 @@ void system_power_onoff(bool onoff)
     }
     else
     {
-        // send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, 0);
-			#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
-			  task_car_reset_trip();
+// send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, 0);
+#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
+        task_car_reset_trip();
         flash_save_carinfor_meter();
-			#endif
+#endif
         LOG_LEVEL("Power down SOC... \r\n");
         gpio_power_on_off(false);
         if (!gpio_is_power_on())

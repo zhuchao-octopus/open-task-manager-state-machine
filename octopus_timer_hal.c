@@ -131,13 +131,12 @@ void hal_timer_interrupt_callback(void *data)
 
 void hal_timer_init(uint8_t timer_id)
 {
-	
 }
 
 void hal_timer_interrupt_callback(uint8_t event)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_SIF
-  SIF_IO_IRQHandler();
+    SIF_IO_IRQHandler();
 #endif
 }
 
@@ -147,7 +146,6 @@ void otsm_timer_init(void)
 #else
 void hal_timer_init(uint8_t timer_id)
 {
-	
 }
 
 void hal_timer_interrupt_callback(uint8_t event)

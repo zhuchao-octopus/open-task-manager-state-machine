@@ -190,18 +190,18 @@ void sif_controller_updating(void)
         temp_carinfo_meter.speed_limit = GETBIT(sif_buff[4], 0);
         temp_carinfo_indicator.reverse = GETBIT(sif_buff[4], 2);
         temp_carinfo_indicator.ready = GETBIT(sif_buff[4], 7);
-			  temp_carinfo_indicator.cruise_control = GETBIT(sif_buff[2], 2);
-				temp_carinfo_indicator.walk_assist = GETBIT(sif_buff[2], 1);
-			
+        temp_carinfo_indicator.cruise_control = GETBIT(sif_buff[2], 2);
+        temp_carinfo_indicator.walk_assist = GETBIT(sif_buff[2], 1);
+
         carinfo_add_error_code(ERROR_CODE_HALLSENSOR_ABNORMALITY, GETBIT(sif_buff[2], 6), false);
         carinfo_add_error_code(ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY, GETBIT(sif_buff[2], 5), false);
         carinfo_add_error_code(ERROR_CODE_CONTROLLER_ABNORMALITY, GETBIT(sif_buff[2], 4), false);
         carinfo_add_error_code(ERROR_CODE_LOW_VOLTAGE_PROTECTION, GETBIT(sif_buff[2], 3), false);
         carinfo_add_error_code(ERROR_CODE_MOTOR_ABNORMALITY, GETBIT(sif_buff[2], 0), false);
-				carinfo_add_error_code(ERROR_CODE_CONTROLLER_PROTECTION_TRIGGER, GETBIT(sif_buff[3], 4), false);
-			  
-			  carinfo_add_error_code(ERROR_CODE_COMMUNICATION_ABNORMALITY,GETBIT(sif_buff[9], 7), true);
-			
+        carinfo_add_error_code(ERROR_CODE_CONTROLLER_PROTECTION_TRIGGER, GETBIT(sif_buff[3], 4), false);
+
+        carinfo_add_error_code(ERROR_CODE_COMMUNICATION_ABNORMALITY, GETBIT(sif_buff[9], 7), true);
+
         if (!is_struct_equal(&temp_carinfo_meter, &lt_carinfo_meter, sizeof(carinfo_meter_t)))
         {
             send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);

@@ -11,7 +11,7 @@
 #ifdef CUSTOMER_MODEL_DH_500
 
 CAN_Data_Union data_union_2e008;
-	 
+
 void can_update_vehicle_infor(const CanQueueMsg_t *queue_msg);
 
 /**
@@ -21,15 +21,15 @@ void can_update_vehicle_infor(const CanQueueMsg_t *queue_msg);
  */
 bool can_message_dispatcher(const CanQueueMsg_t *queue_msg)
 {
-    // LOG_BUFF_LEVEL((uint8_t *)queue_msg, sizeof(CanQueueMsg_t));
-    // bool updated = false;
-    can_update_vehicle_infor(queue_msg);
-		return true;
+  // LOG_BUFF_LEVEL((uint8_t *)queue_msg, sizeof(CanQueueMsg_t));
+  // bool updated = false;
+  can_update_vehicle_infor(queue_msg);
+  return true;
 }
 
 bool can_message_sender(const uint16_t message_id)
-{		
-		return false;
+{
+  return false;
 }
 
 // ERROR_CODE_IDLE = 0X00,                                      // 无动作
@@ -56,68 +56,82 @@ bool can_message_sender(const uint16_t message_id)
 
 void can_update_vehicle_infor(const CanQueueMsg_t *queue_msg)
 {
-	 CAN_Data_Union data_union;
-	 bool difference = false;
-    // Copy the raw data from the CAN message into the union (big endian)
-    for (int i = 0; i < 8; i++) 
-	  {
-        data_union.bytes[i] = queue_msg->data[i];	
-    }
-		 
-		for (int i = 0; i < 8; i++) 
-	  {
-      if (data_union_2e008.bytes[i] != data_union.bytes[i])
-			 difference = true;
-    } 
-		
-		if (!difference) return;
+  CAN_Data_Union data_union;
+  bool difference = false;
+  // Copy the raw data from the CAN message into the union (big endian)
+  for (int i = 0; i < 8; i++)
+  {
+    data_union.bytes[i] = queue_msg->data[i];
+  }
 
-		for (int i = 0; i < 8; i++) 
-	  {
-      data_union_2e008.bytes[i] = data_union.bytes[i];
-    } 
-		
-   switch (queue_msg->std_id)
-    {
-			  case 0x300: break;
-        case 0x301: break;
-        case 0x302: break;
-        case 0x303: break;
-        case 0x304: break;
-        case 0x305: break;
-        case 0x306: break;
-        case 0x307: break;
-        case 0x308: break;
-        case 0x309: break;
-			  case 0x20A:
-        case 0x30A: 
-						lt_carinfo_battery.voltage = data_union_2e008.battery_pack.voltage;
-						lt_carinfo_battery.current = data_union_2e008.battery_pack.current;
-						lt_carinfo_battery.soc = data_union_2e008.battery_pack.soc;
-						//lt_carinfo_battery.reserve = data_union_2e008.battery_pack.soh;
-						carinfo_add_error_code(ERROR_CODE_OVER_VOLTAGE_PROTECTION, data_union_2e008.battery_pack.status2.bits.cell_over_voltage_prot, false);
-						carinfo_add_error_code(ERROR_CODE_OVER_VOLTAGE_PROTECTION, data_union_2e008.battery_pack.status2.bits.cell_low_voltage_prot, false);
+  for (int i = 0; i < 8; i++)
+  {
+    if (data_union_2e008.bytes[i] != data_union.bytes[i])
+      difference = true;
+  }
 
-						//LOG_LEVEL("lt_carinfo_meter.speed_actual: %d\n", lt_carinfo_meter.speed_actual);
-						send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR);
-						send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, FRAME_CMD_CARINFOR_BATTERY);
-					break;
-				
-        case 0x30B: break;
-        case 0x30C: break;
-        case 0x30D: break;
-				
-        case 0x20E: 
-				case 0x30E: 
-						lt_carinfo_battery.abs_charge_state = data_union_2e008.bytes[0];
-						lt_carinfo_battery.rel_charge_state = data_union_2e008.bytes[0];	
-						send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, FRAME_CMD_CARINFOR_BATTERY);				
-					break;
-        case 0x30F: break;
-        default:
-        break; // unknown ID
-    }
+  if (!difference)
+    return;
+
+  for (int i = 0; i < 8; i++)
+  {
+    data_union_2e008.bytes[i] = data_union.bytes[i];
+  }
+
+  switch (queue_msg->std_id)
+  {
+  case 0x300:
+    break;
+  case 0x301:
+    break;
+  case 0x302:
+    break;
+  case 0x303:
+    break;
+  case 0x304:
+    break;
+  case 0x305:
+    break;
+  case 0x306:
+    break;
+  case 0x307:
+    break;
+  case 0x308:
+    break;
+  case 0x309:
+    break;
+  case 0x20A:
+  case 0x30A:
+    lt_carinfo_battery.voltage = data_union_2e008.battery_pack.voltage;
+    lt_carinfo_battery.current = data_union_2e008.battery_pack.current;
+    lt_carinfo_battery.soc = data_union_2e008.battery_pack.soc;
+    // lt_carinfo_battery.reserve = data_union_2e008.battery_pack.soh;
+    carinfo_add_error_code(ERROR_CODE_OVER_VOLTAGE_PROTECTION, data_union_2e008.battery_pack.status2.bits.cell_over_voltage_prot, false);
+    carinfo_add_error_code(ERROR_CODE_OVER_VOLTAGE_PROTECTION, data_union_2e008.battery_pack.status2.bits.cell_low_voltage_prot, false);
+
+    // LOG_LEVEL("lt_carinfo_meter.speed_actual: %d\n", lt_carinfo_meter.speed_actual);
+    send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR);
+    send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, FRAME_CMD_CARINFOR_BATTERY);
+    break;
+
+  case 0x30B:
+    break;
+  case 0x30C:
+    break;
+  case 0x30D:
+    break;
+
+  case 0x20E:
+  case 0x30E:
+    lt_carinfo_battery.abs_charge_state = data_union_2e008.bytes[0];
+    lt_carinfo_battery.rel_charge_state = data_union_2e008.bytes[0];
+    send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, FRAME_CMD_CARINFOR_BATTERY);
+    break;
+  case 0x30F:
+    break;
+  default:
+    break; // unknown ID
+  }
 }
-
 
 #endif

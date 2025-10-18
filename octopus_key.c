@@ -29,27 +29,27 @@
  * GLOBAL VARIABLES
  */
 
-// GPIO_STATUS gpio_zzd_pin_status = {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP, GPIO_ZZD_KEY_PIN, false, false, OCTOPUS_KEY_ZZD,0, 0};
-// GPIO_STATUS gpio_yzd_pin_status = {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP, GPIO_YZD_KEY_PIN, false, false, OCTOPUS_KEY_YZD,0, 0};
-// GPIO_STATUS gpio_skd_pin_status = {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP, GPIO_SKD_KEY_PIN, false, false, OCTOPUS_KEY_SKD,0, 0};
-// GPIO_STATUS gpio_plus_pin_status = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, false, false, OCTOPUS_KEY_PLUS,0, 0};
-// GPIO_STATUS gpio_subt_pin_status = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, false, false, OCTOPUS_KEY_SUBT,0, 0};
+// GPIO_STATUS gpio_zzd_pin_status = {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP, GPIO_ZZD_KEY_PIN, false, false, OCT_KEY_ZZD,0, 0};
+// GPIO_STATUS gpio_yzd_pin_status = {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP, GPIO_YZD_KEY_PIN, false, false, OCT_KEY_YZD,0, 0};
+// GPIO_STATUS gpio_skd_pin_status = {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP, GPIO_SKD_KEY_PIN, false, false, OCT_KEY_SKD,0, 0};
+// GPIO_STATUS gpio_plus_pin_status = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, false, false, OCT_KEY_PLUS,0, 0};
+// GPIO_STATUS gpio_subt_pin_status = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, false, false, OCT_KEY_SUBT,0, 0};
 
-GPIO_KEY_STATUS key_status_power = {(GPIO_GROUP *)GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, OCTOPUS_KEY_POWER, 0, 0, 0, 0, 0, 0, 0};
-// GPIO_KEY_STATUS key_status_zzd =   {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP,GPIO_ZZD_KEY_PIN,OCTOPUS_KEY_ZZD, 0, 0, 0, 0, 0, 0, 0};
-// GPIO_KEY_STATUS key_status_yzd =   {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP,GPIO_YZD_KEY_PIN,OCTOPUS_KEY_YZD, 0, 0, 0, 0, 0, 0, 0};
-// GPIO_KEY_STATUS key_status_skd =   {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP,GPIO_SKD_KEY_PIN,OCTOPUS_KEY_SKD, 0, 0, 0, 0, 0, 0, 0};
-// GPIO_KEY_STATUS key_status_ddd =   {(GPIO_GROUP *)GPIO_DDD_KEY_GROUP,GPIO_DDD_KEY_PIN,OCTOPUS_KEY_DDD, 0, 0, 0, 0, 0, 0, 0};
-// GPIO_KEY_STATUS key_status_plus = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, OCTOPUS_KEY_PLUS, 0, 0, 0, 0, 0, 0, 0};
-// GPIO_KEY_STATUS key_status_subt = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, OCTOPUS_KEY_SUBT, 0, 0, 0, 0, 0, 0, 0};
-GPIO_KEY_STATUS key_status_page = {(GPIO_GROUP *)GPIO_PAGE_KEY_GROUP, GPIO_PAGE_KEY_PIN, OCTOPUS_KEY_PAGE, 0, 0, 0, 0, 0, 0, 0};
+GPIO_KEY_STATUS key_status_power = {(GPIO_GROUP *)GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, OCT_KEY_POWER, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_zzd =   {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP,GPIO_ZZD_KEY_PIN,OCT_KEY_ZZD, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_yzd =   {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP,GPIO_YZD_KEY_PIN,OCT_KEY_YZD, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_skd =   {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP,GPIO_SKD_KEY_PIN,OCT_KEY_SKD, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_ddd =   {(GPIO_GROUP *)GPIO_DDD_KEY_GROUP,GPIO_DDD_KEY_PIN,OCT_KEY_DDD, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_plus = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, OCT_KEY_PLUS, 0, 0, 0, 0, 0, 0, 0};
+// GPIO_KEY_STATUS key_status_subt = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, OCT_KEY_SUBT, 0, 0, 0, 0, 0, 0, 0};
+GPIO_KEY_STATUS key_status_page = {(GPIO_GROUP *)GPIO_PAGE_KEY_GROUP, GPIO_PAGE_KEY_PIN, OCT_KEY_PAGE, 0, 0, 0, 0, 0, 0, 0};
 
 GPIO_STATUS *gpio_array[] = {NULL};
 GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_power, &key_status_page, NULL};
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-uint8_t power_key_password[] = {OCTOPUS_KEY_POWER, OCTOPUS_KEY_POWER, OCTOPUS_KEY_POWER};
+uint8_t power_key_password[] = {OCT_KEY_POWER, OCT_KEY_POWER, OCT_KEY_POWER};
 uint8_t power_key_password_index = 0;
 GPIO_KEY_STATUS key_status_received_temp;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -150,12 +150,12 @@ static void task_key_action_handler(void)
         switch (key)
         {
 
-        case OCTOPUS_KEY_POWER:
+        case OCT_KEY_POWER:
             task_key_power_handler(key_status);
             break;
 
-        case OCTOPUS_KEY_PLUS:
-        case OCTOPUS_KEY_SUBT:
+        case OCT_KEY_PLUS:
+        case OCT_KEY_SUBT:
         default:
             task_key_event_dispatcher(key_status);
             break;
@@ -169,12 +169,12 @@ static void task_key_action_handler(void)
         switch (key)
         {
 
-        case OCTOPUS_KEY_POWER:
+        case OCT_KEY_POWER:
             task_key_power_handler(key_status);
             break;
 
-        case OCTOPUS_KEY_PLUS:
-        case OCTOPUS_KEY_SUBT:
+        case OCT_KEY_PLUS:
+        case OCT_KEY_SUBT:
         default:
             task_key_event_dispatcher(key_status);
             break;
@@ -190,19 +190,19 @@ void task_key_power_handler(GPIO_KEY_STATUS *key_status)
     static uint32_t power_key_wait_timer;
     if (key_status == NULL)
         return;
-    if (key_status->key != OCTOPUS_KEY_POWER)
+    if (key_status->key != OCT_KEY_POWER)
         return;
 
     switch (key_status->state)
     {
     case KEY_STATE_RELEASED:
-        LOG_LEVEL("OCTOPUS_KEY_POWER release key=%d key_status=%02x\r\n", key_status->key, key_status->state);
+        LOG_LEVEL("OCT_KEY_POWER release key=%d key_status=%02x\r\n", key_status->key, key_status->state);
         key_status->state = KEY_STATE_NONE;
         StartTickCounter(&power_key_wait_timer);
         break;
 
     case KEY_STATE_PRESSED:
-        LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d key_status=%02x\r\n", key_status->key, key_status->state);
+        LOG_LEVEL("OCT_KEY_POWER pressed key=%d key_status=%02x\r\n", key_status->key, key_status->state);
         hal_gpio_write((GPIO_GROUP *)GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
         if (GetTickCounter(&power_key_wait_timer) >= 300)
         {
@@ -234,7 +234,7 @@ void task_key_power_handler(GPIO_KEY_STATUS *key_status)
     case KEY_STATE_LONG_LONG_LONG_PRESSED:
         if (!key_status->ignore)
         {
-            LOG_LEVEL("OCTOPUS_KEY_POWER pressed key=%d 3long duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
+            LOG_LEVEL("OCT_KEY_POWER pressed key=%d 3long duration=%d\r\n", key_status->key, key_status->state, key_status->press_duration);
             if (gpio_is_power_on())
             {
                 send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_OFF, 0);
@@ -262,7 +262,7 @@ void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status)
     if (key_status == NULL)
         return;
 
-    if (key_status->key == OCTOPUS_KEY_POWER)
+    if (key_status->key == OCT_KEY_POWER)
         return;
 
     switch (key_status->state)
@@ -423,7 +423,7 @@ void task_key_local_dispatcher(uint8_t key, uint8_t key_status)
     LOG_LEVEL("key %02d key_status=%02d\r\n", key, key_status);
     switch (key)
     {
-    case OCTOPUS_KEY_PAGE:
+    case OCT_KEY_PAGE:
         send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_KEY, key, key_status);
         break;
     }
@@ -435,7 +435,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
     switch (key)
     {
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
-    case OCTOPUS_KEY_ZZD:
+    case OCT_KEY_ZZD:
         if (key_status == KEY_STATE_PRESSED)
         {
             lt_carinfo_indicator.left_turn = !lt_carinfo_indicator.left_turn;
@@ -443,7 +443,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
         }
         break;
 
-    case OCTOPUS_KEY_YZD:
+    case OCT_KEY_YZD:
         if (key_status == KEY_STATE_PRESSED)
         {
             lt_carinfo_indicator.right_turn = !lt_carinfo_indicator.right_turn;
@@ -451,7 +451,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
         }
         break;
 
-    case OCTOPUS_KEY_SKD:
+    case OCT_KEY_SKD:
         // lt_carinfo_indicator.width_lamp = !lt_carinfo_indicator.width_lamp;
         if (key_status == KEY_STATE_PRESSED)
             lt_carinfo_indicator.horn = 1;
@@ -460,11 +460,11 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
 
         break;
 
-    case OCTOPUS_KEY_DDD:
+    case OCT_KEY_DDD:
         lt_carinfo_indicator.high_beam = !lt_carinfo_indicator.high_beam;
         break;
 #endif
-    case OCTOPUS_KEY_PLUS:
+    case OCT_KEY_PLUS:
         if (key_status == KEY_STATE_LONG_PRESSED)
         {
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
@@ -479,7 +479,7 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
             break;
         }
 
-    case OCTOPUS_KEY_SUBT:
+    case OCT_KEY_SUBT:
         if (key_status == KEY_STATE_LONG_PRESSED)
         {
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
@@ -494,11 +494,11 @@ void task_key_received_dispatcher(uint8_t key, uint8_t key_status)
             break;
         }
 
-    case OCTOPUS_KEY_PAGE:
+    case OCT_KEY_PAGE:
         send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_KEY, key, key_status);
         break;
 
-    case OCTOPUS_KEY_ACC:
+    case OCT_KEY_ACC:
         if (key_status)
             send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_OFF, 0);
         else

@@ -44,13 +44,13 @@
  */
 
 // Data receive GPIO pin, defined to read data from the SIF communication interface
-#define SIF_RECEIVE_DATA_BIT() hal_gpio_read(GPIO_SIF_GROUP,GPIO_SIF_PIN)
+#define SIF_RECEIVE_DATA_BIT() hal_gpio_read(GPIO_SIF_GROUP, GPIO_SIF_PIN)
 
 // Set the send data GPIO pin to low for transmission
-#define SIF_SEND_DATA_BIT_LOW() hal_gpio_write(GPIO_SIF_GROUP,GPIO_SIF_PIN,BIT_RESET)
+#define SIF_SEND_DATA_BIT_LOW() hal_gpio_write(GPIO_SIF_GROUP, GPIO_SIF_PIN, BIT_RESET)
 
 // Set the send data GPIO pin to high for transmission
-#define SIF_SEND_DATA_BIT_HIGH() hal_gpio_write(GPIO_SIF_GROUP,GPIO_SIF_PIN,BIT_SET)
+#define SIF_SEND_DATA_BIT_HIGH() hal_gpio_write(GPIO_SIF_GROUP, GPIO_SIF_PIN, BIT_SET)
 
 #ifdef __cplusplus
 extern "C"
@@ -126,8 +126,8 @@ extern "C"
     /*******************************************************************************
     *******************************************************************************/
     void otsm_sif_init(void);
-    
-		extern volatile uint32_t system_timer_tick_50us;
+
+    extern volatile uint32_t system_timer_tick_50us;
 #ifdef __cplusplus
 }
 #endif
