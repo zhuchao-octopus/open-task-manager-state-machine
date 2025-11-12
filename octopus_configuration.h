@@ -62,10 +62,16 @@
 
 ///////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------//
-//                          Enable / Disable Modules                            //
+//                     Enable / Disable Hardware Modules                        //
 //------------------------------------------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////
 
+#define HARDWARE_BSP_UART_1
+#define HARDWARE_BSP_UART_2
+#define HARDWARE_BSP_UART_3
+#define HARDWARE_BSP_UART_4 
+#define HARDWARE_BSP_LUART_1
+#define HARDWARE_BSP_TIMER_2
 // #define TASK_MANAGER_STATE_MACHINE_LOG_CHANNEL 				4
 #define TASK_MANAGER_STATE_MACHINE_GPIO 1  /**< GPIO handling */
 #define TASK_MANAGER_STATE_MACHINE_FLASH 1 /**< Flash memory handling */

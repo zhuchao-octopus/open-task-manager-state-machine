@@ -80,7 +80,7 @@ extern "C"
 #ifdef PLATFORM_CST_OSAL_RTOS
     uint16_t hal_com_uart_event_handler(uint8_t task_id, uint16 events);
 #else
-void *hal_com_uart_event_handler(void *arg);
+		void *hal_com_uart_event_handler(void *arg);
 #endif
 
     /*******************************************************************************/
