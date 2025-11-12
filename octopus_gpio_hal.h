@@ -151,6 +151,8 @@ typedef uint8_t GPIO_GROUP;
 #elif defined(PLATFORM_STM32_RTOS)
 typedef GPIO_TypeDef GPIO_GROUP;
 // Default GPIO pin definitions for unsupported platforms
+#define GPIO_ACC_KEY_GROUP GPIOA
+#define GPIO_ACC_KEY_PIN GPIO_Pin_12
 
 #define GPIO_POWER_KEY_GROUP GPIOA
 #define GPIO_POWER_KEY_PIN GPIO_Pin_12

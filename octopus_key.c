@@ -34,8 +34,14 @@
 // GPIO_STATUS gpio_skd_pin_status = {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP, GPIO_SKD_KEY_PIN, false, false, OCT_KEY_SKD,0, 0};
 // GPIO_STATUS gpio_plus_pin_status = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, false, false, OCT_KEY_PLUS,0, 0};
 // GPIO_STATUS gpio_subt_pin_status = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, false, false, OCT_KEY_SUBT,0, 0};
+GPIO_STATUS gpio_acc1_pin_status = {(GPIO_GROUP *)GPIO_ACC_KEY_GROUP, GPIO_ACC_KEY_PIN, false, false, OCT_KEY_ACC, 0, 0};
 
-GPIO_KEY_STATUS key_status_power = {(GPIO_GROUP *)GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, OCT_KEY_POWER, 0, 0, 0, 0, 0, 0, 0};
+
+GPIO_STATUS *gpio_array[] = {&gpio_acc1_pin_status,NULL};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//GPIO_KEY_STATUS key_status_power = {(GPIO_GROUP *)GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, OCT_KEY_POWER, 0, 0, 0, 0, 0, 0, 0};
 // GPIO_KEY_STATUS key_status_zzd =   {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP,GPIO_ZZD_KEY_PIN,OCT_KEY_ZZD, 0, 0, 0, 0, 0, 0, 0};
 // GPIO_KEY_STATUS key_status_yzd =   {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP,GPIO_YZD_KEY_PIN,OCT_KEY_YZD, 0, 0, 0, 0, 0, 0, 0};
 // GPIO_KEY_STATUS key_status_skd =   {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP,GPIO_SKD_KEY_PIN,OCT_KEY_SKD, 0, 0, 0, 0, 0, 0, 0};
@@ -44,8 +50,7 @@ GPIO_KEY_STATUS key_status_power = {(GPIO_GROUP *)GPIO_POWER_KEY_GROUP, GPIO_POW
 // GPIO_KEY_STATUS key_status_subt = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, OCT_KEY_SUBT, 0, 0, 0, 0, 0, 0, 0};
 GPIO_KEY_STATUS key_status_page = {(GPIO_GROUP *)GPIO_PAGE_KEY_GROUP, GPIO_PAGE_KEY_PIN, OCT_KEY_PAGE, 0, 0, 0, 0, 0, 0, 0};
 
-GPIO_STATUS *gpio_array[] = {NULL};
-GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_power, &key_status_page, NULL};
+GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_page, NULL};
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +76,7 @@ static void task_key_event_dispatcher(GPIO_KEY_STATUS *key_status);
 static void task_key_power_handler(GPIO_KEY_STATUS *key_status);
 static void task_key_received_dispatcher(uint8_t key, uint8_t key_status);
 static void task_key_local_dispatcher(uint8_t key, uint8_t key_status);
+static void task_key_acc_handler(GPIO_STATUS *gpio_status);
 
 void key_reset(GPIO_KEY_STATUS *key_status);
 
@@ -136,7 +142,14 @@ static void task_key_action_handler(void)
         gpio_status = gpio_get_gpio_status_by_pin(msg->param1);
         if (gpio_status == NULL)
             break;
-
+				
+        switch (gpio_status->key)
+        {
+           case OCT_KEY_ACC:
+              task_key_acc_handler(gpio_status);
+            break;
+        }
+				
         if (!gpio_status->offon)
             send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_KEY, gpio_status->key, KEY_STATE_PRESSED);
         else
@@ -182,6 +195,24 @@ static void task_key_action_handler(void)
         break;
     }
 #endif
+}
+
+void task_key_acc_handler(GPIO_STATUS *gpio_status)
+{
+	  if (gpio_status == NULL)
+        return;
+    if (gpio_status->key != OCT_KEY_ACC)
+        return;
+		
+		 if (!gpio_status->offon)
+		 {
+			 hal_gpio_write((GPIO_GROUP *)GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
+			 send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_ON, 0);
+		 }
+		 else
+		 {
+			 send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_OFF, 0);
+		 }
 }
 
 void task_key_power_handler(GPIO_KEY_STATUS *key_status)

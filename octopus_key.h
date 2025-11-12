@@ -168,7 +168,7 @@
 #define OCT_KEY_PLUS 155  ///< Plus key / volume up
 #define OCT_KEY_SUBT 156  ///< Minus key / volume down
 #define OCT_KEY_PAGE 157  ///< Page key
-#define OCT_KEY_ACC 158   ///< ACC key
+#define OCT_KEY_ACC  158   ///< ACC key
 // #define OCTOPUS_NORMAL_KEY_MAX 100
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

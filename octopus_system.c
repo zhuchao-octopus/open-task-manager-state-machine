@@ -51,6 +51,7 @@ bool system_is_power_on(void);
 void system_mcu_initate_remote_soc(void);
 void system_soc_request_mata_infor(void);
 void system_mcu_goto_lowpower(void);
+void system_event_acc_handler(void);
 /*******************************************************************************
  * Global Variables
  * Define variables accessible across multiple files if needed.
@@ -142,6 +143,7 @@ void task_system_running(void)
     StartTickCounter(&l_t_msg_wait_10_timer);
 
     system_event_message_handler();
+		system_event_acc_handler();
 }
 
 void task_system_post_running(void)
@@ -377,6 +379,18 @@ void system_event_message_handler(void)
         break;
     }
 }
+
+void system_event_acc_handler(void)
+{
+	bool acc_status = hal_gpio_read(GPIO_ACC_KEY_GROUP, GPIO_ACC_KEY_PIN);
+	if( !acc_status)
+	{
+		if(g_mcu_state != MCU_POWER_ST_ON)
+		{
+			system_power_onoff(true);
+		}
+	}
+}
 /*******************************************************************************
  * FUNCTION: system_synchronize_with_mcu
  *
@@ -440,27 +454,27 @@ void system_power_onoff(bool onoff)
         LOG_LEVEL("Power on soc...\r\n");
         // system_delay_ms(5);
         gpio_power_on_off(true);
+		#ifdef TASK_MANAGER_STATE_MACHINE_CAN
+            CAN_Config();
+		#endif
         if (gpio_is_power_on())
         {
             g_mcu_state = MCU_POWER_ST_ON;
             LOG_LEVEL("Power on soc succesfully\r\n");
-#ifdef TASK_MANAGER_STATE_MACHINE_CAN
-            CAN_Config();
-#endif
         }
     }
     else
     {
-// send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, 0);
+	   // send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_OFF, 0);
 #ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
         task_car_reset_trip();
         flash_save_carinfor_meter();
 #endif
-        LOG_LEVEL("Power down SOC... \r\n");
+        LOG_LEVEL("Power down soc... \r\n");
         gpio_power_on_off(false);
         if (!gpio_is_power_on())
         {
-            LOG_LEVEL("Power down SOC succesfully\r\n");
+            LOG_LEVEL("Power down soc succesfully\r\n");
 #ifdef MCU_LOW_POWER_MODE
             g_mcu_state = MCU_POWER_ST_LOWPOWER;
             StartTickCounter(&l_t_msg_lowpower_wait_timer); // time out goto sleep
@@ -469,7 +483,7 @@ void system_power_onoff(bool onoff)
 #endif
         }
     }
-#endif
+#endif//TASK_MANAGER_STATE_MACHINE_GPIO
 }
 
 void system_mcu_goto_lowpower(void)
