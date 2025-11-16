@@ -394,7 +394,19 @@ void flash_load_sync_data_infor(void)
 }
 
 /**
- * @brief Main bootloader logic: verify and jump to the valid application
+ @brief Main bootloader logic: verify and jump to the valid application
+// 1) Flash metadata is valid:
+//    - The metadata region exists and its structure matches expected format.
+//    - All mandatory fields (version, size, flags, etc.) are present and correct.
+//
+// 2) CRC check passed:
+//    - Data integrity verified.
+//    - Computed CRC matches the stored CRC value, ensuring no corruption.
+//
+// 3) Vector table is valid:
+//    - Stack pointer and reset handler addresses fall within legal memory regions.
+//    - All core exception vectors are aligned and properly populated.
+//    - Table can be safely used for boot or firmware jump.
  */
 void flash_loader_active_user_app(uint8_t bank_slot, const char *date_str, const char *time_str)
 {
@@ -772,61 +784,83 @@ bool flash_verify_bank_slot_crc(uint32_t slot_addr, uint32_t slot_size, uint32_t
 
 	return (calculated_crc == expected_crc);
 }
-
 /**
- * @brief 检查应用程序向量表是否合法，决定 Bootloader 是否可以跳转
- * @param vector_table 起始地址（例如 0x0800A400）
- * @return true: 向量表合法，可跳转; false: 不合法，禁止跳转
+ * @brief Verifies the validity of the application's vector table to determine if the Bootloader can safely jump to the application.
+ * 
+ * The vector table consists of the initial stack pointer and the addresses of the exception handlers (e.g., Reset Handler). 
+ * This function validates each component of the vector table, including:
+ * - Ensuring the initial stack pointer is within a valid RAM range.
+ * - Verifying that the Reset Handler and SysTick Handler fall within the designated Flash region.
+ * - Ensuring all interrupt vectors (except zero) point to valid Flash addresses.
+ * 
+ * @param bank_slot The Flash bank slot being checked (possible values: BANK_SLOT_LOADER, BANK_SLOT_A, BANK_SLOT_B)
+ * @param vector_address The starting address of the vector table (e.g., 0x0800A400)
+ * 
+ * @return true: Vector table is valid, Bootloader can jump to the application; 
+ *         false: Vector table is invalid, jump to the application is not allowed
  */
 bool flash_check_vector_table(uint8_t bank_slot, uint32_t vector_address)
 {
-	if ((vector_address == 0) || (vector_address > (FLASH_BASE_END_ADDR - 2 * FLASH_BLOCK_SIZE)))
-		return false;
+    // Check if the vector table address is valid.
+    // If the vector address is 0 or exceeds the valid Flash region, return false.
+    if ((vector_address == 0) || (vector_address > (FLASH_BASE_END_ADDR - 2 * FLASH_BLOCK_SIZE)))
+        return false;
 
-	uint32_t *vector_table = (uint32_t *)(uintptr_t)vector_address;
-	uint32_t sp_initial = vector_table[0];
-	uint32_t reset_handler = vector_table[1];
-	uint32_t systick_handler = vector_table[15];
+    // Obtain a pointer to the vector table
+    uint32_t *vector_table = (uint32_t *)(uintptr_t)vector_address;
 
-	uint32_t start_address = 0;
-	uint32_t end_address = 0;
+    // Retrieve the initial stack pointer and the Reset Handler address
+    uint32_t sp_initial = vector_table[0];          // Initial stack pointer
+    uint32_t reset_handler = vector_table[1];       // Reset handler address
+    uint32_t systick_handler = vector_table[15];    // SysTick handler address
 
-	switch (bank_slot)
-	{
-	case BANK_SLOT_LOADER:
-		start_address = FLASH_BOOTLOADER_START_ADDR;
-		end_address = FLASH_BOOTLOADER_END_ADDR;
-		break;
-	case BANK_SLOT_A:
-		start_address = flash_meta_infor.slot_a_addr;
-		end_address = flash_meta_infor.slot_a_addr + flash_meta_infor.slot_a_size;
-		break;
-	case BANK_SLOT_B:
-		start_address = flash_meta_infor.slot_b_addr;
-		end_address = flash_meta_infor.slot_b_addr + flash_meta_infor.slot_b_size;
-		break;
-	}
+    uint32_t start_address = 0;
+    uint32_t end_address = 0;
 
-	// 检查初始栈指针是否在 RAM 区间
-	if (sp_initial < 0x20000000 || sp_initial > 0x20040000)
-		return false;
+    // Based on the Flash bank slot, define the valid address range for the vector table
+    switch (bank_slot)
+    {
+    case BANK_SLOT_LOADER:
+        start_address = FLASH_BOOTLOADER_START_ADDR;   // Bootloader start address
+        end_address = FLASH_BOOTLOADER_END_ADDR;       // Bootloader end address
+        break;
+    case BANK_SLOT_A:
+        start_address = flash_meta_infor.slot_a_addr;  // Slot A start address
+        end_address = flash_meta_infor.slot_a_addr + flash_meta_infor.slot_a_size;  // Slot A end address
+        break;
+    case BANK_SLOT_B:
+        start_address = flash_meta_infor.slot_b_addr;  // Slot B start address
+        end_address = flash_meta_infor.slot_b_addr + flash_meta_infor.slot_b_size;  // Slot B end address
+        break;
+    }
 
-	// 检查 Reset Handler 是否在 Flash/ROM 区间
-	if (reset_handler < start_address || reset_handler > end_address)
-		return false;
+    // Check if the initial stack pointer is within the valid RAM range (usually 0x20000000 to 0x20040000)
+    if (sp_initial < 0x20000000 || sp_initial > 0x20040000)
+        return false;
 
-	if (systick_handler < start_address || systick_handler > end_address)
-		return false;
+    // Check if the Reset Handler is within the valid Flash region
+    if (reset_handler < start_address || reset_handler > end_address)
+        return false;
 
-	// 可选：检查前几个 IRQ 向量是否在 Flash 范围
-	for (int i = 2; i < 16; i++)
-	{
-		uint32_t irq = vector_table[i];
-		if (irq != 0 && (irq < start_address || irq > end_address))
-			return false;
-	}
-	LOG_LEVEL("check vector table successfuly.\r\n");
-	return true; // 向量表合法
+    // Check if the SysTick Handler is within the valid Flash region
+    if (systick_handler < start_address || systick_handler > end_address)
+        return false;
+
+    // Check the interrupt vectors (from 2 to 15) to ensure they point to valid Flash addresses
+    // Non-zero interrupt vectors must point to valid Flash regions
+    for (int i = 2; i < 16; i++)
+    {
+        uint32_t irq = vector_table[i];
+        // For non-zero IRQ, check if it points to a valid address in the Flash range
+        if (irq != 0 && (irq < start_address || irq > end_address))
+            return false;
+    }
+
+    // Log a message indicating the vector table check passed successfully
+    LOG_LEVEL("check vector table successfully.\r\n");
+
+    // The vector table is valid, the Bootloader can safely jump to the application
+    return true;
 }
 
 bool flash_check_enter_upgrade_mode(void)
