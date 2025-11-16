@@ -103,7 +103,7 @@
 //------------------------------------------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////
 
-// #define FLASH_USE_EEROM_FOR_DATA_SAVING   /**< Use EEPROM instead of Flash */
+#define FLASH_USE_EEROM_FOR_DATA_SAVING   /**< Use EEPROM instead of Flash */
 #define FLASH_MAPPING_VECT_TABLE_TO_SRAM true /**< Remap vector table to SRAM */
 
 ///////////////////////////////////////////////////////////////////////////////////
