@@ -46,12 +46,13 @@ static bool system_send_handler(ptl_frame_type_t frame_type, uint16_t param1, ui
 static bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_ack_buff);
 
 void system_event_message_handler(void);
-void system_power_onoff(bool onoff);
-bool system_is_power_on(void);
-void system_mcu_initate_remote_soc(void);
+void system_power_onoff(bool onoff, mcu_power_reason_t reason);
 void system_soc_request_mata_infor(void);
+void system_mcu_initate_remote_soc(void);
 void system_mcu_goto_lowpower(void);
-void system_event_acc_handler(void);
+
+bool system_is_power_on(void);
+
 /*******************************************************************************
  * Global Variables
  * Define variables accessible across multiple files if needed.
@@ -143,7 +144,6 @@ void task_system_running(void)
     StartTickCounter(&l_t_msg_wait_10_timer);
 
     system_event_message_handler();
-		system_event_acc_handler();
 }
 
 void task_system_post_running(void)
@@ -277,7 +277,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_a
             if (!system_is_power_on())
             {
                 LOG_LEVEL("Got MSG_OTSM_CMD_BLE_CONNECTED prameter=%02x\r\n", payload->data[0]);
-                system_power_onoff(true);
+                system_power_onoff(true,MCU_POWER_REASON_BLE);
             }
             break;
         case MSG_OTSM_CMD_BLE_DISCONNECTED:
@@ -285,7 +285,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_a
             LOG_LEVEL("Got MSG_OTSM_CMD_BLE_DISCONNECTED prameter=%02x\r\n", payload->data[1]);
             if (payload->data[1] == FRAME_CMD_SYSTEM_POWER_OFF)
             {
-                system_power_onoff(false);
+                system_power_onoff(false,MCU_POWER_REASON_BLE);
             }
             break;
 
@@ -366,9 +366,9 @@ void system_event_message_handler(void)
     case MSG_OTSM_DEVICE_POWER_EVENT:
         LOG_LEVEL("Got Event MSG_DEVICE_POWER_EVENT\r\n");
         if (msg->param1 == FRAME_CMD_SYSTEM_POWER_ON)
-            system_power_onoff(true);
+            system_power_onoff(true,MCU_POWER_REASON_KEY);
         else if (msg->param1 == FRAME_CMD_SYSTEM_POWER_OFF)
-            system_power_onoff(false);
+            system_power_onoff(false,MCU_POWER_REASON_KEY);
         else if (msg->param1 == FRAME_CMD_UPDATE_REBOOT)
             system_reboot_soc();
 
@@ -387,7 +387,7 @@ void system_event_acc_handler(void)
 	{
 		if(g_mcu_state != MCU_POWER_ST_ON)
 		{
-			system_power_onoff(true);
+			system_power_onoff(true,MCU_POWER_REASON_ACC);
 		}
 	}
 }
@@ -444,14 +444,14 @@ void system_reboot_soc(void)
     }
 }
 
-void system_power_onoff(bool onoff)
+void system_power_onoff(bool onoff, mcu_power_reason_t reason)
 {
 #ifdef TASK_MANAGER_STATE_MACHINE_GPIO
     if (onoff)
     {
         // send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_SYSTEM, FRAME_CMD_SYSTEM_POWER_ON, 0);
         gpio_power_on_off(true);
-        LOG_LEVEL("Power on soc...\r\n");
+			  LOG_LEVEL("Power on soc...reason:%d\r\n",reason);
         // system_delay_ms(5);
         gpio_power_on_off(true);
 		#ifdef TASK_MANAGER_STATE_MACHINE_CAN
@@ -470,7 +470,7 @@ void system_power_onoff(bool onoff)
         task_car_reset_trip();
         flash_save_carinfor_meter();
 #endif
-        LOG_LEVEL("Power down soc... \r\n");
+        LOG_LEVEL("Power down soc... reason:%d\r\n",reason);
         gpio_power_on_off(false);
         if (!gpio_is_power_on())
         {

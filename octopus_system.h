@@ -84,6 +84,15 @@ typedef enum MCU_POWER_STATE
 
 } mcu_state_t;
 
+typedef enum MCU_POWER_REASON
+{
+  MCU_POWER_REASON_BOOT,
+	MCU_POWER_REASON_ACC,
+	MCU_POWER_REASON_GPIO,
+	MCU_POWER_REASON_BLE,
+	MCU_POWER_REASON_KEY,
+} mcu_power_reason_t;
+
 /*******************************************************************************
  * GLOBAL FUNCTIONS DECLARATION
  ******************************************************************************/
@@ -138,10 +147,11 @@ extern "C"
      */
     void system_synchronize_with_mcu(void);
 
-    void system_power_onoff(bool onoff);
+    void system_power_onoff(bool onoff, mcu_power_reason_t reason);
     void system_reboot_soc(void);
     void system_set_mcu_status(mcu_state_t mcu_state);
-
+    void system_event_acc_handler(void);
+		
     mcu_state_t system_get_mcu_status(void);
 
 #ifdef __cplusplus
