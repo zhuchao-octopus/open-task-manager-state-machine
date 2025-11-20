@@ -130,7 +130,7 @@ void task_ble_running(void)
 			case MSG_OTSM_CMD_BLE_PAIRING:
 			case MSG_OTSM_CMD_BLE_BONDED:
 				ble_status.connected = true;
-				ble_status.rssi_unlock = true;
+				ble_status.rssi_unlock = false;
 				ble_master_bonded_mac();
 				break;
 
@@ -162,8 +162,8 @@ void task_ble_running(void)
 
 	if (GetTickCounter(&l_t_msg_ble_polling_timer_1s) >= 1000)
 	{
-		// LOG_LEVEL("ble_status.rssi:%d\r\n",ble_status.rssi);
 		ble_status.rssi = hal_get_ble_rssi(0);
+		LOG_LEVEL("ble_status.rssi:%d ble_status.connected:%d ble_status.rssi_unlock:%d\r\n",ble_status.rssi,ble_status.connected,ble_status.rssi_unlock);
 		ble_start_to_lock_rssi();
 		ble_start_to_unlock_rssi();
 		StartTickCounter(&l_t_msg_ble_polling_timer_1s);
@@ -364,12 +364,11 @@ void ble_start_to_unlock_rssi(void)
 	if (IsTickCounterStart(&l_t_msg_ble_lock_wait_timer))
 		StopTickCounter(&l_t_msg_ble_lock_wait_timer);
 
-	if (!ble_status.rssi_unlock)
+	if (ble_status.rssi_unlock)
 		return;
 
 	ble_status.to_lock = false;
-	// ble_status.locked = false;
-	ble_status.rssi_unlock = false;
+	ble_status.rssi_unlock = true;
 	LOG_LEVEL("Start to unlock system rssi=%d ...\r\n", ble_status.rssi);
 	send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, FRAME_CMD_SYSTEM_POWER_ON);
 }
@@ -392,7 +391,6 @@ void ble_start_to_unlock(void)
 		StopTickCounter(&l_t_msg_ble_lock_wait_timer);
 
 	ble_status.to_lock = false;
-	// ble_status.locked = false;
 	LOG_LEVEL("Start to unlock system...\r\n");
 	send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_CONNECTED, FRAME_CMD_SYSTEM_POWER_ON);
 }
@@ -404,9 +402,8 @@ void ble_connecttion_polling(void)
 	if (ble_status.to_lock && GetTickCounter(&l_t_msg_ble_lock_wait_timer) > 8000)
 	{
 		StopTickCounter(&l_t_msg_ble_lock_wait_timer);
-		// ble_status.locked = true;
 		ble_status.to_lock = false;
-
+		ble_status.rssi_unlock = false;
 		LOG_LEVEL("Start to power off system ...\r\n");
 		send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_BLE_EVENT, MSG_OTSM_CMD_BLE_DISCONNECTED, FRAME_CMD_SYSTEM_POWER_OFF);
 	}

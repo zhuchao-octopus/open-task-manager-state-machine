@@ -92,8 +92,11 @@ void hal_gpio_callback(GpioPin_t pin, gpio_polarity_e type)
 void hal_gpio_init(uint8_t task_id)
 {
     // Initialize GPIO pins and set their states
-    HalGpioPinInit(GPIO_ACC_SOC_PIN, GPIO_OUTPUT); // Set ACC-->SOC pin (P0) as output
-    HalGpioSet(GPIO_ACC_SOC_PIN, Bit_ENABLE);      // Enable the ACC-->SOC pin (P0)
+	  HalGpioPinInit(GPIO_ACC_PIN, GPIO_INPUT);        // Set ACC pin (P0) as input
+    HalGpioPupdConfig(GPIO_ACC_PIN, GPIO_FLOATING);  // Enable floating input for ACC pin (P0)
+	
+    HalGpioPinInit(GPIO_ACC_SOC_PIN, GPIO_OUTPUT);  // Set ACC-->SOC pin (P1) as output
+    HalGpioSet(GPIO_ACC_SOC_PIN, Bit_ENABLE);       // Enable the ACC-->SOC pin (P1)
 
     HalGpioPinInit(GPIO_SIF_S_PIN, GPIO_OUTPUT);
     HalGpioSet(GPIO_SIF_S_PIN, Bit_DISABLE); // Set SIF_S_PIN to low (disabled)
@@ -113,9 +116,6 @@ void hal_gpio_init(uint8_t task_id)
 
     HalGpioPinInit(GPIO_SKD_PIN, GPIO_INPUT);        // Set SKD pin (P34) as input
     HalGpioPupdConfig(GPIO_SKD_PIN, GPIO_PULL_DOWN); // Enable pull-down for SKD pin (P34)
-
-    HalGpioPinInit(GPIO_ACC_PIN, GPIO_INPUT);        // Set ACC pin (P1) as input
-    HalGpioPupdConfig(GPIO_ACC_PIN, GPIO_PULL_DOWN); // Enable pull-down for ACC pin (P1)
 
     HalGpioPinInit(GPIO_KEY_PIN, GPIO_INPUT);      // Set KEY pin (P14) as input
     HalGpioPupdConfig(GPIO_KEY_PIN, GPIO_PULL_UP); // Enable pull-up for KEY pin (P14)

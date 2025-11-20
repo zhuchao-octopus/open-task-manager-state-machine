@@ -46,8 +46,8 @@ extern "C"
 #define USR_TEST_TIMER2_EVT 0x0002 /**< Event identifier for test timer 2 */
 
 // Define GPIO pins for various hardware components (mapped to platform-specific pins)
-#define GPIO_ACC_SOC_PIN P1 /**< ACC_SOC pin */
 #define GPIO_ACC_PIN P0     /**< ACC pin */
+#define GPIO_ACC_SOC_PIN P1 /**< ACC_SOC pin */
 
 #define GPIO_DDD_PIN P31 /**< DDD pin */
 #define GPIO_ZZD_PIN P32 /**< ZZD pin */

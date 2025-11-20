@@ -99,6 +99,12 @@ static void task_key_action_handler(void)
         if (gpio_status == NULL)
             break;
 
+				if(gpio_status ->pin == GPIO_ACC_KEY_PIN)
+				{
+					send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_KEY, gpio_status->key, gpio_status->offon);
+					break;
+				}
+				
         if (!gpio_status->offon)
             send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_KEY, gpio_status->key, KEY_STATE_PRESSED);
         else
@@ -295,8 +301,15 @@ bool key_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
     {
         switch (param1)
         {
-        case FRAME_CMD_SETUP_KEY:
-        default:
+					case FRAME_CMD_SYSTEM_ACC_STATE:
+					case OCTOPUS_KEY_ACC:
+						tmp[0] = param1;
+            tmp[1] = param2;
+            LOG_LEVEL("FRAME_CMD_SYSTEM_ACC_STATE param1=%02d param2=%02d\r\n", param1, param2);
+            ptl_build_frame(SOC_TO_MCU_MOD_KEY, FRAME_CMD_SYSTEM_ACC_STATE, tmp, 2, buff);
+					 return true;
+          case FRAME_CMD_SETUP_KEY:
+          default:
             tmp[0] = param1;
             tmp[1] = param2;
             LOG_LEVEL("SOC_TO_MCU_MOD_KEY param1=%02d param2=%02d\r\n", param1, param2);

@@ -53,7 +53,8 @@ void task_gpio_event_polling(void);
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-GPIO_STATUS gpio_acc_pin_status = {(GPIO_GROUP *)GPIO_ACC_KEY_GROUP, GPIO_ACC_KEY_PIN, false, false, OCTOPUS_KEY_POWER, 0, 0};
+//GPIO_STATUS gpio_acc1_pin_status = {(GPIO_GROUP *)GPIO_ACC_KEY_GROUP, GPIO_ACC_KEY_PIN, false, false, OCTOPUS_KEY_ACC, 0, 0};
+//GPIO_STATUS gpio_acc2_pin_status = {(GPIO_GROUP *)GPIO_ACC_KEY_GROUP, P18, false, false, OCTOPUS_KEY_ACC, 0, 0};
 
 GPIO_STATUS gpio_zzd_pin_status = {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP, GPIO_ZZD_KEY_PIN, false, false, OCTOPUS_KEY_ZZD, 0, 0};
 GPIO_STATUS gpio_yzd_pin_status = {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP, GPIO_YZD_KEY_PIN, false, false, OCTOPUS_KEY_YZD, 0, 0};
@@ -66,10 +67,11 @@ GPIO_STATUS gpio_subt_pin_status = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT
 // GPIO_KEY_STATUS key_status_yzd =   {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP,GPIO_YZD_KEY_PIN,OCTOPUS_KEY_YZD, 0, 0, 0, 0, 0, 0, 0};
 // GPIO_KEY_STATUS key_status_skd =   {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP,GPIO_SKD_KEY_PIN,OCTOPUS_KEY_SKD, 0, 0, 0, 0, 0, 0, 0};
 // GPIO_KEY_STATUS key_status_ddd =   {(GPIO_GROUP *)GPIO_DDD_KEY_GROUP,GPIO_DDD_KEY_PIN,OCTOPUS_KEY_DDD, 0, 0, 0, 0, 0, 0, 0};
+
 GPIO_KEY_STATUS key_status_plus = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, OCTOPUS_KEY_PLUS, 0, 0, 0, 0, 0, 0, 0};
 GPIO_KEY_STATUS key_status_subt = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, OCTOPUS_KEY_SUBT, 0, 0, 0, 0, 0, 0, 0};
 
-GPIO_STATUS *gpio_array[] = {&gpio_acc_pin_status, &gpio_zzd_pin_status, &gpio_yzd_pin_status, &gpio_skd_pin_status, &gpio_plus_pin_status, &gpio_subt_pin_status};
+GPIO_STATUS *gpio_array[] = {&gpio_zzd_pin_status, &gpio_yzd_pin_status, &gpio_skd_pin_status, &gpio_plus_pin_status, &gpio_subt_pin_status};
 GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_plus, &key_status_subt};
 
 // GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_power,&key_status_zzd,&key_status_yzd,&key_status_skd,&key_status_ddd,&key_status_plus,&key_status_subt};
