@@ -220,7 +220,6 @@ uint8_t update_get_target_bank(void)
 	default:
 		return BANK_SLOT_INVALID;
 	}
-
 	// return BANK_SLOT_INVALID;
 }
 
@@ -356,13 +355,16 @@ bool update_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_a
 
 			if (upgrade_enter_upgrade_mode() != BANK_SLOT_LOADER)
 			{
+				otms_task_manager_stop();
 				flash_writ_all_infor();
 				flash_delay_ms(200);
-				LOG_LEVEL("Jumping to bootLoader : 0x%08X\r\n", flash_get_bank_address(BANK_SLOT_LOADER));
+				///flash_writ_all_infor();
+				///flash_delay_ms(200);
+				LOG_LEVEL("Jumping to bootLoader: 0x%08X\r\n", flash_get_bank_address(BANK_SLOT_LOADER));
 				flash_JumpToApplication(flash_get_bank_address(BANK_SLOT_LOADER));
-				//flash_delay_ms(100);
-				// NVIC_SystemReset(); // user reboot enter bootloader
-				LOG_LEVEL("Jumping to bootLoader : 0x%08X failed!!!!!\r\n", flash_get_bank_address(BANK_SLOT_LOADER));
+				///flash_delay_ms(100);
+				///NVIC_SystemReset(); // user reboot enter bootloader
+				LOG_LEVEL("Jumping to bootLoader: 0x%08X failed!!!!!\r\n", flash_get_bank_address(BANK_SLOT_LOADER));
 				return false;
 			}
 

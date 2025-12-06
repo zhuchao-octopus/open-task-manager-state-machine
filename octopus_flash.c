@@ -329,7 +329,7 @@ void flash_load_sync_data_infor(void)
 			flash_meta_infor.slot_a_crc = calculated_crc;
 			flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_A;
 			e2rom_meta_infor = flash_meta_infor;
-			flash_writ_all_infor();
+			//flash_writ_all_infor();
 		}
 	}
 	else if (flash_bank_config_mode_slot == BANK_SLOT_B)
@@ -352,7 +352,7 @@ void flash_load_sync_data_infor(void)
 			flash_meta_infor.slot_b_crc = calculated_crc;
 			flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_B;
 			e2rom_meta_infor = flash_meta_infor;
-			flash_writ_all_infor();
+			//flash_writ_all_infor();
 		}
 	}
 	else if (flash_bank_config_mode_slot == BANK_SLOT_LOADER)
@@ -375,10 +375,10 @@ void flash_load_sync_data_infor(void)
 				}
 				flash_meta_infor.slot_a_crc = calculated_crc;
 				flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_A;
-				CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
-				CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
-				e2rom_meta_infor = flash_meta_infor;
-				flash_writ_all_infor();
+				//CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
+				//CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
+				//e2rom_meta_infor = flash_meta_infor;
+				//flash_writ_all_infor();
 			}
 		}
 	}
@@ -539,6 +539,9 @@ ENTER_BOOTLOADER_MODE:
 	else
 	{
 		LOG_LEVEL("Entering running (%s)...\r\n", flash_get_current_bank_name());
+		CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
+		CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
+		flash_writ_all_infor();
 	}
 }
 
@@ -877,15 +880,20 @@ bool flash_check_enter_upgrade_mode(void)
 		upgrade_mode = true;
 		LOG_LEVEL("IS_SLOT_B_NEED_UPGRADE = true: 0x%08X\r\n", flash_meta_infor.slot_stat_flags);
 	}
-	else if (IS_SLOT_B_NEED_UPGRADE(e2rom_meta_infor.slot_stat_flags))
+	else if (IS_SLOT_A_NEED_UPGRADE(e2rom_meta_infor.slot_stat_flags))
 	{
 		upgrade_mode = true;
-		LOG_LEVEL("IS_SLOT_A_NEED_UPGRADE = true: e2rom 0x%08X\r\n", flash_meta_infor.slot_stat_flags);
+		LOG_LEVEL("IS_SLOT_A_NEED_UPGRADE = true: e2rom 0x%08X\r\n", e2rom_meta_infor.slot_stat_flags);
 	}
 	else if (IS_SLOT_B_NEED_UPGRADE(e2rom_meta_infor.slot_stat_flags))
 	{
 		upgrade_mode = true;
-		LOG_LEVEL("IS_SLOT_B_NEED_UPGRADE = true: e2rom 0x%08X\r\n", flash_meta_infor.slot_stat_flags);
+		LOG_LEVEL("IS_SLOT_B_NEED_UPGRADE = true: e2rom 0x%08X\r\n", e2rom_meta_infor.slot_stat_flags);
+	}
+	else
+	{
+		LOG_LEVEL("IS_SLOT_A_NEED_UPGRADE = true: e2rom 0x%08X\r\n", e2rom_meta_infor.slot_stat_flags);
+		upgrade_mode = false;
 	}
 	CLEAR_FLAG(e2rom_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
 	CLEAR_FLAG(e2rom_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
@@ -913,6 +921,7 @@ void flash_delay_ms(uint32_t ms)
 		__NOP(); // __NOP()
 	}
 }
+
 void flash_JumpToApplication(uint32_t app_address)
 {
 	typedef void (*pFunction)(void); // Function pointer type for Reset_Handler
@@ -1125,10 +1134,12 @@ void flash_writ_all_infor(void)
 		system_meter_infor.trip_odo = task_carinfo_get_meter_info()->trip_odo;
 		system_meter_infor.speed_average = task_carinfo_get_meter_info()->speed_average;
 	}
+	
 	pages = FlashWritBuffTo(FLASH_META_DATA_START_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
 	LOG_LEVEL("Save flash meta information count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
 	pages = FlashWritBuffTo(FLASH_SYSTEM_DATA_START_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
 	LOG_LEVEL("Save syste meta information count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
+	
 	if (task_carinfo_get_meter_info())
 	{
 		// pages = FlashErasePage(FLASH_METER_DATA_START_ADDRESS, 1);
