@@ -190,7 +190,7 @@ typedef struct
 
     uint8_t bt;   // Bluetooth indicator status (1 = connected)
     uint8_t wifi; // Wi-Fi indicator status (1 = connected)
-} carinfo_indicator_t;
+} __attribute__((aligned(4))) carinfo_indicator_t;
 
 typedef struct
 {
@@ -208,7 +208,7 @@ typedef struct
     uint8_t gear_level_max; // Maximum selectable gear level
     uint8_t wheel_diameter; // Wheel diameter (unit: inch)
     uint8_t reserve;
-} carinfo_meter_t;
+} __attribute__((packed, aligned(4))) carinfo_meter_t;
 
 typedef struct
 {
@@ -225,7 +225,7 @@ typedef struct
     uint8_t abs_charge_state; // Absolute charge state (e.g., charging, full, fault, enum value)
     uint8_t reserve1;
     uint16_t reserve2;
-} carinfo_battery_t;
+} __attribute__((aligned(4))) carinfo_battery_t;
 
 // 故障信息
 typedef struct
@@ -239,7 +239,7 @@ typedef struct
     uint8_t fault_battery;  // Battery fault status
     uint8_t fault_brake;    // Brake fault status
     uint8_t fault_throttle; // Throttle fault status
-} carinfo_error_t;
+} __attribute__((aligned(4))) carinfo_error_t;
 #pragma pack(pop)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

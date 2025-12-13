@@ -208,7 +208,7 @@ void hal_eeprom_write_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {
 #ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
     uint8_t ret = I2C_EepromBufferWrite(startaddr, buffer, length);
-    // if (ret == ERROR)
+    //  if (ret == ERROR)
     LOG_LEVEL("Save data to eeprom status:%d\r\n", ret);
 #endif
 }
@@ -216,6 +216,7 @@ void hal_eeprom_write_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 void hal_eeprom_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length)
 {
 #ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
-    EEPROM_Read(startaddr, buffer, length);
+    uint8_t ret = EEPROM_Read(startaddr, buffer, length);
+    LOG_LEVEL("read data from eeprom status:%d\r\n", ret);
 #endif
 }

@@ -103,7 +103,7 @@ static uint32_t l_t_msg_wait_50_timer;  // Timer for 50 ms message wait
 static uint32_t l_t_msg_car_trip_timer; // Timer for 100 ms message wait
 
 static uint32_t l_t_trip_saving_timer; // Timer for state of charge monitoring
-
+static uint32_t l_t_chd_timer;         // communication heartbeat detection timer;
 // static bool l_t_speed_changed = false;
 // static bool l_t_gear_changed = false;
 /*******************************************************************************
@@ -133,7 +133,7 @@ void task_vehicle_start_running(void)
     LOG_LEVEL("task_vehicle_start_running\r\n");
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_ASSERT_RUN);
 #ifdef TASK_MANAGER_STATE_MACHINE_MCU
-    lt_carinfo_indicator.ready = 1; // ready flag
+    lt_carinfo_indicator.ready = 0; // ready flag
     lt_carinfo_meter.trip_distance = 0;
     lt_carinfo_meter.trip_time = 0;
 #endif
@@ -147,6 +147,7 @@ void task_vehicle_assert_running(void)
     StartTickCounter(&l_t_msg_wait_50_timer);
     // StartTickCounter(&l_t_msg_wait_100_timer);
     StartTickCounter(&l_t_trip_saving_timer);
+    StartTickCounter(&l_t_chd_timer);
     OTMS(TASK_MODULE_CAR_INFOR, OTMS_S_RUNNING);
 }
 
@@ -299,18 +300,19 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void battary_update_simulate_infor(void)
 {
+#ifdef TASK_MANAGER_STATE_MACHINE_MCU
+    lt_carinfo_battery.reserve2 = adc_get_value_v();
 #if 1
-    calculate_battery_soc_ex_v2(lt_carinfo_battery.voltage, lt_carinfo_battery.current, system_meter_infor.trip_odo,
-                                DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
-                                lt_carinfo_meter.speed_average, 20000, 50,
-                                &lt_carinfo_battery.power, &lt_carinfo_battery.soc,
-                                &lt_carinfo_battery.range, &lt_carinfo_battery.range_max, &lt_carinfo_battery.reserve2);
+    calculate_battery_soc_voltage_only(lt_carinfo_battery.voltage * 100,
+                                       (lt_carinfo_battery.reserve2 * 100),
+                                       lt_carinfo_battery.current * 100,
+                                       system_meter_infor.trip_odo,
+                                       DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
+                                       lt_carinfo_meter.speed_average,
+                                       &lt_carinfo_battery.power, &lt_carinfo_battery.soc,
+                                       &lt_carinfo_battery.range, &lt_carinfo_battery.range_max);
 #endif
-    // calculate_battery_soc_ex(lt_carinfo_battery.voltage, lt_carinfo_battery.current, system_meter_infor.trip_odo,
-    //											 DEFAULT_CONSUMPTION_WH_PER_KM, DEFAULT_SAFETY_RESERVE_RATIO,
-    //											 lt_carinfo_meter.speed_average,
-    //											 &lt_carinfo_battery.power, &lt_carinfo_battery.soc,
-    //											 &lt_carinfo_battery.range, &lt_carinfo_battery.range_max);
+#endif
 }
 
 void task_car_controller_msg_handler(void)
@@ -358,19 +360,25 @@ void task_car_controller_msg_handler(void)
             RestartTickCounter(&l_t_msg_car_trip_timer);
         }
 
-        if (trip_saving_timer > 60000 * 5 && delta_distance > 0)
+        if (trip_saving_timer > 60000 * 1 && delta_distance > 0)
         {
             flash_save_carinfor_meter();
 
             RestartTickCounter(&l_t_trip_saving_timer);
         }
 
-        if (lt_carinfo_battery.soc == 0 || trip_saving_timer % 60000 == 0)
+        // if (lt_carinfo_battery.soc == 0 || trip_saving_timer % 60000 == 0)
+        if (trip_saving_timer % 3000 == 0)
         {
             battary_update_simulate_infor();
             send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, 0);
         }
 
+        if (GetTickCounter(&l_t_chd_timer) > 1000 * 10)
+        {
+            // lt_carinfo_indicator.ready = 0;
+            StartTickCounter(&l_t_chd_timer);
+        }
         return;
     }
 
@@ -382,6 +390,7 @@ void task_car_controller_msg_handler(void)
             send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, 0);
             break;
         case FRAME_CMD_CARINFOR_METER:
+            // LOG_LEVEL("lt_carinfo_meter.trip_odo=%d\r\n", lt_carinfo_meter.trip_odo);
             send_message(TASK_MODULE_PTL_1, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, 0);
             break;
         case FRAME_CMD_CARINFOR_BATTERY:
