@@ -51,6 +51,8 @@ static bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
 static void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
 static void ipc_request_upgrade_mcu(Msg_t *msg);
 
+void ipc_notify_message_from_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
+
 /*******************************************************************************
  * Global Variables
  * Define variables accessible across multiple files if needed.
@@ -494,6 +496,19 @@ void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, const uint8
     {
         /// LOG_LEVEL("msg_grp=%d,msg_id=%d \r\n", msg_grp, msg_id);
         message_data_infor_callback(msg_grp, msg_id, data, length);
+    }
+}
+
+void ipc_notify_message_from_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length)
+{
+    // LOG_LEVEL("msg_grp=%d,msg_id=%d \r\n", msg_grp, msg_id);
+    ptl_proc_buff_t ptl_proc_buff;
+    LOG_BUFF_LEVEL(data, length);
+    if (data != NULL)
+    {
+        ptl_build_frame(SOC_TO_MCU_MOD_IPC, FRAME_CMD_USER_CUSTOMIZE, data, length, ptl_proc_buff.buff);
+        ptl_send_buffer(ptl_proc_buff.channel, ptl_proc_buff.buff, ptl_proc_buff.size);
+        // send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, MSG_OTSM_CMD_MCU_USER_CUSTOMIZE, 0);
     }
 }
 
