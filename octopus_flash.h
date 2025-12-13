@@ -21,11 +21,11 @@
 /***************************************************************************************
  * User Data EEPROM Struct Definition
  ***************************************************************************************/
-#define EEROM_START_ADDRESS (0x00000000)
+#define EEPROM_START_ADDRESS (0x00000000)
 #define EEPROM_FLASH_META_SIZE (128) // 128byte app meta struct total 2kb
 #define EEROM_SYSTEM_METER_SIZE (128)
 
-#define EEROM_FLASH_MATA_ADDRESS (EEROM_START_ADDRESS)
+#define EEROM_FLASH_MATA_ADDRESS (EEPROM_START_ADDRESS)
 #define EEROM_SYSTEM_METER_ADDRESS (EEROM_FLASH_MATA_ADDRESS + EEPROM_FLASH_META_SIZE)
 
 #define EEROM_DATAS_ADDRESS (EEROM_SYSTEM_METER_ADDRESS + EEROM_SYSTEM_METER_SIZE) // user data area from app meta struct
@@ -35,6 +35,62 @@
 // #define EEROM_DATAS_VALID_FLAG (0xAA55)
 // #define EEROM_APPPP_VALID_FLAG (0x55AA)
 
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// * MCU Flash Memory Layout Configuration
+/////////////////////////////////////////////////////////////////////////////////////////
+
+#define FLASH_BLOCK_SIZE (1024)                                 // 0x00000400  /* FLASH Page Size 1KB(1024)*/
+#define FLASH_TOTAL_BLOCK (128)                                 // 128K 0x20000 Total Flash size: 128KB
+#define FLASH_TOTAL_SIZE (FLASH_TOTAL_BLOCK * FLASH_BLOCK_SIZE) // Total Flash size: 128KB
+
+#define FLASH_BASE_START_ADDR (0x08000000)
+#define FLASH_BASE_END_ADDR (FLASH_BASE_START_ADDR + FLASH_TOTAL_SIZE)
+
+#define FLASH_BANK_MASK (0xFFFF0000)
+#define FLASH_BANK_UNMASK (0x00FFFFFF)
+
+#define FLASH_DATA_BLOCK (2)
+#define FLASH_USER_DATA_BLOCK (FLASH_DATA_BLOCK - 1)
+/////////////////////////////////////////////////////////////////////////////////////////
+// Bootloader Configuration
+// #define BOOTLOADER_CONFIG_MODE_TYPE BOOT_MODE_DUAL_BANK_NO_LOADER
+
+#define FLASH_BOOTLOADER_START_ADDR (0x08000000)                                  // 0x08000000 + 0x20000 - 0x5000 // Bootloader start address
+#define FLASH_BOOTLOADER_BLOCK_COUNT (40)                                         // 40K(0xA000)
+#define FLASH_BOOTLOADER_SIZE ((FLASH_BOOTLOADER_BLOCK_COUNT) * FLASH_BLOCK_SIZE) // Bootloader size: 20KB
+#define FLASH_BOOTLOADER_END_ADDR (FLASH_BOOTLOADER_START_ADDR + FLASH_BOOTLOADER_SIZE)
+
+/////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
+#define FLASH_USER_META_DATA_START_ADDRESS (FLASH_BASE_END_ADDR - FLASH_USER_DATA_BLOCK * FLASH_BLOCK_SIZE)
+#define FLASH_META_DATA_START_ADDRESS (FLASH_USER_META_DATA_START_ADDRESS)
+#define FLASH_SYSTEM_DATA_START_ADDRESS (FLASH_META_DATA_START_ADDRESS + 128)
+
+#define FLASH_METER_DATA_START_ADDRESS (FLASH_SYSTEM_DATA_START_ADDRESS + 128)
+// #define FLASH_USER_DATA_START_ADDRESS (FLASH_METER_DATA_START_ADDRESS + 128)
+
+#define FLASH_META_DATAS_VALID_FLAG (0XA5A5)
+/////////////////////////////////////////////////////////////////////////////////////////
+// Main Application Configuration
+
+// #define MAIN_APP_BLOCK_COUNT (FLASH_TOTAL_BLOCK - BOOTLOADER_BLOCK_COUNT - 2) //((FLASH_TOTAL_BLOCK - BOOTLOADER_BLOCK_COUNT) / 2)
+// #define MAIN_APP_SIZE (MAIN_APP_BLOCK_COUNT * FLASH_BLOCK_SIZE) 							// Main Application size: 100KB
+
+// #define MAIN_APP_END_ADDR (MAIN_APP_START_ADDR + MAIN_APP_SIZE)
+
+// #define MAIN_APP_SLOT_A_START_ADDR (BOOTLOADER_END_ADDR + FLASH_BLOCK_SIZE)              // Main Application start address
+
+// #define MAIN_APP_SLOT_B_START_ADDR (((FLASH_TOTAL_BLOCK - 2)/2 +1) * FLASH_BLOCK_SIZE)   // Main Application start address
+
+/////////////////////////////////////////////////////////////////////////////////////////
+#define IS_FLASH_ADDR(addr) ((addr) >= 0x08000000 && (addr) < 0x08100000)
+/* Debug Information */
+//#define DEBUG_BOOTLOADER_ADDR_INFO() \
+//LOG_LEVEL("bootloader address: 0x%08X,0x%08X\n", BOOTLOADER_START_ADDR, BOOTLOADER_END_ADDR)
+
+//#define DEBUG_MAIN_APP_ADDR_INFO() \
+//LOG_LEVEL("user apppp address: 0x%08X,0x%08X\n", MAIN_APP_START_ADDR, MAIN_APP_END_ADDR)
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
 // Application Slot A requires an upgrade
@@ -169,61 +225,6 @@ typedef struct
 // Global instance holding metadata for application and bootloader
 extern flash_meta_infor_t flash_meta_infor;
 extern system_meter_infor_t system_meter_infor;
-/////////////////////////////////////////////////////////////////////////////////////////
-// * MCU Flash Memory Layout Configuration
-/////////////////////////////////////////////////////////////////////////////////////////
-
-#define FLASH_BLOCK_SIZE (1024)                                 // 0x00000400  /* FLASH Page Size 1KB(1024)*/
-#define FLASH_TOTAL_BLOCK (128)                                 // 128K 0x20000 Total Flash size: 128KB
-#define FLASH_TOTAL_SIZE (FLASH_TOTAL_BLOCK * FLASH_BLOCK_SIZE) // Total Flash size: 128KB
-
-#define FLASH_BASE_START_ADDR (0x08000000)
-#define FLASH_BASE_END_ADDR (FLASH_BASE_START_ADDR + FLASH_TOTAL_SIZE)
-
-#define FLASH_BANK_MASK (0xFFFF0000)
-#define FLASH_BANK_UNMASK (0x00FFFFFF)
-
-#define FLASH_DATA_BLOCK (2)
-#define FLASH_USER_DATA_BLOCK (FLASH_DATA_BLOCK - 1)
-/////////////////////////////////////////////////////////////////////////////////////////
-// Bootloader Configuration
-// #define BOOTLOADER_CONFIG_MODE_TYPE BOOT_MODE_DUAL_BANK_NO_LOADER
-
-#define FLASH_BOOTLOADER_START_ADDR (0x08000000)                                  // 0x08000000 + 0x20000 - 0x5000 // Bootloader start address
-#define FLASH_BOOTLOADER_BLOCK_COUNT (40)                                         // 40K(0xA000)
-#define FLASH_BOOTLOADER_SIZE ((FLASH_BOOTLOADER_BLOCK_COUNT) * FLASH_BLOCK_SIZE) // Bootloader size: 20KB
-#define FLASH_BOOTLOADER_END_ADDR (FLASH_BOOTLOADER_START_ADDR + FLASH_BOOTLOADER_SIZE)
-
-/////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////
-#define FLASH_USER_META_DATA_START_ADDRESS (FLASH_BASE_END_ADDR - FLASH_USER_DATA_BLOCK * FLASH_BLOCK_SIZE)
-#define FLASH_META_DATA_START_ADDRESS (FLASH_USER_META_DATA_START_ADDRESS)
-#define FLASH_SYSTEM_DATA_START_ADDRESS (FLASH_META_DATA_START_ADDRESS + 128)
-
-#define FLASH_METER_DATA_START_ADDRESS (FLASH_SYSTEM_DATA_START_ADDRESS + 128)
-// #define FLASH_USER_DATA_START_ADDRESS (FLASH_METER_DATA_START_ADDRESS + 128)
-
-#define FLASH_META_DATAS_VALID_FLAG (0XA5A5)
-/////////////////////////////////////////////////////////////////////////////////////////
-// Main Application Configuration
-
-// #define MAIN_APP_BLOCK_COUNT (FLASH_TOTAL_BLOCK - BOOTLOADER_BLOCK_COUNT - 2) //((FLASH_TOTAL_BLOCK - BOOTLOADER_BLOCK_COUNT) / 2)
-// #define MAIN_APP_SIZE (MAIN_APP_BLOCK_COUNT * FLASH_BLOCK_SIZE) 							// Main Application size: 100KB
-
-// #define MAIN_APP_END_ADDR (MAIN_APP_START_ADDR + MAIN_APP_SIZE)
-
-// #define MAIN_APP_SLOT_A_START_ADDR (BOOTLOADER_END_ADDR + FLASH_BLOCK_SIZE)              // Main Application start address
-
-// #define MAIN_APP_SLOT_B_START_ADDR (((FLASH_TOTAL_BLOCK - 2)/2 +1) * FLASH_BLOCK_SIZE)   // Main Application start address
-
-/////////////////////////////////////////////////////////////////////////////////////////
-#define IS_FLASH_ADDR(addr) ((addr) >= 0x08000000 && (addr) < 0x08100000)
-/* Debug Information */
-//#define DEBUG_BOOTLOADER_ADDR_INFO() \
-//LOG_LEVEL("bootloader address: 0x%08X,0x%08X\n", BOOTLOADER_START_ADDR, BOOTLOADER_END_ADDR)
-
-//#define DEBUG_MAIN_APP_ADDR_INFO() \
-//LOG_LEVEL("user apppp address: 0x%08X,0x%08X\n", MAIN_APP_START_ADDR, MAIN_APP_END_ADDR)
 
 #ifdef __cplusplus
 extern "C"
@@ -252,10 +253,13 @@ extern "C"
 
     flash_meta_infor_t *flash_get_meta_infor(void);
     uint32_t flash_get_app_max_size(void);
+    uint32_t flash_erase_bank(uint8_t bank_slot);
+
     uint32_t flash_get_bank_slot_mode(void);
     uint32_t flash_get_current_bank(void);
     uint32_t flash_get_bank_address(uint8_t bank_slot);
     uint32_t flash_get_bank_offset_address(uint8_t bank_slot);
+
     const char *flash_get_current_bank_name(void);
     const char *flash_get_bank_name(uint8_t bank);
 
@@ -278,7 +282,6 @@ extern "C"
     void E2ROM_writ_meter_infor(void);
     void E2ROM_read_meter_infor(void);
 
-    uint32_t flash_erase_user_app_bank(uint8_t bank_slot);
     void flash_writ_all_infor(void);
     void flash_read_all_infor(void);
     void flash_save_carinfor_meter(void);

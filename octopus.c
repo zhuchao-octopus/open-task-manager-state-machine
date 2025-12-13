@@ -19,18 +19,21 @@
 /*******************************************************************************
  * INCLUDES
  */
+#include "octopus_platform.h"
 #include "octopus.h"
 #include "octopus_flash.h"
 #include "octopus_gpio.h"
 #include "octopus_uart_ptl.h"
 #include "octopus_uart_upf.h"
 #include "octopus_uart_hal.h"
+#include "octopus_timer_hal.h"
+
 #include "octopus_msgqueue.h"     // Include message queue header for task communication
 #include "octopus_task_manager.h" // Include task manager for scheduling tasks
 #include "octopus_message.h"      // Include message id for inter-task communication
 #include "octopus_tickcounter.h"  // Include tick counter for timing operations
 #include "octopus_system.h"
-#include "octopus_platform.h"
+#include "octopus_sif.h"
 /*******************************************************************************
  * DEBUG SWITCH MACROS
  */
@@ -191,6 +194,7 @@ void TaskManagerStateMachineInit(void)
     LOG_NONE("-----------------------------------------------------------------------------\r\n");
 #if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
     system_set_mcu_status(MCU_POWER_ST_ON);
+	//system_event_acc_handler();
 #endif
 }
 
@@ -201,9 +205,9 @@ __attribute__((destructor)) void exit_cleanup()
     TaskManagerStateStopRunning();
 }
 #endif
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef PLATFORM_CST_OSAL_RTOS
 /**
  * @brief Handles events in the Task Manager State Machine for CST OSAL RTOS.
@@ -215,7 +219,7 @@ uint16_t TaskManagerStateEventLoop(uint8 task_id, uint16 events)
 {
     if (events & DEVICE_TIMER_EVENT) // If the timer event is triggered
     {
-        //////////////////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////////////////
         otms_task_manager_run();              // Run the task manager to handle pending tasks per MAIN_TASK_TIMER_INTERVAL ms
         return (events ^ DEVICE_TIMER_EVENT); // Remove the timer event from the active events
     }

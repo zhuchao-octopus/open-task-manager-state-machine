@@ -111,9 +111,9 @@ extern "C"
 {
 #endif
 
-/*******************************************************************************
- * DEBUG SWITCH MACROS
- */
+	/*******************************************************************************
+	 * DEBUG SWITCH MACROS
+	 */
 
 	/*******************************************************************************
 	 * MACROS
@@ -171,6 +171,6 @@ extern "C"
 #endif
 
 extern upf_module_t upf_module_info_BT_MUSIC;
-#endif //#ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
+#endif // #ifdef TASK_MANAGER_STATE_MACHINE_BT_MUSIC
 
 #endif // __OCTOPUS_TASK_MANAGER_BLE_H__

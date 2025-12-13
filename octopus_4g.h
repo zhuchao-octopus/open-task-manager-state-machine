@@ -21,7 +21,7 @@
  * INCLUDES
  * Include necessary headers for BLE management.
  *******************************************************************************/
-#include "octopus_base.h" //  Base include file for the Octopus project.
+#include "octopus_base.h"     //  Base include file for the Octopus project.
 #include "octopus_uart_upf.h" // Include UART protocol header
 /*******************************************************************************
  * DEBUG SWITCH MACROS

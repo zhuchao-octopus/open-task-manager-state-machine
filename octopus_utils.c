@@ -1379,12 +1379,21 @@ int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_
     return 0; // Not found
 }
 
-int file_exists(const char *file_path_name)
+bool is_file_exists(const char *file_path_name)
 {
-#ifdef PLATFORM_LINUX_RISC
+    if (file_path_name == NULL)
+        return false;
+
+#if defined(__linux__) || defined(PLATFORM_LINUX_RISC)
     return access(file_path_name, F_OK) == 0;
+
+#elif defined(_WIN32)
+    return _access(file_path_name, 0) == 0;
+
 #else
-    return 0;
+    // 其它系统（如 RTOS、裸机）
+    (void)file_path_name;
+    return false;
 #endif
 }
 
@@ -1399,4 +1408,11 @@ bool is_str_empty(const char *s)
         return true; // 空字符串
     }
     return false;
+}
+
+bool is_struct_equal(const void *a, const void *b, size_t size)
+{
+    if (a == NULL || b == NULL)
+        return false;
+    return memcmp(a, b, size) == 0;
 }

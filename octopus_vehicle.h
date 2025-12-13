@@ -58,7 +58,9 @@ typedef enum
     BMS_MODE_CHARGE = 0x03,    // 充电模式
     BMS_MODE_SLEEP = 0x04      // 睡眠模式
 } BMS_Mode_t;
-
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
 // 故障-故障信息
 typedef enum __attribute__((packed))
 {
@@ -159,12 +161,12 @@ typedef enum __attribute__((packed))
 #define ERROR_CODE_BEGIN ERROR_CODE_THROTTLE_NOT_ZERO       // 故障码开始
 #define ERROR_CODE_END ERROR_CODE_COMMUNICATION_ABNORMALITY // 故障码结束
 
+#pragma pack(push, 1)
 typedef struct
 {
     uint8_t flags[ERROR_FLAG_BYTES];
-} CarErrorCodeFlags_t;
+} __attribute__((aligned(4))) CarErrorCodeFlags_t;
 
-#pragma pack(push, 1)
 typedef struct
 {
     uint8_t ready;      // Ready status (1 = system ready to operate)
@@ -188,8 +190,8 @@ typedef struct
     uint8_t drive_mode;  // Drive mode selection (0 = eco, 1 = normal, etc.)
     uint8_t start_mode;  // Start mode setting (e.g., throttle/pedal)
 
-    uint8_t bt;   // Bluetooth indicator status (1 = connected)
-    uint8_t wifi; // Wi-Fi indicator status (1 = connected)
+    uint8_t reverse;
+    uint8_t reserve; // Wi-Fi indicator status (1 = connected)
 } __attribute__((aligned(4))) carinfo_indicator_t;
 
 typedef struct
@@ -438,15 +440,24 @@ extern "C"
 
     // void car_indicator_proc_turn_signal(void);
     // void car_meter_proc_speed_rpm(void);
+    void task_car_reset_trip(void);
+    bool task_car_has_error_code(void);
+
     void battary_update_simulate_infor(void);
     void carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately);
-    bool task_carinfo_has_error_code(void);
 
     extern carinfo_meter_t lt_carinfo_meter;         // Local meter data structure
     extern carinfo_indicator_t lt_carinfo_indicator; // Local indicator data structure
     extern carinfo_battery_t lt_carinfo_battery;
     extern carinfo_error_t lt_carinfo_error;
     extern CarErrorCodeFlags_t CarErrorCodeFlags;
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    extern uint16_t adc_get_value_v(void);
+
 #ifdef __cplusplus
 }
 #endif

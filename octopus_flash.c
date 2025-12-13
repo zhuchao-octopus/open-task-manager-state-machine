@@ -39,9 +39,12 @@ void flash_goto_terget_bank(uint32_t active_app_addr, uint32_t expected_crc, uin
 
 bool flash_check_vector_table(uint8_t bank_slot, uint32_t vector_address);
 bool flash_is_first_boot(uint8_t bank_slot);
+void flash_data_check_invalid(void);
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 flash_meta_infor_t flash_meta_infor = {0};
+flash_meta_infor_t e2rom_meta_infor = {0};
+
 system_meter_infor_t system_meter_infor = {0};
 uint8_t flash_bank_config_mode_slot = BANK_SLOT_INVALID;
 uint8_t flash_bank_config_mode_boot = BOOT_MODE_SINGLE_BANK_NONE;
@@ -325,6 +328,8 @@ void flash_load_sync_data_infor(void)
 			}
 			flash_meta_infor.slot_a_crc = calculated_crc;
 			flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_A;
+			e2rom_meta_infor = flash_meta_infor;
+			//flash_writ_all_infor();
 		}
 	}
 	else if (flash_bank_config_mode_slot == BANK_SLOT_B)
@@ -346,6 +351,8 @@ void flash_load_sync_data_infor(void)
 
 			flash_meta_infor.slot_b_crc = calculated_crc;
 			flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_B;
+			e2rom_meta_infor = flash_meta_infor;
+			//flash_writ_all_infor();
 		}
 	}
 	else if (flash_bank_config_mode_slot == BANK_SLOT_LOADER)
@@ -368,7 +375,10 @@ void flash_load_sync_data_infor(void)
 				}
 				flash_meta_infor.slot_a_crc = calculated_crc;
 				flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_A;
-				flash_writ_all_infor();
+				//CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
+				//CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
+				//e2rom_meta_infor = flash_meta_infor;
+				//flash_writ_all_infor();
 			}
 		}
 	}
@@ -384,7 +394,19 @@ void flash_load_sync_data_infor(void)
 }
 
 /**
- * @brief Main bootloader logic: verify and jump to the valid application
+ @brief Main bootloader logic: verify and jump to the valid application
+// 1) Flash metadata is valid:
+//    - The metadata region exists and its structure matches expected format.
+//    - All mandatory fields (version, size, flags, etc.) are present and correct.
+//
+// 2) CRC check passed:
+//    - Data integrity verified.
+//    - Computed CRC matches the stored CRC value, ensuring no corruption.
+//
+// 3) Vector table is valid:
+//    - Stack pointer and reset handler addresses fall within legal memory regions.
+//    - All core exception vectors are aligned and properly populated.
+//    - Table can be safely used for boot or firmware jump.
  */
 void flash_loader_active_user_app(uint8_t bank_slot, const char *date_str, const char *time_str)
 {
@@ -517,6 +539,9 @@ ENTER_BOOTLOADER_MODE:
 	else
 	{
 		LOG_LEVEL("Entering running (%s)...\r\n", flash_get_current_bank_name());
+		CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
+		CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
+		flash_writ_all_infor();
 	}
 }
 
@@ -559,8 +584,7 @@ bool flash_is_first_boot(uint8_t bank_slot)
 	switch (bank_slot)
 	{
 	case BANK_SLOT_LOADER:
-		return false;
-
+	//	return false;
 	case BANK_SLOT_A:
 		if (flash_meta_infor.slot_a_crc == 0xFFFFFFFF || flash_meta_infor.slot_a_crc == 0)
 		{
@@ -763,71 +787,117 @@ bool flash_verify_bank_slot_crc(uint32_t slot_addr, uint32_t slot_size, uint32_t
 
 	return (calculated_crc == expected_crc);
 }
-
 /**
- * @brief 检查应用程序向量表是否合法，决定 Bootloader 是否可以跳转
- * @param vector_table 起始地址（例如 0x0800A400）
- * @return true: 向量表合法，可跳转; false: 不合法，禁止跳转
+ * @brief Verifies the validity of the application's vector table to determine if the Bootloader can safely jump to the application.
+ * 
+ * The vector table consists of the initial stack pointer and the addresses of the exception handlers (e.g., Reset Handler). 
+ * This function validates each component of the vector table, including:
+ * - Ensuring the initial stack pointer is within a valid RAM range.
+ * - Verifying that the Reset Handler and SysTick Handler fall within the designated Flash region.
+ * - Ensuring all interrupt vectors (except zero) point to valid Flash addresses.
+ * 
+ * @param bank_slot The Flash bank slot being checked (possible values: BANK_SLOT_LOADER, BANK_SLOT_A, BANK_SLOT_B)
+ * @param vector_address The starting address of the vector table (e.g., 0x0800A400)
+ * 
+ * @return true: Vector table is valid, Bootloader can jump to the application; 
+ *         false: Vector table is invalid, jump to the application is not allowed
  */
 bool flash_check_vector_table(uint8_t bank_slot, uint32_t vector_address)
 {
-	if ((vector_address == 0) || (vector_address > (FLASH_BASE_END_ADDR - 2 * FLASH_BLOCK_SIZE)))
-		return false;
+    // Check if the vector table address is valid.
+    // If the vector address is 0 or exceeds the valid Flash region, return false.
+    if ((vector_address == 0) || (vector_address > (FLASH_BASE_END_ADDR - 2 * FLASH_BLOCK_SIZE)))
+        return false;
 
-	uint32_t *vector_table = (uint32_t *)(uintptr_t)vector_address;
-	uint32_t sp_initial = vector_table[0];
-	uint32_t reset_handler = vector_table[1];
-	uint32_t systick_handler = vector_table[15];
+    // Obtain a pointer to the vector table
+    uint32_t *vector_table = (uint32_t *)(uintptr_t)vector_address;
 
-	uint32_t start_address = 0;
-	uint32_t end_address = 0;
+    // Retrieve the initial stack pointer and the Reset Handler address
+    uint32_t sp_initial = vector_table[0];          // Initial stack pointer
+    uint32_t reset_handler = vector_table[1];       // Reset handler address
+    uint32_t systick_handler = vector_table[15];    // SysTick handler address
 
-	switch (bank_slot)
-	{
-	case BANK_SLOT_LOADER:
-		start_address = FLASH_BOOTLOADER_START_ADDR;
-		end_address = FLASH_BOOTLOADER_END_ADDR;
-		break;
-	case BANK_SLOT_A:
-		start_address = flash_meta_infor.slot_a_addr;
-		end_address = flash_meta_infor.slot_a_addr + flash_meta_infor.slot_a_size;
-		break;
-	case BANK_SLOT_B:
-		start_address = flash_meta_infor.slot_b_addr;
-		end_address = flash_meta_infor.slot_b_addr + flash_meta_infor.slot_b_size;
-		break;
-	}
+    uint32_t start_address = 0;
+    uint32_t end_address = 0;
 
-	// 检查初始栈指针是否在 RAM 区间
-	if (sp_initial < 0x20000000 || sp_initial > 0x20040000)
-		return false;
+    // Based on the Flash bank slot, define the valid address range for the vector table
+    switch (bank_slot)
+    {
+    case BANK_SLOT_LOADER:
+        start_address = FLASH_BOOTLOADER_START_ADDR;   // Bootloader start address
+        end_address = FLASH_BOOTLOADER_END_ADDR;       // Bootloader end address
+        break;
+    case BANK_SLOT_A:
+        start_address = flash_meta_infor.slot_a_addr;  // Slot A start address
+        end_address = flash_meta_infor.slot_a_addr + flash_meta_infor.slot_a_size;  // Slot A end address
+        break;
+    case BANK_SLOT_B:
+        start_address = flash_meta_infor.slot_b_addr;  // Slot B start address
+        end_address = flash_meta_infor.slot_b_addr + flash_meta_infor.slot_b_size;  // Slot B end address
+        break;
+    }
 
-	// 检查 Reset Handler 是否在 Flash/ROM 区间
-	if (reset_handler < start_address || reset_handler > end_address)
-		return false;
+    // Check if the initial stack pointer is within the valid RAM range (usually 0x20000000 to 0x20040000)
+    if (sp_initial < 0x20000000 || sp_initial > 0x20040000)
+        return false;
 
-	if (systick_handler < start_address || systick_handler > end_address)
-		return false;
+    // Check if the Reset Handler is within the valid Flash region
+    if (reset_handler < start_address || reset_handler > end_address)
+        return false;
 
-	// 可选：检查前几个 IRQ 向量是否在 Flash 范围
-	for (int i = 2; i < 16; i++)
-	{
-		uint32_t irq = vector_table[i];
-		if (irq != 0 && (irq < start_address || irq > end_address))
-			return false;
-	}
-	LOG_LEVEL("check vector table successfuly.\r\n");
-	return true; // 向量表合法
+    // Check if the SysTick Handler is within the valid Flash region
+    if (systick_handler < start_address || systick_handler > end_address)
+        return false;
+
+    // Check the interrupt vectors (from 2 to 15) to ensure they point to valid Flash addresses
+    // Non-zero interrupt vectors must point to valid Flash regions
+    for (int i = 2; i < 16; i++)
+    {
+        uint32_t irq = vector_table[i];
+        // For non-zero IRQ, check if it points to a valid address in the Flash range
+        if (irq != 0 && (irq < start_address || irq > end_address))
+            return false;
+    }
+
+    // Log a message indicating the vector table check passed successfully
+    LOG_LEVEL("check vector table successfully.\r\n");
+
+    // The vector table is valid, the Bootloader can safely jump to the application
+    return true;
 }
 
 bool flash_check_enter_upgrade_mode(void)
 {
+	bool upgrade_mode = false;
+	E2ROM_read_metas_infor();
 	if (IS_SLOT_A_NEED_UPGRADE(flash_meta_infor.slot_stat_flags))
-		return true;
+	{
+		upgrade_mode = true;
+		LOG_LEVEL("IS_SLOT_A_NEED_UPGRADE = true: 0x%08X\r\n", flash_meta_infor.slot_stat_flags);
+	}
 	else if (IS_SLOT_B_NEED_UPGRADE(flash_meta_infor.slot_stat_flags))
-		return true;
+	{
+		upgrade_mode = true;
+		LOG_LEVEL("IS_SLOT_B_NEED_UPGRADE = true: 0x%08X\r\n", flash_meta_infor.slot_stat_flags);
+	}
+	else if (IS_SLOT_A_NEED_UPGRADE(e2rom_meta_infor.slot_stat_flags))
+	{
+		upgrade_mode = true;
+		LOG_LEVEL("IS_SLOT_A_NEED_UPGRADE = true: e2rom 0x%08X\r\n", e2rom_meta_infor.slot_stat_flags);
+	}
+	else if (IS_SLOT_B_NEED_UPGRADE(e2rom_meta_infor.slot_stat_flags))
+	{
+		upgrade_mode = true;
+		LOG_LEVEL("IS_SLOT_B_NEED_UPGRADE = true: e2rom 0x%08X\r\n", e2rom_meta_infor.slot_stat_flags);
+	}
 	else
-		return false;
+	{
+		LOG_LEVEL("IS_SLOT_A_NEED_UPGRADE = true: e2rom 0x%08X\r\n", e2rom_meta_infor.slot_stat_flags);
+		upgrade_mode = false;
+	}
+	CLEAR_FLAG(e2rom_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
+	CLEAR_FLAG(e2rom_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
+	return upgrade_mode;
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -851,6 +921,7 @@ void flash_delay_ms(uint32_t ms)
 		__NOP(); // __NOP()
 	}
 }
+
 void flash_JumpToApplication(uint32_t app_address)
 {
 	typedef void (*pFunction)(void); // Function pointer type for Reset_Handler
@@ -906,7 +977,7 @@ void flash_JumpToApplication(uint32_t app_address)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-uint32_t flash_erase_user_app_bank(uint8_t bank_slot)
+uint32_t flash_erase_bank(uint8_t bank_slot)
 {
 	uint32_t ret = 0;
 	uint16_t pages_count = 0;
@@ -974,7 +1045,7 @@ uint32_t FlashWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 		return 0;
 	}
 	DISABLE_IRQ;
-	writed_bytes = hal_flash_write_(addr, buf, length);
+	writed_bytes = hal_flash_writ_(addr, buf, length);
 	ENABLE_IRQ;
 	return writed_bytes;
 }
@@ -1002,7 +1073,7 @@ void E2ROMWritBuffTo(uint32_t addr, uint8_t *buf, uint32_t length)
 {
 	if (buf)
 	{
-		hal_eeprom_write_(addr, buf, length);
+		hal_eeprom_writ_(addr, buf, length);
 	}
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1043,29 +1114,13 @@ void E2ROM_writ_metas_infor(void)
 
 void E2ROM_read_metas_infor(void)
 {
-	E2ROMReadToBuff(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	E2ROMReadToBuff(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&e2rom_meta_infor, sizeof(flash_meta_infor_t));
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void flash_writ_all_infor(void)
 {
 	uint8_t pages = 0;
 	flash_meta_infor.mete_data_flags = FLASH_META_DATAS_VALID_FLAG;
-
-#ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
-	if (task_carinfo_get_meter_info())
-	{
-		system_meter_infor.trip_odo = task_carinfo_get_meter_info()->trip_odo;
-		system_meter_infor.speed_average = task_carinfo_get_meter_info()->speed_average;
-	}
-	E2ROMWritBuffTo(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
-	E2ROMWritBuffTo(EEROM_SYSTEM_METER_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
-	if (task_carinfo_get_meter_info())
-	{
-		// LOG_BUFF_LEVEL((uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-		// LOG_LEVEL("task_carinfo_get_meter_info().trip_odo:%d\r\n", task_carinfo_get_meter_info()->trip_odo);
-		E2ROMWritBuffTo(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-	}
-#else
 	if (FLASH_USER_DATA_BLOCK <= 0)
 	{
 		LOG_LEVEL("No enougth space for user data pages:%d\r\n", FLASH_USER_DATA_BLOCK);
@@ -1073,28 +1128,47 @@ void flash_writ_all_infor(void)
 	}
 
 	pages = FlashErasePage(FLASH_META_DATA_START_ADDRESS, FLASH_USER_DATA_BLOCK);
-	LOG_LEVEL("flash_writ_all_infor need %d pages...\r\n", pages);
+	LOG_LEVEL("flash_writ_all_infor need %d pages\r\n", pages);
 	if (task_carinfo_get_meter_info())
 	{
 		system_meter_infor.trip_odo = task_carinfo_get_meter_info()->trip_odo;
 		system_meter_infor.speed_average = task_carinfo_get_meter_info()->speed_average;
 	}
+	
 	pages = FlashWritBuffTo(FLASH_META_DATA_START_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
-	LOG_LEVEL("Save flash meta information count=%d... \r\n", pages);
+	LOG_LEVEL("Save flash meta information count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
 	pages = FlashWritBuffTo(FLASH_SYSTEM_DATA_START_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
-	LOG_LEVEL("Save syste meta information count=%d... \r\n", pages);
+	LOG_LEVEL("Save syste meta information count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
+	
 	if (task_carinfo_get_meter_info())
 	{
 		// pages = FlashErasePage(FLASH_METER_DATA_START_ADDRESS, 1);
 		// task_carinfo_get_meter_info()->trip_odo = 12000;
 		pages = FlashWritBuffTo(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-		LOG_LEVEL("Save carif meter data trip_odo=%08x... \r\n", task_carinfo_get_meter_info()->trip_odo);
+		LOG_LEVEL("Save carif meter data trip_odo=%08x \r\n", task_carinfo_get_meter_info()->trip_odo);
 		// FlashReadToBuff(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 		// LOG_LEVEL("task_carinfo_get_meter_info()->trip_odo=%08x\r\n", task_carinfo_get_meter_info()->trip_odo);
 		// E2ROM_writ_meter_infor();
 	}
+	
+	E2ROM_writ_metas_infor();//double backup
+}
 
-#endif
+void flash_read_all_infor(void)
+{
+	FlashReadToBuff(FLASH_META_DATA_START_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	FlashReadToBuff(FLASH_SYSTEM_DATA_START_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
+
+	if (task_carinfo_get_meter_info())
+	{
+		FlashReadToBuff(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
+		LOG_LEVEL("task_carinfo_get_meter_info()->trip_odo=%08x\r\n", task_carinfo_get_meter_info()->trip_odo);
+		// E2ROM_read_meter_infor();
+	}
+	flash_data_check_invalid();
+
+	LOG_NONE("\r\n");
+	// LOG_LEVEL("flash meta information task_carinfo_get_meter_info().trip_odo=%d... \r\n", task_carinfo_get_meter_info()->trip_odo);
 }
 
 void flash_data_check_invalid(void)
@@ -1144,32 +1218,6 @@ void flash_data_check_invalid(void)
 	{
 		LOG_LEVEL("Load meter data[%03d]: ", sizeof(carinfo_meter_t));
 	}
-}
-
-void flash_read_all_infor(void)
-{
-#ifdef FLASH_USE_EEROM_FOR_DATA_SAVING
-	E2ROMReadToBuff(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
-	E2ROMReadToBuff(EEROM_SYSTEM_METER_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
-	if (task_carinfo_get_meter_info())
-	{
-		E2ROMReadToBuff(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-	}
-
-#else
-	FlashReadToBuff(FLASH_META_DATA_START_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
-	FlashReadToBuff(FLASH_SYSTEM_DATA_START_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
-
-	if (task_carinfo_get_meter_info())
-	{
-		FlashReadToBuff(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-		LOG_LEVEL("task_carinfo_get_meter_info()->trip_odo=%08x\r\n", task_carinfo_get_meter_info()->trip_odo);
-		// E2ROM_read_meter_infor();
-	}
-#endif
-	flash_data_check_invalid();
-	LOG_NONE("\r\n");
-	// LOG_LEVEL("flash meta information task_carinfo_get_meter_info().trip_odo=%d... \r\n", task_carinfo_get_meter_info()->trip_odo);
 }
 
 // void flash_set_app_meta_

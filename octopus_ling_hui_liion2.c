@@ -544,8 +544,8 @@ void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length) // RX
     // 通讯故障
     if (state2 & BIT_4)
     {
-		lt_carinfo_indicator.ready = 0;
-        carinfo_add_error_code(ERROR_CODE_BMS_ABNORMALITY, state2 & BIT_4, false);
+        lt_carinfo_indicator.ready = 0;
+        carinfo_add_error_code(ERROR_CODE_COMMUNICATION_ABNORMALITY, state2 & BIT_4, false);
     }
 }
 

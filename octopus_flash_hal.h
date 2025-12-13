@@ -39,24 +39,85 @@ extern "C"
      */
     void hal_flash_init(uint8_t task_id);
 
-    /******************************************************************************/
+    /* -------------------------------------------------------------------------- */
+    /*                        Flash Memory Access Interfaces                      */
+    /* -------------------------------------------------------------------------- */
+
     /**
-     * @brief   Reads data from flash memory into a buffer.
-     * @param   addr The address in flash memory from which to start reading.
-     * @param   buf  Pointer to the buffer where the read data will be stored.
-     * @param   len  The number of bytes to read from the flash memory.
-     * @retval  None
-     * @details This function reads data from the specified flash memory address
-     *          into the provided buffer. The function will read up to the length
-     *          specified by the `len` parameter. The data is stored in `buf`.
+     * @brief  Erase one or more Flash pages starting from a specific address.
+     *
+     * @param  startaddr   Start address of the first page to erase.
+     * @param  page_count  Number of pages to erase.
+     *
+     * @retval Number of successfully erased pages.
+     * @note   This function automatically unlocks and locks the Flash.
      */
-
     uint32_t hal_flash_erase_page_(uint32_t startaddr, uint8_t page_count);
-    uint32_t hal_flash_erase_area_(uint32_t startaddr, uint32_t endaddr);
-    uint32_t hal_flash_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length);
-    uint32_t hal_flash_write_(uint32_t startaddr, uint8_t *buffer, uint32_t length);
 
-    void hal_eeprom_write_(uint32_t startaddr, uint8_t *buffer, uint8_t length);
+    /**
+     * @brief  Erase a continuous area in Flash memory.
+     *
+     * @param  startaddr   Start address of the erase area.
+     * @param  endaddr     End address of the erase area (exclusive).
+     *
+     * @retval Number of successfully erased pages.
+     * @note   The area size should be aligned with Flash page boundaries.
+     */
+    uint32_t hal_flash_erase_area_(uint32_t startaddr, uint32_t endaddr);
+
+    /**
+     * @brief  Read a data buffer directly from Flash memory.
+     *
+     * @param  startaddr   Start address in Flash memory.
+     * @param  buffer      Pointer to the destination buffer.
+     * @param  length      Number of bytes to read.
+     *
+     * @retval Number of bytes successfully read.
+     * @note   The read operation does not require Flash unlocking.
+     */
+    uint32_t hal_flash_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length);
+
+    /**
+     * @brief  Write a data buffer to Flash memory (4-byte aligned).
+     *
+     * @param  startaddr   Start address in Flash memory.
+     * @param  buffer      Pointer to source data buffer.
+     * @param  length      Number of bytes to write. Must be 4-byte aligned.
+     *
+     * @retval Number of bytes successfully written (0 if failed).
+     * @note   This function automatically handles Flash unlocking and locking.
+     *         Both buffer address and length must be 4-byte aligned.
+     */
+    uint32_t hal_flash_writ_(uint32_t startaddr, uint8_t *buffer, uint32_t length);
+
+    /* -------------------------------------------------------------------------- */
+    /*                        EEPROM Access Layer Interfaces                      */
+    /* -------------------------------------------------------------------------- */
+
+    /**
+     * @brief  Write data to external EEPROM via I2C interface.
+     *
+     * @param  startaddr   EEPROM memory start address.
+     * @param  buffer      Pointer to source data buffer.
+     * @param  length      Number of bytes to write.
+     *
+     * @retval None
+     * @note   Function internally calls `I2C_EepromBufferWrite()`.
+     *         Log messages are printed upon completion.
+     */
+    void hal_eeprom_writ_(uint32_t startaddr, uint8_t *buffer, uint8_t length);
+
+    /**
+     * @brief  Read data from external EEPROM via I2C interface.
+     *
+     * @param  startaddr   EEPROM memory start address.
+     * @param  buffer      Pointer to destination buffer.
+     * @param  length      Number of bytes to read.
+     *
+     * @retval None
+     * @note   Function internally calls `EEPROM_Read()`.
+     *         Log messages are printed upon completion.
+     */
     void hal_eeprom_read_(uint32_t startaddr, uint8_t *buffer, uint8_t length);
 
 #ifdef __cplusplus

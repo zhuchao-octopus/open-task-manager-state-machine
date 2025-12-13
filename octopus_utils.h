@@ -183,9 +183,10 @@ extern "C"
 	file_read_status_t read_next_bin_record(FILE *bin_file, long *file_offset, hex_record_t *hex_record);
 
 	int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_path_size);
-	int file_exists(const char *file_path_name);
-	bool is_str_empty(const char *s);
 
+	bool is_file_exists(const char *file_path_name);
+	bool is_str_empty(const char *s);
+	bool is_struct_equal(const void *a, const void *b, size_t size);
 #ifdef __cplusplus
 }
 #endif

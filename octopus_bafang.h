@@ -5,7 +5,7 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include "octopus_base.h" //  Base include file for the Octopus project.
+#include "octopus_base.h"     //  Base include file for the Octopus project.
 #include "octopus_uart_upf.h" // Include UART protocol header
 
 #ifdef __cplusplus

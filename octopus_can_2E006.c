@@ -7,6 +7,7 @@
 #include "octopus_msgqueue.h"    // Message Queue: API for sending/receiving messages between tasks
 #include "octopus_uart_ptl.h"    // UART Protocol Layer: handles protocol-level UART operations
 #include "octopus_uart_upf.h"
+#include "octopus_can.h"
 
 #ifdef CUSTOMER_MODEL_CA_500
 
@@ -57,9 +58,9 @@ bool can_message_dispatcher(const CanQueueMsg_t *queue_msg)
         updated = CAN_Parse_MCU_Task_H_001(queue_msg);
         if (updated)
         {
-            //LOG_LEVEL("g_mcu1.motor_speed_rpm: %d\n", g_mcu1.motor_speed_rpm);
-            //LOG_LEVEL("g_mcu1.info           : %d\n", g_mcu1.info.raw);
-            //LOG_LEVEL("g_mcu1.fault_state    : %d\n", g_mcu1.fault_state.raw);
+            // LOG_LEVEL("g_mcu1.motor_speed_rpm: %d\n", g_mcu1.motor_speed_rpm);
+            // LOG_LEVEL("g_mcu1.info           : %d\n", g_mcu1.info.raw);
+            // LOG_LEVEL("g_mcu1.fault_state    : %d\n", g_mcu1.fault_state.raw);
             CAN_update_vehicle_infor(queue_msg);
         }
 
@@ -89,8 +90,8 @@ bool can_message_dispatcher(const CanQueueMsg_t *queue_msg)
     default:
         break; // unknown ID
     }
-		
-		return updated;
+
+    return updated;
 }
 
 bool can_message_sender(const uint16_t message_id)
@@ -143,8 +144,8 @@ bool can_message_sender(const uint16_t message_id)
         // 未知消息ID，可添加错误处理或日志
         break;
     }
-		
-		return false;
+
+    return false;
 }
 
 // -------- BMS --------
@@ -192,18 +193,18 @@ void CAN_Parse_VCU_Task_L_002(const CanQueueMsg_t *msg)
 bool CAN_Parse_MCU_Task_H_001(const CanQueueMsg_t *msg)
 {
     bool b_ret = false;
-	  uint16_t motor_speed_rpm; 
-	  MCU_Task_H_001_t g_mcu1_new;
-	
+    uint16_t motor_speed_rpm;
+    MCU_Task_H_001_t g_mcu1_new;
+
     if (msg->data_len != 8)
         return false;
 
-		motor_speed_rpm = (uint16_t)(msg->data[0] | (msg->data[1] << 8));
-		//if(motor_speed_rpm <= 0) motor_speed_rpm = 0;		
+    motor_speed_rpm = (uint16_t)(msg->data[0] | (msg->data[1] << 8));
+    // if(motor_speed_rpm <= 0) motor_speed_rpm = 0;
     g_mcu1_new.motor_speed_rpm = motor_speed_rpm - 8000;
-		
-		//LOG_LEVEL("g_mcu1_new.motor_speed_rpm:%d, motor_speed_rpm:%d\n", g_mcu1_new.motor_speed_rpm, motor_speed_rpm);
-		
+
+    // LOG_LEVEL("g_mcu1_new.motor_speed_rpm:%d, motor_speed_rpm:%d\n", g_mcu1_new.motor_speed_rpm, motor_speed_rpm);
+
     g_mcu1_new.info.raw = (uint32_t)(msg->data[2] | (msg->data[3] << 8) | (msg->data[4] << 16) | (msg->data[5] << 24));
     g_mcu1_new.fault_state.raw = (uint16_t)(msg->data[6] | (msg->data[7] << 8));
 
@@ -328,9 +329,9 @@ uint16_t get_wheel_radius_mm(void)
 {
     if (lt_carinfo_meter.wheel_diameter >= SETTING_WHEEL_MAX)
     {
-		   return lt_carinfo_meter.wheel_diameter * 25.4;
+        return lt_carinfo_meter.wheel_diameter * 25.4;
     }
-		
+
     switch (lt_carinfo_meter.wheel_diameter)
     {
     case SETTING_WHEEL_16_Inch:
@@ -409,16 +410,16 @@ void CAN_update_vehicle_infor(const CanQueueMsg_t *msg)
         carinfo_add_error_code(ERROR_CODE_CONTROLLER_ABNORMALITY, g_mcu1.fault_state.bits.angleFault, false);
         carinfo_add_error_code(ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY, g_mcu1.fault_state.bits.motorOverTemp1, false);
         carinfo_add_error_code(ERROR_CODE_MOTOR_TEMPERATURE_SENSOR_ABNORMALITY, g_mcu1.fault_state.bits.motorOverTemp2, true);
-		
-		    //LOG_LEVEL("lt_carinfo_meter.speed_actual: %d\n", lt_carinfo_meter.speed_actual);
-		    send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR);
-				send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, FRAME_CMD_CARINFOR_METER);
+
+        // LOG_LEVEL("lt_carinfo_meter.speed_actual: %d\n", lt_carinfo_meter.speed_actual);
+        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_INDICATOR, FRAME_CMD_CARINFOR_INDICATOR);
+        send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_METER, FRAME_CMD_CARINFOR_METER);
         break;
 
     case CAN_ID_MCU_TASK_H_002:
         lt_carinfo_battery.current = g_mcu2.bus_current * 10;
         lt_carinfo_battery.voltage = g_mcu2.bus_voltage * 10;
-		    //LOG_LEVEL("lt_carinfo_battery.voltage=%d lt_carinfo_battery.current=%d\n", lt_carinfo_battery.voltage,lt_carinfo_battery.current);
+        // LOG_LEVEL("lt_carinfo_battery.voltage=%d lt_carinfo_battery.current=%d\n", lt_carinfo_battery.voltage,lt_carinfo_battery.current);
         send_message(TASK_MODULE_CAR_INFOR, MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, FRAME_CMD_CARINFOR_BATTERY);
         break;
 
@@ -460,10 +461,10 @@ void CAN_update_vehicle_infor(const CanQueueMsg_t *msg)
  */
 float Calculate_Speed_From_RPM(uint32_t rpm, uint16_t tire_radius_mm, uint8_t gear_ratio)
 {
-	  //LOG_LEVEL("tire_diameter_mm: %d\n", tire_radius_mm);
-	
+    // LOG_LEVEL("tire_diameter_mm: %d\n", tire_radius_mm);
+
     // 1. 轮胎直径 (m)
-    double D_m = (tire_radius_mm*2) / 1000.0f;
+    double D_m = (tire_radius_mm * 2) / 1000.0f;
 
     // 2. 车轮转速 (RPM)，由电机转速除以减速比得到
     double wheel_rpm = (float)rpm / (float)gear_ratio;
