@@ -1144,8 +1144,11 @@ void flash_writ_all_infor(void)
 	{
 		// pages = FlashErasePage(FLASH_METER_DATA_START_ADDRESS, 1);
 		// task_carinfo_get_meter_info()->trip_odo = 12000;
-		pages = FlashWritBuffTo(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-		LOG_LEVEL("Save carif meter data trip_odo=%08x \r\n", task_carinfo_get_meter_info()->trip_odo);
+		if(task_carinfo_get_meter_info()->trip_odo > 10)
+		{
+		  pages = FlashWritBuffTo(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
+	  }
+		LOG_LEVEL("Save carif meter data trip_odo=%08x count=%d|%d\r\n", task_carinfo_get_meter_info()->trip_odo,pages,sizeof(carinfo_meter_t));
 		// FlashReadToBuff(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 		// LOG_LEVEL("task_carinfo_get_meter_info()->trip_odo=%08x\r\n", task_carinfo_get_meter_info()->trip_odo);
 		// E2ROM_writ_meter_infor();
