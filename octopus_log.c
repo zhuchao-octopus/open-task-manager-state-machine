@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define OTSM_DEBUG_MODE
 
-uint8_t OTSM_DEBUG_UART_CHANNEL = 3;
+uint8_t OTSM_DEBUG_UART_CHANNEL = 4;
 
 // #define USE_MY_PRINTF
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -50,14 +50,13 @@ DBG_LOG_LEVEL current_log_level = LOG_LEVEL_NONE;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifndef USE_MY_PRINTF
 
-#if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(OTSM_DEBUG_MODE) && !defined(USE_MY_PRINTF)
+#if 0// defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(OTSM_DEBUG_MODE) && !defined(USE_MY_PRINTF)
 /**
  * @brief  Retargets the C library printf function to the USART.
  * @param  None
  * @retval None
  */
-//PUTCHAR_PROTOTYPE
-int fputc(int ch, FILE* f)
+PUTCHAR_PROTOTYPE
 {
 #if 0
 	uint32_t Timeout = 0;
@@ -104,6 +103,8 @@ int fputc(int ch, FILE* f)
 		break;
 	case 9:
 		hal_com_uart9_send_buffer(data, 1);
+		break;
+	default:
 		break;
 	}
 	return (ch);

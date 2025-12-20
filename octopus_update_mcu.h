@@ -146,10 +146,11 @@ extern "C"
    */
   void task_update_stop_running(void);
 
-  bool update_check_oupg_file_exists(void);
-  bool update_is_mcu_updating(void);
   uint8_t update_get_target_bank(void);
 
+  bool update_check_oupg_file_exists(void);
+  bool update_is_mcu_updating(void);
+  void update_enable_auto_upgrade(void);
   mcu_update_progress_t get_mcu_update_progress(void);
   /** @} end of group APP_SETTING */
 

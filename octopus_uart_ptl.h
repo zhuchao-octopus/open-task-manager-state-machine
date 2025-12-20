@@ -152,7 +152,8 @@ typedef enum
     FRAME_CMD_CAR_SET_BATTERY = 0x25,
     FRAME_CMD_CAR_RESET_BATTERY = 0x26,
     FRAME_CMD_CAR_RESET_SYSTEM = 0x27,
-
+    
+    FRAME_CMD_USER_CUSTOMIZE = 0x63,
     FRAME_CMD_CARINFOR_MAX = 0x64
 } ptl_frame_cmd_t;
 
@@ -180,8 +181,8 @@ typedef struct
 /**
  * @brief Module handlers for sending and receiving frames.
  */
-typedef bool (*module_send_handler_t)(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
-typedef bool (*module_receive_handler_t)(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff);
+typedef bool (*module_send_handler_t)(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *ptl_proc_buff);
+typedef bool (*module_receive_handler_t)(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_ack_buff);
 
 #ifdef __cplusplus
 extern "C"

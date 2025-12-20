@@ -1,154 +1,103 @@
-/**
- * @file    octopus_iic.h
- * @brief   Software I2C driver header for GPIO-based I2C bit-banging implementation.
- *          This header provides the interface and macros used to implement
- *          a lightweight I2C protocol on platforms lacking hardware I2C controllers.
+/*
+ * octopus_i2c.h
  *
- * @author  Macky
- * @version 1.1
- * @date    2025-07-07
+ * @version 1.0
+ * @date    2025-09-18
+ * @author  Octopus Team
  *
- * @details
- * This file defines GPIO macros for SDA/SCL control, the software-based I2C API,
- * and error tracking mechanisms. It is designed to work with the GPIO HAL wrapper layer
- * provided in `octopus_gpio.h`.
+ * @brief
+ * This header file declares the public interfaces for the I2C task module.
+ * It provides lifecycle functions for managing I2C communication in an
+ * embedded system environment.
  *
- * Features:
- * - Software-based I2C start/stop conditions
- * - Byte send/receive operations
- * - ACK/NACK handling
- * - Error detection (no ACK, timeout, bus lock)
- * - Optional logging support (in .c file)
+ * Typical usage:
+ * - Call `task_i2c_init_running()` once during system initialization.
+ * - Call `task_i2c_start_running()` when the I2C service should begin.
+ * - Periodically call `task_i2c_running()` from the main loop or RTOS task.
+ * - Optionally call `task_i2c_post_running()` for deferred actions.
+ * - Call `task_i2c_stop_running()` to gracefully stop I2C operations.
+ *
+ * This module is designed to integrate with a task state machine framework.
  */
 
-#ifndef __OCTOPUS_IIC_H__
-#define __OCTOPUS_IIC_H__
+#ifndef __OCTOPUS_I2C_H_
+#define __OCTOPUS_I2C_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "octopus_platform.h"   ///< Platform-specific settings (e.g. clock, GPIO defs)
-#include "octopus_gpio.h"       ///< HAL GPIO API used for I2C bit operations
-
-// -----------------------------------------------------------------------------
-// GPIO Macros for Software I2C Bit Manipulation
-// -----------------------------------------------------------------------------
-#define IIC_GPIO_GROUP GPIO_I2C_GROUP_B
-/**
- * @brief Set SCL line to high (logic 1)
- */
-#define iic_scl_high()    hal_gpio_write(IIC_GPIO_GROUP, GPIO_I2C_SCL_PIN, BIT_SET)
-
-/**
- * @brief Set SCL line to low (logic 0)
- */
-#define iic_scl_low()     hal_gpio_reset(IIC_GPIO_GROUP, GPIO_I2C_SCL_PIN, BIT_RESET)
-
-/**
- * @brief Set SDA line to high (logic 1)
- */
-#define iic_sda_high()    hal_gpio_write(IIC_GPIO_GROUP, GPIO_I2C_SDA_PIN, BIT_SET)
-
-/**
- * @brief Set SDA line to low (logic 0)
- */
-#define iic_sda_low()     hal_gpio_reset(IIC_GPIO_GROUP, GPIO_I2C_SDA_PIN, BIT_RESET)
-
-/**
- * @brief Read current level of SDA line
- * @return uint8_t Logic level (0 or 1)
- */
-#define read_sda_()       hal_gpio_read(IIC_GPIO_GROUP, GPIO_I2C_SDA_PIN)
-
-/**
- * @brief Configure SDA as output (push-pull)
- */
-#define iic_sda_out()     hal_gpio_set_mode(IIC_GPIO_GROUP, GPIO_I2C_SDA_PIN, GPIO_MODE_OUTPUT)
-
-/**
- * @brief Configure SDA as input (floating or pull-up)
- */
-#define iic_sda_in()      hal_gpio_set_mode(IIC_GPIO_GROUP, GPIO_I2C_SDA_PIN, GPIO_MODE_INPUT)
-
-
-// -----------------------------------------------------------------------------
-// Error Type Definitions for I2C Communication
-// -----------------------------------------------------------------------------
+#include "octopus_base.h" //  Base include file for the Octopus project.
 
 /**
  * @brief I2C communication error codes
  */
-typedef enum {
-    I2C_ERROR_NONE = 0,        ///< No error, last communication successful
-    I2C_ERROR_NO_ACK = 1,      ///< No ACK received after sending a byte
-    I2C_ERROR_READ_TIMEOUT = 2,///< Timeout during reading SDA
-    I2C_ERROR_BUS_LOCKED = 3,  ///< Bus stuck in busy state (not yet implemented)
+typedef enum
+{
+	I2C_ERROR_NONE = 0,			///< No error, last communication successful
+	I2C_ERROR_NO_ACK = 1,		///< No ACK received after sending a byte
+	I2C_ERROR_READ_TIMEOUT = 2, ///< Timeout during reading SDA
+	I2C_ERROR_BUS_LOCKED = 3,	///< Bus stuck in busy state (not yet implemented)
 } i2c_error_t;
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
-// -----------------------------------------------------------------------------
-// Software I2C API Declarations
-// -----------------------------------------------------------------------------
+	/*******************************************************************************
+	 * GLOBAL FUNCTIONS DECLARATION
+	 *******************************************************************************/
 
-/**
- * @brief Initialize I2C GPIO lines and optional DWT delay unit
- */
-void i2c_init(void);
+	/**
+	 * @brief Initialize I2C functionality.
+	 *
+	 * This function sets up internal data structures, initializes the I2C hardware,
+	 * and prepares the message queue for operation.
+	 */
+	void task_i2c_init_running(void);
 
-/**
- * @brief Generate I2C start condition (SDA goes low while SCL is high)
- */
-void i2c_start(void);
+	/**
+	 * @brief Start I2C operations.
+	 *
+	 * Enables interrupts, DMA, or background tasks associated with I2C communication.
+	 * Should be called after initialization and when I2C needs to become active.
+	 */
+	void task_i2c_start_running(void);
 
-/**
- * @brief Generate I2C stop condition (SDA goes high while SCL is high)
- */
-void i2c_stop(void);
+	/**
+	 * @brief Assert and verify the I2C module is running correctly.
+	 *
+	 * This function can be used as a sanity check to ensure the I2C module is still
+	 * operating as expected (e.g., queue not stuck, bus not hung).
+	 */
+	void task_i2c_assert_running(void);
 
-/**
- * @brief Wait for ACK after sending a byte
- * @retval 0 if ACK received
- * @retval 1 if no ACK (NACK)
- */
-uint8_t i2c_wait_ack(void);
+	/**
+	 * @brief Handle the main logic for I2C operations.
+	 *
+	 * This function is expected to be called periodically in the main loop or a
+	 * dedicated RTOS task. It processes messages in the I2C TX/RX queue and
+	 * performs data transfers.
+	 */
+	void task_i2c_running(void);
 
-/**
- * @brief Send ACK bit (used when master wants to continue reading)
- */
-void i2c_send_ack(void);
+	/**
+	 * @brief Perform post-processing for I2C operations.
+	 *
+	 * This function can handle cleanup or deferred actions after I2C transfers,
+	 * such as callback execution or logging.
+	 */
+	void task_i2c_post_running(void);
 
-/**
- * @brief Send NACK bit (used when master wants to stop reading)
- */
-void i2c_send_nack(void);
+	/**
+	 * @brief Stop I2C operations.
+	 *
+	 * Gracefully shuts down I2C communication, disables interrupts, and clears
+	 * internal states. Should be called before system shutdown or reset.
+	 */
+	void task_i2c_stop_running(void);
 
-/**
- * @brief Send a byte over I2C bus (MSB first)
- * @param data Byte to send
- */
-void i2c_send_byte(uint8_t data);
-
-/**
- * @brief Read a byte from I2C bus
- * @param ack If 1, send ACK after receiving; if 0, send NACK
- * @return Received byte
- */
-uint8_t i2c_read_byte(uint8_t ack);
-
-/**
- * @brief Retrieve last I2C error status
- * @return i2c_error_t Last recorded error
- */
-i2c_error_t i2c_get_last_error(void);
-
-/**
- * @brief Clear I2C error state (usually after a successful transaction)
- */
-void i2c_clear_error(void);
+	void i2c_send_message(uint8_t channel, uint8_t dev_address, uint8_t reg_address, const uint8_t *data, uint8_t data_len);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // __OCTOPUS_IIC_H__
+#endif /* __OCTOPUS_I2C_H_ */

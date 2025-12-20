@@ -67,6 +67,144 @@
  */
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+// ================== 36V 电池 ==================
+const BatterySOC_t battery_table_36V[] = {
+    {31.0, 31.8, 0, 10, 1},
+    {31.8, 32.6, 10, 20, 2},
+    {32.6, 33.4, 20, 30, 3},
+    {33.4, 34.2, 30, 40, 4},
+    {34.2, 35.0, 40, 50, 5},
+    {35.0, 35.8, 50, 60, 6},
+    {35.8, 36.6, 60, 70, 7},
+    {36.6, 37.4, 70, 80, 8},
+    {37.4, 38.2, 80, 90, 9},
+    {38.2, 42.0, 90, 100, 10},
+};
+
+// ================== 43V 电池 ==================
+const BatterySOC_t battery_table_43V[] = {
+    {36.0, 37.0, 0, 10, 1},
+    {37.0, 38.0, 10, 20, 2},
+    {38.0, 39.0, 20, 30, 3},
+    {39.0, 40.0, 30, 40, 4},
+    {40.0, 41.0, 40, 50, 5},
+    {41.0, 42.0, 50, 60, 6},
+    {42.0, 43.0, 60, 70, 7},
+    {43.0, 44.0, 70, 80, 8},
+    {44.0, 45.0, 80, 90, 9},
+    {45.0, 46.0, 90, 100, 10},
+};
+
+// ================== 48V 电池 ==================
+const BatterySOC_t battery_table_48V[] = {
+    {40.0, 41.0, 0, 10, 1},
+    {41.0, 42.0, 10, 20, 2},
+    {42.0, 43.0, 20, 30, 3},
+    {43.0, 44.0, 30, 40, 4},
+    {44.0, 45.0, 40, 50, 5},
+    {45.0, 46.0, 50, 60, 6},
+    {46.0, 47.0, 60, 70, 7},
+    {47.0, 48.0, 70, 80, 8},
+    {48.0, 49.0, 80, 90, 9},
+    {49.0, 50.0, 90, 100, 10},
+};
+
+// ================== 52V 电池 ==================
+const BatterySOC_t battery_table_52V[] = {
+    {43.0, 44.0, 0, 10, 1},
+    {44.0, 45.0, 10, 20, 2},
+    {45.0, 46.0, 20, 30, 3},
+    {46.0, 47.0, 30, 40, 4},
+    {47.0, 48.0, 40, 50, 5},
+    {48.0, 49.0, 50, 60, 6},
+    {49.0, 50.0, 60, 70, 7},
+    {50.0, 51.0, 70, 80, 8},
+    {51.0, 52.0, 80, 90, 9},
+    {52.0, 54.0, 90, 100, 10},
+};
+
+// ================== 60V 电池 ==================
+const BatterySOC_t battery_table_60V[] = {
+    {50.0, 51.5, 0, 10, 1},
+    {51.5, 53.0, 10, 20, 2},
+    {53.0, 54.5, 20, 30, 3},
+    {54.5, 56.0, 30, 40, 4},
+    {56.0, 57.5, 40, 50, 5},
+    {57.5, 59.0, 50, 60, 6},
+    {59.0, 60.5, 60, 70, 7},
+    {60.5, 62.0, 70, 80, 8},
+    {62.0, 63.5, 80, 90, 9},
+    {63.5, 65.0, 90, 100, 10},
+};
+
+// ================== 72V 电池 ==================
+const BatterySOC_t battery_table_72V[] = {
+    {60.0, 61.5, 0, 10, 1},
+    {61.5, 63.0, 10, 20, 2},
+    {63.0, 64.5, 20, 30, 3},
+    {64.5, 66.0, 30, 40, 4},
+    {66.0, 67.5, 40, 50, 5},
+    {67.5, 69.0, 50, 60, 6},
+    {69.0, 70.5, 60, 70, 7},
+    {70.5, 72.0, 70, 80, 8},
+    {72.0, 73.5, 80, 90, 9},
+    {73.5, 74.4, 90, 100, 10},
+};
+
+static inline float Lerp(float y1, float y2, float t)
+{
+    return y1 + (y2 - y1) * t;
+}
+
+BatteryResult_t Get_Battery_SOC(float voltage, int system_voltage)
+{
+    const BatterySOC_t *table = NULL;
+    size_t table_size = 0;
+
+    switch (system_voltage)
+    {
+    case 36:
+        table = battery_table_36V;
+        table_size = sizeof(battery_table_36V) / sizeof(battery_table_36V[0]);
+        break;
+    case 43:
+        table = battery_table_43V;
+        table_size = sizeof(battery_table_43V) / sizeof(battery_table_43V[0]);
+        break;
+    case 48:
+        table = battery_table_48V;
+        table_size = sizeof(battery_table_48V) / sizeof(battery_table_48V[0]);
+        break;
+    case 52:
+        table = battery_table_52V;
+        table_size = sizeof(battery_table_52V) / sizeof(battery_table_52V[0]);
+        break;
+    case 60:
+        table = battery_table_60V;
+        table_size = sizeof(battery_table_60V) / sizeof(battery_table_60V[0]);
+        break;
+    case 72:
+        table = battery_table_72V;
+        table_size = sizeof(battery_table_72V) / sizeof(battery_table_72V[0]);
+        break;
+    default:
+        return (BatteryResult_t){.soc = -1, .level = -1};
+    }
+
+    for (size_t i = 0; i < table_size; i++)
+    {
+        if (voltage >= table[i].v_min && voltage <= table[i].v_max)
+        {
+            float ratio = (voltage - table[i].v_min) / (table[i].v_max - table[i].v_min);
+            BatteryResult_t result;
+            result.level = table[i].level;
+            result.soc = Lerp(table[i].soc_min, table[i].soc_max, ratio);
+            return result;
+        }
+    }
+
+    return (BatteryResult_t){.soc = -1, .level = -1};
+}
 /**
  * @brief Calculate the distance traveled based on speed and time.
  *
@@ -193,6 +331,195 @@ void calculate_battery_soc_ex(uint32_t voltage_mV,
         rmax100 = 65535;
     *out_range_max_100m = (uint16_t)rmax100;
 }
+
+void calculate_battery_soc_ex_v2(uint32_t rated_voltage_mV,
+                                 uint32_t capacity_mAh,
+                                 uint32_t trip_odo_m,
+                                 float consumption_Wh_per_km,
+                                 float safety_reserve_ratio,
+                                 float avg_speed_kph,
+                                 int32_t current_mA,                // 新：实时放电电流，正为放电（mA）
+                                 uint32_t internal_resistance_mohm, // 新：包内阻，毫欧 (mΩ)
+                                 uint16_t *out_power_w,
+                                 uint16_t *out_soc_pct,
+                                 uint16_t *out_range_100m,
+                                 uint16_t *out_range_max_100m,
+                                 uint16_t *out_voltage_mV) // 新：输出估算端电压 (mV)
+{
+    if (!out_power_w || !out_soc_pct || !out_range_100m || !out_range_max_100m || !out_voltage_mV)
+        return;
+
+    // --- 原有输入单位兼容处理 ---
+    if (rated_voltage_mV < 1000)
+        rated_voltage_mV *= 100;
+    if (capacity_mAh < 1000)
+        capacity_mAh *= 100;
+
+    if (consumption_Wh_per_km <= 0.01f)
+        consumption_Wh_per_km = 18.0f;
+    if (safety_reserve_ratio < 0.0f)
+        safety_reserve_ratio = 0.0f;
+    if (safety_reserve_ratio > 0.5f)
+        safety_reserve_ratio = 0.5f;
+
+    // --- 能量与 SOC（保持原算法的里程→能量推算） ---
+    double capacity_Wh = (rated_voltage_mV * (double)capacity_mAh) / 1000000.0;
+    double usable_Wh = capacity_Wh * (1.0 - safety_reserve_ratio);
+
+    double used_km = trip_odo_m / 1000.0;
+    double used_Wh = used_km * consumption_Wh_per_km;
+    double remain_Wh = usable_Wh - used_Wh;
+    if (remain_Wh < 0.0)
+        remain_Wh = 0.0;
+
+    double soc_f = (usable_Wh > 0.0) ? (remain_Wh / usable_Wh) * 100.0 : 0.0;
+    if (soc_f > 100.0)
+        soc_f = 100.0;
+
+    double full_range_km = (usable_Wh > 0.0) ? (usable_Wh / consumption_Wh_per_km) : 0.0;
+    double remain_range_km = (remain_Wh > 0.0) ? (remain_Wh / consumption_Wh_per_km) : 0.0;
+
+    // --- 功率估算（同原） ---
+    uint16_t power_w = 0;
+    if (avg_speed_kph > 0.0f)
+    {
+        double p = consumption_Wh_per_km * avg_speed_kph;
+        if (p < 0.0)
+            p = 0.0;
+        if (p > 65535.0)
+            p = 65535.0;
+        power_w = (uint16_t)(p + 0.5);
+    }
+    *out_power_w = power_w;
+    *out_soc_pct = (uint16_t)(soc_f + 0.5);
+
+    uint32_t r100 = (uint32_t)(remain_range_km * 10.0 + 0.5);
+    if (r100 > 65535)
+        r100 = 65535;
+    *out_range_100m = (uint16_t)r100;
+
+    uint32_t rmax100 = (uint32_t)(full_range_km * 10.0 + 0.5);
+    if (rmax100 > 65535)
+        rmax100 = 65535;
+    *out_range_max_100m = (uint16_t)rmax100;
+
+    // --- 新：计算 OCV (per cell) 与 串数 ---
+    double v_cell_min = 3.0; // 可调整
+    double v_cell_max = 4.2; // 可调整
+    double v_cell_nom = 3.7; // 用于估算串数
+
+    int n_cell = (int)((rated_voltage_mV / 1000.0) / v_cell_nom + 0.5);
+    if (n_cell < 1)
+        n_cell = 1;
+
+    double soc_ratio = soc_f / 100.0;
+    // 简单线性 OCV，若需精确请替换为查表/拟合函数
+    double v_cell_ocv = v_cell_min + (v_cell_max - v_cell_min) * soc_ratio;
+    double vpack_ocv = v_cell_ocv * n_cell;
+
+    // --- 新：考虑内阻压降计算端电压（terminal voltage） ---
+    // internal_resistance_mohm: 毫欧 (mΩ)
+    // current_mA: mA，正为放电（电流离开电池）
+    double I_A = ((double)current_mA) / 1000.0;
+    double R_ohm = ((double)internal_resistance_mohm) / 1000.0; // mΩ -> Ω
+    double v_drop = I_A * R_ohm;                                // V
+
+    double vpack_terminal = vpack_ocv - v_drop;
+
+    // 下限保护：不小于各单体最低允许电压总和
+    double vpack_min = v_cell_min * n_cell;
+    if (vpack_terminal < vpack_min)
+        vpack_terminal = vpack_min;
+
+    // 上限保护（OCV 不应超过充满电OCV）
+    double vpack_max = v_cell_max * n_cell;
+    if (vpack_terminal > vpack_max)
+        vpack_terminal = vpack_max;
+
+    // 输出端电压（mV）
+    double v_mV = vpack_terminal * 1000.0;
+    if (v_mV < 0.0)
+        v_mV = 0.0;
+    if (v_mV > 0xFFFFFFFFu)
+        v_mV = 0xFFFFFFFFu;
+
+    if (!(v_mV >= 0.0 && v_mV < 4e5)) // 合理范围，比如 <400V
+        v_mV = 0.0;
+    *out_voltage_mV = (uint16_t)(v_mV / 100 + 0.5);
+}
+
+void calculate_battery_soc_voltage_only(uint32_t constant_voltage_mV, // 满电电压 (mV)
+                                        uint32_t voltage_mV,          // 实时电压 (mV)
+                                        uint32_t capacity_mAh,        // 电池额定容量 (mAh)
+                                        uint32_t trip_odo_m,          // 已行驶距离 (m)
+                                        float consumption_Wh_per_km,  // 单位能耗 (Wh/km)
+                                        float safety_reserve_ratio,   // 安全余量 0~0.5
+                                        float avg_speed_kph,
+                                        uint16_t *out_power_w,
+                                        uint16_t *out_soc_pct,
+                                        uint16_t *out_range_100m,
+                                        uint16_t *out_range_max_100m)
+{
+    if (!out_power_w || !out_soc_pct || !out_range_100m || !out_range_max_100m)
+        return;
+
+    // 规范化参数
+    if (consumption_Wh_per_km <= 0.01f)
+        consumption_Wh_per_km = 18.0f;
+    if (safety_reserve_ratio < 0.0f)
+        safety_reserve_ratio = 0.0f;
+    if (safety_reserve_ratio > 0.5f)
+        safety_reserve_ratio = 0.5f;
+
+    // ---------- SOC 由实时电压计算 ----------
+    double soc = (double)voltage_mV / (double)constant_voltage_mV;
+    if (soc < 0.0)
+        soc = 0.0;
+    if (soc > 1.0)
+        soc = 1.0;
+    *out_soc_pct = (uint16_t)(soc * 100.0 + 0.5);
+
+    // ---------- 电池总能量 & 可用能量 ----------
+    double capacity_Wh = (constant_voltage_mV * (double)capacity_mAh) / 1000000.0;
+    double usable_Wh = capacity_Wh * (1.0 - safety_reserve_ratio);
+
+    // ---------- 剩余能量根据里程消耗 ----------
+    double used_km = trip_odo_m / 1000.0;
+    double used_Wh = used_km * consumption_Wh_per_km;
+    if (used_Wh < 0.0)
+        used_Wh = 0.0;
+    double remain_Wh = usable_Wh - used_Wh;
+    if (remain_Wh < 0.0)
+        remain_Wh = 0.0;
+
+    // ---------- 剩余里程 ----------
+    double full_range_km = (consumption_Wh_per_km > 0.0) ? (usable_Wh / consumption_Wh_per_km) : 0.0;
+    double remain_range_km = (consumption_Wh_per_km > 0.0) ? (remain_Wh / consumption_Wh_per_km) : 0.0;
+
+    uint32_t r100 = (uint32_t)(remain_range_km * 10.0 + 0.5); // 100m单位
+    if (r100 > 65535)
+        r100 = 65535;
+    *out_range_100m = (uint16_t)r100;
+
+    uint32_t rmax100 = (uint32_t)(full_range_km * 10.0 + 0.5); // 100m单位
+    if (rmax100 > 65535)
+        rmax100 = 65535;
+    *out_range_max_100m = (uint16_t)rmax100;
+
+    // ---------- 功率估算 ----------
+    uint16_t power_w = 0;
+    if (avg_speed_kph > 0.0f)
+    {
+        double p = consumption_Wh_per_km * avg_speed_kph;
+        if (p < 0.0)
+            p = 0.0;
+        if (p > 65535)
+            p = 65535;
+        power_w = (uint16_t)(p + 0.5);
+    }
+    *out_power_w = power_w;
+}
+
 /*******************************************************************************
  * CRC Calculation
  *******************************************************************************/
@@ -419,6 +746,61 @@ bool check_encoded_version_valid(uint32_t encoded_version)
 }
 
 /**
+ * @brief 检查字符数组是否全部为数字
+ *
+ * @param str    字符数组指针
+ * @param len    检查长度
+ * @return true  全部是数字
+ * @return false 含有非数字字符
+ */
+bool is_all_digits(const char *str, size_t len)
+{
+    if (str == NULL || len == 0)
+        return false;
+
+    for (size_t i = 0; i < len; i++)
+    {
+        if (str[i] == '\0')
+        {
+            // 遇到 '\0' 直接认为后续为空，返回 true
+            return true;
+        }
+        if (!isdigit((unsigned char)str[i]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool is_all_digits_2(const char *str, size_t len)
+{
+    if (!str)
+        return false;
+
+    if (len == 0)
+    {
+        // 遍历 C 字符串直到 '\0'
+        while (*str)
+        {
+            if (!isdigit((unsigned char)*str))
+                return false;
+            str++;
+        }
+        return true;
+    }
+    else
+    {
+        // 遍历已知长度数组
+        for (size_t i = 0; i < len; i++)
+        {
+            if (!isdigit((unsigned char)str[i]))
+                return false;
+        }
+        return true;
+    }
+}
+/**
  * Extracts and encodes version information from a firmware file name.
  * Expected file name format example: "mcu_202506141612_100.oupg"
  *
@@ -472,13 +854,9 @@ uint32_t decode_version_from_filename(const char *filepath)
     strncpy(version_str, underscore + 1, 3);
 
     // Step 7: Validate version code is numeric
-    for (int i = 0; i < 3; ++i)
-    {
-        if (!isdigit((unsigned char)version_str[i]))
-            return 0;
-    }
-
-    uint8_t version_code = atoi(version_str); // VVV
+    uint16_t version_code = 0;
+    if (is_all_digits(version_str, sizeof(version_str)))
+        version_code = atoi(version_str); // VVV
 
     // Step 8: Encode all components into a compact 32-bit value
     return encode_datetime_version(year, month, day, hour, minute, version_code);
@@ -716,7 +1094,16 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     fseek(f, file_size - sizeof(meta_info_t), SEEK_SET);
     if (fread(&meta, 1, sizeof(meta_info_t), f) == sizeof(meta_info_t))
     {
-        if (meta.bank1.magic == APP_MATA_INFO_MAGIC && meta.bank2.magic == APP_MATA_INFO_MAGIC)
+        LOG_LEVEL("target_bank_offset:%08x\r\n ", target_bank_offset);
+        LOG_LEVEL("bank0.magic:%08x \r\n ", meta.bank0.magic);
+        LOG_LEVEL("bank1.magic:%08x \r\n ", meta.bank1.magic);
+        LOG_LEVEL("bank2.magic:%08x \r\n ", meta.bank2.magic);
+
+        if (meta.bank0.magic == APP_MATA_INFO_MAGIC && meta.bank1.magic == APP_MATA_INFO_MAGIC && meta.bank2.magic == APP_MATA_INFO_MAGIC)
+        {
+            has_valid_meta = 1;
+        }
+        else if (meta.bank0.magic == APP_MATA_INFO_MAGIC && meta.bank1.magic == APP_MATA_INFO_MAGIC)
         {
             has_valid_meta = 1;
         }
@@ -726,9 +1113,15 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
             return info;
         }
 
-        LOG_LEVEL("bank1.model: %08x bank2.model: %08x model_number:%08x\n ", meta.bank1.model, meta.bank2.model, model_number);
+        LOG_LEVEL("bank0.model: %08x model_number:%08x\r\n ", meta.bank0.model, model_number);
+        LOG_LEVEL("bank1.model: %08x model_number:%08x\r\n ", meta.bank1.model, model_number);
+        LOG_LEVEL("bank2.model: %08x model_number:%08x\r\n ", meta.bank2.model, model_number);
 
-        if (meta.bank1.model != model_number || meta.bank2.model != model_number)
+        LOG_LEVEL("bank0.size: %08x start_address:%08x\r\n ", meta.bank0.size, meta.bank0.start_address);
+        LOG_LEVEL("bank1.size: %08x start_address:%08x\r\n ", meta.bank1.size, meta.bank1.start_address);
+        LOG_LEVEL("bank2.size: %08x start_address:%08x\r\n ", meta.bank2.size, meta.bank2.start_address);
+
+        if ((meta.bank0.model != model_number) && (meta.bank1.model != model_number) && (meta.bank2.model != model_number))
         {
             fclose(f);
             return info;
@@ -736,8 +1129,9 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     }
 
     // Step 3: Read first 8 bytes from target offset (SP + Reset Vector)
-    if (fseek(f, target_bank_offset, SEEK_SET) != 0)
+    if (fseek(f, target_bank_offset, SEEK_SET) != 0) // goto target address
     {
+        LOG_LEVEL("invalid target offset\r\n ");
         fclose(f);
         return info;
     }
@@ -745,12 +1139,15 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     uint8_t header_buf[8];
     if (fread(header_buf, 1, 8, f) != 8)
     {
+        LOG_LEVEL("invalid reset vector\r\n ");
         fclose(f);
         return info;
     }
-
+    // get target reset address
     uint32_t sp = header_buf[0] | (header_buf[1] << 8) | (header_buf[2] << 16) | (header_buf[3] << 24);
     uint32_t reset_vector = header_buf[4] | (header_buf[5] << 8) | (header_buf[6] << 16) | (header_buf[7] << 24);
+
+    LOG_LEVEL("reset_vector: %08x\r\n ", reset_vector);
 
     // Step 4: Validate stack pointer and reset handler address range
     if (sp < 0x20000000 || sp > 0x40000000 ||
@@ -781,7 +1178,7 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     }
 
     // Step 6: Calculate CRC from target offset to end of valid range
-    if (fseek(f, target_bank_offset, SEEK_SET) != 0)
+    if (fseek(f, target_bank_offset, SEEK_SET) != 0) // goto target address for caculate crc
     {
         fclose(f);
         return info;
@@ -809,7 +1206,10 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     info.file_type = FILE_TYPE_BIN;
     info.file_size = valid_size;
     info.file_version = decode_version_from_filename(path_filename);
-    LOG_LEVEL("bank1.crc: %08x bank2.crc: %08x re-crc:%08x\r\n ", meta.bank1.crc32, meta.bank2.crc32, info.file_crc_32);
+    LOG_LEVEL("bank0.crc: %08x\r\n", meta.bank0.crc32);
+    LOG_LEVEL("bank1.crc: %08x\r\n", meta.bank1.crc32);
+    LOG_LEVEL("bank2.crc: %08x\r\n", meta.bank2.crc32);
+    LOG_LEVEL("local.crc: %08x\r\n", info.file_crc_32);
     return info;
 }
 
@@ -891,7 +1291,7 @@ file_info_t parse_firmware_file(uint32_t model_number, uint32_t target_bank_offs
 {
     file_info_t info = {.file_type = FILE_TYPE_UNKNOWN};
     LOG_LEVEL("parse firmware file:%s\r\n", filename);
-    LOG_LEVEL("parse firmware file target_address:%08x\r\n", target_bank_offset);
+    LOG_LEVEL("parse firmware file target offset address:%08x\r\n", target_bank_offset);
 
     info = is_valid_hex_file(filename);
     if (info.file_type == FILE_TYPE_HEX)
@@ -939,11 +1339,12 @@ int copy_file_to_tmp(const char *src_path, const char *filename, char *dst_path,
 
 int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_path_size)
 {
+
 #ifdef PLATFORM_LINUX_RISC
     DIR *dir = opendir(dir_path);
-    if (!dir)
+    if (!dir || out_path_size < 64)
     {
-        LOG_LEVEL("dir not exitst:%s\r\n", dir_path);
+        LOG_LEVEL("dir not exitst:%s mini size:%d\r\n", dir_path, out_path_size);
         return 0;
     }
 
@@ -955,14 +1356,15 @@ int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_
             continue;
         }
 
-        // if (strlen(entry->d_name) > out_path_size -10)
-        //{
-        //     continue;
-        // }
+        if (strlen(entry->d_name) > out_path_size - 64)
+        {
+            LOG_LEVEL("entry->d_name too long:%s\r\n", entry->d_name);
+            continue;
+        }
 
         if (fnmatch("*.oupg", entry->d_name, 0) == 0)
         {
-            char full_path[64];
+            char full_path[255];
             snprintf(full_path, sizeof(full_path), "%s/%s", dir_path, entry->d_name);
             if (copy_file_to_tmp(full_path, entry->d_name, out_path, out_path_size) >= 0)
             {
@@ -977,11 +1379,40 @@ int search_and_copy_oupg_files(const char *dir_path, char *out_path, size_t out_
     return 0; // Not found
 }
 
-int file_exists(const char *file_path_name)
+bool is_file_exists(const char *file_path_name)
 {
-#ifdef PLATFORM_LINUX_RISC
+    if (file_path_name == NULL)
+        return false;
+
+#if defined(__linux__) || defined(PLATFORM_LINUX_RISC)
     return access(file_path_name, F_OK) == 0;
+
+#elif defined(_WIN32)
+    return _access(file_path_name, 0) == 0;
+
 #else
-    return 0;
+    // 其它系统（如 RTOS、裸机）
+    (void)file_path_name;
+    return false;
 #endif
+}
+
+bool is_str_empty(const char *s)
+{
+    if (s == NULL)
+    {
+        return true; // NULL 指针
+    }
+    if (s[0] == '\0')
+    {
+        return true; // 空字符串
+    }
+    return false;
+}
+
+bool is_struct_equal(const void *a, const void *b, size_t size)
+{
+    if (a == NULL || b == NULL)
+        return false;
+    return memcmp(a, b, size) == 0;
 }
