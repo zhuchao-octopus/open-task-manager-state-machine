@@ -190,6 +190,8 @@ typedef enum
 
 #define MSG_GROUP_CAR MSG_GROUP_11 /**< Alias for Car Information Group */
 
+#define MSG_GROUP_PASSTHROUGH  MSG_GROUP_15
+
 /****************************************************************************************
  *                                       ENDIF
  ****************************************************************************************/

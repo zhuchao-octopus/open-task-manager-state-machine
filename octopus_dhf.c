@@ -8,9 +8,9 @@
  * Created on   : 2025-10-13
  ******************************************************************************/
 
-#include "Octopus_dhf.h"
-#include "Octopus_sif.h"
-#include "Octopus_utils.h"
+#include "octopus_dhf.h"
+#include "octopus_sif.h"
+#include "octopus_utils.h"
 #include "octopus_tickcounter.h" // Include tick counter for timing operations
 #include "octopus_msgqueue.h"    // Include message queue header for task communication
 #include "octopus_message.h"     // Include message id for inter-task communication
