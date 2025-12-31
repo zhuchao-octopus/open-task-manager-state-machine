@@ -109,7 +109,7 @@ typedef enum
     MSG_IPC_CMD_CAR_SET_METER,
     MSG_IPC_CMD_CAR_SET_BATTERY,
     MSG_IPC_CMD_CAR_SETTING_SAVE, /**< Save Car Settings */
-    MSG_IPC_CMD_USER_CUSTOMIZE
+    MSG_IPC_CMD_USER_CUSTOMIZE = 0xFF
 } Message_Group_11_Cmd_Id;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,7 +154,7 @@ typedef enum
     MSG_OTSM_CMD_MCU_VERSION,
     MSG_OTSM_CMD_MCU_UPDATING,
     MSG_OTSM_CMD_MCU_REQUEST_UPGRADING,
-    MSG_OTSM_CMD_MCU_USER_CUSTOMIZE
+    MSG_OTSM_CMD_MCU_USER_CUSTOMIZE = 0xFF
 } otsm_msg_cmd_t;
 
 /****************************************************************************************
@@ -190,7 +190,7 @@ typedef enum
 
 #define MSG_GROUP_CAR MSG_GROUP_11 /**< Alias for Car Information Group */
 
-#define MSG_GROUP_PASSTHROUGH  MSG_GROUP_15
+#define MSG_GROUP_PASSTHROUGH MSG_GROUP_15
 
 /****************************************************************************************
  *                                       ENDIF

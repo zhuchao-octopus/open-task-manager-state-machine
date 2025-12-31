@@ -241,10 +241,10 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
         switch (payload->frame_cmd)
         {
         case FRAME_CMD_CARINFOR_INDICATOR:
-            if (payload->data_len == sizeof(carinfo_indicator_t))
+            if (payload->data_len <= sizeof(carinfo_indicator_t))
             {
                 memcpy(&lt_carinfo_indicator, payload->data, payload->data_len);
-                send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_INDICATOR_INFO, 0);
+                send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_INDICATOR_INFO, payload->data_len);
             }
             else
             {
@@ -253,10 +253,10 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             break;
 
         case FRAME_CMD_CARINFOR_METER:
-            if (payload->data_len == sizeof(carinfo_meter_t))
+            if (payload->data_len <= sizeof(carinfo_meter_t))
             {
                 memcpy(&lt_carinfo_meter, payload->data, payload->data_len);
-                send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_METER_INFO, 0);
+                send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_METER_INFO, payload->data_len);
             }
             else
             {
@@ -265,10 +265,10 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             break;
 
         case FRAME_CMD_CARINFOR_BATTERY:
-            if (payload->data_len == sizeof(carinfo_battery_t))
+            if (payload->data_len <= sizeof(carinfo_battery_t))
             {
                 memcpy(&lt_carinfo_battery, payload->data, payload->data_len);
-                send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_BATTERY_INFO, 0);
+                send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_BATTERY_INFO, payload->data_len);
             }
             else
             {
@@ -276,10 +276,10 @@ bool meter_module_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t 
             }
             break;
         case FRAME_CMD_CARINFOR_ERROR:
-            if (payload->data_len == sizeof(carinfo_error_t))
+            if (payload->data_len <= sizeof(carinfo_error_t))
             {
                 memcpy(&lt_carinfo_error, payload->data, payload->data_len);
-                send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_ERROR_INFO, 0);
+                send_message(TASK_MODULE_IPC, MSG_OTSM_DEVICE_CAR_EVENT, MSG_IPC_CMD_CAR_GET_ERROR_INFO, payload->data_len);
             }
             else
             {
@@ -433,7 +433,7 @@ void task_car_controller_msg_handler(void)
 // ERROR_CODE_LAMP_ABNORMALITY = 0X23,                          // 大灯故障
 // ERROR_CODE_LAMP_SENSOR_ABNORMALITY = 0X24,                   // 大灯传感器故障
 // ERROR_CODE_COMMUNICATION_ABNORMALITY = 0X30,                 // 通讯故障
-//  添加错误代码
+// 添加错误代码
 
 void carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately)
 {

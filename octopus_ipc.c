@@ -215,7 +215,7 @@ void task_ipc_running(void)
         case MSG_IPC_CMD_CAR_GET_BATTERY_INFO:
         default:
             // LOG_LEVEL("msg->id=%d param1=%d,param2=%d\r\n", msg->id, msg->param1,msg->param2);
-            ipc_notify_message_to_client(MSG_GROUP_CAR, msg->param1, NULL, 0);
+            ipc_notify_message_to_client(MSG_GROUP_CAR, msg->param1, NULL, msg->param2);
             break;
         }
         break;
@@ -229,10 +229,10 @@ void task_ipc_running(void)
             break;
 
         case MSG_OTSM_CMD_MCU_UPDATING:
-            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_UPDATING, NULL, 0);
+            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_UPDATING, NULL, msg->param2);
             break;
         case MSG_OTSM_CMD_MCU_VERSION:
-            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_VERSION, NULL, 0);
+            ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_VERSION, NULL, msg->param2);
             break;
         }
 
@@ -469,7 +469,7 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
                           lt_carinfo_battery.range, lt_carinfo_battery.range_max);
             }
 
-            if (lt_carinfo_battery.abs_charge_state >= 255)
+            if (lt_carinfo_battery.charge_state >= 255)
             {
                 system_meter_infor.trip_odo = 0;
             }
@@ -516,7 +516,7 @@ void ipc_notify_message_from_client(uint16_t msg_grp, uint16_t msg_id, const uin
     LOG_BUFF_LEVEL(data, length);
     if (data != NULL)
     {
-        ptl_build_frame(SOC_TO_MCU_MOD_IPC, msg_id, data, length, ptl_proc_buff.buff);
+        ptl_build_frame(msg_grp, msg_id, data, length, ptl_proc_buff.buff);
         ptl_send_buffer(ptl_proc_buff.channel, ptl_proc_buff.buff, ptl_proc_buff.size);
         // send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, MSG_OTSM_CMD_MCU_USER_CUSTOMIZE, 0);
     }

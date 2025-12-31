@@ -190,8 +190,8 @@ typedef struct
     uint8_t drive_mode;  // Drive mode selection (0 = eco, 1 = normal, etc.)
     uint8_t start_mode;  // Start mode setting (e.g., throttle/pedal)
 
-    uint8_t reverse;
-    uint8_t reserve; // Wi-Fi indicator status (1 = connected)
+    uint8_t reserve1;
+    uint8_t reserve2; // Wi-Fi indicator status (1 = connected)
 } __attribute__((aligned(4))) carinfo_indicator_t;
 
 typedef struct
@@ -209,7 +209,13 @@ typedef struct
     uint8_t gear;           // Current gear level (0 = Neutral, 1–N)
     uint8_t gear_level_max; // Maximum selectable gear level
     uint8_t wheel_diameter; // Wheel diameter (unit: inch)
-    uint8_t reserve;
+    uint8_t reserve1;
+    uint8_t reserve2;
+    uint8_t reserve3;
+    uint8_t reserve4;
+    uint8_t reserve5;
+    uint8_t reserve6;
+    uint8_t reserve7;
 } __attribute__((packed, aligned(4))) carinfo_meter_t;
 
 typedef struct
@@ -222,11 +228,15 @@ typedef struct
     uint16_t range_max;    // Estimated maximum range (unit: 100 meters)
     uint16_t throttle_pwm; // Throttle signal PWM duty (0–1000 for 0–100%)
 
-    uint8_t current_limit;    // Current limit, range: 6~50A, default: 12A, unit: 1A
-    uint8_t rel_charge_state; // Relative charge state (e.g., fast/slow charging, enum value)
-    uint8_t abs_charge_state; // Absolute charge state (e.g., charging, full, fault, enum value)
-    uint8_t reserve1;
+    uint8_t current_limit; // Current limit, range: 6~50A, default: 12A, unit: 1A
+    uint8_t charge_state;  // Relative charge state (e.g., fast/slow charging, enum value)
+
+    uint16_t reserve1;
     uint16_t reserve2;
+    uint16_t reserve3;
+    uint16_t reserve4;
+    uint16_t reserve5;
+    uint16_t reserve6;
 } __attribute__((aligned(4))) carinfo_battery_t;
 
 // 故障信息
@@ -441,7 +451,7 @@ extern "C"
     // void car_indicator_proc_turn_signal(void);
     // void car_meter_proc_speed_rpm(void);
     void task_car_reset_trip(void);
-    bool task_car_has_error_code(void);
+    bool task_carinfo_has_error_code(void);
 
     void battary_update_simulate_infor(void);
     void carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately);
