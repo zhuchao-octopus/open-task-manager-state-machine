@@ -117,7 +117,6 @@ void task_vehicle_init_running(void)
     lt_carinfo_meter.speed_max = 0;
     lt_carinfo_meter.speed_average = 0;
     lt_carinfo_indicator.width_lamp = 0;
-    // lt_carinfo_meter.wheel_diameter = SETTING_WHEEL_27_Inch;
 }
 
 void task_vehicle_start_running(void)
@@ -128,6 +127,7 @@ void task_vehicle_start_running(void)
     lt_carinfo_indicator.ready = 0; // ready flag
     lt_carinfo_meter.trip_distance = 0;
     lt_carinfo_meter.trip_time = 0;
+	  //lt_carinfo_meter.trip_odo = 1000;
 #endif
 }
 
@@ -200,7 +200,9 @@ bool meter_module_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uin
 
         case FRAME_CMD_CARINFOR_BATTERY:
 #ifdef TEST_LOG_DEBUG_VEHICLE
-            LOG_LEVEL("lt_carinfo_battery.voltage=%d lt_carinfo_battery.current=%d\n", lt_carinfo_battery.voltage, lt_carinfo_battery.current);
+						lt_carinfo_battery.reserve5 = 0x5566;
+            //LOG_LEVEL("lt_carinfo_battery.voltage=%d lt_carinfo_battery.current=%d\n", lt_carinfo_battery.voltage, lt_carinfo_battery.current);
+				   	LOG_BUFF_LEVEL((uint8_t *)&lt_carinfo_battery, sizeof(carinfo_battery_t));
 #endif
             ptl_build_frame(MCU_TO_SOC_MOD_CARINFOR, FRAME_CMD_CARINFOR_BATTERY, (uint8_t *)&lt_carinfo_battery, sizeof(carinfo_battery_t), buff);
             return true;
@@ -306,7 +308,7 @@ void task_car_reset_trip(void)
 void battary_update_simulate_infor(void)
 {
     lt_carinfo_battery.reserve2 = adc_get_value_v();
-#if 1
+#if 0
     calculate_battery_soc_voltage_only(lt_carinfo_battery.voltage * 100,
                                        (lt_carinfo_battery.reserve2 * 100),
                                        lt_carinfo_battery.current * 100,
@@ -334,7 +336,7 @@ void task_car_controller_msg_handler(void)
     {
         StopTickCounter(&l_t_msg_car_trip_timer);
     }
-
+    ///LOG_LEVEL("lt_carinfo_meter.trip_odo=%d\r\n", lt_carinfo_meter.trip_odo);
     Msg_t *msg = get_message(TASK_MODULE_CAR_INFOR);
     if (msg->msg_id == NO_MSG)
     {
@@ -358,7 +360,7 @@ void task_car_controller_msg_handler(void)
 
             system_meter_infor.trip_odo = system_meter_infor.trip_odo + delta_distance;
             system_meter_infor.speed_average = lt_carinfo_meter.speed_average;
-
+						
             battary_update_simulate_infor();
             RestartTickCounter(&l_t_msg_car_trip_timer);
         }
@@ -433,7 +435,7 @@ void task_car_controller_msg_handler(void)
 // ERROR_CODE_LAMP_ABNORMALITY = 0X23,                          // 大灯故障
 // ERROR_CODE_LAMP_SENSOR_ABNORMALITY = 0X24,                   // 大灯传感器故障
 // ERROR_CODE_COMMUNICATION_ABNORMALITY = 0X30,                 // 通讯故障
-//  添加错误代码
+// 添加错误代码
 
 void carinfo_add_error_code(ERROR_CODE error_code, bool code_append, bool update_immediately)
 {

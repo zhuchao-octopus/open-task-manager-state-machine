@@ -37,8 +37,8 @@
 ///////////////////////////////////////////////////////////////////////////////////
 #define TASK_MANAGER_STATE_MACHINE_MCU_APP
 // #define CUSTOMER_MODEL_EZ_406
-// #define CUSTOMER_MODEL_RL_500
-#define CUSTOMER_MODEL_CA_500
+ #define CUSTOMER_MODEL_RL_500
+// #define CUSTOMER_MODEL_CA_500
 // #define CUSTOMER_MODEL_DH_500
 //#define CUSTOMER_MODEL_RONGJUE_500
 

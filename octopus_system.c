@@ -280,6 +280,7 @@ bool system_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ptl_a
                 system_power_onoff(true,MCU_POWER_REASON_BLE);
             }
             break;
+						
         case MSG_OTSM_CMD_BLE_DISCONNECTED:
 
             LOG_LEVEL("Got MSG_OTSM_CMD_BLE_DISCONNECTED prameter=%02x\r\n", payload->data[1]);
@@ -337,7 +338,7 @@ void system_event_message_handler(void)
             g_mcu_state = MCU_POWER_ST_ON;
         }
     }
-#ifdef MCU_LOW_POWER_MODE
+		#ifdef MCU_LOW_POWER_MODE
     else if (g_mcu_state == MCU_POWER_ST_LOWPOWER)
     {
         if (GetTickCounter(&l_t_msg_lowpower_wait_timer) > 1000 * 60)
@@ -345,7 +346,7 @@ void system_event_message_handler(void)
             system_mcu_goto_lowpower();
         }
     }
-#endif
+		#endif
 #endif
 
     Msg_t *msg = get_message(TASK_MODULE_SYSTEM);

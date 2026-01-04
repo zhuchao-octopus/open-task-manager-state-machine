@@ -194,7 +194,7 @@ void TaskManagerStateMachineInit(void)
     LOG_NONE("-----------------------------------------------------------------------------\r\n");
 #if defined(TASK_MANAGER_STATE_MACHINE_MCU) && defined(TASK_MANAGER_STATE_MACHINE_SYSTEM)
     system_set_mcu_status(MCU_POWER_ST_ON);
-		//system_event_acc_handler();
+	//system_event_acc_handler();
 #endif
 }
 

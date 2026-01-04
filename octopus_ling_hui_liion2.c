@@ -39,10 +39,13 @@ bool lhl2_ptl_receive_handler(upf_proc_buff_t *upf_proc_buff);
 void lhl2_ptl_tx_process(void);
 void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length);
 
-uint16_t get_wheel_radius_inch(void);
+uint16_t get_wheel_diameter_inch_x10(void);
 uint16_t get_geer_level(void);
+void lhl2_ptl_rx_test(void);
+
 
 void lhl2_ptl_test_carinfo_indicator(void);
+uint16_t calculate_speed_kph_x10(uint16_t round_ms);
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
@@ -80,28 +83,29 @@ void task_lhl2_ptl_assert_running(void)
     StartTickCounter(&lhl2_task_interval_ms);
     StartTickCounter(&lhl2_task_tx_interval_ms);
 
-    lt_carinfo_meter.wheel_diameter = SETTING_WHEEL_20_Inch;
-    lt_carinfo_meter.gear_level_max = SETTING_MAX_PAS_5_LEVEL;
-    lt_carinfo_meter.speed_limit = 255;
-    lt_carinfo_meter.gear = 0;
+    //lt_carinfo_meter.wheel_diameter = 25; //SETTING_WHEEL_18_Inch;
+    //lt_carinfo_meter.gear_level_max = SETTING_MAX_PAS_5_LEVEL;
+    //lt_carinfo_meter.speed_limit = 255;
+    //lt_carinfo_meter.gear = 0;
 
-    lt_carinfo_battery.voltage = 600;
-    lt_carinfo_battery.current = 175;
-    // lt_carinfo_battery.range_max = 60; // UINT16_MAX;
-    // lt_carinfo_battery.range = 60;
+    //lt_carinfo_battery.voltage = 600;
+    //lt_carinfo_battery.current = 175;
+    //lt_carinfo_battery.range_max = 60; // UINT16_MAX;
+    //lt_carinfo_battery.range = 60;
 
     lt_carinfo_indicator.cruise_control = true;
     lt_carinfo_indicator.start_poles = 1;
     lt_carinfo_indicator.motor_poles = 2;
     lt_carinfo_indicator.cruise_control = true;
-    // lt_carinfo_indicator.horn = true;
+    //lt_carinfo_indicator.horn = true;
+	  //calculate_speed_kph_x10(206);
 }
 
 void task_lhl2_ptl_running(void)
 {
     static uint8_t loop = 0;
     lhl2_ptl_tx_process();
-
+    //lhl2_ptl_rx_test();
     if (GetTickCounter(&lhl2_task_interval_ms) < 30)
     {
         return;
@@ -245,7 +249,7 @@ void lhl2_ptl_tx_process(void)
     lu_tx_buff[6] = lt_carinfo_indicator.motor_poles;
 
     // 轮径:（单位:0.1英寸）
-    uint16_t radius = get_wheel_radius_inch();
+    uint16_t radius = get_wheel_diameter_inch_x10();
     lu_tx_buff[7] = MK_MSB(radius);
     lu_tx_buff[8] = MK_LSB(radius);
 
@@ -417,7 +421,8 @@ bool lhl2_ptl_find_valid_frame(upf_proc_buff_t *upf_proc_buff)
 
 // 根据一圈所用时间（ms）计算车速（返回 km/h * 10）
 // 参数 round_ms: 一圈用时（毫秒）
-// get_wheel_radius_inch(): 返回轮毂半径，单位 0.1 英寸
+// get_wheel_diameter_inch_x10(): 返回轮毂直径，单位 0.1 英寸
+/*
 uint16_t calculate_speed_kph_x10(uint16_t round_ms)
 {
     if (round_ms == 0)
@@ -428,10 +433,25 @@ uint16_t calculate_speed_kph_x10(uint16_t round_ms)
     // 0.0254（英寸→米）
     // 3600（秒→小时）
     // 10（保留 1 位小数）
-    uint32_t wheel_r = get_wheel_radius_inch();                        // 半径，0.1 英寸
+    uint32_t wheel_r = get_wheel_diameter_inch();                        // 半径，0.1 英寸
     uint32_t speed_x10 = (wheel_r * 5748UL + round_ms / 2) / round_ms; // 四舍五入
-
+		
+    //LOG_LEVEL("wheel_diameter=%d,wheel_r=%d speed_x10=%d round_ms=%d\r\n",lt_carinfo_meter.wheel_diameter, wheel_r, speed_x10,round_ms);
     return (uint16_t)(speed_x10 / 10);
+}
+*/
+
+uint16_t calculate_speed_kph_x10(uint16_t round_ms)
+{
+    if (round_ms == 0)
+        return 0;
+    //round_ms = 206;
+    uint32_t wheel_d_x10 = get_wheel_diameter_inch_x10(); // 0.1 英寸
+
+    // 常数 = 287
+    uint32_t speed_x10 = (wheel_d_x10 * 287UL + round_ms / 2) / round_ms;
+
+    return (uint16_t)speed_x10;// * 10;
 }
 
 // #define  YONGJIU_WHEEL_Inch 284 //284,700C50C,700C的车圈直径为622毫米,理论直径?：622mm+(50mm×2)=722mm（约28.4英寸）
@@ -504,7 +524,84 @@ void lhl2_ptl_proc_valid_frame(uint8_t *data, uint16_t length) // RX
     // 断电刹把
     lt_carinfo_indicator.brake = (state2 & BIT_5) ? 1 : 0;
     // 充电状态
-    lt_carinfo_battery.rel_charge_state = (state2 & BIT_3) ? 1 : 0;
+    lt_carinfo_battery.charge_state = (state2 & BIT_3) ? 1 : 0;
+
+    lt_carinfo_indicator.ready = 1; //(state2 & BIT_6) ? 1 : 0; //---ready��
+
+    // mingnuo_4chin
+    if (((state1 & BIT_6) == 0) && ((state1 & BIT_5) == 0) && ((state1 & BIT_4) == 0) && ((state1 & BIT_3) == 0) && ((state1 & BIT_0) == 0) && ((state2 & BIT_6) == 0) && ((state2 & BIT_4) == 0))
+    {
+        carinfo_add_error_code(ERROR_CODE_NORMAL, true, false);
+        return;
+    }
+
+    if (state1 & BIT_6) // 霍尔传感器状态
+        carinfo_add_error_code(ERROR_CODE_HALLSENSOR_ABNORMALITY, state1 & BIT_6, false);
+
+    // 转把故障状态
+    if (state1 & BIT_5)
+        carinfo_add_error_code(ERROR_CODE_THROTTLE_HALLSENSOR_ABNORMALITY, state1 & BIT_5, false);
+
+    // 控制器故障状态
+    if (state1 & BIT_4)
+        carinfo_add_error_code(ERROR_CODE_CONTROLLER_ABNORMALITY, state1 & BIT_4, false);
+
+    // 欠压保护状态
+    if (state1 & BIT_3)
+        carinfo_add_error_code(ERROR_CODE_LOW_VOLTAGE_PROTECTION, state1 & BIT_3, false);
+
+    // 电机缺相
+    if (state1 & BIT_0)
+        carinfo_add_error_code(ERROR_CODE_MOTOR_ABNORMALITY, state1 & BIT_0, false);
+
+    // 助力传感器状态
+    if (state2 & BIT_6)
+    {
+        if (lt_carinfo_error.fault_sensor)
+            carinfo_add_error_code(ERROR_CODE_ASSIST_POWER_SENSOR_ABNORMALITY, state2 & BIT_6, false);
+    }
+
+    // 通讯故障
+    if (state2 & BIT_4)
+    {
+        lt_carinfo_indicator.ready = 0;
+        carinfo_add_error_code(ERROR_CODE_COMMUNICATION_ABNORMALITY, state2 & BIT_4, false);
+    }
+}
+
+void lhl2_ptl_rx_test(void) // RX
+{
+    uint8_t state1 = 0;
+    uint8_t state2 = 0;
+    uint16_t round = 206;
+
+    if (round <= 10 || round >= 3500) // 如果一圈的时间大于等于30S，认为车辆已经停止
+    {
+        lt_carinfo_meter.rpm = 0;
+        lt_carinfo_meter.speed_actual = 0;
+    }
+    else
+    {
+        lt_carinfo_meter.rpm = 60.0 * 1000 / round; // 245
+        // double radius = get_wheel_radius_inch();  //轮毂半径，单位：米  //0.33
+        // double w = rpm * (2.0 * PI_FLOAT / 60.0); //转换角速度，单位：弧度/秒  //25
+        // double v = w * radius;                    //线速度,单位：米/秒   //8.25
+        // double kph = (v * 3600.0 / 1000.0) * 10;  // 297
+        // double speed = kph * 1.618; //实物调试修正
+        lt_carinfo_meter.speed_actual = (uint32_t)calculate_speed_kph_x10(round);
+        // lt_carinfo_meter.speed_average = lt_carinfo_meter.speed_actual;
+    }
+
+    // 6KM巡航状态
+    lt_carinfo_indicator.walk_assist = (state1 & BIT_7) ? 1 : 0; //------ 接收车机来的助推
+    // 巡航状态
+    lt_carinfo_indicator.cruise_control = (state1 & BIT_2) ? 1 : 0;
+    // 车辆水平状态
+    lt_carinfo_indicator.horizontal_position = (state2 & BIT_7) ? 1 : 0;
+    // 断电刹把
+    lt_carinfo_indicator.brake = (state2 & BIT_5) ? 1 : 0;
+    // 充电状态
+    lt_carinfo_battery.charge_state = (state2 & BIT_3) ? 1 : 0;
 
     lt_carinfo_indicator.ready = 1; //(state2 & BIT_6) ? 1 : 0; //---ready��
 
@@ -559,14 +656,14 @@ uint8_t lhl2_ptl_checksum(uint8_t *data, uint8_t len)
     return sum;
 }
 
-uint16_t get_wheel_radius_inch(void)
+uint16_t get_wheel_diameter_inch_x10(void)
 {
-    if (lt_carinfo_meter.wheel_diameter >= SETTING_WHEEL_MAX)
+    //if (lt_carinfo_meter.wheel_diameter >= SETTING_WHEEL_MAX)
     {
-        return lt_carinfo_meter.wheel_diameter * 10;
+      return lt_carinfo_meter.wheel_diameter * 10;
     }
 
-    switch (lt_carinfo_meter.wheel_diameter)
+ /*   switch (lt_carinfo_meter.wheel_diameter)
     {
     case SETTING_WHEEL_16_Inch:
         return 160;
@@ -591,6 +688,7 @@ uint16_t get_wheel_radius_inch(void)
     }
 
     return 260;
+	*/
 }
 
 uint16_t get_geer_level(void)

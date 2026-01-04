@@ -48,7 +48,7 @@
  ******************************************************************************/
 static bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t param2, ptl_proc_buff_t *buff);
 static bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer);
-static void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
+static void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, uint8_t *data, uint16_t length);
 static void ipc_request_upgrade_mcu(Msg_t *msg);
 
 /*******************************************************************************
@@ -138,39 +138,7 @@ void task_ipc_running(void)
 
     Msg_t *msg = get_message(TASK_MODULE_IPC);
 
-#ifdef TASK_MANAGER_STATE_MACHINE_SOC
-    if (update_is_mcu_updating() && (msg->msg_id != MSG_OTSM_DEVICE_MCU_EVENT))
-    {
-        return;
-    }
-
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    if (msg->msg_id == NO_MSG)
-    {
-        if (!IsTickCounterStart(&l_t_msg_wait_500_timer))
-            StartTickCounter(&l_t_msg_wait_500_timer);
-
-        if ((GetTickCounter(&l_t_msg_wait_500_timer) >= l_t_callback_delay) && (l_t_callback_delay > 0))
-        {
-            if (l_u8_idle_swich > 0)
-            {
-                ipc_notify_message_to_client(MSG_GROUP_CAR, FRAME_CMD_CARINFOR_INDICATOR, NULL, 0);
-                l_u8_idle_swich = 0;
-            }
-            else
-            {
-                ipc_notify_message_to_client(MSG_GROUP_CAR, FRAME_CMD_CARINFOR_METER, NULL, 0);
-                l_u8_idle_swich = 1;
-            }
-
-            StartTickCounter(&l_t_msg_wait_500_timer);
-        }
-        return;
-    }
-    StopTickCounter(&l_t_msg_wait_500_timer);
-#endif
-    /////////////////////////////////////////////////////////////////////////////////////////////////////
-
     switch (msg->msg_id)
     {
     case MSG_OTSM_DEVICE_CAR_EVENT:
@@ -233,8 +201,8 @@ void task_ipc_running(void)
             ipc_notify_message_to_client(MSG_GROUP_MCU, MSG_IPC_CMD_MCU_VERSION, NULL, 0);
             break;
         }
-
         break;
+				
     case MSG_OTSM_DEVICE_KEY_EVENT:
     case MSG_OTSM_DEVICE_KEY_DOWN_EVENT:
     case MSG_OTSM_DEVICE_KEY_UP_EVENT:
@@ -440,25 +408,31 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
             return false;
 
         case FRAME_CMD_CAR_SET_INDICATOR:
-            if (payload->data_len >= sizeof(carinfo_indicator_t))
+            if (payload->data_len <= sizeof(carinfo_indicator_t))
             {
-                memcpy(&lt_carinfo_indicator, payload->data, sizeof(carinfo_indicator_t));
+                memcpy(&lt_carinfo_indicator, payload->data, payload->data_len);
                 // LOG_BUFF_LEVEL((uint8_t *)&lt_carinfo_indicator, sizeof(carinfo_indicator_t));
             }
             return false;
 
         case FRAME_CMD_CAR_SET_METER:
-            if (payload->data_len >= sizeof(carinfo_meter_t))
+            if (payload->data_len <= sizeof(carinfo_meter_t))
             {
-                memcpy(&lt_carinfo_meter, payload->data, sizeof(carinfo_meter_t));
-                // LOG_BUFF_LEVEL((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
+							  //lt_carinfo_meter.wheel_diameter = ((carinfo_meter_t)(payload->data))->
+                memcpy(&lt_carinfo_meter, payload->data, payload->data_len);
+                //LOG_BUFF_LEVEL((uint8_t *)&lt_carinfo_meter, payload->data_len);
+							  LOG_LEVEL("lt_carinfo_meter.wheel_diameter %d\r\n",lt_carinfo_meter.wheel_diameter);
             }
+						else
+						{
+							  LOG_LEVEL("ERROR: FRAME_CMD_CAR_SET_METER failed!");
+						}
             return false;
 
         case FRAME_CMD_CAR_SET_BATTERY:
-            if (payload->data_len >= sizeof(carinfo_battery_t))
+            if (payload->data_len <= sizeof(carinfo_battery_t))
             {
-                memcpy(&lt_carinfo_battery, payload->data, sizeof(carinfo_battery_t));
+                memcpy(&lt_carinfo_battery, payload->data, payload->data_len);
                 battary_update_simulate_infor();
 
                 LOG_LEVEL("voltage=%d,current=%d,trip_odo=%d,power=%d,soc=%d,range=%d,range_max=%d\r\n",
@@ -467,7 +441,7 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
                           lt_carinfo_battery.range, lt_carinfo_battery.range_max);
             }
 
-            if (lt_carinfo_battery.abs_charge_state >= 255)
+            if (lt_carinfo_battery.charge_state >= 255)
             {
                 system_meter_infor.trip_odo = 0;
             }
@@ -488,7 +462,7 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
     return false; // Command not processed
 }
 
-void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length)
+void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, uint8_t *data, uint16_t length)
 {
     if (message_data_infor_callback)
     {

@@ -5,6 +5,7 @@
 #include "octopus_flash.h"
 #include "octopus_key.h"
 #include "octopus_gpio.h" // Include GPIO HAL for hardware-specific functionality
+//#include "octopus_system.h"
 
 #include "octopus_uart_ptl.h"    // Include UART protocol header
 #include "octopus_uart_upf.h"    // Include UART protocol header
@@ -34,23 +35,29 @@
 // GPIO_STATUS gpio_skd_pin_status = {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP, GPIO_SKD_KEY_PIN, false, false, OCT_KEY_SKD,0, 0};
 // GPIO_STATUS gpio_plus_pin_status = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, false, false, OCT_KEY_PLUS,0, 0};
 // GPIO_STATUS gpio_subt_pin_status = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, false, false, OCT_KEY_SUBT,0, 0};
-GPIO_STATUS gpio_acc1_pin_status = {(GPIO_GROUP *)GPIO_ACC_KEY_GROUP, GPIO_ACC_KEY_PIN, false, false, OCT_KEY_ACC, 0, 0};
 
-
-GPIO_STATUS *gpio_array[] = {&gpio_acc1_pin_status,NULL};
+#ifdef CUSTOMER_MODEL_CA_500
+	GPIO_STATUS gpio_acc1_pin_status = {(GPIO_GROUP *)GPIO_ACC_KEY_GROUP, GPIO_ACC_KEY_PIN, false, false, OCT_KEY_ACC, 0, 0};
+	GPIO_STATUS *gpio_array[] = {&gpio_acc1_pin_status,NULL};
+#else
+	GPIO_STATUS *gpio_array[] = {NULL};
+#endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//GPIO_KEY_STATUS key_status_power = {(GPIO_GROUP *)GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, OCT_KEY_POWER, 0, 0, 0, 0, 0, 0, 0};
 // GPIO_KEY_STATUS key_status_zzd =   {(GPIO_GROUP *)GPIO_ZZD_KEY_GROUP,GPIO_ZZD_KEY_PIN,OCT_KEY_ZZD, 0, 0, 0, 0, 0, 0, 0};
 // GPIO_KEY_STATUS key_status_yzd =   {(GPIO_GROUP *)GPIO_YZD_KEY_GROUP,GPIO_YZD_KEY_PIN,OCT_KEY_YZD, 0, 0, 0, 0, 0, 0, 0};
 // GPIO_KEY_STATUS key_status_skd =   {(GPIO_GROUP *)GPIO_SKD_KEY_GROUP,GPIO_SKD_KEY_PIN,OCT_KEY_SKD, 0, 0, 0, 0, 0, 0, 0};
 // GPIO_KEY_STATUS key_status_ddd =   {(GPIO_GROUP *)GPIO_DDD_KEY_GROUP,GPIO_DDD_KEY_PIN,OCT_KEY_DDD, 0, 0, 0, 0, 0, 0, 0};
 // GPIO_KEY_STATUS key_status_plus = {(GPIO_GROUP *)GPIO_PLUS_KEY_GROUP, GPIO_PLUS_KEY_PIN, OCT_KEY_PLUS, 0, 0, 0, 0, 0, 0, 0};
 // GPIO_KEY_STATUS key_status_subt = {(GPIO_GROUP *)GPIO_SUBT_KEY_GROUP, GPIO_SUBT_KEY_PIN, OCT_KEY_SUBT, 0, 0, 0, 0, 0, 0, 0};
-GPIO_KEY_STATUS key_status_page = {(GPIO_GROUP *)GPIO_PAGE_KEY_GROUP, GPIO_PAGE_KEY_PIN, OCT_KEY_PAGE, 0, 0, 0, 0, 0, 0, 0};
 
-GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_page, NULL};
+#ifdef CUSTOMER_MODEL_RL_500
+	GPIO_KEY_STATUS key_status_page = {(GPIO_GROUP *)GPIO_PAGE_KEY_GROUP, GPIO_PAGE_KEY_PIN, OCT_KEY_PAGE, 0, 0, 0, 0, 0, 0, 0};
+	GPIO_KEY_STATUS key_status_power = {(GPIO_GROUP *)GPIO_POWER_KEY_GROUP, GPIO_POWER_KEY_PIN, OCT_KEY_POWER, 0, 0, 0, 0, 0, 0, 0};
+	GPIO_KEY_STATUS *gpio_key_array[] = {&key_status_power,&key_status_page, NULL};
+#else
+	GPIO_KEY_STATUS *gpio_key_array[] = {NULL};
+#endif
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -146,7 +153,7 @@ static void task_key_action_handler(void)
         switch (gpio_status->key)
         {
            case OCT_KEY_ACC:
-              task_key_acc_handler(gpio_status);
+            task_key_acc_handler(gpio_status);
             break;
         }
 				
@@ -199,20 +206,20 @@ static void task_key_action_handler(void)
 
 void task_key_acc_handler(GPIO_STATUS *gpio_status)
 {
-	  if (gpio_status == NULL)
-        return;
-    if (gpio_status->key != OCT_KEY_ACC)
-        return;
-		
-		 if (!gpio_status->offon)
-		 {
-			 hal_gpio_write((GPIO_GROUP *)GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
-			 send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_ON, 0);
-		 }
-		 else
-		 {
-			 send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_OFF, 0);
-		 }
+		if (gpio_status == NULL)
+			return;
+		if (gpio_status->key != OCT_KEY_ACC)
+			return;
+
+		if (!gpio_status->offon)
+		{
+		 hal_gpio_write((GPIO_GROUP *)GPIO_POWER_ENABLE_GROUP, GPIO_POWER_ENABLE_PIN, BIT_SET); // prepare to power
+		 send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_ON, 0);
+		}
+		else
+		{
+		 send_message(TASK_MODULE_SYSTEM, MSG_OTSM_DEVICE_POWER_EVENT, FRAME_CMD_SYSTEM_POWER_OFF, 0);
+		}
 }
 
 void task_key_power_handler(GPIO_KEY_STATUS *key_status)
@@ -423,8 +430,10 @@ bool key_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuff)
     if (SOC_TO_MCU_MOD_KEY == payload->frame_type)
     {
         if (payload->data[0] == KEY_STATE_RELEASED)
+				{
             key_status_received_temp.ignore = false;
-
+				}
+				
         if (key_status_received_temp.key != payload->data[1])
         {
             key_status_received_temp.key = payload->data[0];
