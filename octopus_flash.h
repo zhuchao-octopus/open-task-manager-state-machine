@@ -285,7 +285,7 @@ extern "C"
     void flash_writ_all_infor(void);
     void flash_read_all_infor(void);
     void flash_save_carinfor_meter(void);
-		void flash_read_carinfor_meter(void);
+	void flash_read_carinfor_meter(void);
 #ifdef __cplusplus
 }
 #endif

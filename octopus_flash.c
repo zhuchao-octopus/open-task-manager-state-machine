@@ -367,8 +367,6 @@ void flash_load_sync_data_infor(void)
 				LOG_LEVEL("Starting data synchronization...\r\n");
 				// flash_meta_infor.slot_a_size = flash_get_app_max_size() - FLASH_BLOCK_SIZE;
 				// flash_meta_infor.slot_a_size = MAIN_APP_SIZE;
-				//CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
-		    //CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
 				if (flash_meta_infor.slot_a_size <= flash_get_app_max_size())
 				{
 					DISABLE_IRQ;
@@ -1152,9 +1150,9 @@ void flash_writ_all_infor(void)
 	}
 	
 	pages = FlashWritBuffTo(FLASH_META_DATA_START_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
-	LOG_LEVEL("Save flash meta information count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
+	LOG_LEVEL("Save flash meta data count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
 	pages = FlashWritBuffTo(FLASH_SYSTEM_DATA_START_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
-	LOG_LEVEL("Save syste meta information count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
+	LOG_LEVEL("Save syste meta data count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
 	
 	if (task_carinfo_get_meter_info())
 	{
@@ -1163,8 +1161,8 @@ void flash_writ_all_infor(void)
 		if(task_carinfo_get_meter_info()->trip_odo > 10)
 		{
 		  pages = FlashWritBuffTo(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-	  }
-		LOG_LEVEL("Save carif meter data trip_odo=%08x count=%d|%d\r\n", task_carinfo_get_meter_info()->trip_odo,pages,sizeof(carinfo_meter_t));
+	    }
+		LOG_LEVEL("Save carif mete data trip_odo=%08x count=%d|%d\r\n", task_carinfo_get_meter_info()->trip_odo,pages,sizeof(carinfo_meter_t));
 		// FlashReadToBuff(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 		// LOG_LEVEL("task_carinfo_get_meter_info()->trip_odo=%08x\r\n", task_carinfo_get_meter_info()->trip_odo);
 		// E2ROM_writ_meter_infor();
