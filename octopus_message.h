@@ -46,7 +46,23 @@ enum MessageGroup
     MSG_GROUP_12,    /**< Reserved for future use */
     MSG_GROUP_13,    /**< Reserved for future use */
     MSG_GROUP_14,    /**< Reserved for future use */
-    MSG_GROUP_15     /**< Reserved for future use */
+    MSG_GROUP_15,     /**< Reserved for future use */
+    MSG_GROUP_16,
+    MSG_GROUP_17,
+    MSG_GROUP_18,
+    MSG_GROUP_19,
+    MSG_GROUP_20,
+    MSG_GROUP_21,
+    MSG_GROUP_22,
+    MSG_GROUP_23,
+    MSG_GROUP_24,
+    MSG_GROUP_25,
+    MSG_GROUP_26,
+    MSG_GROUP_27,
+    MSG_GROUP_28,
+    MSG_GROUP_29,
+    MSG_GROUP_30,
+    MSG_GROUP_31,
 };
 
 /****************************************************************************************
@@ -190,8 +206,8 @@ typedef enum
 
 #define MSG_GROUP_CAR MSG_GROUP_11 /**< Alias for Car Information Group */
 
-#define MSG_GROUP_PASSTHROUGH MSG_GROUP_15
-
+#define MSG_GROUP_PASSTHROUGH_O MSG_GROUP_30
+#define MSG_GROUP_PASSTHROUGH_I MSG_GROUP_31
 /****************************************************************************************
  *                                       ENDIF
  ****************************************************************************************/

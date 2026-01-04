@@ -78,7 +78,7 @@ extern "C"
 
     void update_push_interval_ms(uint16_t delay_ms);
 
-    void ipc_notify_message_from_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
+    void ipc_notify_message_to_mcu(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
 
 #ifdef __cplusplus
 }

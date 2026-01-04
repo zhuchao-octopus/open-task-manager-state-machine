@@ -1094,10 +1094,10 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     fseek(f, file_size - sizeof(meta_info_t), SEEK_SET);
     if (fread(&meta, 1, sizeof(meta_info_t), f) == sizeof(meta_info_t))
     {
-        LOG_LEVEL("target_bank_offset:%08x\r\n ", target_bank_offset);
-        LOG_LEVEL("bank0.magic:%08x \r\n ", meta.bank0.magic);
-        LOG_LEVEL("bank1.magic:%08x \r\n ", meta.bank1.magic);
-        LOG_LEVEL("bank2.magic:%08x \r\n ", meta.bank2.magic);
+        LOG_LEVEL("target_bank_offset :%08x\r\n ", target_bank_offset);
+        LOG_LEVEL("bank0.magic        :%08x\r\n ", meta.bank0.magic);
+        LOG_LEVEL("bank1.magic        :%08x\r\n ", meta.bank1.magic);
+        LOG_LEVEL("bank2.magic        :%08x\r\n ", meta.bank2.magic);
 
         if (meta.bank0.magic == APP_MATA_INFO_MAGIC && meta.bank1.magic == APP_MATA_INFO_MAGIC && meta.bank2.magic == APP_MATA_INFO_MAGIC)
         {
@@ -1113,13 +1113,13 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
             return info;
         }
 
-        LOG_LEVEL("bank0.model: %08x model_number:%08x\r\n ", meta.bank0.model, model_number);
-        LOG_LEVEL("bank1.model: %08x model_number:%08x\r\n ", meta.bank1.model, model_number);
-        LOG_LEVEL("bank2.model: %08x model_number:%08x\r\n ", meta.bank2.model, model_number);
+        LOG_LEVEL("bank0.model        :%08x model_number:%08x\r\n ", meta.bank0.model, model_number);
+        LOG_LEVEL("bank1.model        :%08x model_number:%08x\r\n ", meta.bank1.model, model_number);
+        LOG_LEVEL("bank2.model        :%08x model_number:%08x\r\n ", meta.bank2.model, model_number);
 
-        LOG_LEVEL("bank0.size: %08x start_address:%08x\r\n ", meta.bank0.size, meta.bank0.start_address);
-        LOG_LEVEL("bank1.size: %08x start_address:%08x\r\n ", meta.bank1.size, meta.bank1.start_address);
-        LOG_LEVEL("bank2.size: %08x start_address:%08x\r\n ", meta.bank2.size, meta.bank2.start_address);
+        LOG_LEVEL("bank0.size         :%08x start_address:%08x\r\n ", meta.bank0.size, meta.bank0.start_address);
+        LOG_LEVEL("bank1.size         :%08x start_address:%08x\r\n ", meta.bank1.size, meta.bank1.start_address);
+        LOG_LEVEL("bank2.size         :%08x start_address:%08x\r\n ", meta.bank2.size, meta.bank2.start_address);
 
         if ((meta.bank0.model != model_number) && (meta.bank1.model != model_number) && (meta.bank2.model != model_number))
         {
@@ -1147,7 +1147,7 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     uint32_t sp = header_buf[0] | (header_buf[1] << 8) | (header_buf[2] << 16) | (header_buf[3] << 24);
     uint32_t reset_vector = header_buf[4] | (header_buf[5] << 8) | (header_buf[6] << 16) | (header_buf[7] << 24);
 
-    LOG_LEVEL("reset_vector: %08x\r\n ", reset_vector);
+    LOG_LEVEL("reset_vector           :%08x\r\n ", reset_vector);
 
     // Step 4: Validate stack pointer and reset handler address range
     if (sp < 0x20000000 || sp > 0x40000000 ||
@@ -1206,10 +1206,10 @@ file_info_t is_valid_bin_file(uint32_t model_number, uint32_t target_bank_offset
     info.file_type = FILE_TYPE_BIN;
     info.file_size = valid_size;
     info.file_version = decode_version_from_filename(path_filename);
-    LOG_LEVEL("bank0.crc: %08x\r\n", meta.bank0.crc32);
-    LOG_LEVEL("bank1.crc: %08x\r\n", meta.bank1.crc32);
-    LOG_LEVEL("bank2.crc: %08x\r\n", meta.bank2.crc32);
-    LOG_LEVEL("local.crc: %08x\r\n", info.file_crc_32);
+    LOG_LEVEL("bank0.crc              : %08x\r\n", meta.bank0.crc32);
+    LOG_LEVEL("bank1.crc              : %08x\r\n", meta.bank1.crc32);
+    LOG_LEVEL("bank2.crc              : %08x\r\n", meta.bank2.crc32);
+    LOG_LEVEL("local.crc              : %08x\r\n", info.file_crc_32);
     return info;
 }
 

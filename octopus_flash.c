@@ -40,6 +40,8 @@ void flash_goto_terget_bank(uint32_t active_app_addr, uint32_t expected_crc, uin
 bool flash_check_vector_table(uint8_t bank_slot, uint32_t vector_address);
 bool flash_is_first_boot(uint8_t bank_slot);
 void flash_data_check_invalid(void);
+void flash_writ_meta_infor(void);
+void print_meta_meter_infor(void);
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 flash_meta_infor_t flash_meta_infor = {0};
@@ -329,7 +331,6 @@ void flash_load_sync_data_infor(void)
 			flash_meta_infor.slot_a_crc = calculated_crc;
 			flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_A;
 			e2rom_meta_infor = flash_meta_infor;
-			//flash_writ_all_infor();
 		}
 	}
 	else if (flash_bank_config_mode_slot == BANK_SLOT_B)
@@ -352,7 +353,6 @@ void flash_load_sync_data_infor(void)
 			flash_meta_infor.slot_b_crc = calculated_crc;
 			flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_B;
 			e2rom_meta_infor = flash_meta_infor;
-			//flash_writ_all_infor();
 		}
 	}
 	else if (flash_bank_config_mode_slot == BANK_SLOT_LOADER)
@@ -375,10 +375,6 @@ void flash_load_sync_data_infor(void)
 				}
 				flash_meta_infor.slot_a_crc = calculated_crc;
 				flash_meta_infor.slot_stat_flags |= APP_FLAG_VALID_A;
-				//CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
-				//CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
-				//e2rom_meta_infor = flash_meta_infor;
-				//flash_writ_all_infor();
 			}
 		}
 	}
@@ -541,7 +537,7 @@ ENTER_BOOTLOADER_MODE:
 		LOG_LEVEL("Entering running (%s)...\r\n", flash_get_current_bank_name());
 		CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
 		CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
-		flash_writ_all_infor();
+		//flash_writ_meta_infor();
 	}
 }
 
@@ -1103,7 +1099,7 @@ void E2ROM_read_meter_infor(void)
 	if (task_carinfo_get_meter_info())
 	{
 		E2ROMReadToBuff(EEROM_CARINFOR_METER_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-		LOG_LEVEL("task_carinfo_get_meter_info()->trip_odo=%d\r\n", task_carinfo_get_meter_info()->trip_odo);
+		//LOG_LEVEL("task_carinfo_get_meter_info()->trip_odo=%d\r\n", task_carinfo_get_meter_info()->trip_odo);
 	}
 }
 
@@ -1117,6 +1113,24 @@ void E2ROM_read_metas_infor(void)
 	E2ROMReadToBuff(EEROM_FLASH_MATA_ADDRESS, (uint8_t *)&e2rom_meta_infor, sizeof(flash_meta_infor_t));
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void flash_writ_meta_infor(void)
+{
+	uint8_t pages = 0;
+	flash_meta_infor.mete_data_flags = FLASH_META_DATAS_VALID_FLAG;
+	if (FLASH_USER_DATA_BLOCK <= 0)
+	{
+		LOG_LEVEL("No enougth space for user data pages:%d\r\n", FLASH_USER_DATA_BLOCK);
+		return;
+	}
+
+	pages = FlashErasePage(FLASH_META_DATA_START_ADDRESS, FLASH_USER_DATA_BLOCK);
+	LOG_LEVEL("flash_writ_all_infor need %d pages\r\n", pages);
+	pages = FlashWritBuffTo(FLASH_META_DATA_START_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+	LOG_LEVEL("Save flash meta information count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
+	pages = FlashWritBuffTo(FLASH_SYSTEM_DATA_START_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
+	LOG_LEVEL("Save syste meta information count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
+}
+
 void flash_writ_all_infor(void)
 {
 	uint8_t pages = 0;
@@ -1136,16 +1150,19 @@ void flash_writ_all_infor(void)
 	}
 	
 	pages = FlashWritBuffTo(FLASH_META_DATA_START_ADDRESS, (uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
-	LOG_LEVEL("Save flash meta information count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
+	LOG_LEVEL("Save flash meta data count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
 	pages = FlashWritBuffTo(FLASH_SYSTEM_DATA_START_ADDRESS, (uint8_t *)&system_meter_infor, sizeof(system_meter_infor_t));
-	LOG_LEVEL("Save syste meta information count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
+	LOG_LEVEL("Save syste meta data count=%d|%d \r\n", pages, sizeof(flash_meta_infor_t));
 	
 	if (task_carinfo_get_meter_info())
 	{
 		// pages = FlashErasePage(FLASH_METER_DATA_START_ADDRESS, 1);
 		// task_carinfo_get_meter_info()->trip_odo = 12000;
-		pages = FlashWritBuffTo(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-		LOG_LEVEL("Save carif meter data trip_odo=%08x \r\n", task_carinfo_get_meter_info()->trip_odo);
+		if(task_carinfo_get_meter_info()->trip_odo > 10)
+		{
+		  pages = FlashWritBuffTo(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
+	    }
+		LOG_LEVEL("Save carif mete data trip_odo=%08x count=%d|%d\r\n", task_carinfo_get_meter_info()->trip_odo,pages,sizeof(carinfo_meter_t));
 		// FlashReadToBuff(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
 		// LOG_LEVEL("task_carinfo_get_meter_info()->trip_odo=%08x\r\n", task_carinfo_get_meter_info()->trip_odo);
 		// E2ROM_writ_meter_infor();
@@ -1161,14 +1178,31 @@ void flash_read_all_infor(void)
 
 	if (task_carinfo_get_meter_info())
 	{
-		FlashReadToBuff(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-		LOG_LEVEL("task_carinfo_get_meter_info()->trip_odo=%08x\r\n", task_carinfo_get_meter_info()->trip_odo);
-		// E2ROM_read_meter_infor();
+		FlashReadToBuff(FLASH_METER_DATA_START_ADDRESS, (uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));	
 	}
+	
+	print_meta_meter_infor();
+	LOG_LEVEL("task_carinfo_get_meter_info()->trip_odo=%08x mete_data_flags=%08x\r\n", task_carinfo_get_meter_info()->trip_odo,flash_meta_infor.mete_data_flags);
 	flash_data_check_invalid();
-
 	LOG_NONE("\r\n");
 	// LOG_LEVEL("flash meta information task_carinfo_get_meter_info().trip_odo=%d... \r\n", task_carinfo_get_meter_info()->trip_odo);
+}
+
+void print_meta_meter_infor(void)
+{
+  LOG_LEVEL("Load metas data[%03d]: ", sizeof(flash_meta_infor_t));
+	LOG_BUFF((uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
+  LOG_NONE("\r\n");
+	if (task_carinfo_get_meter_info())
+	{
+		LOG_LEVEL("Load meter data[%03d]: ", sizeof(carinfo_meter_t));
+		LOG_BUFF((uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
+	}
+	else
+	{
+		LOG_LEVEL("Load meter data[%03d]: ", sizeof(carinfo_meter_t));
+	}	
+	LOG_NONE("\r\n");
 }
 
 void flash_data_check_invalid(void)
@@ -1192,31 +1226,19 @@ void flash_data_check_invalid(void)
 	{
 		if (task_carinfo_get_meter_info())
 		{
-			task_carinfo_get_meter_info()->trip_odo = 0;
+			//task_carinfo_get_meter_info()->trip_odo = 0;
 			task_carinfo_get_meter_info()->speed_actual = 0;
 			task_carinfo_get_meter_info()->speed_average = 0;
-			task_carinfo_get_meter_info()->trip_odo = 0;
 			task_carinfo_get_meter_info()->trip_distance = 0;
 			task_carinfo_get_meter_info()->trip_time = 0;
 		}
-
+		
+		CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_A_NEED_UPGRADE);
+		CLEAR_FLAG(flash_meta_infor.slot_stat_flags, APP_FLAG_SLOT_B_NEED_UPGRADE);
 		system_meter_infor.trip_odo = 0;
 		system_meter_infor.speed_actual = 0;
 		system_meter_infor.speed_average = 0;
 		LOG_LEVEL("user data invalid clear all...\r\n");
-	}
-
-	LOG_LEVEL("Load metas data[%03d]: ", sizeof(flash_meta_infor_t));
-	LOG_BUFF((uint8_t *)&flash_meta_infor, sizeof(flash_meta_infor_t));
-
-	if (task_carinfo_get_meter_info() && (flash_meta_infor.mete_data_flags == FLASH_META_DATAS_VALID_FLAG))
-	{
-		LOG_LEVEL("Load meter data[%03d]: ", sizeof(carinfo_meter_t));
-		LOG_BUFF((uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
-	}
-	else
-	{
-		LOG_LEVEL("Load meter data[%03d]: ", sizeof(carinfo_meter_t));
 	}
 }
 
@@ -1224,6 +1246,21 @@ void flash_data_check_invalid(void)
 void flash_save_carinfor_meter(void)
 {
 	flash_writ_all_infor();
+}
+
+void flash_read_carinfor_meter(void)
+{
+	if (task_carinfo_get_meter_info())
+	{
+		if (task_carinfo_get_meter_info()->trip_odo == 0)
+		{
+		  LOG_LEVEL("ReLoad meter data[%03d]: ", sizeof(carinfo_meter_t));
+	  	E2ROM_read_meter_infor();	
+			LOG_BUFF((uint8_t *)task_carinfo_get_meter_info(), sizeof(carinfo_meter_t));
+			LOG_NONE("\r\n");
+			flash_data_check_invalid();
+		}
+	}
 }
 
 bool flash_decode_active_version(uint8_t bank_slot, char *out_str, size_t max_len, const char *date_str, const char *time_str)

@@ -632,7 +632,7 @@ bool update_upgrade_mode_polling(void)
 		if (IS_SLOT_A_NEED_UPGRADE(flash_meta_infor.slot_stat_flags) || (IS_SLOT_B_NEED_UPGRADE(flash_meta_infor.slot_stat_flags)))
 		{
 			LOG_LEVEL("Start auto check and enter upgrading mode.\r\n");
-			if (!file_exists(file_path_name_upgrade))
+			if (!is_file_exists(file_path_name_upgrade))
 			{
 				update_check_oupg_file_exists();
 			}
@@ -654,7 +654,7 @@ bool update_upgrade_mode_polling(void)
 bool update_check_and_enter_start(ptl_proc_buff_t *ptl_proc_buff)
 {
 	uint8_t buffer[8] = {0};
-	if (!file_exists(file_path_name_upgrade))
+	if (!is_file_exists(file_path_name_upgrade))
 	{
 		LOG_LEVEL("file do not exists : %s\n", file_path_name_upgrade);
 		return false;
@@ -983,16 +983,16 @@ static void update_state_handler_polling(void)
 		{
 			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_a_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_a_crc, lt_mcu_program_buf.total_crc_32);
 			LOG_LEVEL("Task finished, time taken: %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
-
+            E2ROM_writ_metas_infor(); 
 			flash_writ_all_infor();
 			flash_JumpToApplication(flash_meta_infor.slot_a_addr);
-			/////Because BANK A is the default boot slot, no jump is required after a successful upgrade on BANK A.
+			///Because BANK A is the default boot slot, no jump is required after a successful upgrade on BANK A.
 		}
 		else if (lt_mcu_program_buf.bank_slot == BANK_SLOT_B)
 		{
 			LOG_LEVEL("MCU_UPDATE_STATE_COMPLETE flash_meta_infor.slot_b_crc=%08X, Received crc_32=%08X\n", flash_meta_infor.slot_b_crc, lt_mcu_program_buf.total_crc_32);
 			LOG_LEVEL("Task finished, time taken: %d seconds\r\n", GetTickCounter(&mcu_upgrade_status.start_time) / 1000);
-
+             E2ROM_writ_metas_infor(); 
 			flash_writ_all_infor();
 			flash_JumpToApplication(flash_meta_infor.slot_b_addr); // bank B must to perform a jump when the upgrade on BANK B succeeds.
 		}

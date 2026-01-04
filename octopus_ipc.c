@@ -51,13 +51,13 @@ static bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *a
 static void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
 static void ipc_request_upgrade_mcu(Msg_t *msg);
 
-void ipc_notify_message_from_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
+void ipc_notify_message_to_mcu(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length);
 
 /*******************************************************************************
  * Global Variables
  * Define variables accessible across multiple files if needed.
  ******************************************************************************/
-static MessageDataInforCallback_t message_data_infor_callback = NULL;
+static MessageDataInforCallback_t ipc_message_data_infor_callback = NULL;
 
 /*******************************************************************************
  * Local Variables
@@ -75,7 +75,7 @@ static uint32_t l_t_msg_wait_500_timer;
  ******************************************************************************/
 void register_message_data_callback(MessageDataInforCallback_t callback)
 {
-    message_data_infor_callback = callback;
+    ipc_message_data_infor_callback = callback;
 }
 /**
  * @brief Initializes the system for running.
@@ -486,13 +486,15 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
             break;
         }
     }
-
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     if (MCU_TO_SOC_MOD_IPC == payload->frame_type)
     {
         switch (payload->frame_cmd)
         {
         case FRAME_CMD_USER_CUSTOMIZE:
-            ipc_notify_message_to_client(MSG_GROUP_PASSTHROUGH, FRAME_CMD_USER_CUSTOMIZE, payload->data, payload->data_len);
+            ipc_notify_message_to_client(MSG_GROUP_PASSTHROUGH_I, FRAME_CMD_USER_CUSTOMIZE, payload->data, payload->data_len);
         }
     }
 
@@ -502,14 +504,14 @@ bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffe
 
 void ipc_notify_message_to_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length)
 {
-    if (message_data_infor_callback)
+    if (ipc_message_data_infor_callback)
     {
         /// LOG_LEVEL("msg_grp=%d,msg_id=%d \r\n", msg_grp, msg_id);
-        message_data_infor_callback(msg_grp, msg_id, data, length);
+        ipc_message_data_infor_callback(msg_grp, msg_id, data, length);
     }
 }
 
-void ipc_notify_message_from_client(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length)
+void ipc_notify_message_to_mcu(uint16_t msg_grp, uint16_t msg_id, const uint8_t *data, uint16_t length)
 {
     // LOG_LEVEL("msg_grp=%d,msg_id=%d \r\n", msg_grp, msg_id);
     ptl_proc_buff_t ptl_proc_buff;
