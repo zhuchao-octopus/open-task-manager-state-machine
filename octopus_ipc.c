@@ -339,7 +339,6 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
 
-#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
         case FRAME_CMD_CAR_SET_INDICATOR:
             ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, (uint8_t *)&lt_carinfo_indicator, sizeof(carinfo_indicator_t), buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
@@ -354,20 +353,12 @@ bool ipc_send_handler(ptl_frame_type_t frame_type, uint16_t param1, uint16_t par
             ptl_build_frame(SOC_TO_MCU_MOD_IPC, (ptl_frame_cmd_t)param1, (uint8_t *)&lt_carinfo_battery, sizeof(carinfo_battery_t), buff);
             LOG_BUFF_LEVEL(buff->buff, buff->size);
             return true;
-#endif
+
         default:
             break;
         }
     }
 
-    if (MCU_TO_SOC_MOD_IPC == frame_type)
-    {
-        switch (param1)
-        {
-        default:
-            break;
-        }
-    }
     return false; // Command not processed
 }
 
@@ -390,115 +381,16 @@ extern void bafang_lamp_on_off(bool on_off);
 extern void bafang_set_gear(uint8_t level);
 bool ipc_receive_handler(ptl_frame_payload_t *payload, ptl_proc_buff_t *ackbuffer)
 {
-    // assert(payload);    // Ensure payload is valid
-    // assert(ackbuffer);  // Ensure acknowledgment buffer is valid
-    // uint8_t tmp[1];     // Temporary variable for holding command data
     LOG_LEVEL("payload.frame_type=%02x cmd=%02x,length=%d data[0]=%d\r\n", payload->frame_type, payload->frame_cmd, payload->data_len, payload->data[0]);
-    if (SOC_TO_MCU_MOD_IPC == payload->frame_type)
-    {
-        switch (payload->frame_cmd)
-        {
-        case FRAME_CMD_SYSTEM_SAVE_DATA:
-            // lt_carinfo_meter.unit_type = payload->data[0];
-            flash_save_carinfor_meter();
-            return false;
 
-#ifdef TASK_MANAGER_STATE_MACHINE_CARINFOR
-        case FRAME_CMD_CAR_SET_LIGHT:
-#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
-            if (payload->data[0] == 1)
-                bafang_lamp_on_off(true);
-            else
-                bafang_lamp_on_off(false);
-            return false;
-#else
-            if (payload->data_len > 0)
-                lt_carinfo_indicator.high_beam = payload->data[0];
-            return false;
-#endif
-
-        case FRAME_CMD_CAR_SET_GEAR_LEVEL:
-            if (payload->data_len >= 1)
-                lt_carinfo_meter.gear = payload->data[0];
-
-#ifdef TASK_MANAGER_STATE_MACHINE_BAFANG
-            bafang_set_gear(payload->data[0]);
-#endif
-            return false;
-
-        case FRAME_CMD_CAR_METER_TRIP_DISTANCE_CLEAR:
-            lt_carinfo_meter.trip_distance = 0;
-            flash_save_carinfor_meter();
-            return false;
-
-        case FRAME_CMD_CAR_METER_TIME_CLEAR:
-            lt_carinfo_meter.trip_time = 0;
-            flash_save_carinfor_meter();
-            return false;
-
-        case FRAME_CMD_CAR_METER_ODO_CLEAR:
-            lt_carinfo_meter.trip_odo = 0;
-            flash_save_carinfor_meter();
-            return false;
-
-        case FRAME_CMD_CAR_SET_INDICATOR:
-            if (payload->data_len >= sizeof(carinfo_indicator_t))
-            {
-                memcpy(&lt_carinfo_indicator, payload->data, sizeof(carinfo_indicator_t));
-                // LOG_BUFF_LEVEL((uint8_t *)&lt_carinfo_indicator, sizeof(carinfo_indicator_t));
-            }
-            return false;
-
-        case FRAME_CMD_CAR_SET_METER:
-            if (payload->data_len >= sizeof(carinfo_meter_t))
-            {
-                memcpy(&lt_carinfo_meter, payload->data, sizeof(carinfo_meter_t));
-                // LOG_BUFF_LEVEL((uint8_t *)&lt_carinfo_meter, sizeof(carinfo_meter_t));
-            }
-            return false;
-
-        case FRAME_CMD_CAR_SET_BATTERY:
-            if (payload->data_len >= sizeof(carinfo_battery_t))
-            {
-                memcpy(&lt_carinfo_battery, payload->data, sizeof(carinfo_battery_t));
-                battary_update_simulate_infor();
-
-                LOG_LEVEL("voltage=%d,current=%d,trip_odo=%d,power=%d,soc=%d,range=%d,range_max=%d\r\n",
-                          lt_carinfo_battery.voltage, lt_carinfo_battery.current, lt_carinfo_meter.trip_odo,
-                          lt_carinfo_battery.power, lt_carinfo_battery.soc,
-                          lt_carinfo_battery.range, lt_carinfo_battery.range_max);
-            }
-
-            if (lt_carinfo_battery.charge_state >= 255)
-            {
-                system_meter_infor.trip_odo = 0;
-            }
-            return false;
-        case FRAME_CMD_CAR_RESET_BATTERY:
-            system_meter_infor.trip_odo = 0;
-            return false;
-
-        case FRAME_CMD_CAR_RESET_SYSTEM:
-            memset(&system_meter_infor, 0, sizeof(system_meter_infor_t));
-            return false;
-#endif
-        default:
-            break;
-        }
-    }
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     if (MCU_TO_SOC_MOD_IPC == payload->frame_type)
     {
         switch (payload->frame_cmd)
         {
         case FRAME_CMD_USER_CUSTOMIZE:
-            ipc_notify_message_to_client(MSG_GROUP_PASSTHROUGH_I, FRAME_CMD_USER_CUSTOMIZE, payload->data, payload->data_len);
+            ipc_notify_message_to_client(MSG_GROUP_PASSTHROUGH_I, payload->frame_cmd, payload->data, payload->data_len);
         }
     }
-
-    /// Handle received commands for MCU_TO_SOC_MOD_SYSTEM frame type
     return false; // Command not processed
 }
 
@@ -518,9 +410,17 @@ void ipc_notify_message_to_mcu(uint16_t msg_grp, uint16_t msg_id, const uint8_t 
     LOG_BUFF_LEVEL(data, length);
     if (data != NULL)
     {
-        ptl_build_frame(msg_grp, msg_id, data, length, ptl_proc_buff.buff);
-        ptl_send_buffer(ptl_proc_buff.channel, ptl_proc_buff.buff, ptl_proc_buff.size);
-        // send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, MSG_OTSM_CMD_MCU_USER_CUSTOMIZE, 0);
+        if (msg_grp == MSG_GROUP_PASSTHROUGH_O)
+        {
+            ptl_build_frame(SOC_TO_MCU_MOD_IPC, msg_id, data, length, ptl_proc_buff.buff);
+            ptl_send_buffer(ptl_proc_buff.channel, ptl_proc_buff.buff, ptl_proc_buff.size);
+        }
+        else
+        {
+            ptl_build_frame(msg_grp, msg_id, data, length, ptl_proc_buff.buff);
+            ptl_send_buffer(ptl_proc_buff.channel, ptl_proc_buff.buff, ptl_proc_buff.size);
+            // send_message(TASK_MODULE_PTL_1, SOC_TO_MCU_MOD_IPC, MSG_OTSM_CMD_MCU_USER_CUSTOMIZE, 0);
+        }
     }
 }
 
